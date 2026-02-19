@@ -1,10 +1,12 @@
+import React, { lazy, Suspense } from "react";
+
+// Lazy load OrderPage to avoid base44 auth trigger on public route
+const OrderPage = lazy(() => import("./OrderPage"));
+
+// Regular imports for admin pages (will be wrapped in Layout with auth)
 import Layout from "./Layout.jsx";
-
 import Albaranes from "./Albaranes";
-
 import MenuManagement from "./MenuManagement";
-
-import OrderPage from "./OrderPage";
 
 import ApiDiagnostics from "./ApiDiagnostics";
 
@@ -469,11 +471,30 @@ function AppRouter() {
     );
 }
 
+// Loading component for lazy loaded pages
+function LoadingSpinner() {
+    return (
+        <div className="flex items-center justify-center h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                <p className="text-gray-500 dark:text-gray-400">Cargando...</p>
+            </div>
+        </div>
+    );
+}
+
 export default function Pages() {
     return (
         <Router>
             <Routes>
-                <Route path="/pedir" element={<OrderPage />} />
+                <Route 
+                    path="/pedir" 
+                    element={
+                        <Suspense fallback={<LoadingSpinner />}>
+                            <OrderPage />
+                        </Suspense>
+                    } 
+                />
                 <Route path="/*" element={<PagesContent />} />
             </Routes>
         </Router>
