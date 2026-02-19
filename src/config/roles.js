@@ -207,6 +207,9 @@ export const ROUTE_PERMISSIONS = {
   '/KitchenDisplay': [PERMISSIONS.VIEW_KITCHEN],
   '/Comparator': [PERMISSIONS.VIEW_PROVIDERS],
   
+  // Gestión de Carta
+  '/MenuManagement': [PERMISSIONS.VIEW_REVO],
+  
   // Integraciones
   '/BiloopAgent': [PERMISSIONS.VIEW_BILOOP],
   '/BiloopDocuments': [PERMISSIONS.VIEW_BILOOP],
