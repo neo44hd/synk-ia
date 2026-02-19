@@ -20,7 +20,8 @@ import {
   Package,
   ShoppingCart,
   Clock,
-  Bell
+  Bell,
+  Sparkles
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,6 +34,7 @@ import { Button } from "@/components/ui/button";
 import NotificationBell from "@/components/NotificationBell";
 import { BackgroundTasksProvider, BackgroundTasksIndicator } from "@/components/BackgroundTasksManager";
 import { base44 } from "@/api/base44Client";
+import { SynkiaBrain, SynkiaBrainButton } from "@/components/SynkiaBrain";
 
 // Navegación Minimalista "Zen"
 const navItems = [
@@ -42,7 +44,7 @@ const navItems = [
     icon: LayoutDashboard, 
     items: [
       { label: "Resumen General", url: createPageUrl("Dashboard") },
-      { label: "CEO Brain (IA)", url: createPageUrl("CEOBrain") },
+      { label: "SYNK-IA Brain", url: createPageUrl("SynkiaBrainPage"), isHighlight: true },
       { label: "Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
     ]
   },
@@ -84,6 +86,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [synkiaBrainOpen, setSynkiaBrainOpen] = useState(false);
 
   // Detectar sección activa
   const getActiveSection = () => {
@@ -278,6 +281,17 @@ export default function Layout({ children }) {
 
         {/* Background Tasks Indicator */}
         <BackgroundTasksIndicator />
+
+        {/* SYNK-IA Brain - Floating Panel & Button */}
+        <SynkiaBrainButton 
+          onClick={() => setSynkiaBrainOpen(true)} 
+          isOpen={synkiaBrainOpen} 
+        />
+        <SynkiaBrain 
+          isOpen={synkiaBrainOpen} 
+          onClose={() => setSynkiaBrainOpen(false)}
+          onToggle={() => setSynkiaBrainOpen(!synkiaBrainOpen)}
+        />
       </div>
     </BackgroundTasksProvider>
   );
