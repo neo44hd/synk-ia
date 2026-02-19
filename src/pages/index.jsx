@@ -60,6 +60,7 @@ import VoiceCommands from "./VoiceCommands";
 import WebSync from "./WebSync";
 import WorkerInterface from "./WorkerInterface";
 import WorkerMobile from "./WorkerMobile";
+import SynkiaBrainPage from "./SynkiaBrainPage";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -121,6 +122,7 @@ const PAGES = {
     WebSync: WebSync,
     WorkerInterface: WorkerInterface,
     WorkerMobile: WorkerMobile,
+    SynkiaBrainPage: SynkiaBrainPage,
 }
 
 // Rutas públicas (sin autenticación)
@@ -236,6 +238,7 @@ function PagesContent() {
                 <Route path="/WebSync" element={<ProtectedPageRoute path="/WebSync" element={<WebSync />} />} />
                 <Route path="/WorkerInterface" element={<ProtectedPageRoute path="/WorkerInterface" element={<WorkerInterface />} />} />
                 <Route path="/WorkerMobile" element={<ProtectedPageRoute path="/WorkerMobile" element={<WorkerMobile />} />} />
+                <Route path="/SynkiaBrainPage" element={<ProtectedPageRoute path="/SynkiaBrainPage" element={<SynkiaBrainPage />} />} />
                 
                 {/* Ruta pública /pedir */}
                 <Route path="/pedir" element={<OrdersDashboard />} />
