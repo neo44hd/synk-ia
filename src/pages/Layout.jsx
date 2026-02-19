@@ -20,8 +20,7 @@ import {
   Package,
   ShoppingCart,
   Clock,
-  Bell,
-  Sparkles
+  Bell
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -34,7 +33,6 @@ import { Button } from "@/components/ui/button";
 import NotificationBell from "@/components/NotificationBell";
 import { BackgroundTasksProvider, BackgroundTasksIndicator } from "@/components/BackgroundTasksManager";
 import { base44 } from "@/api/base44Client";
-import { SynkiaBrain, SynkiaBrainButton } from "@/components/SynkiaBrain";
 
 // Navegación Minimalista "Zen"
 const navItems = [
@@ -44,7 +42,7 @@ const navItems = [
     icon: LayoutDashboard, 
     items: [
       { label: "Resumen General", url: createPageUrl("Dashboard") },
-      { label: "SYNK-IA Brain", url: createPageUrl("SynkiaBrainPage"), isHighlight: true },
+      { label: "CEO Brain (IA)", url: createPageUrl("CEOBrain") },
       { label: "Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
     ]
   },
@@ -65,7 +63,7 @@ const navItems = [
     label: "Equipo", 
     icon: Users,
     items: [
-      { label: "Gestión de Personal", url: createPageUrl("Staff") },
+      { label: "Portal Empleado", url: createPageUrl("Staff") },
       { label: "Control Horario", url: createPageUrl("AttendanceControl") },
       { label: "Portal Empleado", url: createPageUrl("WorkerInterface") },
     ]
@@ -86,7 +84,6 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [synkiaBrainOpen, setSynkiaBrainOpen] = useState(false);
 
   // Detectar sección activa
   const getActiveSection = () => {
@@ -114,7 +111,7 @@ export default function Layout({ children }) {
         }
       `}</style>
       
-      <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-zinc-950 via-neutral-900 to-zinc-950">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-zinc-950 via-neutral-900 to-zinc-950">
         {/* Header / Navbar Superior */}
         <header className="bg-black/90 backdrop-blur-xl border-b border-zinc-800/50 sticky top-0 z-50">
           <div className="max-w-full mx-auto">
@@ -275,23 +272,12 @@ export default function Layout({ children }) {
         </header>
 
         {/* Contenido principal */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1">
           {children}
         </main>
 
         {/* Background Tasks Indicator */}
         <BackgroundTasksIndicator />
-
-        {/* SYNK-IA Brain - Floating Panel & Button */}
-        <SynkiaBrainButton 
-          onClick={() => setSynkiaBrainOpen(true)} 
-          isOpen={synkiaBrainOpen} 
-        />
-        <SynkiaBrain 
-          isOpen={synkiaBrainOpen} 
-          onClose={() => setSynkiaBrainOpen(false)}
-          onToggle={() => setSynkiaBrainOpen(!synkiaBrainOpen)}
-        />
       </div>
     </BackgroundTasksProvider>
   );

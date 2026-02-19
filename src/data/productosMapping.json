@@ -1,0 +1,107 @@
+{
+  "metadata": {
+    "fecha_extraccion": "2026-02-19",
+    "fuente": "https://www.chickenpalace.es",
+    "plataforma": "REVO XEF",
+    "total_productos": 63,
+    "total_imagenes": 53
+  },
+  "categorias": {
+    "comidas": {
+      "category_id": 79,
+      "url": "https://www.chickenpalace.es/nuestra-carta?category=79",
+      "productos": [
+        {"nombre": "Pollo Asado", "precio": "13,50 €", "imagen_local": "pollo_asado.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/m5mF5xYDX5.png"},
+        {"nombre": "1/2 Pollo Asado", "precio": "6,90 €", "imagen_local": "medio_pollo_asado.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/RE7bHhqHyB.png"},
+        {"nombre": "Pollo Teriyaki", "precio": "8,00 € / 11,00 €", "imagen_local": "pollo_teriyaki.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/XEReDtljOA.png"},
+        {"nombre": "Pollo Al Horno Con Verduras", "precio": "8,00 € / 11,00 €", "imagen_local": "pollo_al_horno_verduras.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/C1OZ5DMKd0.png"},
+        {"nombre": "Cuartos Pollo", "precio": "6,00 €", "imagen_local": "cuartos_pollo.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/DOkZ3YcBFf.png"},
+        {"nombre": "Macarrones", "precio": "7,50 €", "imagen_local": "macarrones.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/fn4OkbEEdU.png"},
+        {"nombre": "Spagueti", "precio": "7,50 €", "imagen_local": "spagueti.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/74SRWk7NZU.png"},
+        {"nombre": "1/2 Pasta", "precio": "5,00 €", "imagen_local": "media_pasta.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/kXdCPT3aN7.png"},
+        {"nombre": "Crepe Vegetal", "precio": "4,50 €", "imagen_local": "crepe_vegetal.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/4tVs25wwAd.png"},
+        {"nombre": "Crepe Pollo Y Bacon", "precio": "4,50 €", "imagen_local": "crepe_pollo_bacon.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/sR408M9e4o.png"},
+        {"nombre": "Lasaña De Carne", "precio": "10,00 €", "imagen_local": "lasana_carne.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/Ghkhi6gGjG.png"},
+        {"nombre": "Canelones", "precio": "7,00 €", "imagen_local": "canelones.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/cFV6z14bxN.png"},
+        {"nombre": "Codillo De Cerdo", "precio": "13,50 €", "imagen_local": "codillo_cerdo.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/xOPMqIQz7I.png"},
+        {"nombre": "Costillar Cerdo", "precio": "8,00 € / 11,00 €", "imagen_local": "costillar_cerdo.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/HOzmyo1fWJ.png"},
+        {"nombre": "Costillas Salsa Barbacoa", "precio": "8,00 € / 11,00 €", "imagen_local": "costillas_barbacoa.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/0Fni6Q04LT.png"},
+        {"nombre": "Frita De Cerdo", "precio": "8,00 € / 11,00 €", "imagen_local": "frita_cerdo.png", "imagen_url": "https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images/8yeCPF9vFk.png"}
+      ]
+    },
+    "ensaladas": {
+      "category_id": 75,
+      "url": "https://www.chickenpalace.es/nuestra-carta?category=75",
+      "productos": [
+        {"nombre": "Ensalada Lentejas", "precio": "8,00 € / 11,00 €", "imagen_local": "ensalada_lentejas.png"},
+        {"nombre": "Ensalada De Pasta", "precio": "8,00 € / 11,00 €", "imagen_local": "ensalada_pasta.png"},
+        {"nombre": "Ensalada Payesa", "precio": "8,00 € / 11,00 €", "imagen_local": "ensalada_payesa.png"},
+        {"nombre": "Ensaladilla Rusa", "precio": "8,00 € / 11,00 €", "imagen_local": "ensaladilla_rusa.png"},
+        {"nombre": "Ensalada Patatas All Y Oli", "precio": "8,00 € / 11,00 €", "imagen_local": "ensalada_patatas_alioli.png"},
+        {"nombre": "Ensalada De Tomate Pelado", "precio": "8,00 € / 11,00 €", "imagen_local": "ensalada_tomate_pelado.png"},
+        {"nombre": "Ensalada Arroz", "precio": "8,00 € / 11,00 €", "imagen_local": "ensalada_arroz.png"},
+        {"nombre": "Escalivada", "precio": "8,00 € / 11,00 €", "imagen_local": "escalivada.png"},
+        {"nombre": "Ensalada Garbanzos", "precio": "8,00 € / 11,00 €", "imagen_local": "ensalada_garbanzos.png"},
+        {"nombre": "Ensalada Cous Cous", "precio": "8,00 € / 11,00 €", "imagen_local": "ensalada_couscous.png"}
+      ]
+    },
+    "complementos": {
+      "category_id": 76,
+      "url": "https://www.chickenpalace.es/nuestra-carta?category=76",
+      "productos": [
+        {"nombre": "Barra De Pan", "precio": "1,10 €", "imagen_local": "barra_pan.png"},
+        {"nombre": "All Y Oli", "precio": "1,80 €", "imagen_local": "alioli.png"},
+        {"nombre": "Patatas Al Brost", "precio": "5,80 €", "imagen_local": "patatas_brost.png"},
+        {"nombre": "Boniatos Fritos", "precio": "6,00 €", "imagen_local": "boniatos_fritos.png"},
+        {"nombre": "Boniatos Fritos 1", "precio": "4,00 €", "imagen_local": "boniatos_fritos_1.png"},
+        {"nombre": "Patatas Fritas a Lo Pobre", "precio": "4,80 €", "imagen_local": "patatas_pobres.png"},
+        {"nombre": "Patatas Fritas Largas", "precio": "4,30 €", "imagen_local": "patatas_fritas_largas.png"},
+        {"nombre": "Patatas Asadas", "precio": "0,90 €", "imagen_local": "patatas_asadas.png"},
+        {"nombre": "1/2 Patatas Pobres", "precio": "3,50 €", "imagen_local": null},
+        {"nombre": "1/2 Patatas Fritas Largas", "precio": "3,00 €", "imagen_local": null},
+        {"nombre": "Croqueta De Cocido Y Pollo", "precio": "0,80 €", "imagen_local": "croqueta_cocido.png"},
+        {"nombre": "Croqueta Jamon Serrano", "precio": "0,80 €", "imagen_local": "croqueta_jamon.png"},
+        {"nombre": "Croqueta Espinaca Y Queso", "precio": "0,90 €", "imagen_local": "croqueta_espinaca.png"},
+        {"nombre": "Croqueta De Boletus", "precio": "0,80 €", "imagen_local": "croqueta_boletus.png"},
+        {"nombre": "Jalapeños Con Cheddar", "precio": "1,10 €", "imagen_local": "jalapenos_cheddar.png"}
+      ]
+    },
+    "postres": {
+      "category_id": 78,
+      "url": "https://www.chickenpalace.es/nuestra-carta?category=78",
+      "productos": [
+        {"nombre": "Lemon Pie", "precio": "7,00 €", "imagen_local": "lemon_pie.png"},
+        {"nombre": "Tarta De Zanahoria", "precio": "7,00 €", "imagen_local": "tarta_zanahoria.png"},
+        {"nombre": "Arroz Con Leche", "precio": "3,00 €", "imagen_local": "arroz_leche.png"},
+        {"nombre": "Natillas Caseras", "precio": "3,00 €", "imagen_local": "natillas_caseras.png"},
+        {"nombre": "Tarta De Queso", "precio": "7,00 €", "imagen_local": "tarta_queso.png"},
+        {"nombre": "Tarta De Chocolate", "precio": "7,00 €", "imagen_local": "tarta_chocolate.png"}
+      ]
+    },
+    "bebidas": {
+      "category_id": 79,
+      "url": "https://www.chickenpalace.es/nuestra-carta?category=79",
+      "productos": [
+        {"nombre": "Fanta Limón 500cl", "precio": "2,00 €", "imagen_local": "fanta_limon_500.png"},
+        {"nombre": "Fanta Naranja 500cl", "precio": "2,00 €", "imagen_local": "fanta_naranja_500.png"},
+        {"nombre": "Sprite 500cl", "precio": "2,00 €", "imagen_local": "sprite_500.png"},
+        {"nombre": "Coca Cola Zero 500cl", "precio": "2,00 €", "imagen_local": "cocacola_zero_500.png"},
+        {"nombre": "Coca Cola 2L", "precio": "3,90 €", "imagen_local": "cocacola_2l.png"},
+        {"nombre": "Fanta Limón 2L", "precio": "3,90 €", "imagen_local": "fanta_limon_2l.png"},
+        {"nombre": "Fanta Naranja 2L", "precio": "3,90 €", "imagen_local": "fanta_naranja_2l.png"},
+        {"nombre": "Sprite 2L", "precio": "3,90 €", "imagen_local": "sprite_2l.png"}
+      ]
+    }
+  },
+  "integracion": {
+    "plataforma_detectada": "REVO XEF",
+    "almacenamiento_imagenes": "Google Cloud Storage (revo-cloud-bucket)",
+    "analytics": ["Google Tag Manager (GTM-57GDPZG8)", "Google Analytics (G-6ZSQ2EMKE0)"],
+    "api_publica": false,
+    "metodos_integracion_recomendados": [
+      "Scraping de productos (URLs estables)",
+      "Integración con API de REVO XEF (requiere credenciales)",
+      "Webhooks personalizados"
+    ]
+  }
+}
