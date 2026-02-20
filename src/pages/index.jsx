@@ -116,6 +116,10 @@ import VoiceCommands from "./VoiceCommands";
 
 import WebSync from "./WebSync";
 
+import WhatsAppConfig from "./WhatsAppConfig";
+
+import WhatsAppHistory from "./WhatsAppHistory";
+
 import WorkerInterface from "./WorkerInterface";
 
 import WorkerMobile from "./WorkerMobile";
@@ -235,6 +239,10 @@ const PAGES = {
     VoiceCommands: VoiceCommands,
     
     WebSync: WebSync,
+    
+    WhatsAppConfig: WhatsAppConfig,
+    
+    WhatsAppHistory: WhatsAppHistory,
     
     WorkerInterface: WorkerInterface,
     
@@ -379,6 +387,10 @@ function PagesContent() {
                 
                 <Route path="/WebSync" element={<WebSync />} />
                 
+                <Route path="/WhatsAppConfig" element={<WhatsAppConfig />} />
+                
+                <Route path="/WhatsAppHistory" element={<WhatsAppHistory />} />
+                
                 <Route path="/WorkerInterface" element={<WorkerInterface />} />
                 
                 <Route path="/WorkerMobile" element={<WorkerMobile />} />
@@ -464,6 +476,8 @@ function AppRouter() {
                 <Route path="/VeriFactu" element={<VeriFactu />} />
                 <Route path="/VoiceCommands" element={<VoiceCommands />} />
                 <Route path="/WebSync" element={<WebSync />} />
+                <Route path="/WhatsAppConfig" element={<WhatsAppConfig />} />
+                <Route path="/WhatsAppHistory" element={<WhatsAppHistory />} />
                 <Route path="/WorkerInterface" element={<WorkerInterface />} />
                 <Route path="/WorkerMobile" element={<WorkerMobile />} />
             </Routes>
