@@ -25,6 +25,7 @@ import {
   User,
   Home,
   MessageSquare,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import RevoSyncService from "@/services/revoSyncService";
+import whatsappService from "@/services/whatsappService";
 
 // Placeholder image component
 const ProductImage = ({ src, alt, className }) => {
@@ -84,9 +86,15 @@ export default function OrderPage() {
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     phone: '',
+    whatsapp: '',
     address: '',
     notes: '',
+    wantsWhatsAppConfirmation: true,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(null);
+  const [phoneError, setPhoneError] = useState('');
+  const [whatsappConfig, setWhatsappConfig] = useState(null);
 
   // Load data on mount
   useEffect(() => {
@@ -94,10 +102,12 @@ export default function OrderPage() {
       const allProducts = RevoSyncService.getProducts();
       const allCategories = RevoSyncService.getCategories();
       const info = RevoSyncService.getBusinessInfo();
+      const waConfig = whatsappService.getConfig();
       
       setProducts(allProducts);
       setCategories(allCategories);
       setBusinessInfo(info);
+      setWhatsappConfig(waConfig);
     };
 
     loadData();
@@ -159,20 +169,78 @@ export default function OrderPage() {
     return cart.reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
-  const handleSubmitOrder = () => {
-    // Here would be the order submission logic
-    console.log('Order submitted:', {
-      items: cart,
-      customer: customerInfo,
-      orderType,
-      total: cartTotal,
-    });
+  // Validate phone number
+  const validatePhone = (phone) => {
+    const validation = whatsappService.validatePhoneNumber(phone);
+    if (!validation.valid) {
+      setPhoneError(validation.error);
+      return false;
+    }
+    setPhoneError('');
+    return true;
+  };
+
+  const handleSubmitOrder = async () => {
+    // Validate WhatsApp number if customer wants confirmation
+    const whatsappNumber = customerInfo.whatsapp || customerInfo.phone;
+    if (customerInfo.wantsWhatsAppConfirmation && !validatePhone(whatsappNumber)) {
+      return;
+    }
+
+    setIsSubmitting(true);
     
-    // Show success and reset
-    alert('¡Pedido enviado con éxito! Te contactaremos pronto.');
-    setCart([]);
-    setShowCheckout(false);
-    setIsCartOpen(false);
+    try {
+      // Calculate delivery fee if applicable
+      const deliveryFee = orderType === 'delivery' && businessInfo ? businessInfo.deliveryFee : 0;
+      const totalWithDelivery = cartTotal + deliveryFee;
+
+      // Prepare order data for WhatsApp service
+      const orderData = {
+        items: cart,
+        customer: {
+          name: customerInfo.name,
+          phone: whatsappNumber,
+          notes: customerInfo.notes,
+        },
+        orderType,
+        total: totalWithDelivery,
+        deliveryAddress: orderType === 'delivery' ? customerInfo.address : null,
+        pickupTime: '30-45 minutos',
+      };
+
+      // Process order through WhatsApp service (sends notifications)
+      const result = await whatsappService.processNewOrder(orderData);
+
+      console.log('Order processed:', result);
+
+      // Show success
+      setOrderSuccess({
+        orderNumber: result.orderNumber,
+        whatsappSent: result.customerNotification?.status === 'sent',
+      });
+
+      // Reset cart after delay
+      setTimeout(() => {
+        setCart([]);
+        setShowCheckout(false);
+        setIsCartOpen(false);
+        setOrderSuccess(null);
+        setCustomerInfo({
+          name: '',
+          phone: '',
+          whatsapp: '',
+          address: '',
+          notes: '',
+          wantsWhatsAppConfirmation: true,
+        });
+      }, 5000);
+
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      alert('Error al procesar el pedido. Por favor, inténtalo de nuevo.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const featuredProducts = products.filter(p => p.featured && p.available);
@@ -504,7 +572,49 @@ export default function OrderPage() {
 
               {/* Cart Content */}
               <div className="flex-grow overflow-auto p-6">
-                {showCheckout ? (
+                {orderSuccess ? (
+                  /* Success Screen */
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-8"
+                  >
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                      <CheckCircle2 className="w-10 h-10 text-green-500" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
+                      ¡Pedido Confirmado!
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                      Nº de Pedido: <span className="font-bold text-orange-500">#{orderSuccess.orderNumber}</span>
+                    </p>
+                    {orderSuccess.whatsappSent && (
+                      <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400 mb-4">
+                        <MessageSquare className="w-5 h-5" />
+                        <span>Confirmación enviada por WhatsApp</span>
+                      </div>
+                    )}
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Te contactaremos pronto para confirmar tu pedido.
+                    </p>
+                    {whatsappConfig?.businessPhone && (
+                      <div className="mt-6 p-4 bg-green-50 dark:bg-green-500/10 rounded-xl">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          ¿Tienes alguna pregunta? Contáctanos por WhatsApp:
+                        </p>
+                        <a
+                          href={whatsappService.getWhatsAppLink(whatsappConfig.businessPhone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium"
+                        >
+                          <MessageSquare className="w-5 h-5" />
+                          {whatsappConfig.businessPhone}
+                        </a>
+                      </div>
+                    )}
+                  </motion.div>
+                ) : showCheckout ? (
                   /* Checkout Form */
                   <div className="space-y-6">
                     <div>
@@ -560,6 +670,76 @@ export default function OrderPage() {
                         className="rounded-xl"
                       />
                     </div>
+
+                    {/* WhatsApp Section */}
+                    <div className="p-4 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/30">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-green-500 rounded-lg">
+                          <MessageSquare className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-800 dark:text-white mb-1">
+                            Confirmación por WhatsApp
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            Recibe la confirmación de tu pedido directamente en WhatsApp
+                          </p>
+                          
+                          <label className="flex items-center gap-3 cursor-pointer mb-3">
+                            <input
+                              type="checkbox"
+                              checked={customerInfo.wantsWhatsAppConfirmation}
+                              onChange={(e) => setCustomerInfo(prev => ({ ...prev, wantsWhatsAppConfirmation: e.target.checked }))}
+                              className="w-5 h-5 rounded border-green-500 text-green-500 focus:ring-green-500"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                              Quiero recibir confirmación por WhatsApp
+                            </span>
+                          </label>
+
+                          {customerInfo.wantsWhatsAppConfirmation && (
+                            <div>
+                              <Input
+                                value={customerInfo.whatsapp}
+                                onChange={(e) => {
+                                  setCustomerInfo(prev => ({ ...prev, whatsapp: e.target.value }));
+                                  setPhoneError('');
+                                }}
+                                placeholder="WhatsApp (dejar vacío si es el mismo que teléfono)"
+                                className="rounded-xl bg-white dark:bg-gray-800"
+                              />
+                              {phoneError && (
+                                <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+                                  <AlertCircle className="w-4 h-4" />
+                                  {phoneError}
+                                </p>
+                              )}
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Si lo dejas vacío, usaremos tu número de teléfono
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Business WhatsApp Contact */}
+                    {whatsappConfig?.businessPhone && (
+                      <div className="flex items-center gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-xl">
+                        <MessageSquare className="w-5 h-5 text-green-500" />
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          Nuestro WhatsApp:
+                        </span>
+                        <a
+                          href={whatsappService.getWhatsAppLink(whatsappConfig.businessPhone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-green-600 hover:text-green-700"
+                        >
+                          {whatsappConfig.businessPhone}
+                        </a>
+                      </div>
+                    )}
 
                     {orderType === 'delivery' && (
                       <div>
@@ -663,7 +843,7 @@ export default function OrderPage() {
               </div>
 
               {/* Cart Footer */}
-              {cart.length > 0 && (
+              {cart.length > 0 && !orderSuccess && (
                 <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   {orderType === 'delivery' && businessInfo && (
                     <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -678,16 +858,25 @@ export default function OrderPage() {
                     </span>
                   </div>
                   
-                  {showCheckout ? (
+                  {showCheckout && !orderSuccess ? (
                     <Button
                       onClick={handleSubmitOrder}
-                      disabled={!customerInfo.name || !customerInfo.phone || (orderType === 'delivery' && !customerInfo.address)}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white py-6 rounded-xl text-lg font-bold"
+                      disabled={isSubmitting || !customerInfo.name || !customerInfo.phone || (orderType === 'delivery' && !customerInfo.address)}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white py-6 rounded-xl text-lg font-bold disabled:opacity-50"
                     >
-                      <Send className="w-5 h-5 mr-2" />
-                      Confirmar Pedido
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-5 h-5 mr-2" />
+                          Confirmar Pedido
+                        </>
+                      )}
                     </Button>
-                  ) : (
+                  ) : !orderSuccess ? (
                     <Button
                       onClick={() => setShowCheckout(true)}
                       className="w-full bg-orange-500 hover:bg-orange-600 text-white py-6 rounded-xl text-lg font-bold"
