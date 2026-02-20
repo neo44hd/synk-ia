@@ -884,9 +884,9 @@ export default function OrderPage() {
                       Continuar
                       <ArrowRight className="w-5 h-5 ml-2" />
                     </Button>
-                  )}
+                  ) : null}
 
-                  {businessInfo && businessInfo.minimumOrder > cartTotal && (
+                  {businessInfo && businessInfo.minimumOrder > cartTotal && !orderSuccess && (
                     <p className="mt-3 text-center text-sm text-yellow-600 dark:text-yellow-400 flex items-center justify-center gap-2">
                       <AlertCircle className="w-4 h-4" />
                       Pedido mínimo: {businessInfo.minimumOrder} €
