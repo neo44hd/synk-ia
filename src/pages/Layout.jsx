@@ -53,10 +53,11 @@ const navItems = [
     icon: Briefcase,
     items: [
       { label: "Finanzas & KPIs", url: createPageUrl("FinanceDashboard") },
-      { label: "Ventas (Revo)", url: createPageUrl("RevoDashboard") },
+      { label: "💰 Dashboard Ventas", url: "/ventas" },
+      { label: "📦 Inventario", url: "/inventario" },
+      { label: "🍳 Cocina (KDS)", url: "/pedidos" },
       { label: "Facturación", url: createPageUrl("Billing") },
       { label: "Proveedores", url: createPageUrl("Providers") },
-      { label: "Inventario", url: createPageUrl("ProductInventory") },
     ]
   },
   { 

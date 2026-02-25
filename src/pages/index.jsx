@@ -118,6 +118,12 @@ import LegalTimeRegistry from "./LegalTimeRegistry";
 
 import VeriFactu from "./VeriFactu";
 
+import SalesDashboard from "./SalesDashboard";
+
+import InventoryManagement from "./InventoryManagement";
+
+import KitchenOrders from "./KitchenOrders";
+
 import VoiceCommands from "./VoiceCommands";
 
 import WebSync from "./WebSync";
@@ -253,6 +259,15 @@ const PAGES = {
     RegistroLegal: LegalTimeRegistry,
     
     VeriFactu: VeriFactu,
+    
+    SalesDashboard: SalesDashboard,
+    Ventas: SalesDashboard,
+    
+    InventoryManagement: InventoryManagement,
+    Inventario: InventoryManagement,
+    
+    KitchenOrders: KitchenOrders,
+    Pedidos: KitchenOrders,
     
     VoiceCommands: VoiceCommands,
     
@@ -412,6 +427,15 @@ function PagesContent() {
                 <Route path="/registro-legal" element={<LegalTimeRegistry />} />
                 
                 <Route path="/VeriFactu" element={<VeriFactu />} />
+                
+                <Route path="/SalesDashboard" element={<SalesDashboard />} />
+                <Route path="/ventas" element={<SalesDashboard />} />
+                
+                <Route path="/InventoryManagement" element={<InventoryManagement />} />
+                <Route path="/inventario" element={<InventoryManagement />} />
+                
+                <Route path="/KitchenOrders" element={<KitchenOrders />} />
+                <Route path="/pedidos" element={<KitchenOrders />} />
                 
                 <Route path="/VoiceCommands" element={<VoiceCommands />} />
                 
