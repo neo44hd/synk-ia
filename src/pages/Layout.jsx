@@ -20,8 +20,7 @@ import {
   Package,
   ShoppingCart,
   Clock,
-  Bell,
-  MessageSquare,
+  Bell
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -76,17 +75,7 @@ const navItems = [
     items: [
       { label: "Archivo Inteligente", url: createPageUrl("DocumentArchive") },
       { label: "Legal & Empresa", url: createPageUrl("CompanyDocs") },
-      { label: "Buzón Email", url: createPageUrl("SmartMailbox") },
-    ]
-  },
-  { 
-    id: "whatsapp",
-    label: "WhatsApp", 
-    icon: MessageSquare,
-    items: [
-      { label: "Historial Pedidos", url: createPageUrl("WhatsAppHistory") },
-      { label: "Configuración", url: createPageUrl("WhatsAppConfig") },
-      { label: "Gestión Carta", url: createPageUrl("MenuManagement") },
+      { label: "Buzón Inteligente", url: "/correo" },
     ]
   }
 ];
