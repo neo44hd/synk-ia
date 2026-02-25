@@ -73,7 +73,7 @@ const navItems = [
     label: "Archivo", 
     icon: FileText,
     items: [
-      { label: "Archivo Inteligente", url: createPageUrl("DocumentArchive") },
+      { label: "Archivo Inteligente", url: "/archivo-inteligente" },
       { label: "Legal & Empresa", url: createPageUrl("CompanyDocs") },
       { label: "Buzón Inteligente", url: "/correo" },
     ]

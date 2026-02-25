@@ -95,7 +95,10 @@ import SecurityCameras from "./SecurityCameras";
 import Showcase from "./Showcase";
 
 import SmartMailbox from "./SmartMailbox";
+
 import SmartMailboxV2 from "./SmartMailboxV2";
+
+import SmartDocumentArchive from "./SmartDocumentArchive";
 
 import Staff from "./Staff";
 
@@ -214,8 +217,12 @@ const PAGES = {
     Showcase: Showcase,
     
     SmartMailbox: SmartMailbox,
+    
     SmartMailboxV2: SmartMailboxV2,
     Correo: SmartMailboxV2,
+    
+    SmartDocumentArchive: SmartDocumentArchive,
+    ArchivoInteligente: SmartDocumentArchive,
     
     Staff: Staff,
     
@@ -357,8 +364,12 @@ function PagesContent() {
                 <Route path="/Showcase" element={<Showcase />} />
                 
                 <Route path="/SmartMailbox" element={<SmartMailbox />} />
+                
                 <Route path="/SmartMailboxV2" element={<SmartMailboxV2 />} />
                 <Route path="/correo" element={<SmartMailboxV2 />} />
+                
+                <Route path="/SmartDocumentArchive" element={<SmartDocumentArchive />} />
+                <Route path="/archivo-inteligente" element={<SmartDocumentArchive />} />
                 
                 <Route path="/Staff" element={<Staff />} />
                 
