@@ -108,6 +108,14 @@ import Timesheets from "./Timesheets";
 
 import VacationRequests from "./VacationRequests";
 
+import EmployeePortal from "./EmployeePortal";
+
+import CEOTimeDashboard from "./CEOTimeDashboard";
+
+import VacationCalendar from "./VacationCalendar";
+
+import LegalTimeRegistry from "./LegalTimeRegistry";
+
 import VeriFactu from "./VeriFactu";
 
 import VoiceCommands from "./VoiceCommands";
@@ -231,6 +239,18 @@ const PAGES = {
     Timesheets: Timesheets,
     
     VacationRequests: VacationRequests,
+    
+    EmployeePortal: EmployeePortal,
+    PortalEmpleado: EmployeePortal,
+    
+    CEOTimeDashboard: CEOTimeDashboard,
+    ControlHorarioCEO: CEOTimeDashboard,
+    
+    VacationCalendar: VacationCalendar,
+    CalendarioVacaciones: VacationCalendar,
+    
+    LegalTimeRegistry: LegalTimeRegistry,
+    RegistroLegal: LegalTimeRegistry,
     
     VeriFactu: VeriFactu,
     
@@ -378,6 +398,18 @@ function PagesContent() {
                 <Route path="/Timesheets" element={<Timesheets />} />
                 
                 <Route path="/VacationRequests" element={<VacationRequests />} />
+                
+                <Route path="/EmployeePortal" element={<EmployeePortal />} />
+                <Route path="/portal-empleado" element={<EmployeePortal />} />
+                
+                <Route path="/CEOTimeDashboard" element={<CEOTimeDashboard />} />
+                <Route path="/control-horario-ceo" element={<CEOTimeDashboard />} />
+                
+                <Route path="/VacationCalendar" element={<VacationCalendar />} />
+                <Route path="/calendario-vacaciones" element={<VacationCalendar />} />
+                
+                <Route path="/LegalTimeRegistry" element={<LegalTimeRegistry />} />
+                <Route path="/registro-legal" element={<LegalTimeRegistry />} />
                 
                 <Route path="/VeriFactu" element={<VeriFactu />} />
                 

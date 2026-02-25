@@ -43,6 +43,7 @@ const navItems = [
     items: [
       { label: "Resumen General", url: createPageUrl("Dashboard") },
       { label: "CEO Brain (IA)", url: createPageUrl("CEOBrain") },
+      { label: "Control Horario CEO", url: "/control-horario-ceo" },
       { label: "Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
     ]
   },
@@ -63,9 +64,10 @@ const navItems = [
     label: "Equipo", 
     icon: Users,
     items: [
-      { label: "Portal Empleado", url: createPageUrl("Staff") },
-      { label: "Control Horario", url: createPageUrl("AttendanceControl") },
-      { label: "Portal Empleado", url: createPageUrl("WorkerInterface") },
+      { label: "📱 Portal Empleado", url: "/portal-empleado" },
+      { label: "📅 Calendario Vacaciones", url: "/calendario-vacaciones" },
+      { label: "📋 Registro Legal", url: "/registro-legal" },
+      { label: "Plantilla", url: createPageUrl("Staff") },
     ]
   },
   { 
@@ -98,7 +100,10 @@ export default function Layout({ children }) {
   const activeSection = getActiveSection();
 
   // MODO PORTAL EMPLEADO: Sin layout de administración
-  if (location.pathname.includes('PortalLogin') || location.pathname.includes('WorkerInterface')) {
+  if (location.pathname.includes('PortalLogin') || 
+      location.pathname.includes('WorkerInterface') ||
+      location.pathname.includes('portal-empleado') ||
+      location.pathname.includes('EmployeePortal')) {
     return <>{children}</>;
   }
 
