@@ -4,6 +4,14 @@ import Albaranes from "./Albaranes";
 
 import ApiDiagnostics from "./ApiDiagnostics";
 
+import CEODashboard from "./CEODashboard";
+
+import ProvidersComplete from "./ProvidersComplete";
+
+import EmployeeControl from "./EmployeeControl";
+
+import PayrollsComplete from "./PayrollsComplete";
+
 import AttendanceControl from "./AttendanceControl";
 
 import AutomationHub from "./AutomationHub";
@@ -121,6 +129,14 @@ const PAGES = {
     Albaranes: Albaranes,
     
     ApiDiagnostics: ApiDiagnostics,
+    
+    CEODashboard: CEODashboard,
+    
+    ProvidersComplete: ProvidersComplete,
+    
+    EmployeeControl: EmployeeControl,
+    
+    PayrollsComplete: PayrollsComplete,
     
     AttendanceControl: AttendanceControl,
     
@@ -262,6 +278,14 @@ function PagesContent() {
                 <Route path="/Albaranes" element={<Albaranes />} />
                 
                 <Route path="/ApiDiagnostics" element={<ApiDiagnostics />} />
+                
+                <Route path="/CEODashboard" element={<CEODashboard />} />
+                
+                <Route path="/ProvidersComplete" element={<ProvidersComplete />} />
+                
+                <Route path="/EmployeeControl" element={<EmployeeControl />} />
+                
+                <Route path="/PayrollsComplete" element={<PayrollsComplete />} />
                 
                 <Route path="/AttendanceControl" element={<AttendanceControl />} />
                 
