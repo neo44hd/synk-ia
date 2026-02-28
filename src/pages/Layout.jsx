@@ -21,7 +21,10 @@ import {
   ShoppingCart,
   Clock,
   Bell,
-  Crown
+  Crown,
+  Scale,
+  HardHat,
+  Stethoscope
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -47,6 +50,17 @@ const navItems = [
       { label: "Proveedores", url: createPageUrl("ProvidersComplete") },
       { label: "Empleados", url: createPageUrl("EmployeeControl") },
       { label: "Nóminas", url: createPageUrl("PayrollsComplete") },
+    ]
+  },
+  { 
+    id: "compliance",
+    label: "Compliance", 
+    icon: Scale, 
+    items: [
+      { label: "Dashboard Compliance", url: createPageUrl("ComplianceDashboard") },
+      { label: "Inspección Laboral", url: createPageUrl("InspeccionLaboral") },
+      { label: "Inspección Sanidad", url: createPageUrl("InspeccionSanidad") },
+      { label: "Inspección Industria/PRL", url: createPageUrl("InspeccionIndustria") },
     ]
   },
   { 

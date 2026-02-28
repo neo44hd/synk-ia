@@ -32,6 +32,8 @@ import CentralAgent from "./CentralAgent";
 
 import CompanyDocs from "./CompanyDocs";
 
+import ComplianceDashboard from "./ComplianceDashboard";
+
 import Comparator from "./Comparator";
 
 import ConnectionDiagnostics from "./ConnectionDiagnostics";
@@ -63,6 +65,12 @@ import HRAgent from "./HRAgent";
 import HRDocuments from "./HRDocuments";
 
 import Home from "./Home";
+
+import InspeccionLaboral from "./InspeccionLaboral";
+
+import InspeccionSanidad from "./InspeccionSanidad";
+
+import InspeccionIndustria from "./InspeccionIndustria";
 
 import Invoices from "./Invoices";
 
@@ -158,6 +166,8 @@ const PAGES = {
     
     CompanyDocs: CompanyDocs,
     
+    ComplianceDashboard: ComplianceDashboard,
+    
     Comparator: Comparator,
     
     ConnectionDiagnostics: ConnectionDiagnostics,
@@ -189,6 +199,12 @@ const PAGES = {
     HRDocuments: HRDocuments,
     
     Home: Home,
+    
+    InspeccionLaboral: InspeccionLaboral,
+    
+    InspeccionSanidad: InspeccionSanidad,
+    
+    InspeccionIndustria: InspeccionIndustria,
     
     Invoices: Invoices,
     
@@ -307,6 +323,8 @@ function PagesContent() {
                 
                 <Route path="/CompanyDocs" element={<CompanyDocs />} />
                 
+                <Route path="/ComplianceDashboard" element={<ComplianceDashboard />} />
+                
                 <Route path="/Comparator" element={<Comparator />} />
                 
                 <Route path="/ConnectionDiagnostics" element={<ConnectionDiagnostics />} />
@@ -338,6 +356,12 @@ function PagesContent() {
                 <Route path="/HRDocuments" element={<HRDocuments />} />
                 
                 <Route path="/Home" element={<Home />} />
+                
+                <Route path="/InspeccionLaboral" element={<InspeccionLaboral />} />
+                
+                <Route path="/InspeccionSanidad" element={<InspeccionSanidad />} />
+                
+                <Route path="/InspeccionIndustria" element={<InspeccionIndustria />} />
                 
                 <Route path="/Invoices" element={<Invoices />} />
                 
