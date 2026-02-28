@@ -4,6 +4,8 @@ import Albaranes from "./Albaranes";
 
 import ApiDiagnostics from "./ApiDiagnostics";
 
+import AuditLogs from "./AuditLogs";
+
 import CEODashboard from "./CEODashboard";
 
 import ProvidersComplete from "./ProvidersComplete";
@@ -137,6 +139,8 @@ const PAGES = {
     Albaranes: Albaranes,
     
     ApiDiagnostics: ApiDiagnostics,
+    
+    AuditLogs: AuditLogs,
     
     CEODashboard: CEODashboard,
     
@@ -294,6 +298,8 @@ function PagesContent() {
                 <Route path="/Albaranes" element={<Albaranes />} />
                 
                 <Route path="/ApiDiagnostics" element={<ApiDiagnostics />} />
+
+                <Route path="/AuditLogs" element={<AuditLogs />} />
                 
                 <Route path="/CEODashboard" element={<CEODashboard />} />
                 

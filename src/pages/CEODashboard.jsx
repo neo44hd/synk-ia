@@ -59,6 +59,9 @@ import {
   Legend
 } from 'recharts';
 import { exportService } from "@/services/exportService";
+import { backupService } from "@/services/backupService";
+import { auditService } from "@/services/auditService";
+import { Shield, HardDrive } from "lucide-react";
 
 const COLORS = ['#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
 
@@ -66,6 +69,23 @@ export default function CEODashboard() {
   const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [isExporting, setIsExporting] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+
+  // Handle full backup
+  const handleBackup = async () => {
+    setIsBackingUp(true);
+    try {
+      const result = await backupService.downloadBackup();
+      toast.success(`Backup completo generado: ${result.filename}`, {
+        description: `Tamaño: ${(result.size / 1024).toFixed(1)} KB`
+      });
+    } catch (error) {
+      console.error('Backup error:', error);
+      toast.error('Error al generar backup');
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
 
   // Verificar permisos de CEO
   const [user, setUser] = useState(null);
@@ -265,6 +285,25 @@ export default function CEODashboard() {
             >
               {isExporting ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
               Exportar Gestoría
+            </Button>
+            
+            <Button 
+              onClick={handleBackup}
+              disabled={isBackingUp}
+              variant="outline"
+              className="border-purple-600 text-purple-400 hover:bg-purple-600/20"
+            >
+              {isBackingUp ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <HardDrive className="w-4 h-4 mr-2" />}
+              Backup Completo
+            </Button>
+            
+            <Button 
+              onClick={() => navigate(createPageUrl("AuditLogs"))}
+              variant="outline"
+              className="border-gray-600 text-gray-400 hover:bg-gray-600/20"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Auditoría
             </Button>
           </div>
         </div>
