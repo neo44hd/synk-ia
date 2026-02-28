@@ -1,8 +1,53 @@
+# Dependencies
+node_modules
 **/node_modules
+
+# Build outputs
+dist
+build
 .next
-.cache
+out
+target
+.deploy
 .build
+
+# Cache
+.cache
+.vite
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
 *.nfs*
+
+# Logs
+.logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Yarn
 **/.yarn/
 !**/.yarn/patches
 !**/.yarn/plugins
@@ -12,9 +57,13 @@
 !**/.yarn/cache
 **/.yarn/build-state.yml
 **/.yarn/install-state.gz
-dist
-target
-out
-.deploy
-.logs
-*.tsbuildinfo
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+*.local
+*.bak
+*.tmp
+.abacus.donotdelete

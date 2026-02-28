@@ -96,10 +96,6 @@ import Showcase from "./Showcase";
 
 import SmartMailbox from "./SmartMailbox";
 
-import SmartMailboxV2 from "./SmartMailboxV2";
-
-import SmartDocumentArchive from "./SmartDocumentArchive";
-
 import Staff from "./Staff";
 
 import SystemOverview from "./SystemOverview";
@@ -108,21 +104,7 @@ import Timesheets from "./Timesheets";
 
 import VacationRequests from "./VacationRequests";
 
-import EmployeePortal from "./EmployeePortal";
-
-import CEOTimeDashboard from "./CEOTimeDashboard";
-
-import VacationCalendar from "./VacationCalendar";
-
-import LegalTimeRegistry from "./LegalTimeRegistry";
-
 import VeriFactu from "./VeriFactu";
-
-import SalesDashboard from "./SalesDashboard";
-
-import InventoryManagement from "./InventoryManagement";
-
-import KitchenOrders from "./KitchenOrders";
 
 import VoiceCommands from "./VoiceCommands";
 
@@ -232,12 +214,6 @@ const PAGES = {
     
     SmartMailbox: SmartMailbox,
     
-    SmartMailboxV2: SmartMailboxV2,
-    Correo: SmartMailboxV2,
-    
-    SmartDocumentArchive: SmartDocumentArchive,
-    ArchivoInteligente: SmartDocumentArchive,
-    
     Staff: Staff,
     
     SystemOverview: SystemOverview,
@@ -246,28 +222,7 @@ const PAGES = {
     
     VacationRequests: VacationRequests,
     
-    EmployeePortal: EmployeePortal,
-    PortalEmpleado: EmployeePortal,
-    
-    CEOTimeDashboard: CEOTimeDashboard,
-    ControlHorarioCEO: CEOTimeDashboard,
-    
-    VacationCalendar: VacationCalendar,
-    CalendarioVacaciones: VacationCalendar,
-    
-    LegalTimeRegistry: LegalTimeRegistry,
-    RegistroLegal: LegalTimeRegistry,
-    
     VeriFactu: VeriFactu,
-    
-    SalesDashboard: SalesDashboard,
-    Ventas: SalesDashboard,
-    
-    InventoryManagement: InventoryManagement,
-    Inventario: InventoryManagement,
-    
-    KitchenOrders: KitchenOrders,
-    Pedidos: KitchenOrders,
     
     VoiceCommands: VoiceCommands,
     
@@ -400,12 +355,6 @@ function PagesContent() {
                 
                 <Route path="/SmartMailbox" element={<SmartMailbox />} />
                 
-                <Route path="/SmartMailboxV2" element={<SmartMailboxV2 />} />
-                <Route path="/correo" element={<SmartMailboxV2 />} />
-                
-                <Route path="/SmartDocumentArchive" element={<SmartDocumentArchive />} />
-                <Route path="/archivo-inteligente" element={<SmartDocumentArchive />} />
-                
                 <Route path="/Staff" element={<Staff />} />
                 
                 <Route path="/SystemOverview" element={<SystemOverview />} />
@@ -414,28 +363,7 @@ function PagesContent() {
                 
                 <Route path="/VacationRequests" element={<VacationRequests />} />
                 
-                <Route path="/EmployeePortal" element={<EmployeePortal />} />
-                <Route path="/portal-empleado" element={<EmployeePortal />} />
-                
-                <Route path="/CEOTimeDashboard" element={<CEOTimeDashboard />} />
-                <Route path="/control-horario-ceo" element={<CEOTimeDashboard />} />
-                
-                <Route path="/VacationCalendar" element={<VacationCalendar />} />
-                <Route path="/calendario-vacaciones" element={<VacationCalendar />} />
-                
-                <Route path="/LegalTimeRegistry" element={<LegalTimeRegistry />} />
-                <Route path="/registro-legal" element={<LegalTimeRegistry />} />
-                
                 <Route path="/VeriFactu" element={<VeriFactu />} />
-                
-                <Route path="/SalesDashboard" element={<SalesDashboard />} />
-                <Route path="/ventas" element={<SalesDashboard />} />
-                
-                <Route path="/InventoryManagement" element={<InventoryManagement />} />
-                <Route path="/inventario" element={<InventoryManagement />} />
-                
-                <Route path="/KitchenOrders" element={<KitchenOrders />} />
-                <Route path="/pedidos" element={<KitchenOrders />} />
                 
                 <Route path="/VoiceCommands" element={<VoiceCommands />} />
                 
