@@ -43,7 +43,6 @@ const navItems = [
     items: [
       { label: "Resumen General", url: createPageUrl("Dashboard") },
       { label: "CEO Brain (IA)", url: createPageUrl("CEOBrain") },
-      { label: "Control Horario CEO", url: "/control-horario-ceo" },
       { label: "Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
     ]
   },
@@ -53,11 +52,10 @@ const navItems = [
     icon: Briefcase,
     items: [
       { label: "Finanzas & KPIs", url: createPageUrl("FinanceDashboard") },
-      { label: "💰 Dashboard Ventas", url: "/ventas" },
-      { label: "📦 Inventario", url: "/inventario" },
-      { label: "🍳 Cocina (KDS)", url: "/pedidos" },
+      { label: "Ventas (Revo)", url: createPageUrl("RevoDashboard") },
       { label: "Facturación", url: createPageUrl("Billing") },
       { label: "Proveedores", url: createPageUrl("Providers") },
+      { label: "Inventario", url: createPageUrl("ProductInventory") },
     ]
   },
   { 
@@ -65,10 +63,9 @@ const navItems = [
     label: "Equipo", 
     icon: Users,
     items: [
-      { label: "📱 Portal Empleado", url: "/portal-empleado" },
-      { label: "📅 Calendario Vacaciones", url: "/calendario-vacaciones" },
-      { label: "📋 Registro Legal", url: "/registro-legal" },
-      { label: "Plantilla", url: createPageUrl("Staff") },
+      { label: "Portal Empleado", url: createPageUrl("Staff") },
+      { label: "Control Horario", url: createPageUrl("AttendanceControl") },
+      { label: "Portal Empleado", url: createPageUrl("WorkerInterface") },
     ]
   },
   { 
@@ -76,9 +73,9 @@ const navItems = [
     label: "Archivo", 
     icon: FileText,
     items: [
-      { label: "Archivo Inteligente", url: "/archivo-inteligente" },
+      { label: "Archivo Inteligente", url: createPageUrl("DocumentArchive") },
       { label: "Legal & Empresa", url: createPageUrl("CompanyDocs") },
-      { label: "Buzón Inteligente", url: "/correo" },
+      { label: "Buzón Email", url: createPageUrl("SmartMailbox") },
     ]
   }
 ];
@@ -101,10 +98,7 @@ export default function Layout({ children }) {
   const activeSection = getActiveSection();
 
   // MODO PORTAL EMPLEADO: Sin layout de administración
-  if (location.pathname.includes('PortalLogin') || 
-      location.pathname.includes('WorkerInterface') ||
-      location.pathname.includes('portal-empleado') ||
-      location.pathname.includes('EmployeePortal')) {
+  if (location.pathname.includes('PortalLogin') || location.pathname.includes('WorkerInterface')) {
     return <>{children}</>;
   }
 
