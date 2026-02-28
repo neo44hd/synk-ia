@@ -50,6 +50,7 @@ const navItems = [
       { label: "Proveedores", url: createPageUrl("ProvidersComplete") },
       { label: "Empleados", url: createPageUrl("EmployeeControl") },
       { label: "Nóminas", url: createPageUrl("PayrollsComplete") },
+      { label: "🔒 Auditoría", url: createPageUrl("AuditLogs") },
     ]
   },
   { 
