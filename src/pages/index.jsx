@@ -4,16 +4,6 @@ import Albaranes from "./Albaranes";
 
 import ApiDiagnostics from "./ApiDiagnostics";
 
-import AuditLogs from "./AuditLogs";
-
-import CEODashboard from "./CEODashboard";
-
-import ProvidersComplete from "./ProvidersComplete";
-
-import EmployeeControl from "./EmployeeControl";
-
-import PayrollsComplete from "./PayrollsComplete";
-
 import AttendanceControl from "./AttendanceControl";
 
 import AutomationHub from "./AutomationHub";
@@ -33,8 +23,6 @@ import CEOBrain from "./CEOBrain";
 import CentralAgent from "./CentralAgent";
 
 import CompanyDocs from "./CompanyDocs";
-
-import ComplianceDashboard from "./ComplianceDashboard";
 
 import Comparator from "./Comparator";
 
@@ -67,12 +55,6 @@ import HRAgent from "./HRAgent";
 import HRDocuments from "./HRDocuments";
 
 import Home from "./Home";
-
-import InspeccionLaboral from "./InspeccionLaboral";
-
-import InspeccionSanidad from "./InspeccionSanidad";
-
-import InspeccionIndustria from "./InspeccionIndustria";
 
 import Invoices from "./Invoices";
 
@@ -140,16 +122,6 @@ const PAGES = {
     
     ApiDiagnostics: ApiDiagnostics,
     
-    AuditLogs: AuditLogs,
-    
-    CEODashboard: CEODashboard,
-    
-    ProvidersComplete: ProvidersComplete,
-    
-    EmployeeControl: EmployeeControl,
-    
-    PayrollsComplete: PayrollsComplete,
-    
     AttendanceControl: AttendanceControl,
     
     AutomationHub: AutomationHub,
@@ -169,8 +141,6 @@ const PAGES = {
     CentralAgent: CentralAgent,
     
     CompanyDocs: CompanyDocs,
-    
-    ComplianceDashboard: ComplianceDashboard,
     
     Comparator: Comparator,
     
@@ -203,12 +173,6 @@ const PAGES = {
     HRDocuments: HRDocuments,
     
     Home: Home,
-    
-    InspeccionLaboral: InspeccionLaboral,
-    
-    InspeccionSanidad: InspeccionSanidad,
-    
-    InspeccionIndustria: InspeccionIndustria,
     
     Invoices: Invoices,
     
@@ -298,16 +262,6 @@ function PagesContent() {
                 <Route path="/Albaranes" element={<Albaranes />} />
                 
                 <Route path="/ApiDiagnostics" element={<ApiDiagnostics />} />
-
-                <Route path="/AuditLogs" element={<AuditLogs />} />
-                
-                <Route path="/CEODashboard" element={<CEODashboard />} />
-                
-                <Route path="/ProvidersComplete" element={<ProvidersComplete />} />
-                
-                <Route path="/EmployeeControl" element={<EmployeeControl />} />
-                
-                <Route path="/PayrollsComplete" element={<PayrollsComplete />} />
                 
                 <Route path="/AttendanceControl" element={<AttendanceControl />} />
                 
@@ -328,8 +282,6 @@ function PagesContent() {
                 <Route path="/CentralAgent" element={<CentralAgent />} />
                 
                 <Route path="/CompanyDocs" element={<CompanyDocs />} />
-                
-                <Route path="/ComplianceDashboard" element={<ComplianceDashboard />} />
                 
                 <Route path="/Comparator" element={<Comparator />} />
                 
@@ -362,12 +314,6 @@ function PagesContent() {
                 <Route path="/HRDocuments" element={<HRDocuments />} />
                 
                 <Route path="/Home" element={<Home />} />
-                
-                <Route path="/InspeccionLaboral" element={<InspeccionLaboral />} />
-                
-                <Route path="/InspeccionSanidad" element={<InspeccionSanidad />} />
-                
-                <Route path="/InspeccionIndustria" element={<InspeccionIndustria />} />
                 
                 <Route path="/Invoices" element={<Invoices />} />
                 

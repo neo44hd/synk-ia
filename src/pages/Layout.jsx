@@ -20,11 +20,7 @@ import {
   Package,
   ShoppingCart,
   Clock,
-  Bell,
-  Crown,
-  Scale,
-  HardHat,
-  Stethoscope
+  Bell
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -41,35 +37,12 @@ import { base44 } from "@/api/base44Client";
 // Navegación Minimalista "Zen"
 const navItems = [
   { 
-    id: "ceo",
-    label: "CEO", 
-    icon: Crown, 
-    items: [
-      { label: "Panel CEO", url: createPageUrl("CEODashboard") },
-      { label: "CEO Brain (IA)", url: createPageUrl("CEOBrain") },
-      { label: "Proveedores", url: createPageUrl("ProvidersComplete") },
-      { label: "Empleados", url: createPageUrl("EmployeeControl") },
-      { label: "Nóminas", url: createPageUrl("PayrollsComplete") },
-      { label: "🔒 Auditoría", url: createPageUrl("AuditLogs") },
-    ]
-  },
-  { 
-    id: "compliance",
-    label: "Compliance", 
-    icon: Scale, 
-    items: [
-      { label: "Dashboard Compliance", url: createPageUrl("ComplianceDashboard") },
-      { label: "Inspección Laboral", url: createPageUrl("InspeccionLaboral") },
-      { label: "Inspección Sanidad", url: createPageUrl("InspeccionSanidad") },
-      { label: "Inspección Industria/PRL", url: createPageUrl("InspeccionIndustria") },
-    ]
-  },
-  { 
     id: "dashboard",
     label: "Control", 
     icon: LayoutDashboard, 
     items: [
       { label: "Resumen General", url: createPageUrl("Dashboard") },
+      { label: "CEO Brain (IA)", url: createPageUrl("CEOBrain") },
       { label: "Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
     ]
   },
@@ -81,6 +54,7 @@ const navItems = [
       { label: "Finanzas & KPIs", url: createPageUrl("FinanceDashboard") },
       { label: "Ventas (Revo)", url: createPageUrl("RevoDashboard") },
       { label: "Facturación", url: createPageUrl("Billing") },
+      { label: "Proveedores", url: createPageUrl("Providers") },
       { label: "Inventario", url: createPageUrl("ProductInventory") },
     ]
   },
