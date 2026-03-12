@@ -20,7 +20,7 @@ Cada agente tiene:
 - ✅ **Acceso a datos relevantes** del sistema
 - ✅ **Capacidad de análisis** y generación de insights
 - ✅ **Interfaz conversacional** natural
-- ✅ **Integración con Base44 SDK** para acciones en tiempo real
+- ✅ **Integración con SYNK-IA** para acciones en tiempo real
 
 ---
 
@@ -410,22 +410,22 @@ if (enriched.enriched && enriched.context) {
 ```
 
 #### 2. Gestión de Conversaciones
-Usando Base44 SDK:
+Usando SYNK-IA:
 
 ```javascript
 // Crear conversación
-const conversation = await base44.agents.createConversation({
+const conversation = await SYNK-IA.agents.createConversation({
   agent_name: "agent_name",
   metadata: { name: "Session Name" }
 });
 
 // Suscribirse a actualizaciones
-base44.agents.subscribeToConversation(conversation.id, (data) => {
+SYNK-IA.agents.subscribeToConversation(conversation.id, (data) => {
   setMessages(data.messages || []);
 });
 
 // Enviar mensaje
-await base44.agents.addMessage(conversation, {
+await SYNK-IA.agents.addMessage(conversation, {
   role: "user",
   content: messageContent
 });
@@ -439,26 +439,26 @@ Cada agente tiene un prompt optimizado que define:
 - Datos a los que tiene acceso
 - Restricciones y seguridad
 
-### 🔗 Integración con Base44
+### 🔗 Integración con SYNK-IA
 
 #### Entidades Disponibles
 ```javascript
-base44.entities.Invoice     // Facturas
-base44.entities.Client      // Clientes
-base44.entities.Provider    // Proveedores
-base44.entities.Payroll     // Nóminas
-base44.entities.Employee    // Empleados
+SYNK-IA.entities.Invoice     // Facturas
+SYNK-IA.entities.Client      // Clientes
+SYNK-IA.entities.Provider    // Proveedores
+SYNK-IA.entities.Payroll     // Nóminas
+SYNK-IA.entities.Employee    // Empleados
 ```
 
 #### Servicios de Integración
 ```javascript
-base44.integrations.Core.UploadFile()     // Subir archivos
-base44.integrations.Core.ExtractData()    // Extraer datos
+SYNK-IA.integrations.Core.UploadFile()     // Subir archivos
+SYNK-IA.integrations.Core.ExtractData()    // Extraer datos
 ```
 
 #### Autenticación
 ```javascript
-base44.auth.me()  // Obtener usuario actual
+SYNK-IA.auth.me()  // Obtener usuario actual
 ```
 
 ### 📊 Flujo de Datos
@@ -470,7 +470,7 @@ Interfaz (React)
   ↓
 Servicio del Agente
   ↓
-Base44 SDK
+SYNK-IA
   ↓
 API Backend
   ↓
@@ -517,7 +517,7 @@ const CEO_EMAILS = [
 async nuevaCapacidad(parametros) {
   try {
     // Implementar lógica
-    const resultado = await base44.entities.Entity.list();
+    const resultado = await SYNK-IA.entities.Entity.list();
     return resultado;
   } catch (error) {
     console.error("Error:", error);
@@ -542,7 +542,7 @@ En el servicio correspondiente:
 ```javascript
 async getCustomMetric() {
   try {
-    const data = await base44.entities.Entity.list();
+    const data = await SYNK-IA.entities.Entity.list();
     const metric = {
       total: data.length,
       // Cálculos personalizados

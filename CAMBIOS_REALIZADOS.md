@@ -155,7 +155,7 @@ const { data: payrolls = [], isLoading, error } = useQuery({
   queryKey: ['payrolls', user?.id],
   queryFn: async () => {
     try {
-      const allPayrolls = await base44.entities.Payroll.list('-period');
+      const allPayrolls = await SYNK-IA.entities.Payroll.list('-period');
       
       // Validar que allPayrolls es un array
       if (!Array.isArray(allPayrolls)) {
@@ -283,7 +283,7 @@ npm run build
 ```
 synk-ia/
 ├── src/
-│   ├── api/              # Cliente Base44 y entidades
+│   ├── api/              # Cliente SYNK-IA y entidades
 │   ├── components/       # Componentes reutilizables (52)
 │   ├── pages/           # Páginas de la aplicación (52)
 │   ├── hooks/           # Custom hooks
@@ -373,7 +373,7 @@ npm run lint
 
 ### Configuración Requerida
 
-**Variables de Entorno en Base44:**
+**Variables de Entorno en SYNK-IA:**
 ```
 EMAIL_APP_PASSWORD = [contraseña de aplicación de Gmail]
 ```
@@ -419,7 +419,7 @@ Si el usuario necesita acceder a repositorios privados adicionales, debe dar per
 
 Para preguntas o problemas, consultar:
 - README.md del proyecto
-- Documentación de Base44: https://base44.com
+- Documentación de SYNK-IA: https://SYNK-IA.com
 - Email: info@chickenpalace.es
 
 ---

@@ -2,7 +2,7 @@
 
 ## Descripción General
 
-Sistema de 4 agentes de IA especializados construidos sobre Base44 SDK para automatizar y optimizar diferentes áreas del negocio.
+Sistema de 4 agentes de IA especializados construidos sobre SYNK-IA para automatizar y optimizar diferentes áreas del negocio.
 
 ---
 
@@ -31,7 +31,7 @@ npm >= 9.0.0
 
 ```json
 {
-  "@base44/sdk": "^0.1.2",
+  "@SYNK-IA/sdk": "^0.1.2",
   "react": "^18.2.0",
   "react-router-dom": "^7.2.0",
   "@tanstack/react-query": "latest",
@@ -50,7 +50,7 @@ cd /home/ubuntu/synk-ia
 npm install
 
 # Configurar variables de entorno
-# (El appId ya está configurado en base44Client.js)
+# (El appId ya está configurado en SYNK-IAClient.js)
 
 # Iniciar en desarrollo
 npm run dev
@@ -84,7 +84,7 @@ synk-ia/
 │   │       └── MessageBubble.jsx   # Componente de mensajes
 │   │
 │   └── api/
-│       └── base44Client.js         # Cliente Base44 configurado
+│       └── SYNK-IAClient.js         # Cliente SYNK-IA configurado
 │
 ├── GUIA_AGENTES_IA.md              # Guía de usuario
 ├── AGENTES_README_TECNICO.md       # Este archivo
@@ -99,7 +99,7 @@ synk-ia/
 
 **Archivo**: `src/pages/CEOBrain.jsx`  
 **Servicio**: `src/services/agents/ceoBrainService.js`  
-**Agente Base44**: `ceo_brain`
+**Agente SYNK-IA**: `ceo_brain`
 
 #### Características Técnicas
 - Acceso restringido por email
@@ -109,12 +109,12 @@ synk-ia/
 
 #### Endpoints Usados
 ```javascript
-base44.entities.Invoice.list()
-base44.entities.Client.list()
-base44.entities.Payroll.list()
-base44.agents.createConversation()
-base44.agents.addMessage()
-base44.agents.subscribeToConversation()
+SYNK-IA.entities.Invoice.list()
+SYNK-IA.entities.Client.list()
+SYNK-IA.entities.Payroll.list()
+SYNK-IA.agents.createConversation()
+SYNK-IA.agents.addMessage()
+SYNK-IA.agents.subscribeToConversation()
 ```
 
 #### Métricas Calculadas
@@ -147,7 +147,7 @@ base44.agents.subscribeToConversation()
 
 **Archivo**: `src/pages/HRAgent.jsx`  
 **Servicio**: `src/services/agents/hrAgentService.js`  
-**Agente Base44**: `hr_assistant`
+**Agente SYNK-IA**: `hr_assistant`
 
 #### Características Técnicas
 - Carga automática de datos del empleado
@@ -157,9 +157,9 @@ base44.agents.subscribeToConversation()
 
 #### Endpoints Usados
 ```javascript
-base44.auth.me()
-base44.entities.Payroll.list({ employee_email })
-base44.agents.createConversation()
+SYNK-IA.auth.me()
+SYNK-IA.entities.Payroll.list({ employee_email })
+SYNK-IA.agents.createConversation()
 ```
 
 #### Análisis de Nómina
@@ -183,7 +183,7 @@ base44.agents.createConversation()
 
 **Archivo**: `src/pages/CentralAgent.jsx`  
 **Servicio**: `src/services/agents/centralAgentService.js`  
-**Agente Base44**: `central_coordinator`
+**Agente SYNK-IA**: `central_coordinator`
 
 #### Características Técnicas
 - Búsqueda multi-entidad
@@ -216,7 +216,7 @@ analyzeSavingsOpportunities() {
 
 **Archivo**: `src/pages/BiloopAgent.jsx`  
 **Servicio**: `src/services/agents/biloopAgentService.js`  
-**Agente Base44**: `biloop_assistant`
+**Agente SYNK-IA**: `biloop_assistant`
 
 #### Características Técnicas
 - Procesamiento multi-formato
@@ -287,65 +287,65 @@ export const AgentService = {
 };
 ```
 
-### Base44 SDK - Métodos Clave
+### SYNK-IA - Métodos Clave
 
 #### Agentes
 ```javascript
 // Crear conversación
-const conv = await base44.agents.createConversation({
+const conv = await SYNK-IA.agents.createConversation({
   agent_name: "agent_name",
   metadata: { name: "Session" }
 });
 
 // Listar conversaciones
-const convs = await base44.agents.listConversations({ 
+const convs = await SYNK-IA.agents.listConversations({ 
   agent_name: "agent_name" 
 });
 
 // Obtener conversación
-const conv = await base44.agents.getConversation(conversationId);
+const conv = await SYNK-IA.agents.getConversation(conversationId);
 
 // Enviar mensaje
-await base44.agents.addMessage(conversation, {
+await SYNK-IA.agents.addMessage(conversation, {
   role: "user",
   content: "message",
   file_urls: ["url"]
 });
 
 // Suscribirse a actualizaciones
-base44.agents.subscribeToConversation(conversationId, (data) => {
+SYNK-IA.agents.subscribeToConversation(conversationId, (data) => {
   // Callback con mensajes actualizados
 });
 
 // URL de WhatsApp
-const url = base44.agents.getWhatsAppConnectURL('agent_name');
+const url = SYNK-IA.agents.getWhatsAppConnectURL('agent_name');
 ```
 
 #### Entidades
 ```javascript
 // Listar
-const items = await base44.entities.Entity.list();
-const items = await base44.entities.Entity.list({ filter: value });
+const items = await SYNK-IA.entities.Entity.list();
+const items = await SYNK-IA.entities.Entity.list({ filter: value });
 
 // Crear
-const item = await base44.entities.Entity.create(data);
+const item = await SYNK-IA.entities.Entity.create(data);
 
 // Actualizar
-const item = await base44.entities.Entity.update(id, data);
+const item = await SYNK-IA.entities.Entity.update(id, data);
 
 // Eliminar
-await base44.entities.Entity.delete(id);
+await SYNK-IA.entities.Entity.delete(id);
 ```
 
 #### Integraciones
 ```javascript
 // Subir archivo
-const { file_url } = await base44.integrations.Core.UploadFile({ 
+const { file_url } = await SYNK-IA.integrations.Core.UploadFile({ 
   file: fileObject 
 });
 
 // Extraer datos
-const data = await base44.integrations.Core.ExtractData({
+const data = await SYNK-IA.integrations.Core.ExtractData({
   file_url: "url",
   extraction_type: "invoice|spreadsheet"
 });
@@ -354,7 +354,7 @@ const data = await base44.integrations.Core.ExtractData({
 #### Autenticación
 ```javascript
 // Usuario actual
-const user = await base44.auth.me();
+const user = await SYNK-IA.auth.me();
 // Returns: { email, name, role, ... }
 ```
 
@@ -530,12 +530,12 @@ docker run -p 80:80 synk-ia-agents
 
 #### 1. "Error al iniciar conversación"
 
-**Causa**: Base44 SDK no inicializado correctamente
+**Causa**: SYNK-IA no inicializado correctamente
 
 **Solución**:
 ```javascript
-// Verificar en base44Client.js
-export const base44 = createClient({
+// Verificar en SYNK-IAClient.js
+export const SYNK-IA = createClient({
   appId: "6909eb511f749a49b63df48c",
   requiresAuth: true
 });
@@ -610,11 +610,11 @@ if (DEBUG) {
 }
 ```
 
-#### Base44 SDK Debug
+#### SYNK-IA Debug
 
 ```javascript
-// En base44Client.js
-export const base44 = createClient({
+// En SYNK-IAClient.js
+export const SYNK-IA = createClient({
   appId: "6909eb511f749a49b63df48c",
   requiresAuth: true,
   debug: true  // Activa logs detallados
@@ -697,7 +697,7 @@ const { data: metrics } = useQuery({
 - [x] Sanitización de inputs
 - [x] Validación de archivos subidos
 - [x] Protección contra XSS
-- [x] Rate limiting (implementado por Base44)
+- [x] Rate limiting (implementado por SYNK-IA)
 - [x] HTTPS en producción
 - [x] Datos sensibles no en logs
 - [x] Tokens no expuestos en cliente

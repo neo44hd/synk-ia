@@ -86,10 +86,10 @@ export default function CronSetup() {
                       <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center font-bold">
                         1
                       </div>
-                      <p className="font-bold text-lg">Accede al Dashboard de Base44</p>
+                      <p className="font-bold text-lg">Accede al Panel de SYNK-IA</p>
                     </div>
                     <p className="text-sm text-blue-100 ml-11">
-                      Ve a: <a href="https://app.base44.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">app.base44.com</a>
+                      Ve a: <a href="https://chickenpalace.es" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">chickenpalace.es</a>
                     </p>
                   </div>
 
@@ -319,7 +319,7 @@ export default function CronSetup() {
                 <div className="space-y-2 text-gray-300 text-sm">
                   <p>
                     <strong>No encuentras la opción Schedule:</strong> Contacta con soporte de Base44 en{' '}
-                    <a href="mailto:support@base44.com" className="text-cyan-400 underline">support@base44.com</a>
+                    <a href="mailto:support@chickenpalace.es" className="text-cyan-400 underline">support@chickenpalace.es</a>
                   </p>
                   <p>
                     <strong>Las funciones no se ejecutan:</strong> Verifica en Dashboard → Functions → Logs

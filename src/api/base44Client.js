@@ -1,8 +1,25 @@
-import { createClient } from '@base44/sdk';
-// import { getAccessToken } from '@base44/sdk/utils/auth-utils';
+/**
+ * SYNK-IA - Cliente de Datos Local (Compatibilidad)
+ * © 2024 David Roldan - Chicken Palace Ibiza
+ * Futuro: SYNK-IA LABS
+ * 
+ * Este archivo proporciona compatibilidad con el código existente
+ * que usaba Base44 SDK, ahora usando almacenamiento local.
+ */
 
-// Create a client with authentication required
-export const base44 = createClient({
-  appId: "6909eb511f749a49b63df48c", 
-  requiresAuth: true // Ensure authentication is required for all operations
-});
+import { dataService } from '../services/dataService';
+import { authService } from '../services/authService';
+import { functionsService } from '../services/functionsService';
+import { integrationsService } from '../services/integrationsService';
+
+/**
+ * Objeto de compatibilidad que simula la estructura de Base44 SDK
+ */
+export const base44 = {
+  entities: dataService,
+  auth: authService,
+  functions: functionsService,
+  integrations: integrationsService
+};
+
+export default base44;
