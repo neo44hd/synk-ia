@@ -105,10 +105,10 @@ F12 o Cmd+Option+I (Mac)
 [BiloopAgent]
 ```
 
-### Ver errores de Base44
+### Ver errores de SYNK-IA
 ```javascript
 // En browser console
-localStorage.getItem('base44_debug')
+localStorage.getItem('SYNK-IA_debug')
 ```
 
 ### Limpiar caché de conversaciones
@@ -239,10 +239,10 @@ console.log('Expenses:', expenses);
 
 ## 🐛 Troubleshooting Rápido
 
-### Error: "Cannot connect to Base44"
+### Error: "Cannot connect to SYNK-IA"
 ```bash
-# Verificar appId en base44Client.js
-cat src/api/base44Client.js | grep appId
+# Verificar appId en SYNK-IAClient.js
+cat src/api/SYNK-IAClient.js | grep appId
 
 # Debería ser: 6909eb511f749a49b63df48c
 ```
@@ -269,7 +269,7 @@ cat src/pages/CEOBrain.jsx | grep CEO_EMAILS
 
 ### Error: "Cannot read metrics"
 ```bash
-# Verificar permisos de entidades en Base44
+# Verificar permisos de entidades en SYNK-IA
 # Asegurarse de tener acceso a:
 # - Invoice
 # - Client
@@ -318,7 +318,7 @@ Biloop Agent:   https://app.synk-ia.com/biloop-agent
 ### Post-deploy
 - [ ] URLs accesibles
 - [ ] SSL/HTTPS activo
-- [ ] Base44 conectado
+- [ ] SYNK-IA conectado
 - [ ] Logs sin errores críticos
 - [ ] Performance aceptable
 - [ ] Usuarios pueden autenticarse

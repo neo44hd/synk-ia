@@ -30,21 +30,16 @@ export default function Payrolls() {
   }, []);
 
   const { data: payrolls = [], isLoading } = useQuery({
-    queryKey: ['payrolls', user?.id],
+    queryKey: ['payrolls'],
     queryFn: async () => {
-      try {
-        const allPayrolls = await base44.entities.Payroll.list('-period');
-        
-        // Si no es admin, solo muestra sus nóminas
-        if (user && user.permission_level !== 'super_admin' && user.permission_level !== 'admin' && !user.can_view_payrolls) {
-          return allPayrolls.filter(p => p.employee_id === user.id || p.employee_name === user.full_name);
-        }
-        
-        return allPayrolls || [];
-      } catch (error) {
-        console.error('Error loading payrolls:', error);
-        return [];
+      const allPayrolls = await base44.entities.Payroll.list('-period');
+      
+      // Si no es admin, solo muestra sus nóminas
+      if (user && user.permission_level !== 'super_admin' && user.permission_level !== 'admin' && !user.can_view_payrolls) {
+        return allPayrolls.filter(p => p.employee_id === user.id || p.employee_name === user.full_name);
       }
+      
+      return allPayrolls;
     },
     initialData: [],
     enabled: !!user,

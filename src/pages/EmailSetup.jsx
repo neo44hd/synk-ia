@@ -85,7 +85,7 @@ export default function EmailSetup() {
           </CardHeader>
           <CardContent className="p-6 text-gray-300">
             <ol className="space-y-3 list-decimal list-inside">
-              <li>Ve al Dashboard de Base44: <a href="https://base44.com" target="_blank" className="text-blue-400 hover:underline inline-flex items-center gap-1">base44.com <ExternalLink className="w-3 h-3" /></a></li>
+              <li>Ve al Panel de SYNK-IA: <a href="https://chickenpalace.es" target="_blank" className="text-blue-400 hover:underline inline-flex items-center gap-1">chickenpalace.es <ExternalLink className="w-3 h-3" /></a></li>
               <li>Navega a <strong className="text-white">Settings → Environment Variables</strong></li>
               <li>Busca o crea el secret: <code className="bg-slate-900 px-2 py-1 rounded text-yellow-400">EMAIL_APP_PASSWORD</code></li>
               <li>Pega la contraseña de 16 caracteres (sin espacios): <code className="bg-slate-900 px-2 py-1 rounded text-yellow-400">abcdefghijklmnop</code></li>

@@ -64,22 +64,19 @@ Tienes acceso exclusivo del CEO. Respeta la privacidad y confidencialidad de tod
     try {
       const invoices = await base44.entities.Invoice.list();
       const total = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-      // Use Spanish status values
-      const pending = invoices.filter(inv => inv.status === 'pendiente').length;
-      const paid = invoices.filter(inv => inv.status === 'pagada').length;
-      const overdue = invoices.filter(inv => inv.status === 'vencida').length;
+      const pending = invoices.filter(inv => inv.status === 'pending').length;
+      const paid = invoices.filter(inv => inv.status === 'paid').length;
       
       return {
         total: invoices.length,
         totalAmount: total,
         pending,
         paid,
-        overdue,
         averageAmount: invoices.length > 0 ? total / invoices.length : 0
       };
     } catch (error) {
       console.error("Error getting invoice metrics:", error);
-      return { total: 0, totalAmount: 0, pending: 0, paid: 0, overdue: 0 };
+      return { total: 0, totalAmount: 0, pending: 0, paid: 0 };
     }
   },
 
@@ -155,21 +152,14 @@ Tienes acceso exclusivo del CEO. Respeta la privacidad y confidencialidad de tod
       // Análisis básico de tendencias
       const insights = [];
       
-      if (metrics?.invoices?.pending > metrics?.invoices?.paid) {
+      if (metrics.invoices.pending > metrics.invoices.paid) {
         insights.push({
           type: 'warning',
           message: `⚠️ Tienes ${metrics.invoices.pending} facturas pendientes vs ${metrics.invoices.paid} pagadas. Revisar flujo de caja.`
         });
       }
       
-      if (metrics?.invoices?.overdue > 0) {
-        insights.push({
-          type: 'alert',
-          message: `🚨 Tienes ${metrics.invoices.overdue} facturas vencidas que requieren atención inmediata.`
-        });
-      }
-      
-      if (metrics?.sales?.monthlyRevenue > 0) {
+      if (metrics.sales.monthlyRevenue > 0) {
         insights.push({
           type: 'info',
           message: `📊 Facturación mensual: €${metrics.sales.monthlyRevenue.toFixed(2)} (${metrics.sales.monthlyInvoiceCount} facturas)`

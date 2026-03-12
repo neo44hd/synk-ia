@@ -1,7 +1,8 @@
 # 🚀 SYNK-IA - Guía de Despliegue
 
-> **Fecha de actualización:** 12 de Marzo de 2026  
-> **Versión:** 2.0 (con correcciones aplicadas)
+> **Proyecto:** SYNK-IA - Sistema de Gestión Integral  
+> **Empresa:** Chicken Palace Ibiza  
+> **Autor:** David Roldan
 
 ---
 
@@ -18,11 +19,7 @@ Esta guía explica cómo desplegar SYNK-IA en diferentes plataformas:
 
 Esta aplicación **no requiere variables de entorno adicionales** para el despliegue básico.
 
-La configuración de Base44 SDK ya está integrada en el código:
-```javascript
-// src/api/base44Client.js
-appId: "6909eb511f749a49b63df48c"
-```
+La aplicación utiliza almacenamiento local (localStorage) para persistir datos, sin necesidad de backend externo.
 
 ---
 
@@ -34,7 +31,7 @@ dist/
 ├── assets/
 │   ├── index-*.css     # Estilos compilados
 │   └── index-*.js      # JavaScript compilado
-└── products/           # Imágenes de productos
+└── products/           # Imágenes de productos (si aplica)
 ```
 
 ---
@@ -69,14 +66,7 @@ dist/
 3. ¡Listo! Tu aplicación estará disponible en `tu-proyecto.vercel.app`
 
 ### Configuración para SPA (Single Page Application)
-Crea un archivo `vercel.json` en la raíz del proyecto:
-```json
-{
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
-```
+Ya existe un archivo `vercel.json` en la raíz del proyecto con la configuración correcta.
 
 ---
 
@@ -100,42 +90,23 @@ Similar a Vercel, sube el proyecto a GitHub.
 ### Paso 4: Desplegar
 1. Haz clic en **"Deploy site"**
 2. Netlify construirá y desplegará automáticamente
-3. Obtendrás una URL como `random-name.netlify.app`
 
-### Configuración para SPA (Single Page Application)
-Crea un archivo `netlify.toml` en la raíz del proyecto:
-```toml
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-```
-
-O crea un archivo `public/_redirects`:
-```
-/*    /index.html   200
-```
+Ya existe `netlify.toml` y `public/_redirects` configurados para SPA.
 
 ---
 
 ## 📦 Opción 3: Despliegue Manual con ZIP
 
-### Archivos disponibles:
-- **ZIP de despliegue:** `/home/ubuntu/synkia_deploy_v2.zip`
-- **Tamaño:** ~19 MB
-
 ### Para hosting estático (Apache, Nginx, etc.)
 
-#### Paso 1: Extraer el ZIP
+#### Paso 1: Construir el proyecto
 ```bash
-unzip synkia_deploy_v2.zip
+npm install
+npm run build
 ```
 
 #### Paso 2: Subir contenido de `dist/`
-Sube TODO el contenido de la carpeta `dist/` a tu servidor web:
-- `index.html`
-- `assets/` (carpeta completa)
-- `products/` (carpeta completa)
+Sube TODO el contenido de la carpeta `dist/` a tu servidor web.
 
 #### Paso 3: Configurar redirecciones SPA
 
@@ -158,44 +129,13 @@ location / {
 }
 ```
 
-### Para Netlify Drop (sin GitHub)
-1. Ve a [app.netlify.com/drop](https://app.netlify.com/drop)
-2. Extrae el ZIP localmente
-3. Arrastra la carpeta `dist/` a la página
-4. ¡Listo! Obtendrás una URL inmediatamente
-
-### Para Vercel CLI
-```bash
-# Instalar Vercel CLI
-npm install -g vercel
-
-# Extraer el ZIP
-unzip synkia_deploy_v2.zip
-
-# Desplegar
-cd dist
-vercel --prod
-```
-
----
-
-## 🔄 Actualizar Despliegue Existente
-
-### En Vercel/Netlify (con GitHub)
-- Simplemente haz push de los cambios a GitHub
-- El despliegue se actualiza automáticamente
-
-### Manualmente
-1. Ejecuta el build: `npm run build`
-2. Sube el nuevo contenido de `dist/` al servidor
-
 ---
 
 ## ⚠️ Notas Importantes
 
 1. **SPA Routing:** Esta es una Single Page Application. SIEMPRE configura las redirecciones para evitar errores 404 en rutas directas.
 
-2. **CORS:** Si experimentas problemas de CORS con la API de Base44, verifica que tu dominio esté autorizado en el dashboard de Base44.
+2. **Datos Locales:** Los datos se almacenan en localStorage del navegador. Se persisten entre sesiones pero son específicos por navegador/dispositivo.
 
 3. **Caché:** Después de actualizar, puede ser necesario limpiar la caché del navegador (Ctrl+F5).
 
@@ -205,9 +145,10 @@ vercel --prod
 
 ## 📞 Soporte
 
-- **Base44 Dashboard:** [app.base44.com](https://app.base44.com)
-- **Documentación Base44:** [docs.base44.com](https://docs.base44.com)
-- **Soporte:** support@base44.com
+Para soporte técnico contactar con:
+
+**David Roldan**  
+Chicken Palace Ibiza
 
 ---
 
@@ -217,4 +158,9 @@ vercel --prod
 |------------|---------------|--------|-----------------|
 | Vercel | `npm run build` | `dist` | 2-3 min |
 | Netlify | `npm run build` | `dist` | 2-3 min |
-| Manual | ZIP ya listo | `dist/` | 1 min |
+| Manual | `npm run build` | `dist/` | 1 min |
+
+---
+
+© 2024 David Roldan - Chicken Palace Ibiza  
+*Futuro: SYNK-IA LABS*
