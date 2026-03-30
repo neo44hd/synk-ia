@@ -114,7 +114,7 @@ import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { ocrService } from "@/services/ocrService";
 import { invoiceExtractor, DOCUMENT_TYPES } from "@/services/invoiceExtractorService";
-
+import { useDocBrain } from "@/hooks/useDocBrain";
 // Document type configuration
 const DOC_TYPE_CONFIG = {
   factura: { label: "Factura", color: "orange", icon: Receipt, bgClass: "bg-orange-500/20", borderClass: "border-l-orange-500" },
@@ -138,6 +138,9 @@ const STATUS_CONFIG = {
 };
 
 export default function SmartDocumentArchive() {
+
+    // DocBrain - Cerebro IA auto-procesamiento
+    const { brainStatus, brainStats, processNewFiles, autoProcessing, setAutoProcessing } = useDocBrain();
   // State management
   const [viewMode, setViewMode] = useState("list"); // "list" or "grid"
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -188,6 +191,11 @@ export default function SmartDocumentArchive() {
     staleTime: 30000,
   });
 
+
+    // DocBrain: Auto-procesar archivos nuevos
+    useEffect(() => {
+          if (files.length > 0) processNewFiles(files);
+        }, [files, processNewFiles]);
   // Fetch providers for linking
   const { data: providers = [] } = useQuery({
     queryKey: ['providers'],
