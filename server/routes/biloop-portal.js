@@ -6,7 +6,7 @@ const BILOOP_URL = 'https://assempsa.biloop.es';
 let sessionCookies = null;
 let sessionExpiry = 0;
 
-// Login to Biloop portal and get session cookies
+// Login to Biloop portal
 async function getSession() {
   if (sessionCookies && Date.now() < sessionExpiry) {
     return sessionCookies;
@@ -14,202 +14,221 @@ async function getSession() {
   
   const user = process.env.BILOOP_USER || '';
   const pass = process.env.BILOOP_PASSWORD || '';
+  console.log('[Portal] Logging in as:', user);
   
-  console.log('[BiloopPortal] Logging in as:', user);
-  
-  // First GET to get CSRF token and initial cookies
-  const loginPage = await fetch(`${BILOOP_URL}/`, {
+  // Step 1: GET login page for cookies and CSRF
+  const r1 = await fetch(`${BILOOP_URL}/`, {
     redirect: 'manual',
-    headers: { 'User-Agent': 'Mozilla/5.0' }
+    headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' }
   });
   
-  let cookies = (loginPage.headers.getSetCookie?.() || []).join('; ');
-  const html = await loginPage.text();
+  let cookies = (r1.headers.getSetCookie?.() || []).map(c => c.split(';')[0]).join('; ');
+  const html = await r1.text();
   
-  // Extract CSRF token
-  const tokenMatch = html.match(/name="_token"\s+value="([^"]+)"/) ||
-                     html.match(/meta.*?csrf.*?content="([^"]+)"/) ||
-                     html.match(/token.*?:\s*['"]([^'"]+)['"]/);
-  const csrfToken = tokenMatch ? tokenMatch[1] : '';
+  // Find CSRF token
+  const csrf = html.match(/name="_token"\s+value="([^"]+)"/)?.[1] ||
+               html.match(/csrf[_-]token.*?content="([^"]+)"/)?.[1] || '';
   
-  console.log('[BiloopPortal] Got initial cookies, CSRF:', csrfToken ? 'found' : 'none');
+  // Find form action
+  const formAction = html.match(/action="([^"]*)"/)?.[1] || '';
   
-  // POST login
-  const formData = new URLSearchParams();
-  formData.append('user_input', user);
-  formData.append('password_input', pass);
-  if (csrfToken) formData.append('_token', csrfToken);
+  // Find all script sources to understand login mechanism
+  const scripts = [...html.matchAll(/src="([^"]*\.js[^"]*)"/g)].map(m => m[1]);
   
-  const loginRes = await fetch(`${BILOOP_URL}/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Cookie': cookies,
-      'User-Agent': 'Mozilla/5.0',
-      'Referer': `${BILOOP_URL}/`
-    },
-    body: formData.toString(),
-    redirect: 'manual'
-  });
+  console.log('[Portal] Cookies:', cookies?.substring(0, 80));
+  console.log('[Portal] CSRF:', csrf ? 'found' : 'none');
+  console.log('[Portal] Form action:', formAction || 'none');
+  console.log('[Portal] Scripts:', scripts.length);
   
-  // Collect all Set-Cookie headers
-  const newCookies = loginRes.headers.getSetCookie?.() || [];
-  if (newCookies.length > 0) {
-    cookies = newCookies.map(c => c.split(';')[0]).join('; ');
-  }
+  // Step 2: Try AJAX login (Biloop likely uses AJAX)
+  const loginEndpoints = ['/login', '/auth/login', '/api/login', '/'];
   
-  console.log('[BiloopPortal] Login response:', loginRes.status, 'Location:', loginRes.headers.get('location'));
-  
-  // Follow redirect if needed
-  const location = loginRes.headers.get('location');
-  if (location) {
-    const followRes = await fetch(location.startsWith('http') ? location : `${BILOOP_URL}${location}`, {
-      headers: { 'Cookie': cookies, 'User-Agent': 'Mozilla/5.0' },
-      redirect: 'manual'
-    });
-    const moreCookies = followRes.headers.getSetCookie?.() || [];
-    if (moreCookies.length > 0) {
-      const existing = cookies.split('; ').map(c => c.split('=')[0]);
-      moreCookies.forEach(c => {
-        const name = c.split('=')[0];
-        if (!existing.includes(name)) cookies += '; ' + c.split(';')[0];
+  for (const endpoint of loginEndpoints) {
+    try {
+      // Try JSON POST
+      const r2 = await fetch(`${BILOOP_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': cookies,
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+          'Referer': `${BILOOP_URL}/`,
+          ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {})
+        },
+        body: JSON.stringify({
+          user_input: user,
+          password_input: pass,
+          _token: csrf
+        }),
+        redirect: 'manual'
       });
+      
+      const newCookies = r2.headers.getSetCookie?.() || [];
+      if (newCookies.length > 0) {
+        cookies = [...cookies.split('; '), ...newCookies.map(c => c.split(';')[0])]
+          .filter((v, i, a) => a.findIndex(x => x.split('=')[0] === v.split('=')[0]) === i)
+          .join('; ');
+      }
+      
+      const body = await r2.text();
+      console.log('[Portal] Login try', endpoint, ':', r2.status, body.substring(0, 200));
+      
+      // Check if login succeeded
+      if (r2.status === 200 && (body.includes('redirect') || body.includes('success') || body.includes('bi/home'))) {
+        sessionCookies = cookies;
+        sessionExpiry = Date.now() + 3600000;
+        console.log('[Portal] Login SUCCESS via', endpoint);
+        return cookies;
+      }
+      
+      // Try form-encoded POST
+      const r3 = await fetch(`${BILOOP_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Cookie': cookies,
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+          'Referer': `${BILOOP_URL}/`,
+          ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {})
+        },
+        body: new URLSearchParams({
+          user_input: user,
+          password_input: pass,
+          ...(csrf ? { _token: csrf } : {})
+        }).toString(),
+        redirect: 'manual'
+      });
+      
+      const newCookies3 = r3.headers.getSetCookie?.() || [];
+      if (newCookies3.length > 0) {
+        cookies = [...cookies.split('; '), ...newCookies3.map(c => c.split(';')[0])]
+          .filter((v, i, a) => a.findIndex(x => x.split('=')[0] === v.split('=')[0]) === i)
+          .join('; ');
+      }
+      
+      const location = r3.headers.get('location');
+      console.log('[Portal] Form try', endpoint, ':', r3.status, 'Location:', location);
+      
+      if (r3.status === 302 && location && (location.includes('bi') || location.includes('home'))) {
+        sessionCookies = cookies;
+        sessionExpiry = Date.now() + 3600000;
+        console.log('[Portal] Login SUCCESS via form', endpoint);
+        return cookies;
+      }
+    } catch(e) {
+      console.log('[Portal] Error trying', endpoint, ':', e.message);
     }
   }
   
-  sessionCookies = cookies;
-  sessionExpiry = Date.now() + 3600000; // 1 hour
-  console.log('[BiloopPortal] Session established, cookies:', cookies.substring(0, 100));
-  return cookies;
+  throw new Error('All login attempts failed');
 }
 
-// Fetch a portal page with session
 async function portalFetch(path) {
   const cookies = await getSession();
   const url = path.startsWith('http') ? path : `${BILOOP_URL}${path}`;
-  console.log('[BiloopPortal] Fetching:', url);
   const res = await fetch(url, {
     headers: {
       'Cookie': cookies,
-      'User-Agent': 'Mozilla/5.0',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
     }
   });
   return res.text();
 }
 
-// Parse HTML table rows into objects
-function parseTable(html, tableId) {
+function parseTable(html) {
   const rows = [];
-  // Find table by id or first table
-  const tableRegex = tableId 
-    ? new RegExp(`<table[^>]*id=["']${tableId}["'][^>]*>([\\s\\S]*?)</table>`)
-    : /<table[^>]*>([\s\S]*?)<\/table>/;
-  const tableMatch = html.match(tableRegex);
+  const tableMatch = html.match(/<table[^>]*>([\s\S]*?)<\/table>/);
   if (!tableMatch) return rows;
-  
   const tableHtml = tableMatch[1];
-  
-  // Get headers
   const headers = [];
-  const thRegex = /<th[^>]*>([\s\S]*?)<\/th>/g;
-  let thMatch;
-  while ((thMatch = thRegex.exec(tableHtml)) !== null) {
-    headers.push(thMatch[1].replace(/<[^>]+>/g, '').trim());
-  }
-  
-  // Get body rows
+  let m;
+  const thRe = /<th[^>]*>([\s\S]*?)<\/th>/g;
+  while ((m = thRe.exec(tableHtml))) headers.push(m[1].replace(/<[^>]+>/g, '').trim());
   const tbodyMatch = tableHtml.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/);
   if (!tbodyMatch) return rows;
-  
-  const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/g;
-  let trMatch;
-  while ((trMatch = trRegex.exec(tbodyMatch[1])) !== null) {
+  const trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/g;
+  while ((m = trRe.exec(tbodyMatch[1]))) {
     const cells = [];
-    const tdRegex = /<td[^>]*>([\s\S]*?)<\/td>/g;
-    let tdMatch;
-    while ((tdMatch = tdRegex.exec(trMatch[1])) !== null) {
-      cells.push(tdMatch[1].replace(/<[^>]+>/g, '').trim());
-    }
-    if (cells.length > 0 && headers.length > 0) {
+    const tdRe = /<td[^>]*>([\s\S]*?)<\/td>/g;
+    let td;
+    while ((td = tdRe.exec(m[1]))) cells.push(td[1].replace(/<[^>]+>/g, '').trim());
+    if (cells.length && headers.length) {
       const row = {};
-      headers.forEach((h, i) => { row[h] = cells[i] || ''; });
+      headers.forEach((h, i) => row[h] = cells[i] || '');
       rows.push(row);
-    } else if (cells.length > 0) {
-      rows.push(cells);
     }
   }
   return rows;
 }
 
-// Debug/test endpoint
+// Debug login
 biloopPortalRouter.get('/portal-test', async (req, res) => {
   try {
-    const html = await portalFetch('/bi/home');
-    const isLoggedIn = html.includes('David Roldan') || html.includes('CHICKEN PALACE') || html.includes('bi/home');
-    const title = html.match(/<title>([^<]+)<\/title>/);
+    sessionCookies = null;
+    sessionExpiry = 0;
+    
+    const user = process.env.BILOOP_USER || '';
+    const pass = process.env.BILOOP_PASSWORD || '';
+    
+    // GET login page
+    const r1 = await fetch(`${BILOOP_URL}/`, {
+      redirect: 'manual',
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    const initCookies = (r1.headers.getSetCookie?.() || []).map(c => c.split(';')[0]).join('; ');
+    const html = await r1.text();
+    
+    // Extract form details
+    const csrf = html.match(/name="_token"\s+value="([^"]+)"/)?.[1] || '';
+    const formAction = html.match(/<form[^>]*action="([^"]*)"/)?.[1] || 'no form tag found';
+    const formMethod = html.match(/<form[^>]*method="([^"]*)"/)?.[1] || 'no method';
+    const inputs = [...html.matchAll(/<input[^>]*name="([^"]*)"/g)].map(m => m[1]);
+    const scripts = [...html.matchAll(/src="([^"]*\.js[^"]*)"/g)].map(m => m[1]);
+    
+    // Find login JS function
+    const loginJS = html.match(/function\s+login[\s\S]*?\}/)?.[0] || 
+                    html.match(/btnlogin[\s\S]{0,500}/)?.[0] ||
+                    html.match(/\.click[\s\S]{0,300}login/)?.[0] || 'not found in inline';
+    
     res.json({
       success: true,
-      loggedIn: isLoggedIn,
-      title: title ? title[1] : 'unknown',
-      htmlLength: html.length,
-      preview: html.substring(0, 500)
+      initCookies,
+      csrf: csrf ? 'found' : 'none',
+      formAction,
+      formMethod,
+      inputs,
+      scripts: scripts.slice(0, 10),
+      loginJS: loginJS.substring(0, 500),
+      htmlSnippet: html.match(/controller[\s\S]{0,1000}/)?.[0]?.substring(0, 800) || 'not found'
     });
   } catch (err) {
     res.json({ success: false, error: err.message });
   }
 });
 
-// Documents (facturas emitidas/recibidas)
 biloopPortalRouter.get('/portal-documents', async (req, res) => {
   try {
     const html = await portalFetch('/bi/documents/directory');
-    const tables = parseTable(html);
-    res.json({ success: true, data: tables, htmlLength: html.length });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+    res.json({ success: true, data: parseTable(html), htmlLength: html.length });
+  } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// Workers/Labor
 biloopPortalRouter.get('/portal-workers', async (req, res) => {
   try {
     const html = await portalFetch('/bi/labor/worker-reports');
-    const tables = parseTable(html);
-    res.json({ success: true, data: tables, htmlLength: html.length });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+    res.json({ success: true, data: parseTable(html), htmlLength: html.length });
+  } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// Customers (ERP)
 biloopPortalRouter.get('/portal-customers', async (req, res) => {
   try {
     const html = await portalFetch('/erp/masters/customers');
-    const tables = parseTable(html);
-    res.json({ success: true, data: tables, htmlLength: html.length });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
+    res.json({ success: true, data: parseTable(html), htmlLength: html.length });
+  } catch (err) { res.json({ success: false, error: err.message }); }
 });
 
-// Home dashboard data
-biloopPortalRouter.get('/portal-dashboard', async (req, res) => {
-  try {
-    const html = await portalFetch('/bi/home');
-    // Extract key financial data
-    const resultMatch = html.match(/([\d.,]+)\s*EUR/i) || html.match(/(-?[\d.,]+)\s*&euro;/i);
-    res.json({
-      success: true,
-      resultado: resultMatch ? resultMatch[1] : null,
-      htmlLength: html.length
-    });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
-});
-
-// Clear session
 biloopPortalRouter.get('/portal-logout', async (req, res) => {
   sessionCookies = null;
   sessionExpiry = 0;
