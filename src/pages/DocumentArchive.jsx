@@ -74,7 +74,7 @@ export default function DocumentArchive() {
     try {
       await base44.entities.UploadedFile.update(file.id, { processing_status: 'processing' });
 
-      const isCSV = file.filename.toLowerCase().endsWith('.csv') || file.content_type?.includes('csv');
+      const isCSV = (file.filename || '').toLowerCase().endsWith('.csv') || file.content_type?.includes('csv');
 
       const genericSchema = {
         type: "object",
@@ -564,17 +564,17 @@ export default function DocumentArchive() {
     // Búsqueda general
     const matchesSearch = !searchQuery || 
       file.filename?.toLowerCase().includes(searchLower) ||
-      (metadata.provider && metadata.provider.toLowerCase().includes(searchLower)) ||
-      (metadata.employee_name && metadata.employee_name.toLowerCase().includes(searchLower)) ||
-      (metadata.doc_number && metadata.doc_number.toLowerCase().includes(searchLower));
+      (metadata.provider && (metadata.provider || '').toLowerCase().includes(searchLower)) ||
+      (metadata.employee_name && (metadata.employee_name || '').toLowerCase().includes(searchLower)) ||
+      (metadata.doc_number && (metadata.doc_number || '').toLowerCase().includes(searchLower));
 
     // Filtro por Tipo
     const matchesType = typeFilter === "all" || 
-      (file.detected_type && file.detected_type.toLowerCase().includes(typeFilter.toLowerCase()));
+      (file.detected_type && (file.detected_type || '').toLowerCase().includes(typeFilter.toLowerCase()));
 
     // Filtro por Proveedor (específico)
     const matchesProvider = !providerSearch || 
-      (metadata.provider && metadata.provider.toLowerCase().includes(providerSearch.toLowerCase()));
+      (metadata.provider && (metadata.provider || '').toLowerCase().includes(providerSearch.toLowerCase()));
 
     // Filtro por Fecha (Subida o Documento)
     const matchesDate = !dateFilter || 
@@ -599,7 +599,7 @@ export default function DocumentArchive() {
     
     // Normalizar texto para comparación
     const type = (file.detected_type || file.ai_summary || "").toLowerCase();
-    const filename = file.filename.toLowerCase();
+    const filename = (file.filename || '').toLowerCase();
     
     // 1. NÓMINAS (RRHH) -> Violeta/Púrpura
     if (type.includes('nómina') || type.includes('nomina') || filename.includes('nomina')) {
@@ -622,7 +622,7 @@ export default function DocumentArchive() {
 
   const getTypeBadge = (file) => {
     const type = (file.detected_type || "Desconocido").toLowerCase();
-    const filename = file.filename.toLowerCase();
+    const filename = (file.filename || '').toLowerCase();
 
     if (type.includes('nómina') || filename.includes('nomina')) return <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30">RRHH / Nómina</Badge>;
     if (type.includes('escritura') || type.includes('sociedad')) return <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30">Legal / Sociedad</Badge>;
