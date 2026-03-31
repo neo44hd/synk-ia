@@ -72,18 +72,53 @@ jobs:
           EOF
           cd /opt/sinkia-backend
           npm install --production
-          # Install PM2 if not present
           which pm2 || sudo npm install -g pm2
           pm2 delete sinkia-api 2>/dev/null || true
           pm2 start index.js --name sinkia-api
           pm2 save
           ENDSSH
 
-      - name: Reload Nginx
+      - name: Configure Nginx with API proxy
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
-            "sudo systemctl reload nginx 2>/dev/null || sudo nginx -s reload 2>/dev/null || true"
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'ENDSSH'
+          sudo tee /etc/nginx/sites-available/sinkialabs > /dev/null << 'NGINX'
+          server {
+              listen 80;
+              server_name sinkialabs.com www.sinkialabs.com;
+              root /var/www/sinkialabs;
+              index index.html;
+
+              # API proxy to backend
+              location /api/ {
+                  proxy_pass http://127.0.0.1:3001;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_connect_timeout 30s;
+                  proxy_read_timeout 120s;
+              }
+
+              # Frontend SPA
+              location / {
+                  try_files $uri $uri/ /index.html;
+              }
+
+              # Cache static assets
+              location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+                  expires 1h;
+                  add_header Cache-Control "public, immutable";
+              }
+          }
+          NGINX
+          sudo ln -sf /etc/nginx/sites-available/sinkialabs /etc/nginx/sites-enabled/sinkialabs
+          sudo rm -f /etc/nginx/sites-enabled/default
+          sudo nginx -t && sudo systemctl reload nginx
+          ENDSSH
 
       - name: Cleanup
         if: always()
