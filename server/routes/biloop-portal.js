@@ -238,3 +238,36 @@ biloopPortalRouter.get('/portal-logout', async (req, res) => {
   sessionExpiry = 0;
   res.json({ success: true, message: 'Session cleared' });
 });
+
+// Debug: raw HTML from any portal path
+biloopPortalRouter.get('/portal-raw', async (req, res) => {
+  try {
+    const path = req.query.path || '/erp/masters/customers';
+    const html = await portalFetch(path);
+    // Find table section
+    const tableStart = html.indexOf('<table');
+    const tableEnd = html.indexOf('</table>');
+    const tableSnippet = tableStart >= 0 ? html.substring(tableStart, Math.min(tableStart + 3000, tableEnd + 10)) : 'no table found';
+    // Find Vue data / inline scripts with data
+    const inlineScripts = [];
+    const scriptRe = /<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g;
+    let sm;
+    while ((sm = scriptRe.exec(html))) {
+      const c = sm[1].trim();
+      if (c.length > 50) inlineScripts.push(c.substring(0, 2000));
+    }
+    // Find AJAX data URLs
+    const ajaxUrls = [...html.matchAll(/(?:get|post|fetch|ajax)\s*\(?\s*['"]([^'"]+)['"]|url:\s*['"]([^'"]+)['"]/gi)].map(m => m[1] || m[2]).filter(Boolean);
+    res.json({
+      success: true,
+      path,
+      htmlLength: html.length,
+      title: html.match(/<title>([^<]*)<\/title>/)?.[1] || '',
+      hasTable: tableStart >= 0,
+      tableSnippet: tableSnippet.substring(0, 2000),
+      inlineScriptsCount: inlineScripts.length,
+      inlineScripts: inlineScripts.slice(0, 5),
+      ajaxUrls: ajaxUrls.slice(0, 20)
+    });
+  } catch (err) { res.json({ success: false, error: err.message }); }
+});
