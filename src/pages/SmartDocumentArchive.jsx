@@ -804,13 +804,13 @@ export default function SmartDocumentArchive() {
                   {dragActive ? "Suelta los archivos aquí" : "Arrastra documentos aquí"}
                 </h3>
                 <p className="text-zinc-500 text-sm mb-4">
-                  PDF, imágenes (JPG, PNG) • OCR automático • Extracción con IA
+                  PDF, imágenes, ZIP, RAR, DOC, XLS, CSV • OCR automático • Extracción con IA
                 </p>
                 <input
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.tiff"
+                  accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.tiff,.zip,.rar,.7z,.tar,.gz,.doc,.docx,.xls,.xlsx,.csv,.txt,.xml"
                   className="hidden"
                   onChange={(e) => handleFileUpload(e.target.files)}
                 />
