@@ -332,12 +332,12 @@ export default function BusinessAnalysis() {
                     </div>
                     <p className="text-3xl font-black text-white mb-2">{formatCurrency(cat.total)}</p>
                     <p className="text-gray-400">{cat.count} facturas</p>
-                    {byCategory[cat.name || '').toLowerCase()]?.providers && (
+                                    {byCategory[cat.name?.toLowerCase()]?.providers && (
                       <div className="mt-3 pt-3 border-t border-slate-700">
                         <p className="text-gray-500 text-xs mb-1">Proveedores:</p>
                         <p className="text-gray-300 text-sm">
-                          {byCategory[cat.name || '').toLowerCase()].providers.slice(0, 3).join(', ')}
-                          {byCategory[cat.name || '').toLowerCase()].providers.length > 3 && '...'}
+                                              {byCategory[cat.name?.toLowerCase()]?.providers?.slice(0, 3).join(', ')}
+                                              {byCategory[cat.name?.toLowerCase()]?.providers?.length > 3 && '...'}
                         </p>
                       </div>
                     )}
