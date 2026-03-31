@@ -64,6 +64,9 @@ jobs:
           EMAIL_USER=info@chickenpalace.es
           EMAIL_APP_PASSWORD=${{ secrets.EMAIL_APP_PASSWORD }}
           ASSEMPSA_BILOOP_API_KEY=${{ secrets.ASSEMPSA_BILOOP_API_KEY }}
+          BILOOP_USER=${{ secrets.BILOOP_USER }}
+          BILOOP_PASSWORD=${{ secrets.BILOOP_PASSWORD }}
+          BILOOP_CIF=${{ secrets.BILOOP_CIF }}
           REVO_TOKEN_LARGO=${{ secrets.REVO_BEARER_TOKEN }}
           REVO_ADMIN_USER=${{ secrets.REVO_TENANT }}
           EOF
