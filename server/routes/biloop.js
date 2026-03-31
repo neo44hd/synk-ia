@@ -24,21 +24,20 @@ async function getToken(forceRefresh = false) {
     }
   });
   const data = await res.json();
-  console.log('[Biloop] Token response:', JSON.stringify(data).substring(0, 200));
-  if (data.status === 'KO') {
-    throw new Error(`Token error: ${data.message}`);
-  }
+  if (data.status === 'KO') throw new Error(`Token error: ${data.message}`);
   cachedToken = data.data?.token || data.token || null;
-  if (!cachedToken) throw new Error('No token in response: ' + JSON.stringify(data));
+  if (!cachedToken) throw new Error('No token in response');
   tokenExpiry = Date.now() + 7200000;
-  console.log('[Biloop] Token obtained, length:', cachedToken.length);
   return cachedToken;
 }
 
-async function biloopFetch(endpoint) {
+async function biloopFetch(endpoint, addCompanyId = true) {
   const token = await getToken();
-  const separator = endpoint.includes('?') ? '&' : '?';
-  const url = `${BILOOP_BASE}${endpoint}${separator}Company_id=${COMPANY_ID}`;
+  let url = `${BILOOP_BASE}${endpoint}`;
+  if (addCompanyId) {
+    const sep = endpoint.includes('?') ? '&' : '?';
+    url += `${sep}Company_id=${COMPANY_ID}`;
+  }
   console.log('[Biloop] Fetching:', url);
   const res = await fetch(url, {
     headers: {
@@ -47,18 +46,18 @@ async function biloopFetch(endpoint) {
     }
   });
   if (!res.ok) throw new Error(`Biloop ${res.status}: ${res.statusText}`);
-  const data = await res.json();
-  console.log('[Biloop] Response:', JSON.stringify(data).substring(0, 300));
-  return data;
+  return res.json();
 }
 
+// Debug endpoint - tests multiple approaches
 biloopRouter.get('/token-debug', async (req, res) => {
   try {
     cachedToken = null;
     tokenExpiry = 0;
     const cif = process.env.BILOOP_CIF || '';
     const results = {};
-    // With CIF
+    
+    // Get token with CIF
     const r1 = await fetch(`${BILOOP_BASE}/token?cif=${cif}`, {
       headers: {
         'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY,
@@ -66,26 +65,45 @@ biloopRouter.get('/token-debug', async (req, res) => {
         'PASSWORD': process.env.BILOOP_PASSWORD
       }
     });
-    results.withCif = { url: `${BILOOP_BASE}/token?cif=${cif}`, status: r1.status, body: await r1.json() };
-    // Without CIF
-    const r2 = await fetch(`${BILOOP_BASE}/token`, {
-      headers: {
-        'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY,
-        'USER': process.env.BILOOP_USER,
-        'PASSWORD': process.env.BILOOP_PASSWORD
-      }
-    });
-    results.withoutCif = { status: r2.status, body: await r2.json() };
-    // Test a data endpoint with Company_id
-    const tokenData = results.withCif.body.data?.token || results.withCif.body.token;
-    let workersTest = null;
-    if (tokenData) {
-      const r3 = await fetch(`${BILOOP_BASE}/labor/getWorkers?Company_id=${COMPANY_ID}`, {
-        headers: { 'token': tokenData, 'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY }
-      });
-      workersTest = await r3.json();
+    const tokenBody = await r1.json();
+    const token = tokenBody.data?.token;
+    results.tokenStatus = tokenBody.status;
+    
+    if (token) {
+      const headers = { 'token': token, 'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY };
+      
+      // Test 1: getUser (no Company_id needed)
+      try {
+        const r = await fetch(`${BILOOP_BASE}/getUser`, { headers });
+        results.getUser = await r.json();
+      } catch(e) { results.getUser = e.message; }
+      
+      // Test 2: getCompanies (no Company_id)
+      try {
+        const r = await fetch(`${BILOOP_BASE}/getCompanies`, { headers });
+        results.getCompanies = await r.json();
+      } catch(e) { results.getCompanies = e.message; }
+      
+      // Test 3: getWorkers WITH Company_id
+      try {
+        const r = await fetch(`${BILOOP_BASE}/labor/getWorkers?Company_id=${COMPANY_ID}`, { headers });
+        results.workersWithCompanyId = await r.json();
+      } catch(e) { results.workersWithCompanyId = e.message; }
+      
+      // Test 4: getWorkers WITHOUT Company_id  
+      try {
+        const r = await fetch(`${BILOOP_BASE}/labor/getWorkers`, { headers });
+        results.workersWithoutCompanyId = await r.json();
+      } catch(e) { results.workersWithoutCompanyId = e.message; }
+      
+      // Test 5: getERPProviders with Company_id
+      try {
+        const r = await fetch(`${BILOOP_BASE}/erp/erpProvider/getERPProviders?Company_id=${COMPANY_ID}`, { headers });
+        results.providersWithCompanyId = await r.json();
+      } catch(e) { results.providersWithCompanyId = e.message; }
     }
-    res.json({ cif, companyId: COMPANY_ID, results, workersTest });
+    
+    res.json({ cif, companyId: COMPANY_ID, results });
   } catch (err) {
     res.json({ error: err.message });
   }
@@ -93,24 +111,16 @@ biloopRouter.get('/token-debug', async (req, res) => {
 
 biloopRouter.get('/test', async (req, res) => {
   try {
-    if (!process.env.BILOOP_USER) {
-      return res.json({ success: false, error: 'Credentials not configured' });
-    }
+    if (!process.env.BILOOP_USER) return res.json({ success: false, error: 'Credentials not configured' });
     const token = await getToken(true);
-    let companiesData;
-    try {
-      companiesData = await biloopFetch('/getCompanies');
-    } catch (e) {
-      companiesData = { error: e.message };
-    }
-    res.json({ success: true, tokenOk: true, companyId: COMPANY_ID, cif: process.env.BILOOP_CIF, data: companiesData });
+    res.json({ success: true, tokenOk: true, companyId: COMPANY_ID, cif: process.env.BILOOP_CIF });
   } catch (err) {
     res.json({ success: false, error: err.message });
   }
 });
 
 biloopRouter.get('/companies', async (req, res) => {
-  try { res.json({ success: true, data: await biloopFetch('/getCompanies') }); }
+  try { res.json({ success: true, data: await biloopFetch('/getCompanies', false) }); }
   catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
