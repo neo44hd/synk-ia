@@ -6,6 +6,8 @@ import { biloopRouter } from './routes/biloop.js';
 import { biloopPortalRouter } from './routes/biloop-portal.js';
 import { revoRouter } from './routes/revo.js';
 import { healthRouter } from './routes/health.js';
+import { ollamaRouter } from './routes/ollama.js';
+import { startSyncWorker } from './syncWorker.js';
 
 dotenv.config();
 
@@ -26,6 +28,7 @@ app.use('/api/biloop', biloopRouter);
 app.use('/api/biloop', biloopPortalRouter);
 app.use('/api/revo', revoRouter);
 app.use('/api/health', healthRouter);
+app.use('/api/ollama', ollamaRouter);
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -34,8 +37,13 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`SYNK-IA Backend running on port ${PORT}`);
-  console.log(`Email: ${process.env.EMAIL_USER || 'not configured'}`);
-  console.log(`Biloop: ${process.env.ASSEMPSA_BILOOP_API_KEY ? 'configured' : 'not configured'}`);
-  console.log(`Biloop Portal: scraper enabled`);
+  console.log(`[SERVER] Running on port ${PORT}`);
+  
+  // Start 24/7 sync worker for email + Revo + Ollama classification
+  try {
+    startSyncWorker();
+    console.log('[SYNC-WORKER] Started successfully');
+  } catch (error) {
+    console.error('[SYNC-WORKER] Failed to start:', error.message);
+  }
 });
