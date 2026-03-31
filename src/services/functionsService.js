@@ -4,7 +4,7 @@
  * Conecta con el VPS scraper para datos reales de Biloop
  */
 
-const VPS_URL = 'http://100.91.86.75:3001';
+const VPS_URL = '';  // Uses same domain via nginx proxy
 
 // Helper para llamadas al VPS
 const vpsCall = async (endpoint, options = {}) => {
