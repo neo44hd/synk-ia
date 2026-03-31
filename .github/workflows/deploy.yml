@@ -17,10 +17,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: npm install
 
-      - name: Build
+      - name: Build frontend
         run: npm run build
 
       - name: Setup Tailscale
@@ -35,20 +35,48 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Prepare remote directory
+      - name: Prepare remote directories
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
-            "sudo mkdir -p /var/www/sinkialabs && sudo chown ${{ secrets.SERVER_USER }}:${{ secrets.SERVER_USER }} /var/www/sinkialabs"
+            "sudo mkdir -p /var/www/sinkialabs /opt/sinkia-backend && sudo chown ${{ secrets.SERVER_USER }}:${{ secrets.SERVER_USER }} /var/www/sinkialabs /opt/sinkia-backend"
 
-      - name: Deploy to Oracle VPS
+      - name: Deploy frontend
         run: |
           rsync -avz --delete \
             -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
             dist/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/var/www/sinkialabs/
 
-      - name: Restart Nginx
+      - name: Deploy backend
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            server/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/opt/sinkia-backend/
+
+      - name: Create .env and start backend
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'ENDSSH'
+          cat > /opt/sinkia-backend/.env << 'EOF'
+          PORT=3001
+          EMAIL_USER=info@chickenpalace.es
+          EMAIL_APP_PASSWORD=${{ secrets.EMAIL_APP_PASSWORD }}
+          ASSEMPSA_BILOOP_API_KEY=${{ secrets.ASSEMPSA_BILOOP_API_KEY }}
+          REVO_TOKEN_LARGO=${{ secrets.REVO_BEARER_TOKEN }}
+          REVO_ADMIN_USER=${{ secrets.REVO_TENANT }}
+          EOF
+          cd /opt/sinkia-backend
+          npm install --production
+          # Install PM2 if not present
+          which pm2 || sudo npm install -g pm2
+          pm2 delete sinkia-api 2>/dev/null || true
+          pm2 start index.js --name sinkia-api
+          pm2 save
+          ENDSSH
+
+      - name: Reload Nginx
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
