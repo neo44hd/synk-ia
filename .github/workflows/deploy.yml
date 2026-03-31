@@ -82,6 +82,10 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'ENDSSH'
+          # Open port 443 in iptables (Oracle VPS)
+          sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || true
+          sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || true
+          sudo netfilter-persistent save 2>/dev/null || sudo iptables-save | sudo tee /etc/iptables/rules.v4 2>/dev/null || true
           sudo apt-get install -y certbot python3-certbot-nginx 2>/dev/null || true
           sudo tee /etc/nginx/sites-available/sinkialabs > /dev/null << 'NGINX'
           server {
@@ -119,7 +123,7 @@ jobs:
           sudo ln -sf /etc/nginx/sites-available/sinkialabs /etc/nginx/sites-enabled/sinkialabs
           sudo rm -f /etc/nginx/sites-enabled/default
           sudo nginx -t && sudo systemctl reload nginx
-          # SSL with certbot (non-interactive, skip if already configured)
+          # SSL with certbot
           sudo certbot --nginx -d sinkialabs.com -d www.sinkialabs.com --non-interactive --agree-tos --email info@chickenpalace.es --redirect 2>/dev/null || echo "SSL already configured or certbot failed"
           ENDSSH
 
