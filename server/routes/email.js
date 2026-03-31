@@ -273,4 +273,134 @@ emailRouter.get('/invoices', async (req, res) => {
       invoices: documents.sort((a, b) => new Date(b.date) - new Date(a.date))
     });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+
+  // INVOICES-DETAIL - Parse PDFs, extract line items, prices per provider
+// Uses pdf-parse to extract text and detect product lines
+emailRouter.get('/invoices-detail', async (req, res) => {
+  try {
+    const { since = '2025-01-01', limit = 100 } = req.query;
+    let pdfParse;
+    try { pdfParse = (await import('pdf-parse')).default; } catch(e) { pdfParse = null; }
+
+    const { documents } = await scanEmails({ since, limit, typeFilter: 'factura', includeContent: true });
+
+    const parsed = await Promise.all(documents.map(async (doc) => {
+      let items = [];
+      let total = null;
+      let invoiceNumber = null;
+      let invoiceDate = doc.date;
+      let rawText = '';
+
+      if (pdfParse && doc.content) {
+        try {
+          const buf = Buffer.from(doc.content, 'base64');
+          const data = await pdfParse(buf);
+          rawText = data.text || '';
+
+          // Extract invoice number
+          const numMatch = rawText.match(/(?:factura|invoice|fra\.?|n[uú]mero)[\s:#]*([A-Z0-9\-\/]+)/i);
+          if (numMatch) invoiceNumber = numMatch[1].trim();
+
+          // Extract total
+          const totalMatch = rawText.match(/(?:total|importe total|total factura)[\s:€$]*([\d.,]+)/i);
+          if (totalMatch) total = parseFloat(totalMatch[1].replace(',', '.').replace(/\./g, (m, o, s) => o === s.lastIndexOf('.') ? '.' : ''));
+
+          // Extract line items - look for patterns: description + qty + price
+          const lines = rawText.split('\n').filter(l => l.trim().length > 2);
+          lines.forEach(line => {
+            // Pattern: text followed by numbers (qty x price = total)
+            const itemMatch = line.match(/^(.+?)\s+(\d+[,.]?\d*)\s+([\d.,]+)\s*€?\s+([\d.,]+)\s*€?/);
+            if (itemMatch) {
+              const name = itemMatch[1].trim();
+              const qty = parseFloat(itemMatch[2].replace(',', '.'));
+              const unitPrice = parseFloat(itemMatch[3].replace(',', '.'));
+              const lineTotal = parseFloat(itemMatch[4].replace(',', '.'));
+              if (name.length > 2 && name.length < 80 && qty > 0 && unitPrice > 0) {
+                items.push({ name, qty, unitPrice, lineTotal });
+              }
+            }
+            // Simpler: description + price at end
+            const simpleMatch = line.match(/^([A-Za-zà-ž\s]{4,50})\s+([\d.,]+)\s*€?\s*$/);
+            if (simpleMatch && items.length === 0) {
+              const name = simpleMatch[1].trim();
+              const price = parseFloat(simpleMatch[2].replace(',', '.'));
+              if (price > 0 && price < 10000) items.push({ name, qty: 1, unitPrice: price, lineTotal: price });
+            }
+          });
+        } catch(parseErr) {
+          rawText = '(parse error: ' + parseErr.message + ')';
+        }
+      }
+
+      return {
+        provider: doc.provider,
+        providerEmail: doc.providerEmail,
+        filename: doc.filename,
+        subject: doc.subject,
+        date: doc.date,
+        fileSize: doc.fileSize,
+        invoiceNumber,
+        total,
+        items,
+        hasContent: !!doc.content,
+        textLength: rawText.length
+      };
+    }));
+
+    // Group by provider
+    const byProvider = {};
+    parsed.forEach(inv => {
+      const key = inv.providerEmail || inv.provider;
+      if (!byProvider[key]) {
+        byProvider[key] = {
+          name: inv.provider,
+          email: inv.providerEmail,
+          invoices: [],
+          totalSpend: 0,
+          allItems: []
+        };
+      }
+      byProvider[key].invoices.push(inv);
+      if (inv.total) byProvider[key].totalSpend += inv.total;
+      byProvider[key].allItems.push(...inv.items);
+    });
+
+    // Build item stats per provider (most ordered, price history)
+    const providers = Object.values(byProvider).map(p => {
+      const itemMap = {};
+      p.allItems.forEach(item => {
+        const k = item.name.toLowerCase().trim();
+        if (!itemMap[k]) itemMap[k] = { name: item.name, totalQty: 0, totalSpend: 0, priceHistory: [], appearances: 0 };
+        itemMap[k].totalQty += item.qty;
+        itemMap[k].totalSpend += item.lineTotal;
+        itemMap[k].priceHistory.push(item.unitPrice);
+        itemMap[k].appearances++;
+      });
+      const topItems = Object.values(itemMap)
+        .sort((a, b) => b.appearances - a.appearances)
+        .slice(0, 20)
+        .map(i => ({
+          ...i,
+          avgPrice: i.totalSpend / i.totalQty,
+          minPrice: Math.min(...i.priceHistory),
+          maxPrice: Math.max(...i.priceHistory),
+          priceVariation: i.priceHistory.length > 1 ? ((Math.max(...i.priceHistory) - Math.min(...i.priceHistory)) / Math.min(...i.priceHistory) * 100).toFixed(1) : '0'
+        }));
+      return {
+        name: p.name,
+        email: p.email,
+        invoiceCount: p.invoices.length,
+        totalSpend: Math.round(p.totalSpend * 100) / 100,
+        invoices: p.invoices.sort((a, b) => new Date(b.date) - new Date(a.date)),
+        topItems
+      };
+    }).sort((a, b) => b.totalSpend - a.totalSpend);
+
+    res.json({
+      success: true,
+      totalInvoices: parsed.length,
+      providers
+    });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
 });
