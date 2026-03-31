@@ -35,6 +35,12 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts 2>/dev/null
 
+      - name: Prepare remote directory
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+            "sudo mkdir -p /var/www/sinkialabs && sudo chown ${{ secrets.SERVER_USER }}:${{ secrets.SERVER_USER }} /var/www/sinkialabs"
+
       - name: Deploy to Oracle VPS
         run: |
           rsync -avz --delete \
