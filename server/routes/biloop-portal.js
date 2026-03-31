@@ -271,3 +271,51 @@ biloopPortalRouter.get('/portal-raw', async (req, res) => {
     });
   } catch (err) { res.json({ success: false, error: err.message }); }
 });
+
+// Fetch any portal path and return raw response
+biloopPortalRouter.get('/portal-fetch', async (req, res) => {
+  try {
+    const path = req.query.path || '/erp/masters/customers';
+    const cookies = await getSession();
+    const url = path.startsWith('http') ? path : `${BILOOP_URL}${path}`;
+    const r = await fetch(url, {
+      headers: {
+        'Cookie': cookies,
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json, text/html, */*'
+      }
+    });
+    const ct = r.headers.get('content-type') || '';
+    const text = await r.text();
+    if (ct.includes('json')) {
+      try { res.json({ success: true, path, data: JSON.parse(text) }); return; }
+      catch(e) {}
+    }
+    res.json({ success: true, path, contentType: ct, length: text.length, body: text.substring(0, 5000) });
+  } catch (err) { res.json({ success: false, error: err.message }); }
+});
+
+// Search page HTML for DataTable config
+biloopPortalRouter.get('/portal-datatable', async (req, res) => {
+  try {
+    const path = req.query.path || '/erp/masters/customers';
+    const html = await portalFetch(path);
+    // Find DataTable initialization
+    const dtConfigs = [...html.matchAll(/(?:dataTable|DataTable)\s*\(([\s\S]*?)\)\s*;/g)].map(m => m[0].substring(0, 1500));
+    // Find ajax URLs in DataTable config  
+    const ajaxUrls = [...html.matchAll(/ajax\s*:\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
+    const ajaxObjs = [...html.matchAll(/ajax\s*:\s*\{[^}]*url\s*:\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
+    // Find Vue data sources
+    const vueData = [...html.matchAll(/\$\.(?:get|post)\s*\(\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
+    res.json({
+      success: true,
+      path,
+      dtConfigsCount: dtConfigs.length,
+      dtConfigs: dtConfigs.slice(0, 5),
+      ajaxUrls,
+      ajaxObjs,
+      vueDataSources: vueData.slice(0, 30)
+    });
+  } catch (err) { res.json({ success: false, error: err.message }); }
+});
