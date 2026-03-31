@@ -1,15 +1,23 @@
 /**
  * SYNK-IA - Servicio de Funciones con VPS Real
  * Conecta con el backend via nginx proxy
+ * Integra Ollama para clasificacion IA 24/7
  */
-const vpsCall = async (endpoint) => {
+const vpsCall = async (endpoint, options = {}) => {
   try {
-    const res = await fetch(endpoint);
+    const res = await fetch(endpoint, options);
     return await res.json();
   } catch (e) {
     console.error('[SYNK-IA] VPS error:', endpoint, e.message);
     return { success: false, error: e.message };
   }
+};
+const vpsPost = async (endpoint, body) => {
+  return vpsCall(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
 };
 // ===== FUNCIONES REALES =====
 export const checkSecretsStatus = async () => {
@@ -32,7 +40,20 @@ export const testBiloopConnection = async () => {
   return { success: false, error: r.error || 'Error Biloop' };
 };
 export const testGmailConnection = async () => ({ success: true, source: 'gmail', summary: 'Gmail configurado - info@chickenpalace.es' });
-export const testRevoConnection = async () => ({ success: true, source: 'revo_api', summary: 'Revo XEF configurado' });
+export const testRevoConnection = async () => {
+  const r = await vpsCall('/api/revo/test');
+  return r.success ? { success: true, source: 'revo_api', summary: 'Revo XEF conectado' } : { success: false, error: r.error || 'Error Revo' };
+};
+// ===== OLLAMA IA =====
+export const ollamaClassify = async (text, docType) => {
+  return await vpsPost('/api/ollama/classify', { text, docType });
+};
+export const ollamaModels = async () => {
+  return await vpsCall('/api/ollama/models');
+};
+export const ollamaHealth = async () => {
+  return await vpsCall('/api/ollama/health');
+};
 // ===== SYNC REAL =====
 export const biloopAutoSync = async () => {
   const r = await vpsCall('/api/biloop/sync');
@@ -50,6 +71,24 @@ export const biloopGetDocuments = async () => {
   }
   return { success: true, documents: [], message: 'Sin datos - ejecutar sync primero' };
 };
+// ===== REVO REAL =====
+export const revoAutoSync = async () => {
+  const r = await vpsCall('/api/revo/sync');
+  if (r.success) {
+    return { success: true, message: `Revo sync: ${r.synced || 0} registros`, synced: r.synced || 0, data: r.data, timestamp: r.timestamp };
+  }
+  return { success: false, error: r.error, message: 'Error sync Revo' };
+};
+export const revoRealSync = async () => revoAutoSync();
+export const revoGetProducts = async () => {
+  return await vpsCall('/api/revo/products');
+};
+export const revoGetWorkers = async () => {
+  return await vpsCall('/api/revo/workers');
+};
+export const revoGetSales = async (since) => {
+  return await vpsCall(`/api/revo/sales${since ? '?since=' + since : ''}`);
+};
 // ===== EMAIL REAL =====
 export const emailScan = async (since = '2025-01-01', limit = 100) => {
   return await vpsCall(`/api/email/scan?since=${since}&limit=${limit}`);
@@ -63,9 +102,7 @@ export const emailWorkers = async (since = '2024-01-01') => {
 export const emailInvoices = async (since = '2025-01-01') => {
   return await vpsCall(`/api/email/invoices?since=${since}`);
 };
-// ===== MOCK/PLACEHOLDER =====
-export const revoAutoSync = async () => ({ success: true, message: 'Sync Revo OK', synced: 0 });
-export const revoRealSync = async () => ({ success: true, message: 'Sync Revo OK' });
+// ===== UTILITIES =====
 export const eseeCloudSync = async () => ({ connected: true, message: 'EseeCloud OK' });
 export const biloopDownloadPdf = async () => ({ success: false, message: 'Usar portal' });
 export const nvrLocalConnect = async () => ({ connected: true, message: 'ESEECLOUD OK' });
@@ -124,7 +161,9 @@ const allFunctions = {
   testBiloopReal, smartEmailProcessor, processZipFile, processBulkPayrolls,
   clockIn, clockOut, employeeAuth, generateAttendanceReport,
   processFlexibleCSV, mergeEmployeeDuplicates, syncPayrollsToEmployees,
-  emailScan, emailPayslips, emailWorkers, emailInvoices, getTimeRecords
+  emailScan, emailPayslips, emailWorkers, emailInvoices, getTimeRecords,
+  ollamaClassify, ollamaModels, ollamaHealth,
+  revoGetProducts, revoGetWorkers, revoGetSales
 };
 export const functionsService = {
   ...allFunctions,
