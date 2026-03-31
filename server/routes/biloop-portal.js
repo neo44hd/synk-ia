@@ -319,3 +319,36 @@ biloopPortalRouter.get('/portal-datatable', async (req, res) => {
     });
   } catch (err) { res.json({ success: false, error: err.message }); }
 });
+
+// Search HTML for specific text and return surrounding context
+biloopPortalRouter.get('/portal-search', async (req, res) => {
+  try {
+    const path = req.query.path || '/erp/masters/customers';
+    const search = req.query.q || 'GENERICO';
+    const html = await portalFetch(path);
+    const results = [];
+    let idx = 0;
+    while ((idx = html.indexOf(search, idx)) !== -1 && results.length < 10) {
+      const start = Math.max(0, idx - 200);
+      const end = Math.min(html.length, idx + search.length + 200);
+      results.push({ pos: idx, context: html.substring(start, end) });
+      idx += search.length;
+    }
+    // Also find Vue component with products/customers data
+    const vueDataMatch = html.match(/products\s*:\s*\[([\s\S]{0,5000}?)\]/)?.[0]?.substring(0, 2000) ||
+      html.match(/customers\s*:\s*\[([\s\S]{0,5000}?)\]/)?.[0]?.substring(0, 2000) || 'not found';
+    // Find mounted/created hooks
+    const mounted = html.match(/mounted\s*\(\s*\)\s*\{[\s\S]{0,2000}/)?.[0]?.substring(0, 1500) || 'not found';
+    const created = html.match(/created\s*\(\s*\)\s*\{[\s\S]{0,2000}/)?.[0]?.substring(0, 1500) || 'not found';
+    res.json({
+      success: true,
+      path,
+      search,
+      found: results.length,
+      results: results.slice(0, 5),
+      vueData: vueDataMatch,
+      mounted: mounted.substring(0, 1000),
+      created: created.substring(0, 1000)
+    });
+  } catch (err) { res.json({ success: false, error: err.message }); }
+});
