@@ -78,10 +78,11 @@ jobs:
           pm2 save
           ENDSSH
 
-      - name: Configure Nginx with API proxy
+      - name: Configure Nginx with SSL
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'ENDSSH'
+          sudo apt-get install -y certbot python3-certbot-nginx 2>/dev/null || true
           sudo tee /etc/nginx/sites-available/sinkialabs > /dev/null << 'NGINX'
           server {
               listen 80;
@@ -118,6 +119,8 @@ jobs:
           sudo ln -sf /etc/nginx/sites-available/sinkialabs /etc/nginx/sites-enabled/sinkialabs
           sudo rm -f /etc/nginx/sites-enabled/default
           sudo nginx -t && sudo systemctl reload nginx
+          # SSL with certbot (non-interactive, skip if already configured)
+          sudo certbot --nginx -d sinkialabs.com -d www.sinkialabs.com --non-interactive --agree-tos --email info@chickenpalace.es --redirect 2>/dev/null || echo "SSL already configured or certbot failed"
           ENDSSH
 
       - name: Cleanup
