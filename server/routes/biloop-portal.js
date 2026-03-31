@@ -234,3 +234,23 @@ biloopPortalRouter.get('/portal-datatable', async (req, res) => {
     res.json({ success: true, path, ajaxUrls });
   } catch (err) { res.json({ success: false, error: err.message }); }
 });
+
+// Debug POST endpoint
+biloopPortalRouter.get('/portal-post-debug', async (req, res) => {
+  try {
+    const path = req.query.path || '/';
+    const params = {};
+    for (const k of Object.keys(req.query)) {
+      if (k !== 'path') params[k] = req.query[k];
+    }
+    const r = await portalFetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(params).toString()
+    });
+    const ct = r.headers.get('content-type') || '';
+    const text = await r.text();
+    if (ct.includes('json')) { try { return res.json({ success: true, path, data: JSON.parse(text) }); } catch(e) {} }
+    res.json({ success: true, path, contentType: ct, status: r.status, length: text.length, body: text.substring(0, 3000) });
+  } catch (err) { res.json({ success: false, error: err.message }); }
+});
