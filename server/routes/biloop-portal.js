@@ -69,6 +69,16 @@ async function portalJSON(path) {
   try { return JSON.parse(txt); } catch(e) { return null; }
 }
 
+async function portalJSONPost(path, data) {
+  const res = await portalFetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(data).toString()
+  });
+  const txt = await res.text();
+  try { return JSON.parse(txt); } catch(e) { return null; }
+}
+
 async function portalHTML(path) {
   const res = await portalFetch(path);
   return res.text();
@@ -107,74 +117,52 @@ biloopPortalRouter.get('/sync', async (req, res) => {
     const results = { customers: [], invoicesIssued: [], invoicesReceived: [], forms: [], payslips: [], providers: [] };
     const errors = [];
 
-    // 1. CUSTOMERS from ERP table
+    // 1. CUSTOMERS - use AJAX endpoint
     try {
-      const html = await portalHTML('/erp/masters/customers');
-      results.customers = parseTable(html);
+      const data = await portalJSON('/erp/masters/customers/getAjaxCustomers');
+      results.customers = data?.data || [];
       console.log(`[Sync] Customers: ${results.customers.length}`);
     } catch(e) { errors.push({ section: 'customers', error: e.message }); }
 
-    // 2. FORMS (tax models) from BI AJAX
+    // 2. FORMS (modelos fiscales) - use AJAX endpoint
     try {
       const data = await portalJSON('/bi/documents/forms/getForms');
-      if (Array.isArray(data)) results.forms = data;
-      else if (data?.data) results.forms = data.data;
+      results.forms = data?.forms || data?.data || (Array.isArray(data) ? data : []);
       console.log(`[Sync] Forms: ${results.forms.length}`);
     } catch(e) { errors.push({ section: 'forms', error: e.message }); }
 
-    // 3. INVOICES ISSUED from ERP DataTable AJAX
+    // 3. INVOICES RECEIVED - use directory/list POST
     try {
-      const r = await portalFetch('/erp/documents/getAjaxDocuments?document_type=FV&start=0&length=100', { method: 'GET' });
+      const data = await portalJSONPost('/bi/documents/directory/list', {
+        'subsection': '',
+        'params[year]': '',
+        'params[text]': ''
+      });
+      results.invoicesReceived = data?.documents || [];
+      console.log(`[Sync] Invoices Received: ${results.invoicesReceived.length}`);
+    } catch(e) { errors.push({ section: 'invoicesReceived', error: e.message }); }
+
+    // 4. INVOICES ISSUED - DataTables GET with standard params
+    try {
+      const params = new URLSearchParams({
+        draw: '1', start: '0', length: '500',
+        'order[0][column]': '0', 'order[0][dir]': 'desc',
+        'columns[0][data]': 'date', 'columns[0][name]': 'date',
+        'search[value]': '', 'search[regex]': 'false'
+      });
+      const r = await portalFetch(`/erp/documents/getAjaxDocuments?${params}`);
       const txt = await r.text();
       try {
         const j = JSON.parse(txt);
         results.invoicesIssued = j.data || j.aaData || [];
-      } catch(e) {
-        // Try POST with DataTable params
-        const r2 = await portalFetch('/erp/documents/getAjaxDocuments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({ 'filters[document_type]': 'FV', start: '0', length: '100', 'draw': '1' }).toString()
-        });
-        const txt2 = await r2.text();
-        try { const j2 = JSON.parse(txt2); results.invoicesIssued = j2.data || j2.aaData || []; } catch(e2) {}
-      }
+      } catch(e) {}
       console.log(`[Sync] Invoices Issued: ${results.invoicesIssued.length}`);
     } catch(e) { errors.push({ section: 'invoicesIssued', error: e.message }); }
 
-    // 4. INVOICES RECEIVED - parse directory page HTML
+    // 5. PAYSLIPS - parse server-rendered HTML table (no filters)
     try {
-      const html = await portalHTML('/bi/documents/directory');
-      // The directory uses Vue.js data - try to find it inline
-      const vueDataMatch = html.match(/documents\s*:\s*\[([\s\S]*?)\]\s*[,}]/);
-      if (vueDataMatch) {
-        try { results.invoicesReceived = JSON.parse(`[${vueDataMatch[1]}]`); } catch(e) {}
-      }
-      if (!results.invoicesReceived.length) {
-        // Fallback: parse table
-        results.invoicesReceived = parseTable(html);
-      }
-      console.log(`[Sync] Invoices Received: ${results.invoicesReceived.length}`);
-    } catch(e) { errors.push({ section: 'invoicesReceived', error: e.message }); }
-
-    // 5. PAYSLIPS - try different date ranges
-    try {
-      // Last 3 months
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-      const filters = btoa(JSON.stringify({
-        company_id: 'E95251',
-        dates: { start: start.toISOString().slice(0,10).replace(/-/g,''), end: now.toISOString().slice(0,10).replace(/-/g,'') },
-        type: ''
-      }));
-      const html = await portalHTML(`/bi/labor/payslips?filters=${filters}`);
+      const html = await portalHTML('/bi/labor/payslips');
       results.payslips = parseTable(html);
-      // Also try 2025 full year
-      if (!results.payslips.length) {
-        const f2 = btoa(JSON.stringify({ company_id: 'E95251', dates: { start: '20250101', end: '20251231' }, type: '' }));
-        const html2 = await portalHTML(`/bi/labor/payslips?filters=${f2}`);
-        results.payslips = parseTable(html2);
-      }
       console.log(`[Sync] Payslips: ${results.payslips.length}`);
     } catch(e) { errors.push({ section: 'payslips', error: e.message }); }
 
@@ -187,10 +175,8 @@ biloopPortalRouter.get('/sync', async (req, res) => {
       payslips: results.payslips.length
     };
     const total = Object.values(summary).reduce((a, b) => a + b, 0);
-
     lastSyncData = { timestamp: new Date().toISOString(), summary, results, errors, elapsed };
     console.log(`[Sync] DONE in ${elapsed}ms - Total: ${total} records`, summary);
-
     res.json({ success: true, timestamp: lastSyncData.timestamp, elapsed, summary, total, errors, data: results });
   } catch (err) {
     res.json({ success: false, error: err.message });
@@ -206,7 +192,7 @@ biloopPortalRouter.get('/sync-status', async (req, res) => {
   }
 });
 
-// === EXISTING DEBUG ENDPOINTS ===
+// === DEBUG ENDPOINTS ===
 biloopPortalRouter.get('/portal-test', async (req, res) => {
   try {
     sessionCookies = null; sessionExpiry = 0;
