@@ -4,19 +4,18 @@ export const biloopRouter = Router();
 
 const BILOOP_BASE = 'https://assempsa.biloop.es/api-global/v1';
 
-// Token cache (2h duration)
 let cachedToken = null;
 let tokenExpiry = 0;
 
-async function getToken(useCif = false) {
+async function getToken() {
   if (cachedToken && Date.now() < tokenExpiry - 300000) {
     return cachedToken;
   }
 
-  let url = `${BILOOP_BASE}/token`;
-  if (useCif && process.env.BILOOP_CIF) {
-    url += `?cif=${process.env.BILOOP_CIF}`;
-  }
+  const cif = process.env.BILOOP_CIF || '';
+  const url = `${BILOOP_BASE}/token${cif ? '?cif=' + cif : ''}`;
+
+  console.log('[Biloop] Requesting token with CIF:', cif, 'URL:', url);
 
   const res = await fetch(url, {
     headers: {
@@ -26,33 +25,25 @@ async function getToken(useCif = false) {
     }
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Token ${res.status}: ${text}`);
-  }
-
   const data = await res.json();
+  console.log('[Biloop] Token response status:', data.status);
+
   if (data.status === 'KO') {
     throw new Error(`Token error: ${data.message}`);
   }
 
-  cachedToken = data.token || data.data?.token || data;
+  cachedToken = data.data?.token || data.token || null;
+  if (!cachedToken) throw new Error('No token in response: ' + JSON.stringify(data));
   tokenExpiry = Date.now() + 7200000;
-  console.log('[Biloop] Token obtained successfully');
+  console.log('[Biloop] Token obtained, length:', cachedToken.length);
   return cachedToken;
 }
 
-async function biloopFetch(endpoint, params = {}) {
+async function biloopFetch(endpoint) {
   const token = await getToken();
-  const tokenStr = typeof token === 'string' ? token : JSON.stringify(token);
-  
-  let url = `${BILOOP_BASE}${endpoint}`;
-  const queryParams = new URLSearchParams(params).toString();
-  if (queryParams) url += `?${queryParams}`;
-
-  const res = await fetch(url, {
+  const res = await fetch(`${BILOOP_BASE}${endpoint}`, {
     headers: {
-      'token': tokenStr,
+      'token': token,
       'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY
     }
   });
@@ -60,130 +51,102 @@ async function biloopFetch(endpoint, params = {}) {
   return res.json();
 }
 
-// Test - try getCompanies, fallback to token info
-biloopRouter.get('/test', async (req, res) => {
-  try {
-    if (!process.env.BILOOP_USER || !process.env.BILOOP_PASSWORD) {
-      return res.json({ success: false, error: 'Credentials not configured' });
-    }
-    const token = await getToken();
-    // Try companies first
-    let data;
-    try {
-      data = await biloopFetch('/getCompanies');
-    } catch (e) {
-      data = { note: 'getCompanies failed, but token works', error: e.message };
-    }
-    res.json({ success: true, message: 'Biloop connected', tokenObtained: true, tokenType: typeof token, data });
-  } catch (err) {
-    res.json({ success: false, error: err.message });
-  }
-});
-
-// Raw token debug
 biloopRouter.get('/token-debug', async (req, res) => {
   try {
-    const url = `${BILOOP_BASE}/token`;
-    const response = await fetch(url, {
+    // Test both with and without CIF
+    const cif = process.env.BILOOP_CIF || '';
+    const results = {};
+
+    // With CIF
+    const r1 = await fetch(`${BILOOP_BASE}/token?cif=${cif}`, {
       headers: {
         'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY,
         'USER': process.env.BILOOP_USER,
         'PASSWORD': process.env.BILOOP_PASSWORD
       }
     });
-    const text = await response.text();
-    res.json({ status: response.status, raw: text });
+    results.withCif = { status: r1.status, body: await r1.json() };
+
+    // Without CIF
+    const r2 = await fetch(`${BILOOP_BASE}/token`, {
+      headers: {
+        'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY,
+        'USER': process.env.BILOOP_USER,
+        'PASSWORD': process.env.BILOOP_PASSWORD
+      }
+    });
+    results.withoutCif = { status: r2.status, body: await r2.json() };
+
+    res.json({ cif, results });
   } catch (err) {
     res.json({ error: err.message });
   }
 });
 
-biloopRouter.get('/companies', async (req, res) => {
+biloopRouter.get('/test', async (req, res) => {
   try {
-    const data = await biloopFetch('/getCompanies');
-    res.json({ success: true, data });
+    if (!process.env.BILOOP_USER) {
+      return res.json({ success: false, error: 'Credentials not configured' });
+    }
+    const token = await getToken();
+    let companiesData;
+    try {
+      companiesData = await biloopFetch('/getCompanies');
+    } catch (e) {
+      companiesData = { error: e.message };
+    }
+    res.json({ success: true, tokenOk: true, data: companiesData });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.json({ success: false, error: err.message });
   }
+});
+
+biloopRouter.get('/companies', async (req, res) => {
+  try { res.json({ success: true, data: await biloopFetch('/getCompanies') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 biloopRouter.get('/invoices', async (req, res) => {
-  try {
-    const data = await biloopFetch('/accounting/getInvoices');
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  try { res.json({ success: true, data: await biloopFetch('/accounting/getInvoices') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 biloopRouter.get('/providers', async (req, res) => {
-  try {
-    const data = await biloopFetch('/erp/erpProvider/getERPProviders');
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  try { res.json({ success: true, data: await biloopFetch('/erp/erpProvider/getERPProviders') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 biloopRouter.get('/workers', async (req, res) => {
-  try {
-    const data = await biloopFetch('/labor/getWorkers');
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  try { res.json({ success: true, data: await biloopFetch('/labor/getWorkers') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 biloopRouter.get('/documents', async (req, res) => {
-  try {
-    const data = await biloopFetch('/documents/getDirectory');
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  try { res.json({ success: true, data: await biloopFetch('/documents/getDirectory') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 biloopRouter.get('/customers', async (req, res) => {
-  try {
-    const data = await biloopFetch('/billing/getERPCustomers');
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  try { res.json({ success: true, data: await biloopFetch('/billing/getERPCustomers') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 biloopRouter.get('/expenses-invoices', async (req, res) => {
-  try {
-    const data = await biloopFetch('/erp/expenses/invoices/getInvoices');
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  try { res.json({ success: true, data: await biloopFetch('/erp/expenses/invoices/getInvoices') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 biloopRouter.get('/income-invoices', async (req, res) => {
-  try {
-    const data = await biloopFetch('/erp/incomes/invoices/getInvoices');
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  try { res.json({ success: true, data: await biloopFetch('/erp/incomes/invoices/getInvoices') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 biloopRouter.get('/payslips', async (req, res) => {
-  try {
-    const data = await biloopFetch('/labor/getPayslips');
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  try { res.json({ success: true, data: await biloopFetch('/labor/getPayslips') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 biloopRouter.get('/statistics', async (req, res) => {
-  try {
-    const data = await biloopFetch('/statistics/result/getResults');
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  try { res.json({ success: true, data: await biloopFetch('/statistics/result/getResults') }); }
+  catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
