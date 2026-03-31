@@ -130,7 +130,7 @@ export default function ProductInventory() {
 
     const existingProducts = await base44.entities.Product.list();
     const existingByName = {};
-    existingProducts.forEach(p => { existingByName[p.name.toLowerCase().trim()] = p; });
+    existingProducts.forEach(p => { existingByName[(p.name || '').toLowerCase().trim()] = p; });
 
     for (const [key, data] of Object.entries(productMap)) {
       const prices = data.prices.map(p => p.price).filter(p => p > 0);
