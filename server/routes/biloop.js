@@ -3,6 +3,7 @@ import { Router } from 'express';
 export const biloopRouter = Router();
 
 const BILOOP_BASE = 'https://assempsa.biloop.es/api-global/v1';
+const COMPANY_ID = 'E95251';
 
 let cachedToken = null;
 let tokenExpiry = 0;
@@ -11,12 +12,9 @@ async function getToken() {
   if (cachedToken && Date.now() < tokenExpiry - 300000) {
     return cachedToken;
   }
-
   const cif = process.env.BILOOP_CIF || '';
   const url = `${BILOOP_BASE}/token${cif ? '?cif=' + cif : ''}`;
-
   console.log('[Biloop] Requesting token with CIF:', cif, 'URL:', url);
-
   const res = await fetch(url, {
     headers: {
       'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY,
@@ -24,14 +22,11 @@ async function getToken() {
       'PASSWORD': process.env.BILOOP_PASSWORD
     }
   });
-
   const data = await res.json();
   console.log('[Biloop] Token response status:', data.status);
-
   if (data.status === 'KO') {
     throw new Error(`Token error: ${data.message}`);
   }
-
   cachedToken = data.data?.token || data.token || null;
   if (!cachedToken) throw new Error('No token in response: ' + JSON.stringify(data));
   tokenExpiry = Date.now() + 7200000;
@@ -41,7 +36,10 @@ async function getToken() {
 
 async function biloopFetch(endpoint) {
   const token = await getToken();
-  const res = await fetch(`${BILOOP_BASE}${endpoint}`, {
+  const separator = endpoint.includes('?') ? '&' : '?';
+  const url = `${BILOOP_BASE}${endpoint}${separator}Company_id=${COMPANY_ID}`;
+  console.log('[Biloop] Fetching:', url);
+  const res = await fetch(url, {
     headers: {
       'token': token,
       'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY
@@ -53,11 +51,8 @@ async function biloopFetch(endpoint) {
 
 biloopRouter.get('/token-debug', async (req, res) => {
   try {
-    // Test both with and without CIF
     const cif = process.env.BILOOP_CIF || '';
     const results = {};
-
-    // With CIF
     const r1 = await fetch(`${BILOOP_BASE}/token?cif=${cif}`, {
       headers: {
         'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY,
@@ -66,8 +61,6 @@ biloopRouter.get('/token-debug', async (req, res) => {
       }
     });
     results.withCif = { status: r1.status, body: await r1.json() };
-
-    // Without CIF
     const r2 = await fetch(`${BILOOP_BASE}/token`, {
       headers: {
         'SUBSCRIPTION_KEY': process.env.ASSEMPSA_BILOOP_API_KEY,
@@ -76,8 +69,7 @@ biloopRouter.get('/token-debug', async (req, res) => {
       }
     });
     results.withoutCif = { status: r2.status, body: await r2.json() };
-
-    res.json({ cif, results });
+    res.json({ cif, companyId: COMPANY_ID, results });
   } catch (err) {
     res.json({ error: err.message });
   }
@@ -95,7 +87,7 @@ biloopRouter.get('/test', async (req, res) => {
     } catch (e) {
       companiesData = { error: e.message };
     }
-    res.json({ success: true, tokenOk: true, data: companiesData });
+    res.json({ success: true, tokenOk: true, companyId: COMPANY_ID, data: companiesData });
   } catch (err) {
     res.json({ success: false, error: err.message });
   }
