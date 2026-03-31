@@ -749,6 +749,7 @@ export default function DocumentArchive() {
               ref={fileInputRef}
               type="file"
               multiple
+                            accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp,.webp,.tiff,.zip,.rar,.7z,.tar,.gz,.doc,.docx,.xls,.xlsx,.csv,.txt,.xml"
               className="hidden"
               onChange={(e) => handleFileUpload(e.target.files)}
             />
