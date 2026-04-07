@@ -117,7 +117,7 @@ export const syncEmailInvoices = async () => {
     if (!providerMap.has(d.providerEmail)) {
       providerMap.set(d.providerEmail, {
         id: genId(), name: d.provider, email: d.providerEmail,
-        doc_count: 0, category: d.type === 'factura' ? 'proveedor' : 'otro',
+        doc_count: 0, category: 'suministros', status: 'activo', cif: '', phone: '', address: '', rating: 3, notes: '',
         created_date: new Date().toISOString()
       });
     }
