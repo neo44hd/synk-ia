@@ -108,7 +108,70 @@ export const biloopDownloadPdf = async () => ({ success: false, message: 'Usar p
 export const nvrLocalConnect = async () => ({ connected: true, message: 'ESEECLOUD OK' });
 export const emailAutoProcessor = async () => emailScan();
 export const emailAutoClassifier = async () => emailScan();
-export const smartEmailProcessor = async () => emailScan();
+// ===== SMART EMAIL PROCESSOR - Fetches emails and stores in localStorage =====
+export const smartEmailProcessor = async () => {
+  try {
+    const r = await vpsCall('/api/email/fetch?limit=100');
+    if (r.success && r.emails) {
+      const STORAGE_KEY = 'synkia_data_emailmessage';
+      const CONTACT_KEY = 'synkia_data_emailcontact';
+      const existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      const existingIds = new Set(existing.map(e => e.message_id));
+      const contacts = JSON.parse(localStorage.getItem(CONTACT_KEY) || '[]');
+      const contactMap = new Map(contacts.map(c => [c.email, c]));
+      let newCount = 0;
+      r.emails.forEach(email => {
+        if (!existingIds.has(email.id)) {
+          const senderEmail = (email.from || '').replace(/.*</, '').replace(/>.*/, '').trim();
+          const senderName = (email.from || '').replace(/<.*/, '').replace(/"/g, '').trim();
+          existing.push({
+            id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            message_id: email.id,
+            subject: email.subject || '(sin asunto)',
+            sender_name: senderName,
+            sender_email: senderEmail,
+            received_date: email.date,
+            body_preview: (email.text || '').substring(0, 500),
+            html_body: '',
+            has_attachments: (email.attachments || []).length > 0,
+            attachment_names: (email.attachments || []).map(a => a.filename).filter(Boolean),
+            is_read: false,
+            is_starred: false,
+            folder: 'inbox',
+            category: 'otros',
+            ai_summary: '',
+            ai_action: '',
+            priority: 'media',
+            created_date: new Date().toISOString(),
+            updated_date: new Date().toISOString()
+          });
+          newCount++;
+          if (senderEmail && !contactMap.has(senderEmail)) {
+            const contact = {
+              id: 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+              name: senderName,
+              email: senderEmail,
+              emails_received: 1,
+              is_favorite: false,
+              is_blocked: false,
+              created_date: new Date().toISOString()
+            };
+            contacts.push(contact);
+            contactMap.set(senderEmail, contact);
+          } else if (senderEmail && contactMap.has(senderEmail)) {
+            contactMap.get(senderEmail).emails_received = (contactMap.get(senderEmail).emails_received || 0) + 1;
+          }
+        }
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+      localStorage.setItem(CONTACT_KEY, JSON.stringify(contacts));
+      return { success: true, results: { new_emails: newCount, total: existing.length } };
+    }
+    return { success: false, error: r.error || 'No emails returned' };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+};
 export const generateExecutiveReport = async () => ({ success: true, report: { date: new Date().toISOString() } });
 export const intelligentAlerts = async () => ({ success: true, alerts: [] });
 export const systemAnalytics = async () => ({ success: true, analytics: {} });
@@ -152,27 +215,32 @@ export const mergeEmployeeDuplicates = async () => ({ success: true, merged: 0 }
 export const syncPayrollsToEmployees = async () => emailPayslips();
 // ===== MAIN WITH INVOKE =====
 const allFunctions = {
-  biloopAutoSync, revoAutoSync, emailAutoProcessor, biloopRealSync,
-  revoRealSync, resetAndSyncReal, emailAutoClassifier, eseeCloudSync,
-  generateExecutiveReport, intelligentAlerts, systemAnalytics,
-  checkSecretsStatus, testGmailConnection, testRevoConnection,
-  testBiloopConnection, biloopGetDocuments, biloopUploadInvoice,
-  biloopDownloadPdf, systemFullScan, nvrLocalConnect, fullBusinessScan,
-  testBiloopReal, smartEmailProcessor, processZipFile, processBulkPayrolls,
-  clockIn, clockOut, employeeAuth, generateAttendanceReport,
-  processFlexibleCSV, mergeEmployeeDuplicates, syncPayrollsToEmployees,
-  emailScan, emailPayslips, emailWorkers, emailInvoices, getTimeRecords,
-  ollamaClassify, ollamaModels, ollamaHealth,
-  revoGetProducts, revoGetWorkers, revoGetSales
+  biloopAutoSync, revoAutoSync, emailAutoProcessor, biloopRealSync, revoRealSync,
+  resetAndSyncReal, emailAutoClassifier, eseeCloudSync, generateExecutiveReport,
+  intelligentAlerts, systemAnalytics, checkSecretsStatus, testGmailConnection,
+  testRevoConnection, testBiloopConnection, biloopGetDocuments, biloopUploadInvoice,
+  biloopDownloadPdf, systemFullScan, nvrLocalConnect, fullBusinessScan, testBiloopReal,
+  smartEmailProcessor, processZipFile, processBulkPayrolls, clockIn, clockOut,
+  employeeAuth, generateAttendanceReport, processFlexibleCSV, mergeEmployeeDuplicates,
+  syncPayrollsToEmployees, emailScan, emailPayslips, emailWorkers, emailInvoices,
+  getTimeRecords, ollamaClassify, ollamaModels, ollamaHealth, revoGetProducts,
+  revoGetWorkers, revoGetSales
 };
 export const functionsService = {
   ...allFunctions,
   invoke: async (functionName, params) => {
     console.log(`[SYNK-IA] invoke: ${functionName}`, params);
     const fn = allFunctions[functionName];
-    if (!fn) { console.error(`[SYNK-IA] Not found: ${functionName}`); return { data: null }; }
-    try { const result = await fn(params); return { data: result }; }
-    catch (e) { return { data: { success: false, error: e.message } }; }
+    if (!fn) {
+      console.error(`[SYNK-IA] Not found: ${functionName}`);
+      return { data: null };
+    }
+    try {
+      const result = await fn(params);
+      return { data: result };
+    } catch (e) {
+      return { data: { success: false, error: e.message } };
+    }
   }
 };
 export default functionsService;
