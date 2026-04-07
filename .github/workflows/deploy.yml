@@ -82,7 +82,11 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'ENDSSH'
-          set -e
+          # Disable Tailscale funnel/serve to free port 443
+          sudo tailscale funnel off 2>/dev/null || true
+          sudo tailscale serve reset 2>/dev/null || true
+          sudo tailscale funnel reset 2>/dev/null || true
+          sleep 2
           # Open ports in iptables
           sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || true
           sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || true
@@ -121,7 +125,7 @@ jobs:
           NGINX
           # 3. Create symlink
           sudo ln -sf /etc/nginx/sites-available/sinkialabs /etc/nginx/sites-enabled/sinkialabs
-          # 4. Test and reload nginx (not restart)
+          # 4. Test and reload nginx
           sudo nginx -t
           sudo systemctl reload nginx 2>/dev/null || sudo systemctl start nginx
           # 5. Run certbot to add SSL
