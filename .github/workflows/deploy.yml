@@ -121,7 +121,7 @@ jobs:
           }
           NGINX
           sudo ln -sf /etc/nginx/sites-available/sinkialabs /etc/nginx/sites-enabled/sinkialabs
-          sudo rm -f /etc/nginx/sites-enabled/default
+          sudo rm -f /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf 2>/dev/null || true
           sudo nginx -t && sudo systemctl reload nginx
           # SSL with certbot
           sudo certbot --nginx -d sinkialabs.com -d www.sinkialabs.com --non-interactive --agree-tos --email info@chickenpalace.es --redirect 2>/dev/null || echo "SSL already configured or certbot failed"
