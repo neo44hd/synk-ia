@@ -296,6 +296,6 @@ export default functionsService;
   const oneHour = 3600000;
   if (!lastSync || (Date.now() - new Date(lastSync).getTime()) > oneHour) {
     console.log('[SYNK-IA] Auto-sync: data is stale, syncing...');
-    setTimeout(() => fullDataSync().catch(e => console.error('[SYNK-IA] Auto-sync failed:', e)), 3000);
+    setTimeout(() => fullDataSync().then(() => { if(!sessionStorage.getItem('synkia_synced')) { sessionStorage.setItem('synkia_synced','1'); window.location.reload(); } }).catch(e => console.error('[SYNK-IA] Auto-sync failed:', e)), 2000);
   }
 })();
