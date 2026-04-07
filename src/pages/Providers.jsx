@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client"; import { syncEmailInvoices } from "@/services/functionsService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ export default function Providers() {
     logo_url: ''
   });
 
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient();   useEffect(() => { if (!isLoading && providers.length === 0) { syncEmailInvoices().then(() => { queryClient.invalidateQueries({ queryKey: ['providers'] }); queryClient.invalidateQueries({ queryKey: ['invoices'] }); }); } }, [isLoading]);
 
   const { data: providers = [], isLoading } = useQuery({
     queryKey: ['providers'],
