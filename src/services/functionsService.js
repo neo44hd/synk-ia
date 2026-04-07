@@ -123,14 +123,14 @@ export const syncEmailInvoices = async () => {
     }
     providerMap.get(d.providerEmail).doc_count++;
   });
-  store('provider', [...providerMap.values()]);
+  const providers = (r.providers || []).map(p => ({ id: genId(), name: p.name, email: p.email, doc_count: p.docCount || 0, category: 'suministros', status: 'activo', cif: '', phone: '', address: '', rating: 3, notes: '', created_date: new Date().toISOString() })); store('provider', providers); console.log('[SYNK-IA] Stored providers:', providers.length);
   const payrolls = docs.filter(d => d.type === 'nomina').map(d => ({
     id: genId(), provider: d.provider, filename: d.filename,
     date: d.date, file_size: d.fileSize, employee: '',
     created_date: new Date().toISOString()
   }));
   store('payroll', payrolls);
-  return { success: true, invoices: invoices.length, providers: providerMap.size, payrolls: payrolls.length };
+  return { success: true, invoices: invoices.length, providers: providers.length, payrolls: payrolls.length };
 };
 export const syncBiloopData = async () => {
   const r = await vpsCall('/api/biloop/sync');
