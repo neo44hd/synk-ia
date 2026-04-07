@@ -206,9 +206,9 @@ export default function AutomationHub() {
 
   const runAllSync = async () => {
     toast.info('🔄 Iniciando sincronización completa...');
-    await runBiloopSync();
-    await runRevoSync();
-    await runEmailProcessor();
+    await base44.functions.invoke('fullDataSync'); //
+//    await runRevoSync();
+//    await runEmailProcessor();
     toast.success('🎉 ¡Sincronización completa finalizada!');
     setNextSyncIn(3600);
   };
