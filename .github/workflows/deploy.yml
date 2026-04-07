@@ -87,6 +87,10 @@ jobs:
           sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || true
           sudo netfilter-persistent save 2>/dev/null || sudo iptables-save | sudo tee /etc/iptables/rules.v4 2>/dev/null || true
           sudo apt-get install -y certbot python3-certbot-nginx 2>/dev/null || true
+          # Stop nginx cleanly first to avoid port conflicts
+          sudo systemctl stop nginx 2>/dev/null || true
+          sudo fuser -k 80/tcp 2>/dev/null || true
+          sudo fuser -k 443/tcp 2>/dev/null || true
           # 1. Clean ALL old nginx site configs
           sudo rm -f /etc/nginx/sites-enabled/* 2>/dev/null || true
           sudo rm -f /etc/nginx/sites-available/sinkialabs 2>/dev/null || true
@@ -97,7 +101,6 @@ jobs:
               server_name sinkialabs.com www.sinkialabs.com;
               root /var/www/sinkialabs;
               index index.html;
-              # API proxy to backend
               location /api/ {
                   proxy_pass http://127.0.0.1:3001;
                   proxy_http_version 1.1;
@@ -110,11 +113,9 @@ jobs:
                   proxy_connect_timeout 30s;
                   proxy_read_timeout 120s;
               }
-              # Frontend SPA
               location / {
                   try_files $uri $uri/ /index.html;
               }
-              # Cache static assets
               location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
                   expires 1h;
                   add_header Cache-Control "public, immutable";
@@ -123,14 +124,14 @@ jobs:
           NGINX
           # 3. Create symlink
           sudo ln -sf /etc/nginx/sites-available/sinkialabs /etc/nginx/sites-enabled/sinkialabs
-          # 4. Test and reload nginx with HTTP config
-          sudo nginx -t && sudo systemctl reload nginx
-          # 5. Run certbot to add SSL
-          sudo certbot --nginx -d sinkialabs.com -d www.sinkialabs.com --non-interactive --agree-tos --email info@chickenpalace.es --redirect 2>&1 || echo "Certbot failed, trying install"
-          # 6. If certbot failed to install, try explicit install
-          sudo certbot install --cert-name sinkialabs.com --nginx --redirect --non-interactive 2>&1 || echo "Certbot install also failed"
-          # 7. Final restart to ensure SSL is loaded
-          sudo nginx -t && sudo systemctl restart nginx
+          # 4. Start nginx fresh with HTTP config
+          sudo nginx -t && sudo systemctl start nginx
+          # 5. Run certbot to add SSL (certbot handles nginx reload internally)
+          sudo certbot --nginx -d sinkialabs.com -d www.sinkialabs.com --non-interactive --agree-tos --email info@chickenpalace.es --redirect 2>&1 || echo "Certbot failed"
+          # 6. Ensure nginx is running after certbot (never fail the step)
+          sudo systemctl is-active nginx || sudo systemctl start nginx 2>/dev/null || true
+          echo "Nginx final status:"
+          sudo systemctl is-active nginx || true
           ENDSSH
 
       - name: Cleanup
