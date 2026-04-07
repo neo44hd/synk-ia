@@ -404,3 +404,60 @@ emailRouter.get('/invoices-detail', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 });
+// Fetch emails with pagination support
+emailRouter.get('/fetch-page', async (req, res) => {
+  try {
+    const { folder = 'INBOX', limit = 100, since = '2026-01-01', page = 1 } = req.query;
+    const imap = new Imap(getImapConfig());
+    const emails = [];
+    await new Promise((resolve, reject) => {
+      imap.once('ready', () => {
+        imap.openBox(folder, true, (err) => {
+          if (err) { reject(err); return; }
+          const searchCriteria = [['SINCE', since]];
+          imap.search(searchCriteria, (err, results) => {
+            if (err) { reject(err); return; }
+            if (!results.length) { imap.end(); resolve(); return; }
+            const lim = parseInt(limit);
+            const pg = parseInt(page);
+            const totalResults = results.length;
+            const totalPages = Math.ceil(totalResults / lim);
+            const start = Math.max(0, totalResults - (lim * pg));
+            const end = Math.max(0, totalResults - (lim * (pg - 1)));
+            if (start >= end) { imap.end(); resolve(); return; }
+            const ids = results.slice(start, end);
+            const f = imap.fetch(ids, { bodies: '', struct: true });
+            let pending = ids.length;
+            f.on('message', (msg) => {
+              msg.on('body', (stream) => {
+                simpleParser(stream, (err, parsed) => {
+                  if (!err) {
+                    emails.push({
+                      id: parsed.messageId,
+                      from: parsed.from?.text,
+                      to: parsed.to?.text,
+                      subject: parsed.subject,
+                      date: parsed.date,
+                      text: parsed.text?.substring(0, 500),
+                      attachments: (parsed.attachments || []).map(a => ({
+                        filename: a.filename, contentType: a.contentType, size: a.size
+                      }))
+                    });
+                  }
+                  pending--;
+                  if (pending <= 0) imap.end();
+                });
+              });
+            });
+            f.once('end', () => { imap.end(); });
+          });
+        });
+      });
+      imap.once('end', resolve);
+      imap.once('error', reject);
+      imap.connect();
+    });
+    await new Promise(r => setTimeout(r, 1000));
+    res.json({ success: true, count: emails.length, page: parseInt(page), emails });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
