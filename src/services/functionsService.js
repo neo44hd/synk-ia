@@ -126,7 +126,8 @@ export const smartEmailProcessor = async () => {
     }
     // Fetch from API - use since=2026-01-01 for this year
     const since = '2026-01-01';
-    const r = await vpsCall(`/api/email/fetch?limit=100&since=${since}`);
+        const currentPage = parseInt(localStorage.getItem('synkia_email_page') || '1');
+        const r = await vpsCall(`/api/email/fetch-page?limit=100&since=${since}&page=${currentPage}`);
     if (!r.success || !r.emails) return { success: false, error: r.error || 'No emails' };
     let newCount = 0;
     r.emails.forEach(email => {
@@ -181,8 +182,9 @@ export const smartEmailProcessor = async () => {
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
     localStorage.setItem(CONTACT_KEY, JSON.stringify(contacts));
-    return { success: true, results: { new_emails: newCount, reclassified, total: existing.length } };
-  } catch (e) { return { success: false, error: e.message }; }
+        if (newCount > 0) localStorage.setItem('synkia_email_page', String(currentPage + 1));
+            return { success: true, results: { new_emails: newCount, reclassified, total: existing.length, page: currentPage } };
+    
 };
 export const generateExecutiveReport = async () => ({ success: true, report: { date: new Date().toISOString() } });
 export const intelligentAlerts = async () => ({ success: true, alerts: [] });
