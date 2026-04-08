@@ -178,3 +178,16 @@ export default {
   ClassifyEmail,
   AI,
 };
+
+// ── Export nombrado que espera base44Client.js ────────────────────────────────
+// base44Client.js hace: import { integrationsService } from './integrationsService'
+export const integrationsService = {
+  InvokeLLM,
+  GetChatResponse,
+  SendEmail,
+  UploadFile,
+  ExtractDataFromUploadedFile,
+  ClassifyDocument,
+  ClassifyEmail,
+  AI,
+};

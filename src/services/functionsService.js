@@ -140,3 +140,27 @@ export async function fullDataSync() {
 
   return { success: true, results, timestamp: new Date().toISOString() };
 }
+
+// ── Export nombrado que espera base44Client.js ────────────────────────────────
+// base44Client.js hace: import { functionsService } from './functionsService'
+export const functionsService = {
+  ollamaHealth,
+  ollamaModels,
+  ollamaClassify,
+  ollamaClassifyEmail,
+  ollamaGenerate,
+  fetchEmails,
+  scanEmails,
+  fetchPayslips,
+  fetchInvoices,
+  testEmailConnection,
+  fetchRevoProducts,
+  fetchRevoCategorias,
+  fetchRevoSales,
+  syncRevoWorkers,
+  syncBiloopData,
+  getBiloopSyncStatus,
+  fetchBiloopDocuments,
+  serverHealth,
+  fullDataSync,
+};
