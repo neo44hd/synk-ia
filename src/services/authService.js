@@ -13,6 +13,7 @@ const DEFAULT_ADMIN = {
   email: 'admin@chickenpalace.es',
   full_name: 'David Roldan',
   role: 'admin',
+  permission_level: 'admin',
   department: 'Dirección',
   avatar_url: null,
   created_at: new Date().toISOString()

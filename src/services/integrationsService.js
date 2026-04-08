@@ -306,7 +306,7 @@ export async function ClassifyEmail({ subject, body, from }) {
 
 // ─── Namespace compatible con base44 ─────────────────────────────────────────
 export const AI = { GetChatResponse };
-export const Core = { UploadFile, ExtractDataFromUploadedFile };
+export const Core = { UploadFile, ExtractDataFromUploadedFile, InvokeLLM, UploadPrivateFile: UploadFile };
 
 export default {
   InvokeLLM,
