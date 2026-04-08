@@ -1,5 +1,5 @@
 
 export function createPageUrl(pageName: string) {
-    if (!pageName) return '/dashboard';
+        if (!pageName) return '/ceodashboard';
     return '/' + pageName.toLowerCase().replace(/ /g, '-');
 }
