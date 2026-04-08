@@ -238,3 +238,66 @@ aiRouter.post('/classify-email', async (req, res) => {
 aiRouter.get('/status', (req, res) => {
   res.json({ success: true, engine: 'node-llama-cpp', ...llamaService.getInfo() });
 });
+
+
+// ─── POST /api/ai/extract-document ───────────────────────────────────────────
+// Extrae datos estructurados de texto de documento según un JSON Schema dinámico.
+// A diferencia de /classify (schema fijo), aquí el schema viene del cliente.
+// Usado por integrationsService.ExtractDataFromUploadedFile.
+aiRouter.post('/extract-document', async (req, res) => {
+  const { text, json_schema, filename } = req.body;
+
+  if (!text || text.trim().length < 10) {
+    return res.json({ status: 'error', output: null, details: 'Texto insuficiente para extracción' });
+  }
+
+  const schemaStr = JSON.stringify(json_schema || {}, null, 2);
+  const prompt =
+`Extrae los datos de este documento empresarial y devuelve un JSON que siga EXACTAMENTE el esquema indicado.
+
+ESQUEMA REQUERIDO:
+${schemaStr}
+
+DOCUMENTO (${filename || 'desconocido'}):
+${text.substring(0, 5000)}
+
+REGLAS IMPORTANTES:
+- Devuelve SOLO JSON válido, sin explicaciones ni markdown
+- Usa null para campos que no encuentres en el documento
+- Si el esquema tiene "invoices" (array), incluye TODOS los registros de facturas detectados
+- Fechas en formato YYYY-MM-DD
+- Importes como números (sin símbolo €)`;
+
+  try {
+    const { response, durationMs } = await llamaService.generate({
+      prompt,
+      system: `Eres un extractor preciso de datos de documentos empresariales españoles (facturas, nóminas, contratos).
+Devuelves ÚNICAMENTE JSON válido sin texto adicional ni bloques markdown.`,
+      format:     'json',
+      jsonSchema: json_schema || { type: 'object' },
+      temperature: 0.1,
+      maxTokens:  1024,
+    });
+
+    const parsed = safeParseJSON(response);
+
+    if (parsed && typeof parsed === 'object' && !parsed.raw) {
+      return res.json({
+        status:   'success',
+        output:   parsed,
+        model:    llamaService.getInfo().name,
+        duration: durationMs,
+      });
+    }
+
+    return res.json({
+      status:  'error',
+      output:  null,
+      details: 'El LLM no devolvió JSON válido',
+      raw:     response?.substring(0, 200),
+    });
+  } catch (err) {
+    console.error('[extract-document]', err.message);
+    return res.json({ status: 'error', output: null, details: err.message });
+  }
+});
