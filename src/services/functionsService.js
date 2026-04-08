@@ -2,14 +2,14 @@
  * functionsService.js — FIXED
  *
  * Cambios respecto al original:
- * 1. /api/ollama/* → /api/ai/*  (compatible: el nuevo ai.js registra ambos paths)
- * 2. /api/ollama/health → /api/ai/status  (endpoint existente, antes faltaba)
- * 3. /api/revo/workers → /api/revo/workers  (endpoint añadido en revo.js fix)
- * 4. /api/biloop/sync  → /api/biloop/sync   (endpoint añadido en biloop.js fix)
+ * 1. /api/ollama/* → /api/ai/* (compatible: el nuevo ai.js registra ambos paths)
+ * 2. /api/ollama/health → /api/ai/status (endpoint existente, antes faltaba)
+ * 3. /api/revo/workers → /api/revo/workers (endpoint añadido en revo.js fix)
+ * 4. /api/biloop/sync → /api/biloop/sync (endpoint añadido en biloop.js fix)
  * 5. Todos los fetch con manejo de error unificado
  * 6. fullDataSync mejorado: no bloquea si un servicio falla
+ * 7. invoke() para compatibilidad con base44.functions.invoke()
  */
-
 // ─── Helper de fetch con error handling ──────────────────────────────────────
 async function apiFetch(url, options = {}) {
   try {
@@ -26,15 +26,14 @@ async function apiFetch(url, options = {}) {
 }
 
 // ─── AI / Ollama (ahora apunta a node-llama-cpp) ─────────────────────────────
-
 export const ollamaHealth = () =>
-  apiFetch('/api/ai/status');                         // FIX: antes /api/ollama/health (no existía)
+  apiFetch('/api/ai/status'); // FIX: antes /api/ollama/health (no existía)
 
 export const ollamaModels = () =>
   apiFetch('/api/ai/models');
 
 export const ollamaClassify = (text, filename) =>
-  apiFetch('/api/ai/classify', {                      // FIX: /api/ollama → /api/ai
+  apiFetch('/api/ai/classify', { // FIX: /api/ollama → /api/ai
     method: 'POST',
     body: JSON.stringify({ text, filename }),
   });
@@ -52,7 +51,6 @@ export const ollamaGenerate = (prompt, system, format = 'text') =>
   });
 
 // ─── Email ───────────────────────────────────────────────────────────────────
-
 export const fetchEmails = (params = {}) => {
   const q = new URLSearchParams({ folder: 'INBOX', limit: 100, ...params });
   return apiFetch(`/api/email/fetch-page?${q}`);
@@ -77,7 +75,6 @@ export const testEmailConnection = () =>
   apiFetch('/api/email/test');
 
 // ─── Revo POS ─────────────────────────────────────────────────────────────────
-
 export const fetchRevoProducts = () =>
   apiFetch('/api/revo/products');
 
@@ -89,12 +86,11 @@ export const fetchRevoSales = (params = {}) => {
   return apiFetch(`/api/revo/sales?${q}`);
 };
 
-export const syncRevoWorkers = () =>             // FIX: endpoint antes faltaba
+export const syncRevoWorkers = () => // FIX: endpoint antes faltaba
   apiFetch('/api/revo/workers');
 
 // ─── Biloop ───────────────────────────────────────────────────────────────────
-
-export const syncBiloopData = () =>              // FIX: endpoint antes faltaba
+export const syncBiloopData = () => // FIX: endpoint antes faltaba
   apiFetch('/api/biloop/sync');
 
 export const getBiloopSyncStatus = () =>
@@ -106,25 +102,51 @@ export const fetchBiloopDocuments = (params = {}) => {
 };
 
 // ─── Health ───────────────────────────────────────────────────────────────────
-
 export const serverHealth = () =>
   apiFetch('/api/health');
 
-// ─── Sync completo (resiliente: un fallo no para los demás) ──────────────────
+// ─── invoke() — Compatibilidad con base44.functions.invoke('nombre', params) ─
+// Mapea nombres de funciones antiguas a endpoints reales del backend
+const FUNCTION_MAP = {
+  biloopRealSync: () => apiFetch('/api/biloop/sync', { method: 'POST' }),
+  processZipFile: (params) => apiFetch('/api/biloop/process-zip', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  }),
+  syncEmailInvoices: (params) => apiFetch('/api/email/invoices', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  }),
+  fullSync: () => fullDataSync(),
+};
 
+export async function invoke(functionName, params = {}) {
+  console.log(`[functionsService] invoke('${functionName}')`, params);
+  const fn = FUNCTION_MAP[functionName];
+  if (!fn) {
+    console.warn(`[functionsService] Función '${functionName}' no mapeada, intentando /api/functions/${functionName}`);
+    return apiFetch(`/api/functions/${functionName}`, {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+  const result = await fn(params);
+  // Wrap in { data: ... } para compatibilidad con base44 SDK
+  return { data: result };
+}
+
+// ─── Sync completo (resiliente: un fallo no para los demás) ──────────────────
 export async function fullDataSync() {
   const results = {};
-
   const tasks = [
-    ['emails',   () => scanEmails()],
-    ['revo',     () => fetchRevoProducts()],
+    ['emails', () => scanEmails()],
+    ['revo', () => fetchRevoProducts()],
     ['payslips', () => fetchPayslips()],
-    ['biloop',   () => syncBiloopData()],
+    ['biloop', () => syncBiloopData()],
   ];
 
   // Corre todas en paralelo — si una falla, las demás continúan
   const settled = await Promise.allSettled(tasks.map(([, fn]) => fn()));
-
   tasks.forEach(([key], i) => {
     const r = settled[i];
     results[key] = r.status === 'fulfilled' ? r.value : { success: false, error: r.reason?.message };
@@ -147,7 +169,7 @@ export async function fullDataSync() {
   };
 
   if (results.emails?.documents) await syncToBackend('emailmessage', results.emails.documents);
-  if (results.revo?.products)    await syncToBackend('product', results.revo.products);
+  if (results.revo?.products) await syncToBackend('product', results.revo.products);
   if (results.payslips?.payslips) await syncToBackend('payroll', results.payslips.payslips);
 
   return { success: true, results, timestamp: new Date().toISOString() };
@@ -156,6 +178,7 @@ export async function fullDataSync() {
 // ── Export nombrado que espera base44Client.js ────────────────────────────────
 // base44Client.js hace: import { functionsService } from './functionsService'
 export const functionsService = {
+  invoke,
   ollamaHealth,
   ollamaModels,
   ollamaClassify,
