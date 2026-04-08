@@ -51,6 +51,8 @@ jobs:
       - name: Deploy backend
         run: |
           rsync -avz --delete \
+            --exclude 'uploads/' \
+            --exclude 'data/' \
             -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
             server/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/opt/sinkia-backend/
