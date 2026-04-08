@@ -12,7 +12,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
-import { mkdirSync, existsSync } from 'fs';
+import { mkdirSync, existsSync, readdirSync, statSync } from 'fs';
 
 // En producción process.cwd() = /opt/sinkia-backend → uploads en /opt/sinkia-backend/uploads
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads');
@@ -49,6 +49,22 @@ filesRouter.post('/upload', upload.single('file'), (req, res) => {
     name: req.file.originalname,
     size: req.file.size,
   });
+});
+
+// ── GET /api/files/list ─────────────────────────────────────────────────────
+filesRouter.get('/list', (_req, res) => {
+  try {
+    const files = readdirSync(UPLOADS_DIR)
+      .map(name => {
+        const stats = statSync(path.join(UPLOADS_DIR, name));
+        return { name, size: stats.size, modified: stats.mtime };
+      })
+      .sort((a, b) => b.modified - a.modified)
+      .slice(0, 20);
+    res.json({ success: true, files });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── GET /api/files/serve/:filename ────────────────────────────────────────────
