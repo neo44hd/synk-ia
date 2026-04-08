@@ -185,7 +185,7 @@ export default function Invoices() {
   const processFile = async (file) => {
     setIsUploading(true);
     setUploadProgress(5);
-    setProcessStatus('Subiendo archivo...');
+    setProcessStatus('Subiendo archivo... (v3)');
 
     try {
       // 1. Upload (también guarda en _pendingFiles para PDF.js)
