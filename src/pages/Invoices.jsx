@@ -187,22 +187,69 @@ export default function Invoices() {
     }
   };
 
+  // ─── Helpers de normalización (guardan contra objetos {value,confidence}) ─────
+  const strVal = (v) => {
+    if (!v && v !== 0) return null;
+    if (typeof v === 'object' && 'value' in v) return v.value ?? null;
+    return typeof v === 'string' ? v : String(v);
+  };
+  const numVal = (v) => {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'object' && 'value' in v) return typeof v.value === 'number' ? v.value : null;
+    return typeof v === 'number' ? v : null;
+  };
+
+  // ─── Parser de respuesta LLM → array de facturas ──────────────────────────────
+  const parseInvoices = (raw) => {
+    const clean = (s) => typeof s === 'string'
+      ? s.split('```json').join('').split('```').join('').trim()
+      : JSON.stringify(s);
+    try {
+      const parsed = JSON.parse(clean(raw));
+      if (Array.isArray(parsed?.invoices) && parsed.invoices.length > 0) return parsed.invoices;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (parsed?.invoice_number || parsed?.total) return [parsed];
+      return [];
+    } catch {
+      const match = String(raw).match(/\{[\s\S]*?\}(?=[\s]*$|[\s]*```)/)?.[0]
+        || String(raw).match(/\{[\s\S]*\}/)?.[0];
+      if (!match) return [];
+      try {
+        const parsed = JSON.parse(match);
+        return parsed?.invoices || (Array.isArray(parsed) ? parsed : [parsed]);
+      } catch { return []; }
+    }
+  };
+
+  // ─── Prompt LLM para extracción de facturas ───────────────────────────────────
+  const buildPrompt = (text) =>
+    `Analiza este documento y extrae TODAS las facturas que aparezcan.
+Devuelve SOLO un JSON con esta estructura exacta, sin texto adicional:
+{"invoices":[{"provider_name":"Empresa S.L.","provider_cif":"B12345678","invoice_number":"FAC-001","invoice_date":"2024-01-31","due_date":null,"subtotal":100.00,"iva":21.00,"total":121.00,"category":"suministros"}]}
+
+Categories: alimentacion, bebidas, limpieza, suministros, servicios, nominas, alquiler, equipamiento, otros.
+Usa null para campos no encontrados.
+
+DOCUMENTO:
+${text.substring(0, 6000)}`;
+
   const processFile = async (file) => {
     setIsUploading(true);
     setUploadProgress(5);
-    setProcessStatus('Subiendo archivo... (v3)');
+    setProcessStatus('Subiendo archivo...');
 
     try {
-      // 1. Upload (también guarda en _pendingFiles para PDF.js)
+      // 1. Upload
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       setUploadProgress(15);
       setProcessStatus('Extrayendo texto del PDF...');
 
-      // 2. Extraer texto client-side con PDF.js
+      // 2. Extracción client-side con PDF.js
       const { extractTextFromFile } = await import('@/services/integrationsService');
       let pdfText = await extractTextFromFile(file);
+      let pageTexts = null; // null = sin info por página (PDF digital)
 
-      // Si el PDF es escaneado (sin texto seleccionable), intentar OCR server-side
+      // 3. Si no hay texto → OCR server-side
       if (!pdfText || pdfText.trim().length < 30) {
         setProcessStatus('PDF escaneado — aplicando OCR...');
         try {
@@ -211,61 +258,59 @@ export default function Invoices() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ file_url })
           });
+          if (!ocrRes.ok) throw new Error(`OCR HTTP ${ocrRes.status}`);
           const ocrData = await ocrRes.json();
           if (ocrData.success && ocrData.text && ocrData.text.length > 30) {
             pdfText = ocrData.text;
-            setProcessStatus(`OCR completado (${ocrData.pages} páginas) — analizando...`);
+            pageTexts = ocrData.pageTexts || null;
+            setProcessStatus(`OCR listo: ${ocrData.pages} página${ocrData.pages !== 1 ? 's' : ''} — analizando...`);
           } else {
             toast.error('No se pudo extraer texto del PDF escaneado');
             return;
           }
         } catch (ocrErr) {
-          toast.error('Error en OCR. Asegúrate de que el PDF es legible.');
+          console.error('[OCR]', ocrErr);
+          toast.error('Error en OCR: ' + (ocrErr.message || 'PDF no legible'));
           return;
         }
       }
 
       setUploadProgress(35);
-      setProcessStatus('Analizando facturas con IA...');
 
-      // 3. InvokeLLM con prompt simple (evita grammar-constrained schema que confunde modelos 3B)
-      const rawResponse = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analiza este documento y extrae TODAS las facturas que aparezcan.
-Devuelve SOLO un JSON con esta estructura exacta, sin texto adicional:
-{"invoices":[{"provider_name":"Nombre empresa","provider_cif":"B12345678","invoice_number":"FAC-001","invoice_date":"2024-01-31","due_date":"2024-02-28","subtotal":100.00,"iva":21.00,"total":121.00,"category":"suministros"}]}
+      // 4. Extracción de facturas con IA
+      let invoiceList = [];
+      const validPages = pageTexts
+        ? pageTexts.filter(pt => pt && pt.trim().length >= 30)
+        : null;
 
-La category debe ser una de: alimentacion, bebidas, limpieza, suministros, servicios, nominas, alquiler, equipamiento, otros.
-Usa null para campos que no encuentres. Si hay varias facturas, inclúyelas TODAS en el array.
-
-DOCUMENTO:
-${pdfText.substring(0, 5500)}`,
-      });
+      if (validPages && validPages.length > 1) {
+        // ─── Multi-página: llamadas en paralelo, una por página ───
+        setProcessStatus(`Analizando ${validPages.length} páginas con IA...`);
+        const results = await Promise.all(
+          validPages.map(pt =>
+            base44.integrations.Core.InvokeLLM({ prompt: buildPrompt(pt) })
+              .then(r => parseInvoices(r))
+              .catch(() => [])
+          )
+        );
+        // Aplanar + deduplicar por invoice_number
+        const seen = new Set();
+        for (const pageInvs of results) {
+          for (const inv of pageInvs) {
+            const key = strVal(inv.invoice_number) || `rand-${Math.random()}`;
+            if (!seen.has(key)) { seen.add(key); invoiceList.push(inv); }
+          }
+        }
+      } else {
+        // ─── Página única o PDF digital: una sola llamada ─────────
+        setProcessStatus('Analizando facturas con IA...');
+        const rawResponse = await base44.integrations.Core.InvokeLLM({
+          prompt: buildPrompt(pdfText),
+        });
+        invoiceList = parseInvoices(rawResponse);
+      }
 
       setUploadProgress(65);
-
-      // 4. Parsear respuesta (puede ser objeto ya parseado o string JSON)
-      let invoiceList = [];
-      try {
-        const parsed = typeof rawResponse === 'string'
-          ? JSON.parse(rawResponse.split('```json').join('').split('```').join('').trim())
-          : rawResponse;
-        if (Array.isArray(parsed?.invoices) && parsed.invoices.length > 0) {
-          invoiceList = parsed.invoices;
-        } else if (Array.isArray(parsed) && parsed.length > 0) {
-          invoiceList = parsed;
-        } else if (parsed?.total || parsed?.provider_name || parsed?.invoice_number) {
-          invoiceList = [parsed];
-        }
-      } catch (parseErr) {
-        // Intentar extraer JSON del string con regex
-        const jsonMatch = String(rawResponse).match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            const parsed = JSON.parse(jsonMatch[0]);
-            invoiceList = parsed?.invoices || (Array.isArray(parsed) ? parsed : []);
-          } catch { /* sin datos */ }
-        }
-      }
 
       if (invoiceList.length === 0) {
         toast.error('No se encontraron facturas en el documento');
@@ -274,7 +319,7 @@ ${pdfText.substring(0, 5500)}`,
 
       setProcessStatus(`Guardando ${invoiceList.length} factura${invoiceList.length > 1 ? 's' : ''}...`);
 
-      // 5. Auto-save cada factura + auto-crear proveedor
+      // 5. Auto-crear proveedores + guardar facturas
       const existingProviders = await base44.entities.Provider.list();
       let saved = 0;
 
@@ -282,42 +327,39 @@ ${pdfText.substring(0, 5500)}`,
         const inv = invoiceList[i];
         const progress = 65 + Math.round(((i + 1) / invoiceList.length) * 30);
         setUploadProgress(progress);
-        setProcessStatus(`Guardando ${i + 1}/${invoiceList.length}: ${inv.provider_name || 'factura'}`);
+        const provName = strVal(inv.provider_name);
+        setProcessStatus(`Guardando ${i + 1}/${invoiceList.length}: ${provName || 'factura'}`);
 
         // Auto-crear proveedor si no existe
-        if (inv.provider_name && typeof inv.provider_name === 'string') {
+        if (provName) {
           const exists = existingProviders.find(
-            p => p.name?.toLowerCase() === inv.provider_name.toLowerCase()
+            p => p.name?.toLowerCase() === provName.toLowerCase()
           );
           if (!exists) {
             try {
-              const newProv = await base44.entities.Provider.create({
-                name:     inv.provider_name,
-                cif:      inv.provider_cif   || '',
-                category: inv.category       || 'suministros',
+              const np = await base44.entities.Provider.create({
+                name:     provName,
+                cif:      strVal(inv.provider_cif) || '',
+                category: strVal(inv.category) || 'suministros',
                 status:   'activo',
-                rating:   4
+                rating:   4,
               });
-              existingProviders.push(newProv);
-            } catch (e) { /* continuar */ }
+              existingProviders.push(np);
+            } catch { /* continuar sin proveedor */ }
           }
         }
 
-        // Guardar factura — normalizar (guard contra objetos {value, confidence})
-        const strVal = (v) => (v && typeof v === 'object' && 'value' in v) ? v.value : (typeof v === 'string' ? v : null);
-        const numVal = (v) => (v && typeof v === 'object' && 'value' in v) ? v.value : (typeof v === 'number' ? v : null);
-
         try {
           await base44.entities.Invoice.create({
-            provider_name:  strVal(inv.provider_name)  || 'Sin proveedor',
-            provider_cif:   strVal(inv.provider_cif)   || '',
+            provider_name:  provName || 'Sin proveedor',
+            provider_cif:   strVal(inv.provider_cif) || '',
             invoice_number: strVal(inv.invoice_number) || `AUTO-${Date.now()}-${i}`,
-            invoice_date:   strVal(inv.invoice_date)   || null,
-            due_date:       strVal(inv.due_date)       || null,
-            subtotal:       numVal(inv.subtotal)       || null,
-            iva:            numVal(inv.iva)            || null,
-            total:          numVal(inv.total)          || 0,
-            category:       strVal(inv.category)      || 'otros',
+            invoice_date:   strVal(inv.invoice_date) || null,
+            due_date:       strVal(inv.due_date) || null,
+            subtotal:       numVal(inv.subtotal),
+            iva:            numVal(inv.iva),
+            total:          numVal(inv.total) ?? 0,
+            category:       strVal(inv.category) || 'otros',
             status:         'pendiente',
             file_url,
             file_name: file.name,
