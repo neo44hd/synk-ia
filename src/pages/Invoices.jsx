@@ -223,9 +223,7 @@ ${pdfText.substring(0, 5500)}`,
       let invoiceList = [];
       try {
         const parsed = typeof rawResponse === 'string'
-          ? JSON.parse(rawResponse.replace(/```json
-?|
-?```/g, '').trim())
+          ? JSON.parse(rawResponse.split('```json').join('').split('```').join('').trim())
           : rawResponse;
         if (Array.isArray(parsed?.invoices) && parsed.invoices.length > 0) {
           invoiceList = parsed.invoices;
