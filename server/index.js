@@ -6,6 +6,7 @@ import { biloopRouter }       from './routes/biloop.js';
 import { biloopPortalRouter } from './routes/biloop-portal.js';
 import { revoRouter }         from './routes/revo.js';
 import { healthRouter }       from './routes/health.js';
+import { dataRouter }        from './routes/data.js';
 
 dotenv.config();
 
@@ -48,11 +49,11 @@ app.use('/api/biloop', biloopRouter);
 app.use('/api/biloop', biloopPortalRouter);
 app.use('/api/revo',   revoRouter);
 app.use('/api/health', healthRouter);
+app.use('/api/data',    dataRouter);
 
 // ── AI Engine (node-llama-cpp) ────────────────────────────────────────────────
 // /api/ollama  → backward compat (el frontend no necesita cambios)
 // /api/ai      → nuevo path limpio con /status extra
-try {
   const { aiRouter } = await import('./routes/ai.js');
   app.use('/api/ollama', aiRouter);
   app.use('/api/ai',     aiRouter);
