@@ -62,66 +62,33 @@ jobs:
             scripts/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/opt/sinkia-backend/scripts/
 
-      - name: Create .env and start backend
+      - name: Create .env file
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'ENDSSH'
-          cat > /opt/sinkia-backend/.env << 'EOF'
-          PORT=3001
-          EMAIL_USER=info@chickenpalace.es
-          EMAIL_APP_PASSWORD=${{ secrets.EMAIL_APP_PASSWORD }}
-          ASSEMPSA_BILOOP_API_KEY=${{ secrets.ASSEMPSA_BILOOP_API_KEY }}
-          BILOOP_USER=${{ secrets.BILOOP_USER }}
-          BILOOP_PASSWORD=${{ secrets.BILOOP_PASSWORD }}
-          BILOOP_CIF=${{ secrets.BILOOP_CIF }}
-          REVO_TOKEN_LARGO=${{ secrets.REVO_BEARER_TOKEN }}
-          REVO_ADMIN_USER=${{ secrets.REVO_TENANT }}
-          AI_MODEL_NAME=qwen2.5-3b-instruct-q4_k_m.gguf
-          AI_MODEL_PATH=/opt/models/qwen2.5-3b-instruct-q4_k_m.gguf
-          AI_GPU_MODE=auto
-          EOF
-          cd /opt/sinkia-backend
-          npm install --production
-          which pm2 || sudo npm install -g pm2
-                                        pm2 delete synkia-backend 2>/dev/null || true
-          pm2 delete sinkia-api 2>/dev/null || true
-          pm2 start index.js --name sinkia-api
-                    pm2 save
-                    ENDSSH
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+            "printf '%s\n' 'PORT=3001' 'EMAIL_USER=info@chickenpalace.es' 'EMAIL_APP_PASSWORD=${{ secrets.EMAIL_APP_PASSWORD }}' 'ASSEMPSA_BILOOP_API_KEY=${{ secrets.ASSEMPSA_BILOOP_API_KEY }}' 'BILOOP_USER=${{ secrets.BILOOP_USER }}' 'BILOOP_PASSWORD=${{ secrets.BILOOP_PASSWORD }}' 'BILOOP_CIF=${{ secrets.BILOOP_CIF }}' 'REVO_TOKEN_LARGO=${{ secrets.REVO_BEARER_TOKEN }}' 'REVO_ADMIN_USER=${{ secrets.REVO_TENANT }}' 'AI_MODEL_NAME=qwen2.5-3b-instruct-q4_k_m.gguf' 'AI_MODEL_PATH=/opt/models/qwen2.5-3b-instruct-q4_k_m.gguf' 'AI_GPU_MODE=auto' > /opt/sinkia-backend/.env"
+
+      - name: Install deps and start backend
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+            "cd /opt/sinkia-backend && npm install --production && (which pm2 || sudo npm install -g pm2) && pm2 delete synkia-backend 2>/dev/null; pm2 delete sinkia-api 2>/dev/null; pm2 start index.js --name sinkia-api && pm2 save"
+
       - name: Download AI model if missing
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'ENDSSH'
-          MODEL_FILE="/opt/models/qwen2.5-3b-instruct-q4_k_m.gguf"
-          if [ ! -f "$MODEL_FILE" ]; then
-            echo "Downloading qwen2.5-3b model..."
-            cd /opt/sinkia-backend
-            node scripts/download-model.js qwen-3b || echo "Model download failed but continuing"
-            if [ -f "models/qwen2.5-3b-instruct-q4_k_m.gguf" ]; then
-              mv models/qwen2.5-3b-instruct-q4_k_m.gguf /opt/models/
-              echo "Model moved to /opt/models/"
-            fi
-          else
-            echo "Model already exists, skipping download"
-          fi
-          pm2 restart sinkia-api 2>/dev/null || true
-          ENDSSH
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+            "if [ ! -f /opt/models/qwen2.5-3b-instruct-q4_k_m.gguf ]; then echo 'Downloading model...'; cd /opt/sinkia-backend && node scripts/download-model.js qwen-3b || echo 'Download failed'; [ -f models/qwen2.5-3b-instruct-q4_k_m.gguf ] && mv models/qwen2.5-3b-instruct-q4_k_m.gguf /opt/models/; else echo 'Model exists'; fi && pm2 restart sinkia-api 2>/dev/null || true"
 
       - name: Configure Nginx with SSL
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'ENDSSH'
-          sudo tailscale funnel off 2>/dev/null || true
-          sudo tailscale serve reset 2>/dev/null || true
-          sudo tailscale funnel reset 2>/dev/null || true
-          sleep 2
-          sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || true
-          sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || true
-          sudo netfilter-persistent save 2>/dev/null || sudo iptables-save | sudo tee /etc/iptables/rules.v4 2>/dev/null || true
-          sudo apt-get install -y certbot python3-certbot-nginx 2>/dev/null || true
-          sudo rm -f /etc/nginx/sites-enabled/* 2>/dev/null || true
-          sudo rm -f /etc/nginx/sites-available/sinkialabs 2>/dev/null || true
-          sudo tee /etc/nginx/sites-available/sinkialabs > /dev/null << 'NGINX'
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+            "sudo tailscale funnel off 2>/dev/null || true; sudo tailscale serve reset 2>/dev/null || true; sudo tailscale funnel reset 2>/dev/null || true; sleep 2; sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT 2>/dev/null || true; sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT 2>/dev/null || true; sudo netfilter-persistent save 2>/dev/null || sudo iptables-save | sudo tee /etc/iptables/rules.v4 2>/dev/null || true; sudo apt-get install -y certbot python3-certbot-nginx 2>/dev/null || true; sudo rm -f /etc/nginx/sites-enabled/* 2>/dev/null || true; sudo rm -f /etc/nginx/sites-available/sinkialabs 2>/dev/null || true"
+
+      - name: Write Nginx config
+        run: |
+          cat > /tmp/nginx-sinkialabs << 'NGINXEOF'
           server {
             listen 80;
             server_name sinkialabs.com www.sinkialabs.com;
@@ -147,13 +114,16 @@ jobs:
               add_header Cache-Control "public, immutable";
             }
           }
-          NGINX
-          sudo ln -sf /etc/nginx/sites-available/sinkialabs /etc/nginx/sites-enabled/sinkialabs
-          sudo nginx -t
-          sudo systemctl reload nginx 2>/dev/null || sudo systemctl start nginx
-          sudo certbot --nginx -d sinkialabs.com -d www.sinkialabs.com --non-interactive --agree-tos --email info@chickenpalace.es --redirect || echo "Certbot failed but continuing"
-          echo "Nginx status: $(sudo systemctl is-active nginx)"
-          ENDSSH
+          NGINXEOF
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            /tmp/nginx-sinkialabs \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/tmp/nginx-sinkialabs
+
+      - name: Apply Nginx config and SSL
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+            "sudo cp /tmp/nginx-sinkialabs /etc/nginx/sites-available/sinkialabs && sudo ln -sf /etc/nginx/sites-available/sinkialabs /etc/nginx/sites-enabled/sinkialabs && sudo nginx -t && (sudo systemctl reload nginx 2>/dev/null || sudo systemctl start nginx) && (sudo certbot --nginx -d sinkialabs.com -d www.sinkialabs.com --non-interactive --agree-tos --email info@chickenpalace.es --redirect || echo 'Certbot failed but continuing') && echo 'Nginx status:' && sudo systemctl is-active nginx"
 
       - name: Cleanup
         if: always()
