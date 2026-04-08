@@ -1,11 +1,11 @@
 import express from 'express';
 import cors    from 'cors';
 import dotenv  from 'dotenv';
-import { emailRouter }        from './routes/email.js';
-import { biloopRouter }       from './routes/biloop.js';
+import { emailRouter }       from './routes/email.js';
+import { biloopRouter }      from './routes/biloop.js';
 import { biloopPortalRouter } from './routes/biloop-portal.js';
-import { revoRouter }         from './routes/revo.js';
-import { healthRouter }       from './routes/health.js';
+import { revoRouter }        from './routes/revo.js';
+import { healthRouter }      from './routes/health.js';
 
 dotenv.config();
 
@@ -49,16 +49,18 @@ app.use('/api/biloop', biloopPortalRouter);
 app.use('/api/revo',   revoRouter);
 app.use('/api/health', healthRouter);
 
+// ── Data API (generic CRUD) ──────────────────────────────────────────────────
+try {
+  const { dataRouter } = await import('./routes/data.js');
+  app.use('/api/data', dataRouter);
+  console.log('[SERVER] Data API registrado');
+} catch (e) {
+  console.error('[SERVER] Data API fallo:', e.message);
+}
+
 // ── AI Engine (node-llama-cpp) ────────────────────────────────────────────────
-// /api/ollama  → backward compat (el frontend no necesita cambios)
-  // Data API (generic CRUD)
-  try {
-    const { dataRouter } = await import('./routes/data.js');
-    app.use('/api/data', dataRouter);
-    console.log('[SERVER] Data API registrado');
-  } catch (e) {
-    console.error('[SERVER] Data API fallo:', e.message);
-  }
+// /api/ollama → backward compat (el frontend no necesita cambios)
+try {
   const { aiRouter } = await import('./routes/ai.js');
   app.use('/api/ollama', aiRouter);
   app.use('/api/ai',     aiRouter);
@@ -69,7 +71,6 @@ app.use('/api/health', healthRouter);
   llamaService.init()
     .then(() => console.log('[SERVER] ✓ Modelo LLM listo en memoria'))
     .catch(err => console.warn('[SERVER] ⚠ Modelo no disponible:', err.message));
-
 } catch (e) {
   console.error('[SERVER] ✗ AI Engine falló al cargar:', e.message);
 }
@@ -88,7 +89,7 @@ app.use((err, _req, res, _next) => {
 // ── Arranque ──────────────────────────────────────────────────────────────────
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n[SERVER] ✓ Puerto ${PORT} | ${new Date().toISOString()}`);
-  console.log(`[SERVER]   CORS: ${ALLOWED_ORIGINS.join(', ')}\n`);
+  console.log(`[SERVER] CORS: ${ALLOWED_ORIGINS.join(', ')}\n`);
 
   import('./syncWorker.js').then(({ startSyncWorker }) => {
     try {
