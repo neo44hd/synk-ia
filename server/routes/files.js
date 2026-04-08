@@ -13,10 +13,9 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { mkdirSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
 
-const __dirname   = path.dirname(fileURLToPath(import.meta.url));
-const UPLOADS_DIR = path.resolve(__dirname, '../../uploads');
+// En producción process.cwd() = /opt/sinkia-backend → uploads en /opt/sinkia-backend/uploads
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads');
 
 // Crear directorio de uploads si no existe
 mkdirSync(UPLOADS_DIR, { recursive: true });

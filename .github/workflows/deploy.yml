@@ -39,7 +39,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
-            "sudo mkdir -p /var/www/sinkialabs /opt/sinkia-backend /opt/models && sudo chown ${{ secrets.SERVER_USER }}:${{ secrets.SERVER_USER }} /var/www/sinkialabs /opt/sinkia-backend /opt/models"
+            "sudo mkdir -p /var/www/sinkialabs /opt/sinkia-backend /opt/sinkia-backend/scripts /opt/sinkia-backend/uploads /opt/sinkia-backend/data /opt/models && sudo chown -R ${{ secrets.SERVER_USER }}:${{ secrets.SERVER_USER }} /var/www/sinkialabs /opt/sinkia-backend /opt/models"
 
       - name: Deploy frontend
         run: |
