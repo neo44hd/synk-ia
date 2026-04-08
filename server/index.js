@@ -11,6 +11,7 @@ import { revoRouter }        from './routes/revo.js';
 import { healthRouter }      from './routes/health.js';
 import { filesRouter }       from './routes/files.js';
 import { adminRouter }       from './routes/admin.js';
+import { claudeProxyRouter } from './routes/claude-proxy.js';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ app.use('/api/revo',   revoRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/files',  filesRouter);
 app.use('/api/admin',  adminRouter);
+app.use('/claude',     claudeProxyRouter);  // Proxy local para Claude Code
 
 // ── Data API (generic CRUD) ──────────────────────────────────────────────────
 try {
@@ -73,11 +75,15 @@ try {
   app.use('/api/ai',     aiRouter);
   console.log('[SERVER] ✓ AI Engine (node-llama-cpp) registrado');
 
-  // Pre-warm: carga el modelo al arrancar para evitar cold start
-  const { llamaService } = await import('./services/llamaService.js');
-  llamaService.init()
-    .then(() => console.log('[SERVER] ✓ Modelo LLM listo en memoria'))
-    .catch(err => console.warn('[SERVER] ⚠ Modelo no disponible:', err.message));
+  // Pre-warm: solo si AI_PREWARM=true (por defecto OFF para ahorrar RAM)
+  if (process.env.AI_PREWARM === 'true') {
+    const { llamaService } = await import('./services/llamaService.js');
+    llamaService.init()
+      .then(() => console.log('[SERVER] ✓ Modelo LLM listo en memoria'))
+      .catch(err => console.warn('[SERVER] ⚠ Modelo no disponible:', err.message));
+  } else {
+    console.log('[SERVER] ⏳ Modelo en modo lazy (carga al primer uso, libera RAM tras 10min sin uso)');
+  }
 } catch (e) {
   console.error('[SERVER] ✗ AI Engine falló al cargar:', e.message);
 }

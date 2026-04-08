@@ -14,11 +14,35 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MODELS_DIR = path.resolve(__dirname, '../../models');
 
 // ─── Estado del singleton ────────────────────────────────────────────────────
-let _llama   = null;
-let _model   = null;
-let _loading = false;
-let _error   = null;
+let _llama    = null;
+let _model    = null;
+let _loading  = false;
+let _error    = null;
 let _loadedAt = null;
+let _lastUsed = null;
+let _unloadTimer = null;
+
+// Auto-unload después de N minutos sin uso (libera RAM)
+const UNLOAD_AFTER_MS = (parseInt(process.env.AI_UNLOAD_MINUTES) || 10) * 60 * 1000;
+
+function resetUnloadTimer() {
+  _lastUsed = Date.now();
+  if (_unloadTimer) clearTimeout(_unloadTimer);
+  _unloadTimer = setTimeout(async () => {
+    if (!_model) return;
+    const idleSec = Math.round((Date.now() - _lastUsed) / 1000);
+    console.log(`[LlamaService] ⏱ Sin uso por ${idleSec}s — descargando modelo (libera RAM)`);
+    try {
+      await _model.dispose();
+      if (_llama?.dispose) await _llama.dispose();
+    } catch {}
+    _model   = null;
+    _llama   = null;
+    _error   = null;   // permite reiniciar en el próximo request
+    _loadedAt = null;
+    console.log('[LlamaService] ✓ Modelo descargado. RAM liberada.');
+  }, UNLOAD_AFTER_MS);
+}
 
 // ─── Nombre del modelo (configurable por .env) ───────────────────────────────
 function getModelName() {
@@ -66,7 +90,8 @@ async function init() {
     });
 
     _loadedAt = new Date();
-    console.log(`[LlamaService] ✓ Modelo listo en ${new Date() - _loadedAt + 1}ms`);
+    resetUnloadTimer();
+    console.log(`[LlamaService] ✓ Modelo listo`);
     return _model;
 
   } catch (err) {
@@ -116,6 +141,7 @@ async function generate({ prompt, system, format = 'text', jsonSchema = null, te
     }
 
     const response = await session.prompt(prompt, generateOpts);
+    resetUnloadTimer(); // Reinicia el contador de inactividad en cada uso
     return { response, durationMs: Date.now() - t0 };
 
   } finally {
