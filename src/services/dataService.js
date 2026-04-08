@@ -1,157 +1,93 @@
 /**
- * SYNK-IA - Servicio de Almacenamiento de Datos Local
+ * SYNK-IA - Servicio de Datos (API Backend)
  * © 2024 David Roldan - Chicken Palace Ibiza
  * Futuro: SYNK-IA LABS
- * 
- * Reemplaza la funcionalidad de Base44 SDK con almacenamiento local
+ *
+ * Conecta con el backend /api/data/:entity para persistencia real
+ * Mantiene compatibilidad con la interfaz Base44 SDK
  */
 
-const STORAGE_PREFIX = 'synkia_data_';
+const API_BASE = '/api/data';
 
-/**
- * Genera un ID único
- */
-function generateId() {
-  return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
 }
 
-/**
- * Clase que simula una entidad de Base44
- */
-class LocalEntity {
+class ApiEntity {
   constructor(entityName) {
     this.entityName = entityName;
-    this.storageKey = STORAGE_PREFIX + entityName.toLowerCase();
+    this.endpoint = `${API_BASE}/${entityName.toLowerCase()}`;
   }
 
-  /**
-   * Obtiene todos los registros del storage
-   */
-  _getAll() {
-    const data = localStorage.getItem(this.storageKey);
-    return data ? JSON.parse(data) : [];
-  }
-
-  /**
-   * Guarda todos los registros en storage
-   */
-  _saveAll(records) {
-    localStorage.setItem(this.storageKey, JSON.stringify(records));
-  }
-
-  /**
-   * Lista todos los registros, opcionalmente ordenados
-   * @param {string} sortBy - Campo por el que ordenar (prefijo '-' para descendente)
-   * @param {number} limit - Límite de registros a retornar
-   */
   async list(sortBy = '-created_date', limit = null) {
-    let records = this._getAll();
-    
-    if (sortBy) {
-      const desc = sortBy.startsWith('-');
-      const field = desc ? sortBy.slice(1) : sortBy;
-      
-      records.sort((a, b) => {
-        const aVal = a[field] || '';
-        const bVal = b[field] || '';
-        
-        if (desc) {
-          return bVal > aVal ? 1 : bVal < aVal ? -1 : 0;
-        }
-        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-      });
-    }
-    
-    if (limit) {
-      records = records.slice(0, limit);
-    }
-    
-    return records;
+    const params = new URLSearchParams();
+    if (sortBy) params.set('sort', sortBy);
+    if (limit) params.set('limit', String(limit));
+    const result = await apiFetch(`${this.endpoint}?${params}`);
+    return result.data || [];
   }
 
-  /**
-   * Filtra registros por campo y valor
-   * @param {string} field - Campo a filtrar
-   * @param {any} value - Valor a buscar
-   */
   async filter(filters) {
-    let records = this._getAll();
-    
-    if (typeof filters === 'object') {
-      for (const [field, value] of Object.entries(filters)) {
-        records = records.filter(r => r[field] === value);
-      }
-    }
-    
-    return records;
+    const result = await apiFetch(`${this.endpoint}/filter`, {
+      method: 'POST',
+      body: JSON.stringify(filters),
+    });
+    return result.data || [];
   }
 
-  /**
-   * Obtiene un registro por ID
-   * @param {string} id - ID del registro
-   */
   async get(id) {
-    const records = this._getAll();
-    return records.find(r => r.id === id) || null;
+    const result = await apiFetch(`${this.endpoint}/${id}`);
+    return result.data || null;
   }
 
-  /**
-   * Crea un nuevo registro
-   * @param {object} data - Datos del registro
-   */
   async create(data) {
-    const records = this._getAll();
-    const newRecord = {
-      id: generateId(),
-      ...data,
-      created_date: new Date().toISOString(),
-      updated_date: new Date().toISOString()
-    };
-    records.push(newRecord);
-    this._saveAll(records);
-    return newRecord;
+    const result = await apiFetch(this.endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return result.data;
   }
 
-  /**
-   * Actualiza un registro existente
-   * @param {string} id - ID del registro
-   * @param {object} data - Datos a actualizar
-   */
   async update(id, data) {
-    const records = this._getAll();
-    const idx = records.findIndex(r => r.id === id);
-    
-    if (idx === -1) {
-      throw new Error(`Registro ${id} no encontrado en ${this.entityName}`);
-    }
-    
-    records[idx] = {
-      ...records[idx],
-      ...data,
-      updated_date: new Date().toISOString()
-    };
-    
-    this._saveAll(records);
-    return records[idx];
+    const result = await apiFetch(`${this.endpoint}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return result.data;
   }
 
-  /**
-   * Elimina un registro
-   * @param {string} id - ID del registro
-   */
   async delete(id) {
-    const records = this._getAll();
-    const filteredRecords = records.filter(r => r.id !== id);
-    this._saveAll(filteredRecords);
+    await apiFetch(`${this.endpoint}/${id}`, { method: 'DELETE' });
     return true;
+  }
+
+  async bulkReplace(records) {
+    const result = await apiFetch(`${this.endpoint}/bulk`, {
+      method: 'PUT',
+      body: JSON.stringify({ records, merge: false }),
+    });
+    return result;
+  }
+
+  async bulkMerge(records) {
+    const result = await apiFetch(`${this.endpoint}/bulk`, {
+      method: 'PUT',
+      body: JSON.stringify({ records, merge: true }),
+    });
+    return result;
   }
 }
 
-/**
- * Factory para crear entidades
- */
 function createEntity(name) {
-  return new LocalEntity(name);
+  return new ApiEntity(name);
 }
 
 // Exportar todas las entidades que estaban en Base44
@@ -220,7 +156,7 @@ export const dataService = {
   ProductPurchase,
   Employee,
   UploadedFile,
-  createEntity // Para crear entidades personalizadas
+  createEntity
 };
 
 export default dataService;
