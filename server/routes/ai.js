@@ -305,7 +305,7 @@ Devuelves ÚNICAMENTE JSON válido sin texto adicional ni bloques markdown.`,
 // ─── POST /api/ai/ocr ────────────────────────────────────────────────────────
 // Extrae texto de un PDF escaneado usando Tesseract + pdftoppm
 // Body: { file_url: '/api/files/serve/xxx.pdf' }
-// Returns: { success, text, pages }
+// Returns: { success, text, pages, pageTexts[] }
 aiRouter.post('/ocr', async (req, res) => {
   const { file_url } = req.body;
   if (!file_url) return res.status(400).json({ error: 'file_url requerida' });
@@ -328,38 +328,45 @@ aiRouter.post('/ocr', async (req, res) => {
   console.log(`[OCR] Procesando ${filename} → tmpDir=${tmpDir}`);
 
   try {
-    // Convertir PDF a imágenes PNG (máximo 15 páginas, 200 DPI)
+    // Convertir PDF a imágenes PNG (máximo 20 páginas, 200 DPI)
     await execAsync(
-      `pdftoppm -r 200 -png -l 15 "${filePath}" "${path.join(tmpDir, 'page')}"`,
+      `pdftoppm -r 200 -png -l 20 "${filePath}" "${path.join(tmpDir, 'page')}"`,
       { timeout: 60000 }
     );
 
-    const pages = fsMod.readdirSync(tmpDir)
+    const pageFiles = fsMod.readdirSync(tmpDir)
       .filter(f => f.endsWith('.png'))
       .sort();
 
-    console.log(`[OCR] ${pages.length} páginas detectadas`);
+    console.log(`[OCR] ${pageFiles.length} páginas detectadas`);
 
-    let fullText = '';
-    for (const page of pages) {
+    // Extraer texto por página individualmente
+    const pageTexts = [];
+    for (const page of pageFiles) {
       const pagePath = path.join(tmpDir, page);
       try {
         const { stdout } = await execAsync(
           `tesseract "${pagePath}" stdout -l spa+eng quiet 2>/dev/null`,
           { timeout: 30000 }
         );
-        fullText += stdout + '\n';
+        pageTexts.push(stdout.trim());
       } catch (pageErr) {
         console.warn(`[OCR] Error en página ${page}:`, pageErr.message);
+        pageTexts.push('');
       }
     }
 
     fsMod.rmSync(tmpDir, { recursive: true, force: true });
 
-    const text = fullText.trim();
-    console.log(`[OCR] Texto extraído: ${text.length} chars`);
+    const text = pageTexts.join('\n\n---PAGINA---\n\n').trim();
+    console.log(`[OCR] Texto total: ${text.length} chars en ${pageTexts.length} páginas`);
 
-    res.json({ success: true, text, pages: pages.length });
+    res.json({
+      success: true,
+      text,          // texto completo (retrocompatible)
+      pages: pageTexts.length,
+      pageTexts,     // NUEVO: texto separado por página para extraccion individual
+    });
   } catch (err) {
     fsMod.rmSync(tmpDir, { recursive: true, force: true });
     console.error('[OCR] Error:', err.message);
