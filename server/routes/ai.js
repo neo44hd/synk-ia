@@ -259,7 +259,7 @@ ESQUEMA REQUERIDO:
 ${schemaStr}
 
 DOCUMENTO (${filename || 'desconocido'}):
-${text.substring(0, 5000)}
+${text.substring(0, 8000)}
 
 REGLAS IMPORTANTES:
 - Devuelve SOLO JSON válido, sin explicaciones ni markdown
@@ -276,7 +276,7 @@ Devuelves ÚNICAMENTE JSON válido sin texto adicional ni bloques markdown.`,
       format:     'json',
       jsonSchema: json_schema || { type: 'object' },
       temperature: 0.1,
-      maxTokens:  1024,
+      maxTokens:  2048,
     });
 
     const parsed = safeParseJSON(response);
