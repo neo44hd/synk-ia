@@ -1,4 +1,4 @@
-// v3 — multi-invoice auto-extract
+// v4 — render defensivo contra {value,confidence}
 import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -82,9 +82,13 @@ export default function Invoices() {
     return isValid(date) ? format(date, 'dd/MM/yyyy') : '';
   };
 
+  // Helper inline para normalizar antes de reducir
+  const safeNum = (v) => (v && typeof v === 'object' && 'value' in v) ? (v.value || 0) : (typeof v === 'number' ? v : 0);
+  const safeStr = (v, fallback = '') => (v && typeof v === 'object' && 'value' in v) ? (v.value || fallback) : (v || fallback);
+
   // Agrupar facturas por proveedor
   const invoicesByProvider = invoices.reduce((acc, invoice) => {
-    const provider = invoice.provider_name || 'Sin proveedor';
+    const provider = safeStr(invoice.provider_name, 'Sin proveedor');
     if (!acc[provider]) {
       acc[provider] = {
         name: provider,
@@ -94,7 +98,7 @@ export default function Invoices() {
       };
     }
     acc[provider].invoices.push(invoice);
-    acc[provider].total += invoice.total || 0;
+    acc[provider].total += safeNum(invoice.total);
     acc[provider].count += 1;
     return acc;
   }, {});
@@ -103,7 +107,7 @@ export default function Invoices() {
 
   // Agrupar por categoría
   const invoicesByCategory = invoices.reduce((acc, invoice) => {
-    const category = invoice.category || 'otros';
+    const category = safeStr(invoice.category, 'otros');
     if (!acc[category]) {
       acc[category] = {
         name: category,
@@ -113,7 +117,7 @@ export default function Invoices() {
       };
     }
     acc[category].invoices.push(invoice);
-    acc[category].total += invoice.total || 0;
+    acc[category].total += safeNum(invoice.total);
     acc[category].count += 1;
     return acc;
   }, {});
@@ -122,14 +126,15 @@ export default function Invoices() {
 
   // Datos para gráficos
   const monthlyData = invoices.reduce((acc, invoice) => {
-    if (invoice.invoice_date) {
-      const date = new Date(invoice.invoice_date);
+    const dateStr = safeStr(invoice.invoice_date);
+    if (dateStr) {
+      const date = new Date(dateStr);
       if (isValid(date)) {
         const month = format(date, 'MMM yyyy');
         if (!acc[month]) {
           acc[month] = { month, total: 0, count: 0 };
         }
-        acc[month].total += invoice.total || 0;
+        acc[month].total += safeNum(invoice.total);
         acc[month].count += 1;
       }
     }
@@ -343,6 +348,18 @@ ${pdfText.substring(0, 5500)}`,
     createInvoiceMutation.mutate(previewInvoice);
   };
 
+  // Helpers defensivos: evitan React error #31 si algún campo llega como {value, confidence}
+  const dStr = (v) => {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'object' && 'value' in v) return v.value ?? '';
+    return String(v);
+  };
+  const dNum = (v) => {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'object' && 'value' in v) return typeof v.value === 'number' ? v.value : 0;
+    return typeof v === 'number' ? v : 0;
+  };
+
   const statusColors = {
     pendiente: 'bg-yellow-100 text-yellow-800',
     pagada: 'bg-green-100 text-green-800',
@@ -350,10 +367,10 @@ ${pdfText.substring(0, 5500)}`,
     cancelada: 'bg-gray-100 text-gray-800'
   };
 
-  const totalAmount = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+  const totalAmount = invoices.reduce((sum, inv) => sum + safeNum(inv.total), 0);
   const pendingAmount = invoices
-    .filter(inv => inv.status === 'pendiente')
-    .reduce((sum, inv) => sum + (inv.total || 0), 0);
+    .filter(inv => safeStr(inv.status) === 'pendiente')
+    .reduce((sum, inv) => sum + safeNum(inv.total), 0);
 
   return (
     <div className="p-4 md:p-8">
@@ -588,28 +605,28 @@ ${pdfText.substring(0, 5500)}`,
                             </div>
                           )}
                           <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{invoice.provider_name}</h3>
-                            <p className="text-sm text-gray-600">{invoice.invoice_number}</p>
+                            <h3 className="font-semibold text-lg">{dStr(invoice.provider_name) || 'Sin proveedor'}</h3>
+                            <p className="text-sm text-gray-600">{dStr(invoice.invoice_number)}</p>
                             <div className="flex items-center gap-3 mt-2 flex-wrap">
-                              <Badge className={statusColors[invoice.status]}>
-                                {invoice.status}
+                              <Badge className={statusColors[dStr(invoice.status)] || statusColors.pendiente}>
+                                {dStr(invoice.status)}
                               </Badge>
                               {invoice.category && (
-                                <Badge variant="outline">{invoice.category}</Badge>
+                                <Badge variant="outline">{dStr(invoice.category)}</Badge>
                               )}
                               {invoice.invoice_date && (
                                 <span className="text-sm text-gray-500 flex items-center gap-1">
                                   <Calendar className="w-3 h-3" />
-                                  {formatDate(invoice.invoice_date)}
+                                  {formatDate(dStr(invoice.invoice_date))}
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
                         <div className="text-right flex flex-col items-end gap-2">
-                          <p className="text-2xl font-bold">{invoice.total?.toFixed(2)}€</p>
+                          <p className="text-2xl font-bold">{dNum(invoice.total).toFixed(2)}€</p>
                           {invoice.iva && (
-                            <p className="text-sm text-gray-600">IVA: {invoice.iva?.toFixed(2)}€</p>
+                            <p className="text-sm text-gray-600">IVA: {dNum(invoice.iva).toFixed(2)}€</p>
                           )}
                           {invoice.file_url && (
                             <Button
@@ -716,15 +733,15 @@ ${pdfText.substring(0, 5500)}`,
                             <div className="flex items-center gap-4">
                               <FileText className="w-5 h-5 text-gray-400" />
                               <div>
-                                <p className="font-medium">{invoice.invoice_number}</p>
-                                <p className="text-sm text-gray-600">{formatDate(invoice.invoice_date)}</p>
+                                <p className="font-medium">{dStr(invoice.invoice_number)}</p>
+                                <p className="text-sm text-gray-600">{formatDate(dStr(invoice.invoice_date))}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
-                              <Badge className={statusColors[invoice.status]}>
-                                {invoice.status}
+                              <Badge className={statusColors[dStr(invoice.status)] || statusColors.pendiente}>
+                                {dStr(invoice.status)}
                               </Badge>
-                              <p className="text-lg font-bold">{invoice.total?.toFixed(2)}€</p>
+                              <p className="text-lg font-bold">{dNum(invoice.total).toFixed(2)}€</p>
                               {invoice.file_url && (
                                 <Button
                                   variant="ghost"
