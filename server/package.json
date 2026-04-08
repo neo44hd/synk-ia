@@ -15,6 +15,7 @@
     "mailparser": "^3.7.1",
     "node-llama-cpp": "^3.0.0",
     "pdf-parse": "^1.1.1",
-    "puppeteer": "^22.0.0"
+    "puppeteer": "^22.0.0",
+    "multer": "^1.4.5-lts.1"
   }
 }
