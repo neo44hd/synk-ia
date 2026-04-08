@@ -41,6 +41,7 @@ const navItems = [
     label: "Control", 
     icon: LayoutDashboard, 
     items: [
+            { label: "Panel CEO", url: createPageUrl("CEODashboard") },
       { label: "Resumen General", url: createPageUrl("Dashboard") },
       { label: "CEO Brain (IA)", url: createPageUrl("CEOBrain") },
       { label: "Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
@@ -118,7 +119,7 @@ export default function Layout({ children }) {
             {/* Barra principal */}
             <div className="flex items-center justify-between px-4 h-14">
               {/* Logo */}
-              <Link to={createPageUrl("Dashboard")} className="flex items-center gap-3 group">
+              <Link to={createPageUrl("CEODashboard")} className="flex items-center gap-3 group">
                     <div 
                       className="w-9 h-9 bg-black rounded-lg flex items-center justify-center border border-cyan-500/50 group-hover:border-cyan-400 transition-all"
                       style={{
