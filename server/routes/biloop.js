@@ -168,3 +168,47 @@ biloopRouter.get('/statistics', async (req, res) => {
   try { res.json({ success: true, data: await biloopFetch('/statistics/result/getResults') }); }
   catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
+
+// ── GET /api/biloop/sync ──────────────────────────────────────────────────────
+// FIX: syncBiloopData() en functionsService llamaba a este endpoint que faltaba
+biloopRouter.get('/sync', async (req, res) => {
+  const startTime = Date.now();
+  const results   = {};
+
+  const endpoints = [
+    { key: 'facturas_emitidas',  path: '/erp/incomes/invoices/getInvoices' },
+    { key: 'facturas_recibidas', path: '/erp/expenses/invoices/getInvoices' },
+    { key: 'proveedores',        path: '/erp/expenses/providers/getProviders' },
+  ];
+
+  const settled = await Promise.allSettled(
+    endpoints.map(({ path }) => biloopFetch(path))
+  );
+
+  endpoints.forEach(({ key }, i) => {
+    const r = settled[i];
+    if (r.status === 'fulfilled') {
+      const items = r.value?.data || r.value || [];
+      results[key] = { count: Array.isArray(items) ? items.length : 0, success: true };
+    } else {
+      results[key] = { success: false, error: r.reason?.message };
+    }
+  });
+
+  res.json({
+    success:  true,
+    duration: Date.now() - startTime,
+    synced:   new Date().toISOString(),
+    results,
+  });
+});
+
+// ── GET /api/biloop/sync-status ───────────────────────────────────────────────
+// FIX: getBiloopSyncStatus() llamaba a este endpoint que faltaba
+biloopRouter.get('/sync-status', (req, res) => {
+  res.json({
+    success:   true,
+    available: !!process.env.ASSEMPSA_BILOOP_API_KEY || !!process.env.BILOOP_CIF,
+    last_sync: null,
+  });
+});

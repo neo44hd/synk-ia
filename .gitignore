@@ -67,3 +67,7 @@ coverage
 *.bak
 *.tmp
 .abacus.donotdelete
+
+# Modelos GGUF (varios GB — no versionar)
+models/
+*.gguf
