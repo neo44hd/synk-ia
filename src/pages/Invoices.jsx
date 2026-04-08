@@ -187,54 +187,61 @@ export default function Invoices() {
     setProcessStatus('Subiendo archivo...');
 
     try {
-      // 1. Upload
+      // 1. Upload (también guarda en _pendingFiles para PDF.js)
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setUploadProgress(20);
-      setProcessStatus('Extrayendo facturas con IA...');
+      setUploadProgress(15);
+      setProcessStatus('Extrayendo texto del PDF...');
 
-      // 2. Schema multi-factura
-      const multiSchema = {
-        type: 'object',
-        properties: {
-          invoices: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                provider_name:  { type: 'string' },
-                provider_cif:   { type: 'string' },
-                invoice_number: { type: 'string' },
-                invoice_date:   { type: 'string' },
-                due_date:       { type: 'string' },
-                subtotal:       { type: 'number' },
-                iva:            { type: 'number' },
-                total:          { type: 'number' },
-                category: {
-                  type: 'string',
-                  enum: ['alimentacion','bebidas','limpieza','suministros','servicios','nominas','alquiler','equipamiento','otros']
-                }
-              }
-            }
-          }
-        }
-      };
+      // 2. Extraer texto client-side con PDF.js
+      const { extractTextFromFile } = await import('@/services/integrationsService');
+      const pdfText = await extractTextFromFile(file);
 
-      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: multiSchema
+      if (!pdfText || pdfText.trim().length < 30) {
+        toast.error('El PDF no contiene texto seleccionable (puede estar escaneado)');
+        return;
+      }
+
+      setUploadProgress(35);
+      setProcessStatus('Analizando facturas con IA...');
+
+      // 3. InvokeLLM con prompt simple (evita grammar-constrained schema que confunde modelos 3B)
+      const rawResponse = await base44.integrations.Core.InvokeLLM({
+        prompt: `Analiza este documento y extrae TODAS las facturas que aparezcan.
+Devuelve SOLO un JSON con esta estructura exacta, sin texto adicional:
+{"invoices":[{"provider_name":"Nombre empresa","provider_cif":"B12345678","invoice_number":"FAC-001","invoice_date":"2024-01-31","due_date":"2024-02-28","subtotal":100.00,"iva":21.00,"total":121.00,"category":"suministros"}]}
+
+La category debe ser una de: alimentacion, bebidas, limpieza, suministros, servicios, nominas, alquiler, equipamiento, otros.
+Usa null para campos que no encuentres. Si hay varias facturas, inclúyelas TODAS en el array.
+
+DOCUMENTO:
+${pdfText.substring(0, 5500)}`,
       });
 
-      setUploadProgress(55);
+      setUploadProgress(65);
 
-      // Normalizar: puede venir { invoices: [...] } o un objeto único
+      // 4. Parsear respuesta (puede ser objeto ya parseado o string JSON)
       let invoiceList = [];
-      if (Array.isArray(result?.output?.invoices) && result.output.invoices.length > 0) {
-        invoiceList = result.output.invoices;
-      } else if (result?.output && !Array.isArray(result.output?.invoices)) {
-        // Respuesta de una sola factura (fallback regex o LLM sin array)
-        const o = result.output;
-        if (o.total || o.provider_name || o.invoice_number) {
-          invoiceList = [o];
+      try {
+        const parsed = typeof rawResponse === 'string'
+          ? JSON.parse(rawResponse.replace(/```json
+?|
+?```/g, '').trim())
+          : rawResponse;
+        if (Array.isArray(parsed?.invoices) && parsed.invoices.length > 0) {
+          invoiceList = parsed.invoices;
+        } else if (Array.isArray(parsed) && parsed.length > 0) {
+          invoiceList = parsed;
+        } else if (parsed?.total || parsed?.provider_name || parsed?.invoice_number) {
+          invoiceList = [parsed];
+        }
+      } catch (parseErr) {
+        // Intentar extraer JSON del string con regex
+        const jsonMatch = String(rawResponse).match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            invoiceList = parsed?.invoices || (Array.isArray(parsed) ? parsed : []);
+          } catch { /* sin datos */ }
         }
       }
 
@@ -245,47 +252,50 @@ export default function Invoices() {
 
       setProcessStatus(`Guardando ${invoiceList.length} factura${invoiceList.length > 1 ? 's' : ''}...`);
 
-      // 3. Auto-save cada factura + auto-crear proveedor
+      // 5. Auto-save cada factura + auto-crear proveedor
       const existingProviders = await base44.entities.Provider.list();
       let saved = 0;
 
       for (let i = 0; i < invoiceList.length; i++) {
         const inv = invoiceList[i];
-        const progress = 55 + Math.round(((i + 1) / invoiceList.length) * 40);
+        const progress = 65 + Math.round(((i + 1) / invoiceList.length) * 30);
         setUploadProgress(progress);
         setProcessStatus(`Guardando ${i + 1}/${invoiceList.length}: ${inv.provider_name || 'factura'}`);
 
         // Auto-crear proveedor si no existe
-        if (inv.provider_name) {
+        if (inv.provider_name && typeof inv.provider_name === 'string') {
           const exists = existingProviders.find(
-            p => p.name?.toLowerCase() === inv.provider_name?.toLowerCase()
+            p => p.name?.toLowerCase() === inv.provider_name.toLowerCase()
           );
           if (!exists) {
             try {
               const newProv = await base44.entities.Provider.create({
                 name:     inv.provider_name,
-                cif:      inv.provider_cif || '',
-                category: inv.category    || 'suministros',
+                cif:      inv.provider_cif   || '',
+                category: inv.category       || 'suministros',
                 status:   'activo',
                 rating:   4
               });
               existingProviders.push(newProv);
-            } catch (e) { /* continuar aunque falle */ }
+            } catch (e) { /* continuar */ }
           }
         }
 
-        // Guardar factura
+        // Guardar factura — normalizar (guard contra objetos {value, confidence})
+        const strVal = (v) => (v && typeof v === 'object' && 'value' in v) ? v.value : (typeof v === 'string' ? v : null);
+        const numVal = (v) => (v && typeof v === 'object' && 'value' in v) ? v.value : (typeof v === 'number' ? v : null);
+
         try {
           await base44.entities.Invoice.create({
-            provider_name:  inv.provider_name  || 'Sin proveedor',
-            provider_cif:   inv.provider_cif   || '',
-            invoice_number: inv.invoice_number || `AUTO-${Date.now()}-${i}`,
-            invoice_date:   inv.invoice_date   || null,
-            due_date:       inv.due_date       || null,
-            subtotal:       inv.subtotal       || null,
-            iva:            inv.iva            || null,
-            total:          inv.total          || 0,
-            category:       inv.category       || 'otros',
+            provider_name:  strVal(inv.provider_name)  || 'Sin proveedor',
+            provider_cif:   strVal(inv.provider_cif)   || '',
+            invoice_number: strVal(inv.invoice_number) || `AUTO-${Date.now()}-${i}`,
+            invoice_date:   strVal(inv.invoice_date)   || null,
+            due_date:       strVal(inv.due_date)       || null,
+            subtotal:       numVal(inv.subtotal)       || null,
+            iva:            numVal(inv.iva)            || null,
+            total:          numVal(inv.total)          || 0,
+            category:       strVal(inv.category)      || 'otros',
             status:         'pendiente',
             file_url,
             file_name: file.name,
