@@ -1,6 +1,11 @@
 /**
  * useDocBrain - Hook de integracion del Cerebro IA con SmartDocumentArchive
  * Auto-procesa documentos subidos, clasifica y vincula proveedores automaticamente
+ *
+ * FIX: El OCR fallaba para URLs local:// porque ocrService no puede fetchear ese esquema.
+ *      Ahora se intenta primero getPendingFile(url) de integrationsService para obtener
+ *      el File object real (disponible cuando el archivo se acaba de subir en la misma sesión).
+ *      Si el archivo ya no está en memoria, se intenta con ocrService como antes.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -8,6 +13,7 @@ import { base44 } from '@/api/base44Client';
 import { docBrain } from '@/services/docBrainService';
 import { ocrService } from '@/services/ocrService';
 import { invoiceExtractor } from '@/services/invoiceExtractorService';
+import { getPendingFile, extractTextFromFile } from '@/services/integrationsService';
 import { toast } from 'sonner';
 
 export function useDocBrain() {
@@ -36,7 +42,7 @@ export function useDocBrain() {
 
     for (const file of pending) {
       try {
-        // Step 1: OCR
+        // Step 1: Extraer texto
         await base44.entities.UploadedFile.update(file.id, {
           processing_status: 'ocr_processing'
         });
@@ -44,16 +50,36 @@ export function useDocBrain() {
         let extractedText = '';
         let ocrConfidence = 0;
 
-        try {
-          const ocrResult = await ocrService.processDocument(
-            file.file_url, file.content_type
-          );
-          if (ocrResult.success) {
-            extractedText = ocrResult.text;
-            ocrConfidence = ocrResult.confidence;
+        // NUEVO: si el archivo acaba de subirse, está en _pendingFiles de integrationsService
+        // Esto evita el problema de que ocrService no puede leer URLs local://
+        const pendingFile = getPendingFile(file.file_url);
+
+        if (pendingFile) {
+          // Tenemos el File object real → extraer texto directamente con PDF.js
+          try {
+            const text = await extractTextFromFile(pendingFile);
+            if (text && text.length > 10) {
+              extractedText = text;
+              ocrConfidence = 80; // confianza estimada para PDF con texto embebido
+            }
+          } catch (e) {
+            console.warn('[useDocBrain] extractTextFromFile error:', e.message);
           }
-        } catch (e) {
-          console.warn('OCR failed, continuing with AI extraction:', e);
+        }
+
+        // Si no tenemos texto aún, intentar con ocrService (funciona para URLs reales)
+        if (!extractedText && file.file_url && !file.file_url.startsWith('local://')) {
+          try {
+            const ocrResult = await ocrService.processDocument(
+              file.file_url, file.content_type
+            );
+            if (ocrResult.success) {
+              extractedText = ocrResult.text;
+              ocrConfidence = ocrResult.confidence;
+            }
+          } catch (e) {
+            console.warn('[useDocBrain] OCR failed:', e.message);
+          }
         }
 
         // Step 2: DocBrain classification + extraction
@@ -82,7 +108,7 @@ export function useDocBrain() {
             }
           }
         } catch (brainError) {
-          console.warn('DocBrain processing failed, using fallback:', brainError);
+          console.warn('[useDocBrain] DocBrain processing failed, using fallback:', brainError);
         }
 
         // Step 3: Merge OCR regex extraction with brain results
@@ -119,7 +145,9 @@ export function useDocBrain() {
           ? 'completed'
           : confidence >= 30
             ? 'needs_review'
-            : 'error';
+            : extractedText.length > 20
+              ? 'needs_review'  // tiene texto pero datos insuficientes → revisar
+              : 'error';
 
         // Step 6: Save everything
         await base44.entities.UploadedFile.update(file.id, {
@@ -145,7 +173,7 @@ export function useDocBrain() {
         processed++;
 
         if (providerLink?.type === 'created') {
-          toast.success(`Nuevo proveedor creado: ${providerLink.name}`, { icon: '\uD83E\uDDE0' });
+          toast.success(`Nuevo proveedor creado: ${providerLink.name}`, { icon: '🧠' });
         }
 
       } catch (error) {
@@ -167,7 +195,7 @@ export function useDocBrain() {
 
     if (processed > 0) {
       toast.success(
-        `\uD83E\uDDE0 DocBrain: ${processed} documento(s) procesado(s)${errors > 0 ? `, ${errors} error(es)` : ''}`,
+        `🧠 DocBrain: ${processed} documento(s) procesado(s)${errors > 0 ? `, ${errors} error(es)` : ''}`,
         { duration: 4000 }
       );
       queryClient.invalidateQueries({ queryKey: ['smart-archive-files'] });
