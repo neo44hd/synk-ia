@@ -1,6 +1,9 @@
-import express from 'express';
-import cors    from 'cors';
-import dotenv  from 'dotenv';
+import express            from 'express';
+import cors               from 'cors';
+import dotenv             from 'dotenv';
+import path               from 'path';
+import { fileURLToPath }  from 'url';
+import { existsSync }     from 'fs';
 import { emailRouter }       from './routes/email.js';
 import { biloopRouter }      from './routes/biloop.js';
 import { biloopPortalRouter } from './routes/biloop-portal.js';
@@ -77,10 +80,26 @@ try {
   console.error('[SERVER] ✗ AI Engine falló al cargar:', e.message);
 }
 
-// ── 404 ───────────────────────────────────────────────────────────────────────
-app.use((req, res) => {
-  res.status(404).json({ error: `Ruta no encontrada: ${req.method} ${req.path}` });
-});
+// ── Frontend estático (producción) ─────────────────────────────────────────
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const distPath  = path.join(__dirname, '..', 'dist');
+
+if (existsSync(distPath)) {
+  app.use(express.static(distPath));
+  // SPA fallback — cualquier ruta no-API devuelve index.html
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: `Ruta no encontrada: ${req.method} ${req.path}` });
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+  console.log(`[SERVER] ✓ Frontend estático: ${distPath}`);
+} else {
+  // ── 404 (sin frontend buildeado) ───────────────────────────────────────────
+  app.use((req, res) => {
+    res.status(404).json({ error: `Ruta no encontrada: ${req.method} ${req.path}` });
+  });
+}
 
 // ── Error handler ─────────────────────────────────────────────────────────────
 app.use((err, _req, res, _next) => {
