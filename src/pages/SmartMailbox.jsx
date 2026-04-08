@@ -41,9 +41,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import moment from "moment";
-import "moment/locale/es";
-moment.locale("es");
+
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/es";
+dayjs.extend(relativeTime);
+dayjs.locale("es");
+
 
 const FOLDERS = [
   { id: "inbox", label: "Bandeja de entrada", icon: Inbox, color: "text-blue-500" },
@@ -391,7 +395,7 @@ export default function SmartMailbox() {
 
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
                       <span className="text-xs text-zinc-500">
-                        {moment(email.received_date).fromNow()}
+                        {dayjs(email.received_date).fromNow()}
                       </span>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -508,7 +512,7 @@ export default function SmartMailbox() {
                 )}
 
                 <div className="text-xs text-zinc-500">
-                  <p>Recibido: {moment(selectedEmail.received_date).format("DD MMM YYYY, HH:mm")}</p>
+                  <p>Recibido: {dayjs(selectedEmail.received_date).format("DD MMM YYYY, HH:mm")}</p>
                   <p>Prioridad: {selectedEmail.priority}</p>
                 </div>
                 </div>
