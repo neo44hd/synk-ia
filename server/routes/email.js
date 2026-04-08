@@ -273,8 +273,9 @@ emailRouter.get('/invoices', async (req, res) => {
       invoices: documents.sort((a, b) => new Date(b.date) - new Date(a.date))
     });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
 
-  // INVOICES-DETAIL - Parse PDFs, extract line items, prices per provider
+// INVOICES-DETAIL - Parse PDFs, extract line items, prices per provider
 // Uses pdf-parse to extract text and detect product lines
 emailRouter.get('/invoices-detail', async (req, res) => {
   try {
@@ -403,7 +404,7 @@ emailRouter.get('/invoices-detail', async (req, res) => {
     });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
-});
+
 // Fetch emails with pagination support
 emailRouter.get('/fetch-page', async (req, res) => {
   try {

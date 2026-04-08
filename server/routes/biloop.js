@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import path from 'path';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 
 export const biloopRouter = Router();
 
@@ -201,6 +203,134 @@ biloopRouter.get('/sync', async (req, res) => {
     synced:   new Date().toISOString(),
     results,
   });
+});
+
+// ── POST /api/biloop/process-zip ─────────────────────────────────────────────
+// Descarga un ZIP o PDF desde file_url (subido previamente via /api/files/upload),
+// extrae facturas con pdf-parse y las guarda como registros Invoice + Provider.
+// Respuesta: { success, results: { invoices_created, providers_created, errors[] } }
+biloopRouter.post('/process-zip', async (req, res) => {
+  try {
+    const { file_url } = req.body;
+    if (!file_url) return res.status(400).json({ success: false, error: 'file_url requerido' });
+
+    const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads');
+    const DATA_DIR    = process.env.DATA_DIR    || path.join(process.cwd(), 'data');
+
+    // Extraer nombre de archivo desde la URL  (/api/files/serve/xxx.pdf o URL completa)
+    const urlPath  = new URL(file_url, 'http://localhost').pathname;
+    const filename = path.basename(urlPath);
+    const filePath = path.join(UPLOADS_DIR, filename);
+
+    if (!existsSync(filePath)) {
+      return res.status(404).json({ success: false, error: `Archivo no encontrado: ${filename}` });
+    }
+
+    const results = { invoices_created: 0, providers_created: 0, errors: [] };
+
+    // ── Helpers de datos (replica el patrón de data.js) ────────────────────────
+    const readEntity  = (entity) => {
+      const f = path.join(DATA_DIR, `${entity.toLowerCase()}.json`);
+      if (!existsSync(f)) return [];
+      try { return JSON.parse(readFileSync(f, 'utf8')); } catch { return []; }
+    };
+    const writeEntity = (entity, data) => {
+      mkdirSync(DATA_DIR, { recursive: true });
+      writeFileSync(path.join(DATA_DIR, `${entity.toLowerCase()}.json`), JSON.stringify(data, null, 2), 'utf8');
+    };
+    const genId = () => 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+    // ── Extraer campos clave de texto PDF con regex ──────────────────────────
+    function extractInvoiceData(text, pdfFilename) {
+      const t = text || '';
+      const inv = { filename: pdfFilename, proveedor: null, numero_factura: null, fecha: null, total: null };
+
+      const numM  = t.match(/(?:factura|invoice|fra\.?|n[uú]m(?:ero)?)[.\s:#]*([A-Z0-9\/\-]{3,20})/i);
+      if (numM) inv.numero_factura = numM[1].trim();
+
+      const totM  = t.match(/(?:total\s+(?:factura|a\s+pagar|iva\s+inc\w*|general)|importe\s+total)[:\s€]*([0-9.,]+)/i);
+      if (totM)  inv.total = parseFloat(totM[1].replace(/\./g, '').replace(',', '.')) || null;
+
+      const dateM = t.match(/(?:fecha)[:\s]*(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/i);
+      if (dateM) inv.fecha = dateM[1];
+
+      // Proveedor: intenta cabecera del PDF o nombre de fichero como fallback
+      const provM = t.match(/^([A-ZÁÉÍÓÚÑA-Z ,\.&]{5,60})\s*(?:\n|\r)/m);
+      inv.proveedor = (provM ? provM[1].trim() : null)
+                    || pdfFilename.replace(/\.[^.]+$/, '').replace(/[_\-]/g, ' ').substring(0, 60);
+      return inv;
+    }
+
+    // ── Procesar un buffer PDF ───────────────────────────────────────────────
+    async function processPdfBuffer(buffer, pdfFilename) {
+      let pdfParse;
+      try { pdfParse = (await import('pdf-parse')).default; } catch { pdfParse = null; }
+
+      let text = '';
+      if (pdfParse) {
+        try { text = (await pdfParse(buffer)).text || ''; }
+        catch (e) { results.errors.push(`parse error ${pdfFilename}: ${e.message}`); }
+      }
+
+      const inv      = extractInvoiceData(text, pdfFilename);
+      const providers = readEntity('provider');
+      let provider   = providers.find(p =>
+        p.nombre?.toLowerCase() === inv.proveedor?.toLowerCase()
+      );
+      if (!provider) {
+        provider = {
+          id: genId(), nombre: inv.proveedor || 'Desconocido',
+          email: '', created_date: new Date().toISOString()
+        };
+        providers.push(provider);
+        writeEntity('provider', providers);
+        results.providers_created++;
+      }
+
+      const invoices = readEntity('invoice');
+      invoices.push({
+        id:              genId(),
+        numero_factura:  inv.numero_factura || pdfFilename,
+        proveedor:       inv.proveedor,
+        provider_id:     provider.id,
+        fecha:           inv.fecha,
+        total:           inv.total,
+        estado:          'pendiente',
+        origen:          'zip_upload',
+        filename:        pdfFilename,
+        text_preview:    text.substring(0, 500),
+        created_date:    new Date().toISOString(),
+      });
+      writeEntity('invoice', invoices);
+      results.invoices_created++;
+    }
+
+    const ext = path.extname(filename).toLowerCase();
+
+    if (ext === '.zip') {
+      // Extraer cada PDF del ZIP y procesarlo
+      const { default: AdmZip } = await import('adm-zip');
+      const zip     = new AdmZip(filePath);
+      const entries = zip.getEntries().filter(e =>
+        !e.isDirectory && e.name.toLowerCase().endsWith('.pdf')
+      );
+      if (entries.length === 0) {
+        return res.status(422).json({ success: false, error: 'El ZIP no contiene archivos PDF' });
+      }
+      for (const entry of entries) {
+        try { await processPdfBuffer(entry.getData(), entry.name); }
+        catch (e) { results.errors.push(`Error en ${entry.name}: ${e.message}`); }
+      }
+    } else {
+      // PDF individual
+      await processPdfBuffer(readFileSync(filePath), filename);
+    }
+
+    res.json({ success: true, results });
+  } catch (err) {
+    console.error('[process-zip]', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // ── GET /api/biloop/sync-status ───────────────────────────────────────────────
