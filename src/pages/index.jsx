@@ -10,6 +10,7 @@ import BiloopDocuments from "./BiloopDocuments";
 import BiloopImport from "./BiloopImport";
 import BusinessAnalysis from "./BusinessAnalysis";
 import CEOBrain from "./CEOBrain";
+import CEODashboard from "./CEODashboard";
 import CentralAgent from "./CentralAgent";
 import CompanyDocs from "./CompanyDocs";
 import Comparator from "./Comparator";
@@ -68,7 +69,7 @@ function PagesContent() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Navigate to="/albaranes" replace />} />
+        <Route path="/" element={<Navigate to="/ceodashboard" replace />} />
         <Route path="/albaranes" element={<Albaranes />} />
         <Route path="/apidiagnostics" element={<ApiDiagnostics />} />
         <Route path="/attendancecontrol" element={<AttendanceControl />} />
@@ -79,6 +80,7 @@ function PagesContent() {
         <Route path="/biloopimport" element={<BiloopImport />} />
         <Route path="/businessanalysis" element={<BusinessAnalysis />} />
         <Route path="/ceobrain" element={<CEOBrain />} />
+        <Route path="/ceodashboard" element={<CEODashboard />} />
         <Route path="/centralagent" element={<CentralAgent />} />
         <Route path="/companydocs" element={<CompanyDocs />} />
         <Route path="/comparator" element={<Comparator />} />
@@ -126,7 +128,7 @@ function PagesContent() {
         <Route path="/websync" element={<WebSync />} />
         <Route path="/workerinterface" element={<WorkerInterface />} />
         <Route path="/workermobile" element={<WorkerMobile />} />
-        <Route path="*" element={<Albaranes />} />
+        <Route path="*" element={<Navigate to="/ceodashboard" replace />} />
       </Routes>
     </Layout>
   );
