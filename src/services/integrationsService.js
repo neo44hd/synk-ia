@@ -56,7 +56,7 @@ export async function InvokeLLM({ prompt, response_json_schema, add_context_from
     format,
     ...(response_json_schema ? { jsonSchema: response_json_schema } : {}),
     temperature: 0.2,
-    maxTokens: 1024,
+    maxTokens: 2048,
   });
   if (!data.success) throw new Error(data.error || 'LLM error');
   if (response_json_schema) {
@@ -255,7 +255,7 @@ export async function ExtractDataFromUploadedFile({ file_url, json_schema, extra
   // 5. Intentar extracción estructurada con LLM (si el backend está disponible)
   try {
     const data = await apiPost('/api/ai/extract-document', {
-      text: text.substring(0, 6000),
+      text: text.substring(0, 8000),
       json_schema: schema,
       filename: file.name,
     });

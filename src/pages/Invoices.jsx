@@ -45,6 +45,7 @@ export default function Invoices() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [viewingPDF, setViewingPDF] = useState(null);
+  const [processStatus, setProcessStatus] = useState('');
   const fileInputRef = useRef(null);
 
   const queryClient = useQueryClient();
@@ -182,74 +183,132 @@ export default function Invoices() {
 
   const processFile = async (file) => {
     setIsUploading(true);
-    setUploadProgress(10);
+    setUploadProgress(5);
+    setProcessStatus('Subiendo archivo...');
 
     try {
-      setUploadProgress(30);
+      // 1. Upload
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      
-      setUploadProgress(50);
-      const invoiceSchema = await base44.entities.Invoice.schema();
-      
-      setUploadProgress(70);
-      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: invoiceSchema
-      });
+      setUploadProgress(20);
+      setProcessStatus('Extrayendo facturas con IA...');
 
-      setUploadProgress(90);
-
-      if (result.status === "success" && result.output) {
-        // Extraer logo del proveedor con IA
-        let providerLogo = null;
-        try {
-          const logoResult = await base44.integrations.Core.InvokeLLM({
-            prompt: `Analiza esta factura y extrae SOLO la URL del logo del proveedor si está visible en la imagen. Si no hay logo visible, responde con null.`,
-            file_urls: [file_url],
-            response_json_schema: {
-              type: "object",
+      // 2. Schema multi-factura
+      const multiSchema = {
+        type: 'object',
+        properties: {
+          invoices: {
+            type: 'array',
+            items: {
+              type: 'object',
               properties: {
-                logo_detected: { type: "boolean" },
-                logo_description: { type: "string" }
+                provider_name:  { type: 'string' },
+                provider_cif:   { type: 'string' },
+                invoice_number: { type: 'string' },
+                invoice_date:   { type: 'string' },
+                due_date:       { type: 'string' },
+                subtotal:       { type: 'number' },
+                iva:            { type: 'number' },
+                total:          { type: 'number' },
+                category: {
+                  type: 'string',
+                  enum: ['alimentacion','bebidas','limpieza','suministros','servicios','nominas','alquiler','equipamiento','otros']
+                }
               }
             }
-          });
-          
-          if (logoResult.logo_detected) {
-            // Crear proveedor con logo si no existe
-            const existingProviders = await base44.entities.Provider.list();
-            const providerExists = existingProviders.find(p => p.name === result.output.provider_name);
-            
-            if (!providerExists && result.output.provider_name) {
-              await base44.entities.Provider.create({
-                name: result.output.provider_name,
-                category: result.output.category || 'suministros',
-                status: 'activo',
-                rating: 4,
-                logo_description: logoResult.logo_description
-              });
-            }
           }
-        } catch (e) {
-          console.log('Logo extraction skipped:', e.message);
+        }
+      };
+
+      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        file_url,
+        json_schema: multiSchema
+      });
+
+      setUploadProgress(55);
+
+      // Normalizar: puede venir { invoices: [...] } o un objeto único
+      let invoiceList = [];
+      if (Array.isArray(result?.output?.invoices) && result.output.invoices.length > 0) {
+        invoiceList = result.output.invoices;
+      } else if (result?.output && !Array.isArray(result.output?.invoices)) {
+        // Respuesta de una sola factura (fallback regex o LLM sin array)
+        const o = result.output;
+        if (o.total || o.provider_name || o.invoice_number) {
+          invoiceList = [o];
+        }
+      }
+
+      if (invoiceList.length === 0) {
+        toast.error('No se encontraron facturas en el documento');
+        return;
+      }
+
+      setProcessStatus(`Guardando ${invoiceList.length} factura${invoiceList.length > 1 ? 's' : ''}...`);
+
+      // 3. Auto-save cada factura + auto-crear proveedor
+      const existingProviders = await base44.entities.Provider.list();
+      let saved = 0;
+
+      for (let i = 0; i < invoiceList.length; i++) {
+        const inv = invoiceList[i];
+        const progress = 55 + Math.round(((i + 1) / invoiceList.length) * 40);
+        setUploadProgress(progress);
+        setProcessStatus(`Guardando ${i + 1}/${invoiceList.length}: ${inv.provider_name || 'factura'}`);
+
+        // Auto-crear proveedor si no existe
+        if (inv.provider_name) {
+          const exists = existingProviders.find(
+            p => p.name?.toLowerCase() === inv.provider_name?.toLowerCase()
+          );
+          if (!exists) {
+            try {
+              const newProv = await base44.entities.Provider.create({
+                name:     inv.provider_name,
+                cif:      inv.provider_cif || '',
+                category: inv.category    || 'suministros',
+                status:   'activo',
+                rating:   4
+              });
+              existingProviders.push(newProv);
+            } catch (e) { /* continuar aunque falle */ }
+          }
         }
 
-        setUploadProgress(100);
-        setPreviewInvoice({
-          ...result.output,
-          file_url,
-          file_name: file.name
-        });
-        toast.success('Factura procesada con IA');
-      } else {
-        toast.error('No se pudo extraer datos de la factura');
+        // Guardar factura
+        try {
+          await base44.entities.Invoice.create({
+            provider_name:  inv.provider_name  || 'Sin proveedor',
+            provider_cif:   inv.provider_cif   || '',
+            invoice_number: inv.invoice_number || `AUTO-${Date.now()}-${i}`,
+            invoice_date:   inv.invoice_date   || null,
+            due_date:       inv.due_date       || null,
+            subtotal:       inv.subtotal       || null,
+            iva:            inv.iva            || null,
+            total:          inv.total          || 0,
+            category:       inv.category       || 'otros',
+            status:         'pendiente',
+            file_url,
+            file_name: file.name,
+          });
+          saved++;
+        } catch (e) {
+          console.warn(`Error guardando factura ${i + 1}:`, e.message);
+        }
       }
+
+      setUploadProgress(100);
+      setProcessStatus(`¡Listo! ${saved} factura${saved !== 1 ? 's' : ''} importada${saved !== 1 ? 's' : ''}`);
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['providers'] });
+      toast.success(`${saved} factura${saved !== 1 ? 's' : ''} importada${saved !== 1 ? 's' : ''} automáticamente`);
+
     } catch (error) {
-      toast.error('Error al procesar la factura');
+      toast.error('Error al procesar el archivo');
       console.error(error);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
+      setProcessStatus('');
     }
   };
 
@@ -356,7 +415,7 @@ export default function Invoices() {
                 <div className="space-y-4">
                   <Loader2 className="w-12 h-12 text-blue-500 mx-auto animate-spin" />
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">Procesando con IA...</p>
+                    <p className="text-sm font-medium">{processStatus || 'Procesando con IA...'}</p>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="bg-blue-600 h-2 rounded-full transition-all duration-300"
