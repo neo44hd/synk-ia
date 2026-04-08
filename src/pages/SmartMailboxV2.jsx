@@ -73,11 +73,15 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import moment from "moment";
-import "moment/locale/es";
+
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/es";
+dayjs.extend(relativeTime);
+dayjs.locale("es");
 import { emailService, EMAIL_CATEGORIES } from "@/services/emailService";
 
-moment.locale("es");
+
 
 // Configuración de carpetas
 const FOLDERS = [
@@ -241,8 +245,8 @@ export default function SmartMailboxV2() {
       byCategory,
       byFolder,
       withAttachments: allEmails.filter(e => e.has_attachments).length,
-      today: allEmails.filter(e => moment(e.received_date).isSame(moment(), 'day')).length,
-      thisWeek: allEmails.filter(e => moment(e.received_date).isSame(moment(), 'week')).length,
+      today: allEmails.filter(e => dayjs(e.received_date).isSame(dayjs(), 'day')).length,
+      thisWeek: allEmails.filter(e => dayjs(e.received_date).isSame(dayjs(), 'week')).length,
     };
   }, [allEmails]);
 
@@ -417,7 +421,7 @@ export default function SmartMailboxV2() {
             {/* Última sincronización */}
             {localStorage.getItem('lastEmailSync') && (
               <span className="text-xs text-zinc-500">
-                Última sync: {moment(localStorage.getItem('lastEmailSync')).fromNow()}
+                Última sync: {dayjs(localStorage.getItem('lastEmailSync')).fromNow()}
               </span>
             )}
             
@@ -965,10 +969,10 @@ function EmailRow({ email, isSelected, isChecked, onSelect, onCheck, onToggleSta
       {/* Fecha y Acciones */}
       <div className="flex flex-col items-end gap-1 flex-shrink-0">
         <span className="text-xs text-zinc-500">
-          {moment(email.received_date).format("DD MMM")}
+          {dayjs(email.received_date).format("DD MMM")}
         </span>
         <span className="text-xs text-zinc-600">
-          {moment(email.received_date).format("HH:mm")}
+          {dayjs(email.received_date).format("HH:mm")}
         </span>
         
         <DropdownMenu>
@@ -1042,10 +1046,10 @@ function EmailDetail({ email, onClose, onToggleStar, onMove, onLinkProvider }) {
           </div>
           <div className="ml-auto text-right">
             <p className="text-xs text-zinc-500">
-              {moment(email.received_date).format("DD MMM YYYY")}
+              {dayjs(email.received_date).format("DD MMM YYYY")}
             </p>
             <p className="text-xs text-zinc-600">
-              {moment(email.received_date).format("HH:mm")}
+              {dayjs(email.received_date).format("HH:mm")}
             </p>
           </div>
         </div>
