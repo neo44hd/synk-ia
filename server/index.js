@@ -6,6 +6,7 @@ import { biloopRouter }      from './routes/biloop.js';
 import { biloopPortalRouter } from './routes/biloop-portal.js';
 import { revoRouter }        from './routes/revo.js';
 import { healthRouter }      from './routes/health.js';
+import { filesRouter }       from './routes/files.js';
 
 dotenv.config();
 
@@ -48,6 +49,7 @@ app.use('/api/biloop', biloopRouter);
 app.use('/api/biloop', biloopPortalRouter);
 app.use('/api/revo',   revoRouter);
 app.use('/api/health', healthRouter);
+app.use('/api/files',  filesRouter);
 
 // ── Data API (generic CRUD) ──────────────────────────────────────────────────
 try {
@@ -112,3 +114,4 @@ async function shutdown(signal) {
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT',  () => shutdown('SIGINT'));
+
