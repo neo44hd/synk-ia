@@ -39,7 +39,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
-            "sudo mkdir -p /var/www/sinkialabs /opt/sinkia-backend && sudo chown ${{ secrets.SERVER_USER }}:${{ secrets.SERVER_USER }} /var/www/sinkialabs /opt/sinkia-backend"
+            "sudo mkdir -p /var/www/sinkialabs /opt/sinkia-backend /opt/models && sudo chown ${{ secrets.SERVER_USER }}:${{ secrets.SERVER_USER }} /var/www/sinkialabs /opt/sinkia-backend /opt/models"
 
       - name: Deploy frontend
         run: |
@@ -55,6 +55,13 @@ jobs:
             server/ \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/opt/sinkia-backend/
 
+      - name: Deploy scripts
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            scripts/ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/opt/sinkia-backend/scripts/
+
       - name: Create .env and start backend
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
@@ -69,7 +76,8 @@ jobs:
           BILOOP_CIF=${{ secrets.BILOOP_CIF }}
           REVO_TOKEN_LARGO=${{ secrets.REVO_BEARER_TOKEN }}
           REVO_ADMIN_USER=${{ secrets.REVO_TENANT }}
-          AI_MODEL_NAME=qwen2.5-7b-instruct-q4_k_m.gguf
+          AI_MODEL_NAME=qwen2.5-3b-instruct-q4_k_m.gguf
+          AI_MODEL_PATH=/opt/models/qwen2.5-3b-instruct-q4_k_m.gguf
           AI_GPU_MODE=auto
           EOF
           cd /opt/sinkia-backend
@@ -78,6 +86,25 @@ jobs:
           pm2 delete sinkia-api 2>/dev/null || true
           pm2 start index.js --name sinkia-api
           pm2 save
+          ENDSSH
+
+      - name: Download AI model if missing
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << 'ENDSSH'
+          MODEL_FILE="/opt/models/qwen2.5-3b-instruct-q4_k_m.gguf"
+          if [ ! -f "$MODEL_FILE" ]; then
+            echo "Downloading qwen2.5-3b model..."
+            cd /opt/sinkia-backend
+            node scripts/download-model.js qwen-3b || echo "Model download failed but continuing"
+            if [ -f "models/qwen2.5-3b-instruct-q4_k_m.gguf" ]; then
+              mv models/qwen2.5-3b-instruct-q4_k_m.gguf /opt/models/
+              echo "Model moved to /opt/models/"
+            fi
+          else
+            echo "Model already exists, skipping download"
+          fi
+          pm2 restart sinkia-api 2>/dev/null || true
           ENDSSH
 
       - name: Configure Nginx with SSL
