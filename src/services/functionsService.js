@@ -133,10 +133,22 @@ export async function fullDataSync() {
     }
   });
 
-  // Persiste en localStorage (mantiene compatibilidad con código existente)
-  if (results.emails?.documents)  localStorage.setItem('synkia_emails_cache',    JSON.stringify(results.emails.documents));
-  if (results.revo?.products)     localStorage.setItem('synkia_products_cache',   JSON.stringify(results.revo.products));
-  if (results.payslips?.payslips) localStorage.setItem('synkia_payslips_cache',   JSON.stringify(results.payslips.payslips));
+  // Persiste en el backend via /api/data (reemplaza localStorage)
+  const syncToBackend = async (entity, records) => {
+    try {
+      await fetch(`/api/data/${entity}/bulk`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ records, merge: true }),
+      });
+    } catch (e) {
+      console.warn(`[fullDataSync] No se pudo sincronizar ${entity}:`, e.message);
+    }
+  };
+
+  if (results.emails?.documents) await syncToBackend('emailmessage', results.emails.documents);
+  if (results.revo?.products)    await syncToBackend('product', results.revo.products);
+  if (results.payslips?.payslips) await syncToBackend('payroll', results.payslips.payslips);
 
   return { success: true, results, timestamp: new Date().toISOString() };
 }
