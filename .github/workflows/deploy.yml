@@ -83,11 +83,11 @@ jobs:
           cd /opt/sinkia-backend
           npm install --production
           which pm2 || sudo npm install -g pm2
+                                        pm2 delete synkia-backend 2>/dev/null || true
           pm2 delete sinkia-api 2>/dev/null || true
           pm2 start index.js --name sinkia-api
-          pm2 save
-          ENDSSH
-
+                    pm2 save
+                    ENDSSH
       - name: Download AI model if missing
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
