@@ -10,6 +10,7 @@ import { biloopPortalRouter } from './routes/biloop-portal.js';
 import { revoRouter }        from './routes/revo.js';
 import { healthRouter }      from './routes/health.js';
 import { filesRouter }       from './routes/files.js';
+import { adminRouter }       from './routes/admin.js';
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ app.use('/api/biloop', biloopPortalRouter);
 app.use('/api/revo',   revoRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/files',  filesRouter);
+app.use('/api/admin',  adminRouter);
 
 // ── Data API (generic CRUD) ──────────────────────────────────────────────────
 try {
@@ -83,6 +85,13 @@ try {
 // ── Frontend estático (producción) ─────────────────────────────────────────
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath  = path.join(__dirname, '..', 'dist');
+
+// Servir admin.html en /admin (fuera del SPA de React)
+const adminHtml = path.join(__dirname, '..', 'public', 'admin.html');
+if (existsSync(adminHtml)) {
+  app.get('/admin', (_req, res) => res.sendFile(adminHtml));
+  console.log('[SERVER] ✓ Admin panel: /admin');
+}
 
 if (existsSync(distPath)) {
   app.use(express.static(distPath));
