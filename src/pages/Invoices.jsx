@@ -195,11 +195,29 @@ export default function Invoices() {
 
       // 2. Extraer texto client-side con PDF.js
       const { extractTextFromFile } = await import('@/services/integrationsService');
-      const pdfText = await extractTextFromFile(file);
+      let pdfText = await extractTextFromFile(file);
 
+      // Si el PDF es escaneado (sin texto seleccionable), intentar OCR server-side
       if (!pdfText || pdfText.trim().length < 30) {
-        toast.error('El PDF no contiene texto seleccionable (puede estar escaneado)');
-        return;
+        setProcessStatus('PDF escaneado — aplicando OCR...');
+        try {
+          const ocrRes = await fetch('/api/ai/ocr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file_url })
+          });
+          const ocrData = await ocrRes.json();
+          if (ocrData.success && ocrData.text && ocrData.text.length > 30) {
+            pdfText = ocrData.text;
+            setProcessStatus(`OCR completado (${ocrData.pages} páginas) — analizando...`);
+          } else {
+            toast.error('No se pudo extraer texto del PDF escaneado');
+            return;
+          }
+        } catch (ocrErr) {
+          toast.error('Error en OCR. Asegúrate de que el PDF es legible.');
+          return;
+        }
       }
 
       setUploadProgress(35);

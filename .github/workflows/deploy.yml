@@ -74,6 +74,12 @@ jobs:
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
             "cd /opt/sinkia-backend && npm install --production && (which pm2 || sudo npm install -g pm2) && pm2 delete synkia-backend 2>/dev/null; pm2 delete sinkia-api 2>/dev/null; pm2 start index.js --name sinkia-api && pm2 save"
 
+      - name: Install OCR tools
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+            "which tesseract || (sudo apt-get update -qq && sudo apt-get install -y tesseract-ocr tesseract-ocr-spa poppler-utils) && echo 'OCR tools ready'"
+
       - name: Download AI model if missing
         run: |
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \

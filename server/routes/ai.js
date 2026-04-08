@@ -301,3 +301,68 @@ Devuelves ÚNICAMENTE JSON válido sin texto adicional ni bloques markdown.`,
     return res.json({ status: 'error', output: null, details: err.message });
   }
 });
+
+// ─── POST /api/ai/ocr ────────────────────────────────────────────────────────
+// Extrae texto de un PDF escaneado usando Tesseract + pdftoppm
+// Body: { file_url: '/api/files/serve/xxx.pdf' }
+// Returns: { success, text, pages }
+aiRouter.post('/ocr', async (req, res) => {
+  const { file_url } = req.body;
+  if (!file_url) return res.status(400).json({ error: 'file_url requerida' });
+
+  const { exec } = await import('child_process');
+  const { promisify } = await import('util');
+  const execAsync = promisify(exec);
+  const os = await import('os');
+  const fsMod = await import('fs');
+
+  const filename = path.basename(file_url.split('?')[0]);
+  const UPLOADS_DIR = process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads');
+  const filePath = path.join(UPLOADS_DIR, filename);
+
+  if (!fsMod.existsSync(filePath)) {
+    return res.status(404).json({ error: `Archivo no encontrado: ${filename}` });
+  }
+
+  const tmpDir = fsMod.mkdtempSync(path.join(os.tmpdir(), 'ocr-'));
+  console.log(`[OCR] Procesando ${filename} → tmpDir=${tmpDir}`);
+
+  try {
+    // Convertir PDF a imágenes PNG (máximo 15 páginas, 200 DPI)
+    await execAsync(
+      `pdftoppm -r 200 -png -l 15 "${filePath}" "${path.join(tmpDir, 'page')}"`,
+      { timeout: 60000 }
+    );
+
+    const pages = fsMod.readdirSync(tmpDir)
+      .filter(f => f.endsWith('.png'))
+      .sort();
+
+    console.log(`[OCR] ${pages.length} páginas detectadas`);
+
+    let fullText = '';
+    for (const page of pages) {
+      const pagePath = path.join(tmpDir, page);
+      try {
+        const { stdout } = await execAsync(
+          `tesseract "${pagePath}" stdout -l spa+eng quiet 2>/dev/null`,
+          { timeout: 30000 }
+        );
+        fullText += stdout + '\n';
+      } catch (pageErr) {
+        console.warn(`[OCR] Error en página ${page}:`, pageErr.message);
+      }
+    }
+
+    fsMod.rmSync(tmpDir, { recursive: true, force: true });
+
+    const text = fullText.trim();
+    console.log(`[OCR] Texto extraído: ${text.length} chars`);
+
+    res.json({ success: true, text, pages: pages.length });
+  } catch (err) {
+    fsMod.rmSync(tmpDir, { recursive: true, force: true });
+    console.error('[OCR] Error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
