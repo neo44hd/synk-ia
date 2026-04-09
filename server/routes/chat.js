@@ -1,62 +1,143 @@
 /**
- * chat.js — Proxy de chat al modelo local (LiteLLM / LM Studio)
- * POST /api/chat  → streaming SSE al navegador
+ * chat.js — Chat con Qwen3-VL via LM Studio (OpenAI format)
+ *
+ * Endpoints:
+ *   POST /api/chat         → chat libre, SSE streaming con think tags separados
+ *   POST /api/chat/brain   → chat con contexto de negocio (brain.js)
+ *   GET  /api/chat/status  → estado del modelo
+ *
+ * Eventos SSE:
+ *   data: {"type":"thinking","text":"..."}  → razonamiento interno (colapsable)
+ *   data: {"type":"text","text":"..."}      → respuesta final
+ *   data: [DONE]
  */
 
 import { Router } from 'express';
-import { askBrainStream, classifyIntent } from '../services/brain.js';
+import { askBrainStream, classifyIntent, searchWeb } from '../services/brain.js';
 
-const router = Router();
-const LLM_BASE = process.env.LOCAL_LLM_URL || 'http://localhost:12345';
-const LLM_PORT = process.env.LITELLM_PORT   || '8082';
-const PROXY    = `http://localhost:${LLM_PORT}`;
-const MODEL    = process.env.LOCAL_LLM_MODEL || 'medina-qwen3-14b-openclaw';
+const router     = Router();
+const LM_STUDIO  = process.env.LOCAL_LLM_URL   || 'http://localhost:12345';
+const LITELLM    = process.env.LITELLM_URL      || 'http://localhost:8082';
+const MODEL      = process.env.LOCAL_LLM_MODEL  || 'qwen3-vl-32b-gemini-heretic-uncensored-thinking-i1';
 
-// ── POST /api/chat ─────────────────────────────────────────────────────────────
-// Body: { messages: [{role, content}], stream?: true, system?: string }
+// ── ThinkingFilter: separa <think>...</think> del texto final ─────────────
+// Funciona en streaming, acumula buffer para manejar tags partidos entre chunks
+class ThinkingFilter {
+  constructor(onText, onThinking) {
+    this.onText      = onText;
+    this.onThinking  = onThinking;
+    this.buf         = '';
+    this.inThink     = false;
+  }
+
+  push(chunk) {
+    this.buf += chunk;
+    this._flush();
+  }
+
+  end() {
+    // Al final, volcar lo que quede como texto
+    if (this.buf && !this.inThink) this.onText(this.buf);
+    this.buf = '';
+  }
+
+  _flush() {
+    const OPEN  = '<think>';
+    const CLOSE = '</think>';
+    const SAFE  = 8; // chars mínimos a retener por si el tag viene partido
+
+    while (true) {
+      if (this.inThink) {
+        const end = this.buf.indexOf(CLOSE);
+        if (end === -1) {
+          // Seguimos en bloque think, volcar todo excepto los últimos SAFE chars
+          if (this.buf.length > SAFE) {
+            this.onThinking(this.buf.slice(0, this.buf.length - SAFE));
+            this.buf = this.buf.slice(this.buf.length - SAFE);
+          }
+          break;
+        } else {
+          if (end > 0) this.onThinking(this.buf.slice(0, end));
+          this.buf     = this.buf.slice(end + CLOSE.length);
+          this.inThink = false;
+          this.onThinking(null); // señal: fin de bloque think
+        }
+      } else {
+        const start = this.buf.indexOf(OPEN);
+        if (start === -1) {
+          // No hay tag think, volcar excepto últimos SAFE chars
+          if (this.buf.length > SAFE) {
+            this.onText(this.buf.slice(0, this.buf.length - SAFE));
+            this.buf = this.buf.slice(this.buf.length - SAFE);
+          }
+          break;
+        } else {
+          if (start > 0) this.onText(this.buf.slice(0, start));
+          this.buf     = this.buf.slice(start + OPEN.length);
+          this.inThink = true;
+        }
+      }
+    }
+  }
+}
+
+// ── POST /api/chat ─────────────────────────────────────────────────────────
+// Body: { messages, system?, stream?, thinking? }
+// thinking=true → envía eventos type:"thinking" además de type:"text"
 router.post('/', async (req, res) => {
-  const { messages = [], system, stream = true } = req.body;
+  const { messages = [], system, stream = true, thinking = true } = req.body;
 
   const allMessages = [];
   if (system) allMessages.push({ role: 'system', content: system });
   allMessages.push(...messages);
 
-  try {
-    // Intentar vía LiteLLM proxy primero (Anthropic format)
-    const endpoint = `${PROXY}/v1/messages`;
-    const payload  = {
-      model:      MODEL,
-      messages:   allMessages,
-      max_tokens: 8192,
-      stream:     !!stream,
-    };
+  if (!stream) {
+    // ── Respuesta sin streaming ──────────────────────────────────────────
+    try {
+      const r = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
+        body:    JSON.stringify({ model: MODEL, messages: allMessages, stream: false, max_tokens: 8192 }),
+      });
+      const d    = await r.json();
+      const text = d.choices?.[0]?.message?.content || '';
+      // Limpiar think tags para respuesta no-streaming
+      const clean = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+      return res.json({ text: clean, model: MODEL });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
 
-    const upstream = await fetch(endpoint, {
+  // ── Respuesta streaming con SSE ──────────────────────────────────────────
+  res.setHeader('Content-Type',      'text/event-stream');
+  res.setHeader('Cache-Control',     'no-cache');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+
+  try {
+    const upstream = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
       method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'x-api-key':     'local',
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
+      body:    JSON.stringify({ model: MODEL, messages: allMessages, stream: true, max_tokens: 8192 }),
     });
 
     if (!upstream.ok) {
-      // Fallback: intentar OpenAI format directo con LM Studio
-      return await openaiChat(req, res, allMessages, stream);
+      send({ type: 'error', text: `LM Studio ${upstream.status}` });
+      res.write('data: [DONE]\n\n');
+      return res.end();
     }
 
-    if (!stream) {
-      const data = await upstream.json();
-      const text = data.content?.find(c => c.type === 'text')?.text || '';
-      return res.json({ text, model: data.model || MODEL });
-    }
-
-    // ── Streaming SSE ───────────────────────────────────────────────────────────
-    res.setHeader('Content-Type',      'text/event-stream');
-    res.setHeader('Cache-Control',     'no-cache');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders();
+    const filter = new ThinkingFilter(
+      (text) => { if (text) send({ type: 'text', text }); },
+      (think) => {
+        if (!thinking) return; // si el cliente no quiere el thinking, descartarlo
+        if (think === null) send({ type: 'thinking_done' });
+        else if (think) send({ type: 'thinking', text: think });
+      },
+    );
 
     const reader = upstream.body.getReader();
     const dec    = new TextDecoder();
@@ -71,75 +152,30 @@ router.post('/', async (req, res) => {
       for (const line of lines) {
         if (!line.startsWith('data:')) continue;
         const raw = line.slice(5).trim();
-        if (raw === '[DONE]') { res.write('data: [DONE]\n\n'); continue; }
+        if (raw === '[DONE]') continue;
         try {
-          const evt = JSON.parse(raw);
-          // Anthropic SSE: content_block_delta con text delta
-          const delta = evt.delta?.text || evt.delta?.thinking || '';
-          if (delta) res.write(`data: ${JSON.stringify({ text: delta })}\n\n`);
+          const d     = JSON.parse(raw);
+          const chunk = d.choices?.[0]?.delta?.content || '';
+          if (chunk) filter.push(chunk);
         } catch {}
       }
     }
-    res.write('data: [DONE]\n\n');
-    res.end();
+
+    filter.end();
 
   } catch (e) {
-    // Fallback completo
-    console.error('[CHAT] Error LiteLLM:', e.message, '— intentando LM Studio directo');
-    return await openaiChat(req, res, allMessages, stream);
+    console.error('[CHAT] Error streaming:', e.message);
+    send({ type: 'error', text: e.message });
   }
+
+  res.write('data: [DONE]\n\n');
+  res.end();
 });
 
-// ── Fallback OpenAI directo ────────────────────────────────────────────────────
-async function openaiChat(req, res, messages, stream) {
-  try {
-    const upstream = await fetch(`${LLM_BASE}/v1/chat/completions`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer local' },
-      body: JSON.stringify({ model: MODEL, messages, stream: !!stream, max_tokens: 8192 }),
-    });
-
-    if (!stream) {
-      const d = await upstream.json();
-      return res.json({ text: d.choices?.[0]?.message?.content || '', model: MODEL });
-    }
-
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders();
-
-    const reader = upstream.body.getReader();
-    const dec    = new TextDecoder();
-    let   buf    = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop() || '';
-      for (const line of lines) {
-        if (!line.startsWith('data:')) continue;
-        const raw = line.slice(5).trim();
-        if (raw === '[DONE]') { res.write('data: [DONE]\n\n'); continue; }
-        try {
-          const d    = JSON.parse(raw);
-          const text = d.choices?.[0]?.delta?.content || '';
-          if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`);
-        } catch {}
-      }
-    }
-    res.write('data: [DONE]\n\n');
-    res.end();
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-}
-
-// ── POST /api/chat/brain — Chat inteligente con contexto de negocio ────────────
-// Body: { message: string }
-// SSE: data: {type:"step",label:"..."} | data: {type:"chunk",text:"..."} | data: [DONE]
+// ── POST /api/chat/brain ─────────────────────────────────────────────────────
+// Chat inteligente con contexto de negocio (brain.js)
+// Body: { message }
+// SSE: {type:"step",...} | {type:"thinking",...} | {type:"text",...} | [DONE]
 router.post('/brain', async (req, res) => {
   const { message } = req.body;
   if (!message?.trim()) return res.status(400).json({ error: 'Mensaje requerido' });
@@ -154,8 +190,12 @@ router.post('/brain', async (req, res) => {
   try {
     await askBrainStream(
       message,
-      (step)  => send({ type: 'step',  ...step }),
-      (chunk) => send({ type: 'chunk', text: chunk }),
+      (step)  => send({ type: 'step', ...step }),
+      (chunk) => {
+        // El brain ya devuelve texto limpio (stripThinking en llm())
+        // Solo para el stream final de generateAnswer, filtramos aquí también
+        send({ type: 'text', text: chunk });
+      },
     );
   } catch (err) {
     send({ type: 'error', text: err.message });
@@ -165,19 +205,40 @@ router.post('/brain', async (req, res) => {
   res.end();
 });
 
-// ── GET /api/chat/status ──────────────────────────────────────────────────────
+// ── POST /api/chat/search ────────────────────────────────────────────────────
+// Búsqueda web directa via SearXNG
+// Body: { query, n? }
+router.post('/search', async (req, res) => {
+  const { query, n = 5 } = req.body;
+  if (!query) return res.status(400).json({ error: 'Query requerido' });
+  const results = await searchWeb(query, n);
+  res.json({ query, results: results || [], disponible: !!results });
+});
+
+// ── GET /api/chat/status ─────────────────────────────────────────────────────
 router.get('/status', async (_req, res) => {
   try {
-    const r = await fetch(`${PROXY}/health`, { signal: AbortSignal.timeout(2000) });
-    const litellm_ok = r.ok;
-    const lm_r = await fetch(`${LLM_BASE}/v1/models`, {
-      headers: { Authorization: 'Bearer local' },
-      signal: AbortSignal.timeout(2000),
+    const [lm, searxng] = await Promise.allSettled([
+      fetch(`${LM_STUDIO}/v1/models`, {
+        headers: { Authorization: 'Bearer local' },
+        signal: AbortSignal.timeout(3000),
+      }),
+      fetch('http://localhost:8888/healthz', { signal: AbortSignal.timeout(2000) }),
+    ]);
+
+    const lmOk = lm.status === 'fulfilled' && lm.value.ok;
+    const models = lmOk
+      ? ((await lm.value.json()).data?.map(m => m.id) || [])
+      : [];
+
+    res.json({
+      lm_studio:  lmOk,
+      searxng:    searxng.status === 'fulfilled' && searxng.value.ok,
+      models,
+      active_model: MODEL,
     });
-    const models = lm_r.ok ? (await lm_r.json()).data?.map(m => m.id) || [] : [];
-    res.json({ litellm: litellm_ok, lm_studio: lm_r.ok, models, active_model: MODEL });
   } catch (e) {
-    res.json({ litellm: false, lm_studio: false, models: [], error: e.message });
+    res.json({ lm_studio: false, searxng: false, models: [], error: e.message });
   }
 });
 

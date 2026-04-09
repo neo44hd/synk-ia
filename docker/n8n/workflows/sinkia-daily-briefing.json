@@ -1,0 +1,107 @@
+{
+  "name": "Sinkia — Daily Briefing",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1, "triggerAtHour": 9, "triggerAtMinute": 0 }] }
+      },
+      "id": "trigger-daily",
+      "name": "09:00 cada día",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:3001/api/documents/stats",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-stats",
+      "name": "Estadísticas Sinkia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 180],
+      "credentials": { "httpHeaderAuth": { "id": "sinkia-token", "name": "Sinkia Admin Token" } }
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:3001/api/revo/summary",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-revo",
+      "name": "Ventas Revo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 360],
+      "credentials": { "httpHeaderAuth": { "id": "sinkia-token", "name": "Sinkia Admin Token" } }
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:3001/api/trabajadores/fichajes/hoy",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-trabajadores",
+      "name": "Trabajadores Hoy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 540],
+      "credentials": { "httpHeaderAuth": { "id": "sinkia-token", "name": "Sinkia Admin Token" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $('Estadísticas Sinkia').first().json;\nconst revo  = $('Ventas Revo').first().json;\nconst trabs = $('Trabajadores Hoy').first().json;\n\nconst hoy = new Date().toLocaleDateString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric' });\n\nconst mensaje = `Buenos días. Resumen del ${hoy}:\n\n📄 Documentos: ${stats.total_documentos || 0} procesados | ${stats.total_proveedores || 0} proveedores | ${stats.total_clientes || 0} clientes\n\n💰 Ventas hoy: ${revo?.ventas_hoy?.total || 'N/D'}€ | Tickets: ${revo?.ventas_hoy?.tickets || 'N/D'}\n\n👥 Trabajadores en turno: ${Array.isArray(trabs?.activos) ? trabs.activos.length : 'N/D'}\n\n🔗 Panel: https://sinkialabs.com/admin`;\n\nreturn [{ json: { mensaje, stats, revo, trabs, fecha: hoy } }];"
+      },
+      "id": "build-summary",
+      "name": "Construir Resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 360]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3001/api/chat/brain",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [{ "name": "message", "value": "=Dame el resumen ejecutivo del negocio hoy: ventas, documentos pendientes y alertas importantes. Sé breve y directo." }]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "id": "brain-summary",
+      "name": "Brain IA Summary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 180],
+      "credentials": { "httpHeaderAuth": { "id": "sinkia-token", "name": "Sinkia Admin Token" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log del briefing diario\nconst summary = $('Construir Resumen').first().json;\nconsole.log('=== DAILY BRIEFING ===');\nconsole.log(summary.mensaje);\nreturn [{ json: { ok: true, fecha: summary.fecha, briefing: summary.mensaje } }];"
+      },
+      "id": "log-output",
+      "name": "Log / Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 360]
+    }
+  ],
+  "connections": {
+    "09:00 cada día":     { "main": [[{ "node": "Estadísticas Sinkia", "type": "main", "index": 0 }, { "node": "Ventas Revo", "type": "main", "index": 0 }, { "node": "Trabajadores Hoy", "type": "main", "index": 0 }, { "node": "Brain IA Summary", "type": "main", "index": 0 }]] },
+    "Estadísticas Sinkia":{ "main": [[{ "node": "Construir Resumen", "type": "main", "index": 0 }]] },
+    "Ventas Revo":        { "main": [[{ "node": "Construir Resumen", "type": "main", "index": 0 }]] },
+    "Trabajadores Hoy":   { "main": [[{ "node": "Construir Resumen", "type": "main", "index": 0 }]] },
+    "Construir Resumen":  { "main": [[{ "node": "Log / Output", "type": "main", "index": 0 }]] },
+    "Brain IA Summary":   { "main": [[{ "node": "Log / Output", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "sinkia" }, { "name": "daily" }],
+  "meta": { "templateCredsSetupCompleted": false }
+}
