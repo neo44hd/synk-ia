@@ -11,11 +11,17 @@ import { fileURLToPath } from 'url';
 const __dirname     = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Config ─────────────────────────────────────────────────────────────────
-const LITELLM   = process.env.LITELLM_URL     || 'http://localhost:8082';
-const MODEL     = process.env.LOCAL_LLM_MODEL || 'medina-qwen3-14b-openclaw';
-const DATA_DIR  = process.env.DATA_DIR        || '/Users/davidnows/sinkia/data';
-const DOCS_FILE = path.join(DATA_DIR, 'documents.json');
-const ENT_FILE  = path.join(DATA_DIR, 'entities.json');
+const LITELLM    = process.env.LITELLM_URL     || 'http://localhost:8082';
+const LM_STUDIO  = process.env.LOCAL_LLM_URL   || 'http://localhost:12345';
+const MODEL      = process.env.LOCAL_LLM_MODEL || 'medina-qwen3-14b-openclaw';
+const DATA_DIR   = process.env.DATA_DIR        || '/Users/davidnows/sinkia/data';
+const DOCS_FILE  = path.join(DATA_DIR, 'documents.json');
+const ENT_FILE   = path.join(DATA_DIR, 'entities.json');
+
+// ── Detección automática de modelo con capacidad visual ───────────────────
+// Se activa si el nombre del modelo contiene 'vl', 'vision' o 'visual'
+const IS_VL_MODEL = /vl|vision|visual/i.test(MODEL);
+if (IS_VL_MODEL) console.log(`[DOCS] Modo visión activo — modelo VL detectado: ${MODEL}`);
 
 // ══════════════════════════════════════════════════════════════════════════
 //  PASO 1: EXTRACCIÓN DE TEXTO (cualquier formato)
@@ -48,6 +54,8 @@ export async function extractText(filePath, mimeType = '') {
 
   // ── Imágenes (JPG, PNG, WEBP, TIFF) ──────────────────────────────────
   if (mimeType.startsWith('image/') || ['.jpg','.jpeg','.png','.webp','.tiff','.bmp'].includes(ext)) {
+    // Con modelo VL: la imagen se procesa directamente sin OCR
+    if (IS_VL_MODEL) return { text: '__VISION__', method: 'vision-vl', ok: true, filePath, mimeType };
     return ocrFile(filePath, 'image');
   }
 
@@ -155,6 +163,72 @@ function smartTruncate(text, maxChars = 3200) {
   const head = text.slice(0, Math.floor(maxChars * 0.6));   // 60% inicio
   const tail = text.slice(-Math.floor(maxChars * 0.35));    // 35% final
   return `${head}\n\n[...documento truncado...]\n\n${tail}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  VISIÓN — Helpers para modelos VL (imagen → base64 → LLM)
+// ══════════════════════════════════════════════════════════════════════════
+
+// Convierte cualquier imagen a base64 con MIME correcto
+async function loadImageAsBase64(filePath, mimeType) {
+  const ext  = path.extname(filePath).toLowerCase();
+  const mime = mimeType?.startsWith('image/') ? mimeType
+    : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg'
+    : ext === '.png'  ? 'image/png'
+    : ext === '.webp' ? 'image/webp'
+    : ext === '.bmp'  ? 'image/bmp'
+    : 'image/jpeg';
+  const buf    = await readFile(filePath);
+  const base64 = buf.toString('base64');
+  return { base64, mime, url: `data:${mime};base64,${base64}` };
+}
+
+// Llamada LLM con contenido multimodal (texto + imagen)
+async function llmCallVision(messages, maxTokens = 1600, temp = 0.05) {
+  const controller = new AbortController();
+  const timer      = setTimeout(() => controller.abort(), 240_000); // 4 min (VL es más lento)
+  try {
+    const res = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
+      signal:  controller.signal,
+      body:    JSON.stringify({ model: MODEL, messages, temperature: temp, max_tokens: maxTokens, stream: false }),
+    });
+    if (!res.ok) throw new Error(`LLM-VL ${res.status}: ${await res.text().catch(() => '')}`);
+    const d = await res.json();
+    return d.choices?.[0]?.message?.content?.trim() || '';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Clasificar imagen directamente con el modelo VL
+async function classifyVision(imgData) {
+  const raw = await llmCallVision([
+    { role: 'system', content: CLASSIFY_SYSTEM },
+    { role: 'user', content: [
+      { type: 'text', text: 'Clasifica este documento:' },
+      { type: 'image_url', image_url: { url: imgData.url } },
+    ]},
+  ], 30, 0.0);
+  const tipos = ['factura_recibida','factura_emitida','albaran','presupuesto',
+    'contrato','nomina','extracto_bancario','pedido','ticket','email_comercial','otro'];
+  return tipos.find(t => raw.toLowerCase().includes(t)) || 'otro';
+}
+
+// Extraer datos estructurados de imagen con el modelo VL
+async function extractVision(imgData, tipo) {
+  const instructions = TYPE_INSTRUCTIONS[tipo] || TYPE_INSTRUCTIONS.otro;
+  const raw = await llmCallVision([
+    { role: 'system', content: EXTRACT_SYSTEM },
+    { role: 'user', content: [
+      { type: 'text', text:
+          `TIPO DE DOCUMENTO: ${tipo}\n${instructions}\n\n` +
+          `Analiza la imagen de este documento y devuelve EXACTAMENTE este JSON relleno:\n${BASE_SCHEMA}` },
+      { type: 'image_url', image_url: { url: imgData.url } },
+    ]},
+  ], 1600, 0.05);
+  return parseJSON(raw);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -458,21 +532,46 @@ async function resolveEntities(analysis) {
 // ══════════════════════════════════════════════════════════════════════════
 
 export async function processDocument(filePath, mimeType, originalName) {
-  const id      = `doc_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
-  const t0      = Date.now();
-  console.log(`[DOCS] → Procesando: ${originalName}`);
+  const id  = `doc_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+  const t0  = Date.now();
+  const ext = path.extname(filePath).toLowerCase();
+  const isImageFile = mimeType?.startsWith('image/') ||
+    ['.jpg','.jpeg','.png','.webp','.tiff','.bmp'].includes(ext);
 
-  // 1. Extraer texto
-  const extracted = await extractText(filePath, mimeType);
-  if (!extracted.ok) throw new Error(extracted.hint || 'No se pudo extraer texto');
-  console.log(`[DOCS]   Extracción: ${extracted.method} — ${extracted.text.length} chars`);
+  console.log(`[DOCS] → Procesando: ${originalName} [${IS_VL_MODEL && isImageFile ? 'VISIÓN' : 'TEXTO'}]`);
 
-  // 2. Clasificar (pasada rápida)
-  const tipo = await classify(extracted.text);
-  console.log(`[DOCS]   Tipo: ${tipo}`);
+  let tipo, raw, extracted;
 
-  // 3. Extraer datos estructurados (prompt específico por tipo)
-  const raw = await extract(extracted.text, tipo);
+  // ── PIPELINE VISIÓN: imagen + modelo VL → análisis directo ─────────────
+  if (isImageFile && IS_VL_MODEL) {
+    console.log(`[DOCS]   Cargando imagen para VL...`);
+    const imgData = await loadImageAsBase64(filePath, mimeType);
+
+    // Clasificar viendo la imagen
+    tipo = await classifyVision(imgData);
+    console.log(`[DOCS]   Tipo (visión): ${tipo}`);
+
+    // Extraer datos viendo la imagen
+    raw = await extractVision(imgData, tipo);
+    extracted = {
+      text: '[procesado por visión directa]',
+      method: 'vision-vl',
+      ok: true,
+      pages: 1,
+    };
+
+  // ── PIPELINE TEXTO: extraer texto → clasificar → extraer ───────────────
+  } else {
+    extracted = await extractText(filePath, mimeType);
+    if (!extracted.ok) throw new Error(extracted.hint || 'No se pudo extraer texto');
+    console.log(`[DOCS]   Extracción: ${extracted.method} — ${extracted.text.length} chars`);
+
+    tipo = await classify(extracted.text);
+    console.log(`[DOCS]   Tipo: ${tipo}`);
+
+    raw = await extract(extracted.text, tipo);
+  }
+
   if (!raw) throw new Error('El modelo no devolvió JSON válido. ¿Está LM Studio corriendo?');
 
   // 4. Validar y corregir
@@ -490,8 +589,8 @@ export async function processDocument(filePath, mimeType, originalName) {
     tiempo_ms:         Date.now() - t0,
     metodo_extraccion: extracted.method,
     paginas:           extracted.pages || 1,
-    chars_extraidos:   extracted.text.length,
-    texto_preview:     extracted.text.slice(0, 800),
+    chars_extraidos:   extracted.text?.length || 0,
+    texto_preview:     extracted.text?.slice(0, 800) || '[procesado por visión]',
     analisis:          enriched,
     estado:            'procesado',
   };
@@ -500,7 +599,7 @@ export async function processDocument(filePath, mimeType, originalName) {
   docs.unshift(record);
   await saveJSON(DOCS_FILE, docs.slice(0, 2000));
 
-  console.log(`[DOCS] ✓ ${originalName} → ${tipo} en ${record.tiempo_ms}ms`);
+  console.log(`[DOCS] ✓ ${originalName} → ${tipo} (${extracted.method}) en ${record.tiempo_ms}ms`);
   return record;
 }
 
