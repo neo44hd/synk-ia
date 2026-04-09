@@ -193,7 +193,5 @@ export async function syncEmails() {
   }
 }
 
-export function getEmails() {
-  try { return existsSync(EMAILS_FILE) ? JSON.parse(require('fs').readFileSync(EMAILS_FILE)) : []; }
-  catch { return []; }
-}
+// Lectura asíncrona del historial de emails (compatible con ES modules)
+export const getEmails = () => loadJSON(EMAILS_FILE, []);

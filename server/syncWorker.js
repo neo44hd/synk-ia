@@ -37,7 +37,7 @@ async function runEmailSync() {
     lastSync.email    = new Date().toISOString();
     const r = syncResults.email;
     if (r.success) {
-      console.log(`[SYNC-WORKER] ✓ Email: ${r.new_emails ?? 0} nuevos, ${r.processed ?? 0} procesados`);
+      console.log(`[SYNC-WORKER] ✓ Email: ${r.nuevos ?? 0} nuevos, ${r.con_documentos ?? 0} con documentos`);
     } else {
       console.warn('[SYNC-WORKER] ⚠ Email:', r.error || 'fallo sin detalle');
     }
@@ -54,7 +54,7 @@ async function runRevoSync() {
     lastSync.revo    = new Date().toISOString();
     const r = syncResults.revo;
     if (r.success) {
-      console.log(`[SYNC-WORKER] ✓ Revo: ${r.productos ?? 0} productos, ${r.ventas_nuevas ?? 0} ventas nuevas`);
+      console.log(`[SYNC-WORKER] ✓ Revo: ${r.productos ?? 0} productos, ${r.ventas ?? 0} ventas nuevas`);
     } else {
       console.warn('[SYNC-WORKER] ⚠ Revo:', r.error || 'fallo sin detalle');
     }
