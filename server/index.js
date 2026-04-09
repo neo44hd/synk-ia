@@ -15,6 +15,7 @@ import { claudeProxyRouter } from './routes/claude-proxy.js';
 import { chatRouter }        from './routes/chat.js';
 import { setupTerminal }      from './routes/terminal.js';
 import documentsRouter        from './routes/documents.js';
+import trabajadoresRouter     from './routes/trabajadores.js';
 
 dotenv.config();
 
@@ -59,7 +60,8 @@ app.use('/api/revo',   revoRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/files',  filesRouter);
 app.use('/api/admin',     adminRouter);
-app.use('/api/documents', documentsRouter);
+app.use('/api/documents',    documentsRouter);
+app.use('/api/trabajadores', trabajadoresRouter);
 app.use('/claude',     claudeProxyRouter);  // Proxy local para Claude Code
 app.use('/api/chat',   chatRouter);          // Chat IA local
 
@@ -120,6 +122,12 @@ const documentsHtml = path.join(__dirname, '..', 'public', 'documents.html');
 if (existsSync(documentsHtml)) {
   app.get('/documents', (_req, res) => res.sendFile(documentsHtml));
   console.log('[SERVER] ✓ Documentos: /documents');
+}
+
+const trabajadoresHtml = path.join(__dirname, '..', 'public', 'trabajadores.html');
+if (existsSync(trabajadoresHtml)) {
+  app.get('/trabajadores', (_req, res) => res.sendFile(trabajadoresHtml));
+  console.log('[SERVER] ✓ Portal Trabajadores: /trabajadores');
 }
 
 if (existsSync(distPath)) {
