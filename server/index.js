@@ -12,6 +12,7 @@ import { healthRouter }      from './routes/health.js';
 import { filesRouter }       from './routes/files.js';
 import { adminRouter }       from './routes/admin.js';
 import { claudeProxyRouter } from './routes/claude-proxy.js';
+import { chatRouter }        from './routes/chat.js';
 
 dotenv.config();
 
@@ -57,6 +58,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/files',  filesRouter);
 app.use('/api/admin',  adminRouter);
 app.use('/claude',     claudeProxyRouter);  // Proxy local para Claude Code
+app.use('/api/chat',   chatRouter);          // Chat IA local
 
 // ── Data API (generic CRUD) ──────────────────────────────────────────────────
 try {
@@ -97,6 +99,12 @@ const adminHtml = path.join(__dirname, '..', 'public', 'admin.html');
 if (existsSync(adminHtml)) {
   app.get('/admin', (_req, res) => res.sendFile(adminHtml));
   console.log('[SERVER] ✓ Admin panel: /admin');
+}
+
+const chatHtml = path.join(__dirname, '..', 'public', 'chat.html');
+if (existsSync(chatHtml)) {
+  app.get('/chat', (_req, res) => res.sendFile(chatHtml));
+  console.log('[SERVER] ✓ Chat IA: /chat');
 }
 
 if (existsSync(distPath)) {
