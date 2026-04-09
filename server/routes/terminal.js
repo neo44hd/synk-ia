@@ -90,9 +90,11 @@ export function setupTerminal(httpServer) {
     env.LANG  = 'en_US.UTF-8';
     env.PATH  = EXTRA_PATH + ':' + (process.env.PATH || '');
 
+    // node-pty no puede lanzar scripts Node.js (shebang) directamente via
+    // posix_spawnp — envolvemos en zsh para que el shell gestione la ejecución
     let shell;
     try {
-      shell = pty.spawn(CLAUDE_BIN, [], {
+      shell = pty.spawn('/bin/zsh', ['-c', `exec "${CLAUDE_BIN}"`], {
         name: 'xterm-256color',
         cols: 220,
         rows: 50,
@@ -100,10 +102,8 @@ export function setupTerminal(httpServer) {
         env,
       });
     } catch (err) {
-      ws.send(`\r\n\x1b[31m[ERROR]\x1b[0m No se pudo arrancar Claude Code: ${err.message}\r\n`);
-      ws.send(`\r\n\x1b[33mRuta intentada:\x1b[0m ${CLAUDE_BIN}\r\n`);
-      ws.send(`\r\n\x1b[33mPATH usado:\x1b[0m ${env.PATH}\r\n`);
-      ws.send('\r\nEjecuta en el Mac: \x1b[36mwhich claude\x1b[0m para ver la ruta real.\r\n');
+      ws.send(`\r\n\x1b[31m[ERROR]\x1b[0m No se pudo arrancar: ${err.message}\r\n`);
+      ws.send(`\r\n\x1b[33mclaude:\x1b[0m ${CLAUDE_BIN}\r\n`);
       ws.close();
       return;
     }
