@@ -14,10 +14,11 @@ echo "[LiteLLM] Arrancando proxy en puerto 8082..."
 echo "[LiteLLM] → LM Studio: http://localhost:12345"
 echo "[LiteLLM] → Modelo: medina-qwen3-14b-openclaw"
 
+export OPENAI_API_KEY=local
+
 exec litellm \
   --model openai/medina-qwen3-14b-openclaw \
   --api_base http://localhost:12345/v1 \
-  --api_key local \
   --port 8082 \
   --host 0.0.0.0 \
   --drop_params
