@@ -1,23 +1,61 @@
 // ── Terminal WebSocket — spawna Claude Code via node-pty ───────────────────
 import { WebSocketServer } from 'ws';
 import { createRequire }   from 'module';
+import { execFileSync, execSync } from 'child_process';
 
 const require = createRequire(import.meta.url);
 const pty     = require('node-pty');
 
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'sinkia2026';
+const HOME_DIR    = '/Users/davidnows';
 
-// PATH amplio para que node-pty encuentre "claude" independientemente
-// de cómo PM2 arranque el proceso
+// PATH amplio — cubre Homebrew, npm global, nvm y system bins
 const EXTRA_PATH = [
+  `${HOME_DIR}/.npm-global/bin`,
+  `${HOME_DIR}/.local/bin`,
+  '/opt/homebrew/bin',
+  '/opt/homebrew/sbin',
   '/usr/local/bin',
+  '/usr/local/sbin',
   '/usr/bin',
   '/bin',
   '/usr/sbin',
   '/sbin',
-  '/opt/homebrew/bin',
-  '/opt/homebrew/sbin',
 ].join(':');
+
+// Resuelve la ruta absoluta de "claude" buscando en PATH + nvm
+function findClaude() {
+  const searchEnv = { ...process.env, PATH: EXTRA_PATH + ':' + (process.env.PATH || '') };
+
+  // 1. which con PATH extendido
+  try {
+    const p = execFileSync('which', ['claude'], { env: searchEnv, timeout: 4000 })
+      .toString().trim();
+    if (p) { console.log('[TERMINAL] claude encontrado en:', p); return p; }
+  } catch {}
+
+  // 2. Buscar en todas las versiones de nvm
+  try {
+    const p = execSync(
+      `find ${HOME_DIR}/.nvm/versions/node -maxdepth 3 -name "claude" -type f 2>/dev/null | head -1`,
+      { timeout: 6000 }
+    ).toString().trim();
+    if (p) { console.log('[TERMINAL] claude (nvm) encontrado en:', p); return p; }
+  } catch {}
+
+  // 3. Buscar en npm global prefix
+  try {
+    const prefix = execFileSync('npm', ['config', 'get', 'prefix'],
+      { env: searchEnv, timeout: 4000 }).toString().trim();
+    const p = `${prefix}/bin/claude`;
+    if (p) { console.log('[TERMINAL] claude (npm prefix) en:', p); return p; }
+  } catch {}
+
+  console.warn('[TERMINAL] ⚠ No se pudo resolver ruta de claude, usando nombre directo');
+  return 'claude';
+}
+
+const CLAUDE_BIN = findClaude();
 
 export function setupTerminal(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
@@ -54,7 +92,7 @@ export function setupTerminal(httpServer) {
 
     let shell;
     try {
-      shell = pty.spawn('claude', [], {
+      shell = pty.spawn(CLAUDE_BIN, [], {
         name: 'xterm-256color',
         cols: 220,
         rows: 50,
@@ -63,7 +101,9 @@ export function setupTerminal(httpServer) {
       });
     } catch (err) {
       ws.send(`\r\n\x1b[31m[ERROR]\x1b[0m No se pudo arrancar Claude Code: ${err.message}\r\n`);
-      ws.send('\r\nVerifica que "claude" esté instalado y en el PATH.\r\n');
+      ws.send(`\r\n\x1b[33mRuta intentada:\x1b[0m ${CLAUDE_BIN}\r\n`);
+      ws.send(`\r\n\x1b[33mPATH usado:\x1b[0m ${env.PATH}\r\n`);
+      ws.send('\r\nEjecuta en el Mac: \x1b[36mwhich claude\x1b[0m para ver la ruta real.\r\n');
       ws.close();
       return;
     }
