@@ -4,6 +4,7 @@
  */
 
 import { Router } from 'express';
+import { askBrainStream, classifyIntent } from '../services/brain.js';
 
 const router = Router();
 const LLM_BASE = process.env.LOCAL_LLM_URL || 'http://localhost:12345';
@@ -135,6 +136,34 @@ async function openaiChat(req, res, messages, stream) {
     res.status(500).json({ error: e.message });
   }
 }
+
+// ── POST /api/chat/brain — Chat inteligente con contexto de negocio ────────────
+// Body: { message: string }
+// SSE: data: {type:"step",label:"..."} | data: {type:"chunk",text:"..."} | data: [DONE]
+router.post('/brain', async (req, res) => {
+  const { message } = req.body;
+  if (!message?.trim()) return res.status(400).json({ error: 'Mensaje requerido' });
+
+  res.setHeader('Content-Type',      'text/event-stream');
+  res.setHeader('Cache-Control',     'no-cache');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+
+  try {
+    await askBrainStream(
+      message,
+      (step)  => send({ type: 'step',  ...step }),
+      (chunk) => send({ type: 'chunk', text: chunk }),
+    );
+  } catch (err) {
+    send({ type: 'error', text: err.message });
+  }
+
+  res.write('data: [DONE]\n\n');
+  res.end();
+});
 
 // ── GET /api/chat/status ──────────────────────────────────────────────────────
 router.get('/status', async (_req, res) => {
