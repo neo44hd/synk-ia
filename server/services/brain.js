@@ -3,6 +3,7 @@
 //  Flujo: Pregunta → Clasificar intención → Buscar datos → Responder
 // ═══════════════════════════════════════════════════════════════════════════
 import { getDocuments, getEntities, getStats } from './documentProcessor.js';
+import { getRevoResumen, getRevoProductos, getRevoVentas } from '../agents/revoAgent.js';
 
 const LITELLM  = process.env.LITELLM_URL     || 'http://localhost:8082';
 const MODEL    = process.env.LOCAL_LLM_MODEL || 'medina-qwen3-14b-openclaw';
@@ -372,6 +373,23 @@ export async function askBrain(question, { stream = false } = {}) {
         contextData = { pendientes: await facturasPendientes() };
         break;
 
+      case 'producto_ventas': {
+        stepLabel   = 'Consultando datos de ventas del TPV...';
+        const [resumen, productos] = await Promise.all([
+          getRevoResumen(),
+          getRevoProductos(),
+        ]);
+        contextData = {
+          top_productos:  resumen.top_productos   || [],
+          ventas_por_dia: (resumen.por_dia || []).slice(0, 14),
+          total_ventas:   resumen.total_ventas    || 0,
+          total_tickets:  resumen.total_tickets   || 0,
+          articulo_buscado: params.articulo || null,
+          catalogo_total: (productos.items || []).length,
+        };
+        break;
+      }
+
       default: {
         // Búsqueda general en documentos
         stepLabel   = 'Buscando en documentos...';
@@ -463,7 +481,18 @@ async function fetchContextByIntent(intent, params, question) {
     case 'resumen_proveedor':  return resumenProveedor(params.proveedor || params.query);
     case 'gastos_analisis':    return analisisGastos(params);
     case 'crear_presupuesto':  return crearPresupuesto(params, question);
-    case 'facturas_pendientes':return { pendientes: await facturasPendientes() };
+    case 'facturas_pendientes': return { pendientes: await facturasPendientes() };
+    case 'producto_ventas': {
+      const [resumen, productos] = await Promise.all([ getRevoResumen(), getRevoProductos() ]);
+      return {
+        top_productos:   resumen.top_productos  || [],
+        ventas_por_dia:  (resumen.por_dia || []).slice(0, 14),
+        total_ventas:    resumen.total_ventas   || 0,
+        total_tickets:   resumen.total_tickets  || 0,
+        articulo_buscado: params.articulo       || null,
+        catalogo_total:  (productos.items || []).length,
+      };
+    }
     default: {
       const allDocs = await getDocuments();
       const relevant = allDocs.filter(d => {
