@@ -14,6 +14,7 @@ import { adminRouter }       from './routes/admin.js';
 import { claudeProxyRouter } from './routes/claude-proxy.js';
 import { chatRouter }        from './routes/chat.js';
 import { setupTerminal }      from './routes/terminal.js';
+import documentsRouter        from './routes/documents.js';
 
 dotenv.config();
 
@@ -57,7 +58,8 @@ app.use('/api/biloop', biloopPortalRouter);
 app.use('/api/revo',   revoRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/files',  filesRouter);
-app.use('/api/admin',  adminRouter);
+app.use('/api/admin',     adminRouter);
+app.use('/api/documents', documentsRouter);
 app.use('/claude',     claudeProxyRouter);  // Proxy local para Claude Code
 app.use('/api/chat',   chatRouter);          // Chat IA local
 
@@ -112,6 +114,12 @@ const terminalHtml = path.join(__dirname, '..', 'public', 'terminal.html');
 if (existsSync(terminalHtml)) {
   app.get('/terminal', (_req, res) => res.sendFile(terminalHtml));
   console.log('[SERVER] ✓ Terminal: /terminal');
+}
+
+const documentsHtml = path.join(__dirname, '..', 'public', 'documents.html');
+if (existsSync(documentsHtml)) {
+  app.get('/documents', (_req, res) => res.sendFile(documentsHtml));
+  console.log('[SERVER] ✓ Documentos: /documents');
 }
 
 if (existsSync(distPath)) {

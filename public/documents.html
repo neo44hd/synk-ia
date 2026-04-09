@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinkia — Documentos</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #080808;
+  --surface:   #111111;
+  --surface2:  #161616;
+  --border:    #1e1e1e;
+  --border2:   #2a2a2a;
+  --text:      #e8e8e8;
+  --muted:     #555;
+  --muted2:    #888;
+  --green:     #22c55e;
+  --green-dim: #0d1a0d;
+  --red:       #ef4444;
+  --yellow:    #eab308;
+  --blue:      #3b82f6;
+  --purple:    #a855f7;
+  --orange:    #f97316;
+  --radius:    12px;
+}
+
+html, body { height: 100%; background: var(--bg); color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  font-size: 14px; line-height: 1.5; overflow: hidden; }
+
+/* ── Header ── */
+.header {
+  height: 52px; padding: 0 20px;
+  background: rgba(8,8,8,.9); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 14px; flex-shrink: 0;
+}
+.logo { font-size: 16px; font-weight: 700; letter-spacing: -.3px; }
+.logo span { color: var(--green); }
+.tag { font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; padding: 3px 9px; border-radius: 100px;
+  background: var(--green-dim); border: 1px solid #15803d; color: var(--green); }
+.sep { flex: 1; }
+.hbtn { border: 1px solid var(--border2); background: var(--surface); color: var(--muted2);
+  border-radius: 8px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+.hbtn:hover { border-color: var(--green); color: var(--green); }
+
+/* ── Layout ── */
+.layout { display: flex; height: calc(100vh - 52px); overflow: hidden; }
+
+/* ── Sidebar ── */
+.sidebar { width: 320px; flex-shrink: 0; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden; }
+
+.sidebar-top { padding: 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+
+/* Zona de drop */
+.dropzone {
+  border: 2px dashed var(--border2); border-radius: var(--radius);
+  padding: 24px 16px; text-align: center; cursor: pointer;
+  transition: all .2s; background: var(--surface); position: relative;
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--green); background: var(--green-dim);
+}
+.dropzone.dragover .drop-icon { transform: scale(1.2); }
+.drop-icon { font-size: 32px; margin-bottom: 8px; transition: transform .2s; }
+.drop-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.drop-sub { font-size: 11px; color: var(--muted); }
+#file-input { display: none; }
+
+/* Processing state */
+.processing-state { display: none; background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 16px; margin-top: 10px; }
+.processing-state.show { display: block; }
+.proc-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.proc-spinner { width: 16px; height: 16px; border: 2px solid var(--border2);
+  border-top-color: var(--green); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.proc-label { font-size: 12px; color: var(--muted2); }
+.proc-file { font-size: 11px; color: var(--muted); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.progress-bar { height: 3px; background: var(--border2); border-radius: 100px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--green); border-radius: 100px;
+  transition: width .5s ease; }
+
+/* Search + filter */
+.search-row { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.search-input { flex: 1; background: var(--surface); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 8px; padding: 7px 10px; font-size: 12px; outline: none; }
+.search-input:focus { border-color: var(--green); }
+.filter-select { background: var(--surface); border: 1px solid var(--border2);
+  color: var(--muted2); border-radius: 8px; padding: 7px 8px; font-size: 11px; outline: none; }
+
+/* Doc list */
+.doc-list { flex: 1; overflow-y: auto; padding: 8px; }
+.doc-list::-webkit-scrollbar { width: 4px; }
+.doc-list::-webkit-scrollbar-track { background: transparent; }
+.doc-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.doc-item { border-radius: 10px; padding: 12px; cursor: pointer; margin-bottom: 4px;
+  transition: all .15s; border: 1px solid transparent; }
+.doc-item:hover { background: var(--surface); border-color: var(--border2); }
+.doc-item.active { background: var(--surface2); border-color: var(--green); }
+
+.doc-header-row { display: flex; align-items: flex-start; gap: 10px; }
+.doc-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.doc-info { flex: 1; min-width: 0; }
+.doc-name { font-size: 12px; font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.doc-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.tipo-badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  padding: 2px 6px; border-radius: 100px; white-space: nowrap; flex-shrink: 0;
+}
+
+.empty-list { padding: 40px 16px; text-align: center; color: var(--muted); font-size: 12px; }
+
+/* ── Detail panel ── */
+.detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.detail-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px;
+  color: var(--muted); text-align: center; padding: 40px;
+}
+.detail-empty-icon { font-size: 48px; opacity: .3; }
+.detail-empty-title { font-size: 15px; font-weight: 600; color: var(--muted2); }
+.detail-empty-sub   { font-size: 12px; max-width: 260px; }
+
+/* Detail header */
+.detail-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.detail-title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.detail-icon { font-size: 28px; }
+.detail-name { font-size: 16px; font-weight: 700; }
+.detail-tipo { }
+.detail-meta-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.detail-meta-item { font-size: 11px; color: var(--muted); }
+.detail-meta-item strong { color: var(--muted2); font-weight: 500; }
+
+/* Detail body */
+.detail-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.detail-body::-webkit-scrollbar { width: 4px; }
+.detail-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.section { margin-bottom: 24px; }
+.section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Resumen card */
+.resumen-card { background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px; font-size: 13px; color: var(--muted2); line-height: 1.6; }
+
+/* Entidad card */
+.entity-row { display: flex; gap: 12px; }
+.entity-card { flex: 1; background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px; }
+.entity-label { font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted); margin-bottom: 8px; }
+.entity-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.entity-detail { font-size: 11px; color: var(--muted); line-height: 1.7; }
+.entity-new-badge { font-size: 9px; font-weight: 700; text-transform: uppercase;
+  background: #0d1a0d; border: 1px solid #15803d; color: var(--green);
+  padding: 2px 6px; border-radius: 100px; margin-left: 6px; }
+
+/* Importes */
+.importes-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.importe-card { background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px; text-align: center; }
+.importe-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.importe-value { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.importe-value.total { color: var(--green); font-size: 22px; }
+
+/* Líneas tabla */
+.lineas-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.lineas-table th { text-align: left; color: var(--muted); font-weight: 500;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .5px;
+  padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.lineas-table td { padding: 10px 8px; border-bottom: 1px solid var(--border);
+  vertical-align: top; }
+.lineas-table tr:last-child td { border-bottom: none; }
+.lineas-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* KV list */
+.kv-list { display: flex; flex-direction: column; gap: 6px; }
+.kv-row { display: flex; gap: 10px; font-size: 12px; }
+.kv-key { color: var(--muted); min-width: 130px; flex-shrink: 0; }
+.kv-val { color: var(--text); word-break: break-word; }
+
+/* Stats bar */
+.stats-bar { padding: 10px 16px; border-top: 1px solid var(--border);
+  display: flex; gap: 16px; flex-wrap: wrap; flex-shrink: 0; }
+.stat-chip { font-size: 11px; color: var(--muted); }
+.stat-chip strong { color: var(--muted2); }
+
+/* Notif toast */
+.toast { position: fixed; bottom: 20px; right: 20px; z-index: 100;
+  background: var(--surface); border: 1px solid var(--border2); border-radius: 10px;
+  padding: 12px 16px; font-size: 12px; display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5); animation: slideUp .3s ease;
+  max-width: 320px; transform: translateY(0); transition: opacity .3s; }
+.toast.success { border-color: #15803d; }
+.toast.error   { border-color: #b91c1c; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } }
+.toast-icon { font-size: 16px; flex-shrink: 0; }
+.toast-text { line-height: 1.4; }
+
+/* Login overlay */
+#login-overlay {
+  position: fixed; inset: 0; background: rgba(8,8,8,.97);
+  display: flex; align-items: center; justify-content: center; z-index: 999;
+}
+.login-card { background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 40px; width: 320px; text-align: center; }
+.login-card .logo { font-size: 22px; margin-bottom: 4px; }
+.login-sub { color: var(--muted); font-size: 12px; margin-bottom: 24px; }
+.login-input { width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 10px; padding: 10px 14px; font-size: 14px;
+  outline: none; margin-bottom: 10px; transition: border-color .2s; }
+.login-input:focus { border-color: var(--green); }
+.login-btn { width: 100%; background: var(--green); color: #000; border: none;
+  border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: opacity .2s; }
+.login-btn:hover { opacity: .85; }
+.login-err { color: var(--red); font-size: 11px; margin-top: 6px; display: none; }
+
+/* Tipo badge colors */
+.t-factura_recibida  { background: #1a1008; border: 1px solid #92400e; color: var(--orange); }
+.t-factura_emitida   { background: #0d1a0d; border: 1px solid #15803d; color: var(--green); }
+.t-albaran           { background: #0d1525; border: 1px solid #1d4ed8; color: var(--blue); }
+.t-presupuesto       { background: #160d25; border: 1px solid #7e22ce; color: var(--purple); }
+.t-contrato          { background: #1a1008; border: 1px solid #b45309; color: var(--yellow); }
+.t-nomina            { background: #0d1a0d; border: 1px solid #059669; color: #34d399; }
+.t-extracto_bancario { background: #0d1525; border: 1px solid #0284c7; color: #38bdf8; }
+.t-pedido            { background: #160d25; border: 1px solid #9333ea; color: #c084fc; }
+.t-ticket            { background: #1a1510; border: 1px solid #d97706; color: var(--yellow); }
+.t-otro              { background: #111; border: 1px solid #333; color: var(--muted2); }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="logo">sinkia<span>.</span></div>
+    <div class="login-sub">Procesador de documentos</div>
+    <input class="login-input" type="password" id="token-input" placeholder="Token de acceso">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="login-err">Token incorrecto</div>
+  </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">sinkia<span>.</span></div>
+  <div class="tag">Documentos</div>
+  <div class="sep"></div>
+  <a class="hbtn" href="/admin">← Panel</a>
+  <a class="hbtn" href="/chat">💬 Chat</a>
+</header>
+
+<!-- Layout -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <!-- Drop zone -->
+    <div class="sidebar-top">
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+        <div class="drop-icon">📄</div>
+        <div class="drop-title">Suelta el documento aquí</div>
+        <div class="drop-sub">PDF · JPG · PNG · DOCX · TXT — hasta 100MB</div>
+      </div>
+      <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.txt,.csv">
+
+      <!-- Estado de procesamiento -->
+      <div class="processing-state" id="proc-state">
+        <div class="proc-row">
+          <div class="proc-spinner"></div>
+          <div>
+            <div class="proc-label" id="proc-label">Procesando...</div>
+            <div class="proc-file" id="proc-file"></div>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="search-row">
+      <input class="search-input" id="search-input" type="text" placeholder="Buscar documentos...">
+      <select class="filter-select" id="tipo-filter" onchange="loadDocs()">
+        <option value="">Todos</option>
+        <option value="factura_recibida">Facturas recibidas</option>
+        <option value="factura_emitida">Facturas emitidas</option>
+        <option value="albaran">Albaranes</option>
+        <option value="presupuesto">Presupuestos</option>
+        <option value="contrato">Contratos</option>
+        <option value="nomina">Nóminas</option>
+        <option value="pedido">Pedidos</option>
+        <option value="ticket">Tickets</option>
+        <option value="otro">Otros</option>
+      </select>
+    </div>
+
+    <!-- Doc list -->
+    <div class="doc-list" id="doc-list">
+      <div class="empty-list">Sube tu primer documento</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar" id="stats-bar"></div>
+  </aside>
+
+  <!-- Detail panel -->
+  <main class="detail" id="detail">
+    <div class="detail-empty">
+      <div class="detail-empty-icon">🔍</div>
+      <div class="detail-empty-title">Selecciona un documento</div>
+      <div class="detail-empty-sub">O sube uno nuevo — el sistema lo clasificará y extraerá todos los datos automáticamente</div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────
+let TOKEN = localStorage.getItem('admin_token') || '';
+let currentDocs = [];
+let selectedId  = null;
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+function doLogin() {
+  TOKEN = document.getElementById('token-input').value.trim();
+  api('/api/documents/stats')
+    .then(() => {
+      localStorage.setItem('admin_token', TOKEN);
+      document.getElementById('login-overlay').style.display = 'none';
+      init();
+    })
+    .catch(() => { document.getElementById('login-err').style.display = 'block'; });
+}
+document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ── API ────────────────────────────────────────────────────────────────────
+async function api(url, opts = {}) {
+  const res = await fetch(url, {
+    ...opts,
+    headers: { 'x-admin-token': TOKEN, ...(opts.headers || {}) },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || res.statusText);
+  }
+  return res.json();
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+function init() {
+  setupDrop();
+  loadDocs();
+}
+
+// ── Drop zone ──────────────────────────────────────────────────────────────
+function setupDrop() {
+  const dz = document.getElementById('dropzone');
+  const fi = document.getElementById('file-input');
+
+  ['dragenter','dragover'].forEach(e => dz.addEventListener(e, ev => {
+    ev.preventDefault(); dz.classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(e => dz.addEventListener(e, ev => {
+    ev.preventDefault(); dz.classList.remove('dragover');
+  }));
+  dz.addEventListener('drop', ev => {
+    const files = ev.dataTransfer?.files;
+    if (files?.length) uploadFile(files[0]);
+  });
+  fi.addEventListener('change', () => {
+    if (fi.files?.[0]) uploadFile(fi.files[0]);
+    fi.value = '';
+  });
+}
+
+// ── Upload ─────────────────────────────────────────────────────────────────
+async function uploadFile(file) {
+  const proc  = document.getElementById('proc-state');
+  const label = document.getElementById('proc-label');
+  const fname = document.getElementById('proc-file');
+  const prog  = document.getElementById('progress-fill');
+
+  proc.classList.add('show');
+  fname.textContent = file.name;
+
+  // Simular progreso visual mientras espera la IA
+  const steps = [
+    [10,  'Extrayendo texto...'],
+    [35,  'Analizando con IA...'],
+    [65,  'Clasificando documento...'],
+    [85,  'Resolviendo entidades...'],
+    [95,  'Guardando resultados...'],
+  ];
+  let si = 0;
+  const interval = setInterval(() => {
+    if (si < steps.length) {
+      const [pct, txt] = steps[si++];
+      prog.style.width  = pct + '%';
+      label.textContent = txt;
+    }
+  }, 2000);
+
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    const { documento } = await api('/api/documents/upload', { method: 'POST', body: form });
+
+    clearInterval(interval);
+    prog.style.width  = '100%';
+    label.textContent = '¡Procesado!';
+    setTimeout(() => proc.classList.remove('show'), 1500);
+
+    await loadDocs();
+    selectDoc(documento.id);
+
+    const nuevas = documento.analisis?.entidades_creadas || [];
+    const msg = nuevas.length
+      ? `${documento.analisis.tipo?.replace(/_/g,' ')} — ${nuevas.map(e => `${e.tipo} "${e.nombre}" creado`).join(', ')}`
+      : `${documento.analisis.tipo?.replace(/_/g,' ')} procesado correctamente`;
+    toast('success', '✓', msg);
+
+  } catch (err) {
+    clearInterval(interval);
+    prog.style.width = '100%';
+    proc.classList.remove('show');
+    toast('error', '✗', err.message);
+  }
+}
+
+// ── Load docs ──────────────────────────────────────────────────────────────
+async function loadDocs() {
+  try {
+    const tipo = document.getElementById('tipo-filter').value;
+    const q    = document.getElementById('search-input').value;
+    const params = new URLSearchParams();
+    if (tipo) params.set('tipo', tipo);
+    if (q)    params.set('q', q);
+
+    currentDocs = await api(`/api/documents?${params}`);
+    renderList();
+    loadStats();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+document.getElementById('search-input').addEventListener('input', debounce(loadDocs, 300));
+
+// ── Render list ────────────────────────────────────────────────────────────
+const TIPO_ICONS = {
+  factura_recibida:  '🧾',
+  factura_emitida:   '💰',
+  albaran:           '📦',
+  presupuesto:       '📋',
+  contrato:          '📝',
+  nomina:            '👤',
+  extracto_bancario: '🏦',
+  pedido:            '🛒',
+  ticket:            '🎫',
+  email_comercial:   '📧',
+  otro:              '📄',
+};
+
+const TIPO_LABELS = {
+  factura_recibida:  'Factura recibida',
+  factura_emitida:   'Factura emitida',
+  albaran:           'Albarán',
+  presupuesto:       'Presupuesto',
+  contrato:          'Contrato',
+  nomina:            'Nómina',
+  extracto_bancario: 'Extracto',
+  pedido:            'Pedido',
+  ticket:            'Ticket',
+  email_comercial:   'Email',
+  otro:              'Otro',
+};
+
+function renderList() {
+  const el = document.getElementById('doc-list');
+  if (!currentDocs.length) {
+    el.innerHTML = '<div class="empty-list">No hay documentos</div>';
+    return;
+  }
+  el.innerHTML = currentDocs.map(d => {
+    const tipo  = d.analisis?.tipo || 'otro';
+    const icon  = TIPO_ICONS[tipo] || '📄';
+    const label = TIPO_LABELS[tipo] || tipo;
+    const fecha = d.procesado ? new Date(d.procesado).toLocaleDateString('es-ES', { day:'2-digit', month:'short' }) : '';
+    const part  = d.analisis?.emisor?.nombre || d.analisis?.receptor?.nombre || '';
+    return `
+      <div class="doc-item ${d.id === selectedId ? 'active' : ''}" onclick="selectDoc('${d.id}')">
+        <div class="doc-header-row">
+          <div class="doc-icon">${icon}</div>
+          <div class="doc-info">
+            <div class="doc-name">${esc(d.nombre_archivo)}</div>
+            <div class="doc-meta">${fecha}${part ? ' · ' + esc(part) : ''}</div>
+          </div>
+          <div class="tipo-badge t-${tipo}">${label}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Select doc ─────────────────────────────────────────────────────────────
+async function selectDoc(id) {
+  selectedId = id;
+  renderList();
+  try {
+    const doc = await api(`/api/documents/${id}`);
+    renderDetail(doc);
+  } catch (err) {
+    toast('error', '✗', err.message);
+  }
+}
+
+// ── Render detail ──────────────────────────────────────────────────────────
+function renderDetail(doc) {
+  const el    = document.getElementById('detail');
+  const a     = doc.analisis || {};
+  const tipo  = a.tipo || 'otro';
+  const icon  = TIPO_ICONS[tipo] || '📄';
+  const label = TIPO_LABELS[tipo] || tipo;
+  const conf  = a.confianza ? Math.round(a.confianza * 100) + '%' : '';
+  const fecha = doc.procesado ? new Date(doc.procesado).toLocaleString('es-ES') : '';
+
+  // Emisor / Receptor
+  const emisorHtml   = entityCard('Emisor',   a.emisor,   a.proveedor_nuevo, 'proveedor');
+  const receptorHtml = entityCard('Receptor', a.receptor, a.cliente_nuevo,   'cliente');
+
+  // Importes
+  const importesHtml = (a.base_imponible != null || a.total != null) ? `
+    <div class="section">
+      <div class="section-title">Importes</div>
+      <div class="importes-grid">
+        <div class="importe-card">
+          <div class="importe-label">Base imponible</div>
+          <div class="importe-value">${fmt(a.base_imponible)}</div>
+        </div>
+        <div class="importe-card">
+          <div class="importe-label">IVA</div>
+          <div class="importe-value">${fmt(a.iva_total)}</div>
+        </div>
+        <div class="importe-card">
+          <div class="importe-label">Total</div>
+          <div class="importe-value total">${fmt(a.total)}</div>
+        </div>
+      </div>
+    </div>` : '';
+
+  // Líneas
+  const lineasHtml = a.lineas?.length ? `
+    <div class="section">
+      <div class="section-title">Líneas (${a.lineas.length})</div>
+      <table class="lineas-table">
+        <thead>
+          <tr>
+            <th>Descripción</th>
+            <th>Cant.</th>
+            <th>P.Unit</th>
+            <th>IVA</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${a.lineas.map(l => `
+            <tr>
+              <td>${esc(l.descripcion || '')}</td>
+              <td class="num">${l.cantidad ?? ''}</td>
+              <td class="num">${fmt(l.precio_unitario)}</td>
+              <td class="num">${l.iva_porcentaje != null ? l.iva_porcentaje + '%' : ''}</td>
+              <td class="num">${fmt(l.total_linea)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : '';
+
+  // Otros datos
+  const kvItems = [
+    ['Número', a.numero_documento],
+    ['Fecha',  a.fecha],
+    ['Vencimiento', a.fecha_vencimiento],
+    ['Forma de pago', a.forma_pago],
+    ['Moneda', a.moneda],
+    ['Acción recomendada', a.accion_recomendada?.replace(/_/g,' ')],
+    ['Método extracción', doc.metodo_extraccion],
+    ['Tiempo proceso', doc.tiempo_ms ? doc.tiempo_ms + ' ms' : null],
+    ['Páginas', doc.paginas],
+    ['Chars extraídos', doc.chars_extraidos?.toLocaleString('es-ES')],
+  ].filter(([, v]) => v != null);
+
+  const otrosHtml = kvItems.length ? `
+    <div class="section">
+      <div class="section-title">Información del documento</div>
+      <div class="kv-list">
+        ${kvItems.map(([k, v]) => `
+          <div class="kv-row">
+            <div class="kv-key">${k}</div>
+            <div class="kv-val">${esc(String(v))}</div>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  el.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-title-row">
+        <div class="detail-icon">${icon}</div>
+        <div>
+          <div class="detail-name">${esc(doc.nombre_archivo)}</div>
+          <div class="detail-tipo">
+            <span class="tipo-badge t-${tipo}">${label}</span>
+            ${conf ? `<span style="font-size:11px;color:var(--muted);margin-left:8px;">Confianza ${conf}</span>` : ''}
+          </div>
+        </div>
+        <div style="flex:1"></div>
+        <button class="hbtn" style="color:var(--red)" onclick="deleteDoc('${doc.id}')">Eliminar</button>
+      </div>
+      <div class="detail-meta-row">
+        <div class="detail-meta-item"><strong>Procesado</strong> ${fecha}</div>
+        ${a.fecha ? `<div class="detail-meta-item"><strong>Fecha doc.</strong> ${a.fecha}</div>` : ''}
+        ${a.total != null ? `<div class="detail-meta-item"><strong>Total</strong> ${fmt(a.total)} ${a.moneda || ''}</div>` : ''}
+      </div>
+    </div>
+    <div class="detail-body">
+      ${a.resumen ? `<div class="section"><div class="section-title">Resumen</div><div class="resumen-card">${esc(a.resumen)}</div></div>` : ''}
+      ${emisorHtml || receptorHtml ? `<div class="section"><div class="section-title">Partes</div><div class="entity-row">${emisorHtml}${receptorHtml}</div></div>` : ''}
+      ${importesHtml}
+      ${lineasHtml}
+      ${otrosHtml}
+      ${a.notas ? `<div class="section"><div class="section-title">Notas</div><div class="resumen-card">${esc(a.notas)}</div></div>` : ''}
+    </div>`;
+}
+
+function entityCard(label, entity, isNew, tipo) {
+  if (!entity?.nombre) return '';
+  return `
+    <div class="entity-card">
+      <div class="entity-label">${label}${isNew ? `<span class="entity-new-badge">nuevo ${tipo}</span>` : ''}</div>
+      <div class="entity-name">${esc(entity.nombre)}</div>
+      <div class="entity-detail">
+        ${entity.cif_nif   ? esc(entity.cif_nif) + '<br>' : ''}
+        ${entity.direccion ? esc(entity.direccion) + '<br>' : ''}
+        ${entity.email     ? esc(entity.email) + '<br>' : ''}
+        ${entity.telefono  ? esc(entity.telefono) : ''}
+      </div>
+    </div>`;
+}
+
+// ── Delete doc ─────────────────────────────────────────────────────────────
+async function deleteDoc(id) {
+  if (!confirm('¿Eliminar este documento?')) return;
+  try {
+    await api(`/api/documents/${id}`, { method: 'DELETE' });
+    selectedId = null;
+    document.getElementById('detail').innerHTML = '<div class="detail-empty"><div class="detail-empty-icon">🔍</div><div class="detail-empty-title">Selecciona un documento</div></div>';
+    loadDocs();
+    toast('success', '✓', 'Documento eliminado');
+  } catch (err) {
+    toast('error', '✗', err.message);
+  }
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const s = await api('/api/documents/stats');
+    const el = document.getElementById('stats-bar');
+    el.innerHTML = [
+      `<div class="stat-chip"><strong>${s.total_documentos}</strong> docs</div>`,
+      `<div class="stat-chip"><strong>${s.total_clientes}</strong> clientes</div>`,
+      `<div class="stat-chip"><strong>${s.total_proveedores}</strong> proveedores</div>`,
+    ].join('');
+  } catch {}
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmt(v) {
+  if (v == null) return '';
+  return Number(v).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+function toast(type, icon, msg) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<div class="toast-icon">${icon}</div><div class="toast-text">${esc(msg)}</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 5000);
+}
+
+// ── Auto-login ─────────────────────────────────────────────────────────────
+if (TOKEN) {
+  api('/api/documents/stats')
+    .then(() => {
+      document.getElementById('login-overlay').style.display = 'none';
+      init();
+    })
+    .catch(() => { localStorage.removeItem('admin_token'); TOKEN = ''; });
+}
+</script>
+</body>
+</html>
