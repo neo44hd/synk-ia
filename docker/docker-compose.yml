@@ -1,0 +1,155 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  SINKIA — Stack IA Local completo
+#  Mac Mini M4 Pro · Apple Silicon (ARM64) · 24 GB RAM
+#
+#  Servicios:
+#    • SearXNG     → búsqueda web privada y gratuita   (puerto 8888)
+#    • Qdrant      → memoria vectorial / RAG             (puerto 6333)
+#    • Open WebUI  → interfaz principal del asistente   (puerto 3030)
+#    • n8n         → automatizaciones y subagentes       (puerto 5678)
+#
+#  Requisito: LM Studio corriendo en el Mac (puerto 12345)
+#
+#  Arrancar:  docker compose up -d
+#  Parar:     docker compose down
+#  Logs:      docker compose logs -f [servicio]
+# ═══════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── SEARXNG — Motor de búsqueda web privado ──────────────────────────────
+  searxng:
+    image: searxng/searxng:latest
+    container_name: sinkia-searxng
+    restart: unless-stopped
+    ports:
+      - "8888:8080"
+    volumes:
+      - ./config/searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:8888
+    networks:
+      - sinkia-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── QDRANT — Base de datos vectorial (memoria semántica) ─────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: sinkia-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - sinkia-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:6333/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── OPEN WEBUI — Interfaz principal del asistente IA ─────────────────────
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: sinkia-openwebui
+    restart: unless-stopped
+    ports:
+      - "3030:8080"
+    volumes:
+      - openwebui_data:/app/backend/data
+    environment:
+      # ── LM Studio (modelo local)
+      - OPENAI_API_BASE_URL=http://host.docker.internal:12345/v1
+      - OPENAI_API_KEY=local
+
+      # ── LiteLLM proxy de Sinkia (alternativa / fallback)
+      - OPENAI_API_BASE_URL_2=http://host.docker.internal:8082/v1
+      - OPENAI_API_KEY_2=local
+
+      # ── Búsqueda web vía SearXNG
+      - ENABLE_RAG_WEB_SEARCH=true
+      - RAG_WEB_SEARCH_ENGINE=searxng
+      - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>&format=json&language=es
+
+      # ── Memoria vectorial con Qdrant
+      - VECTOR_DB=qdrant
+      - QDRANT_URI=http://qdrant:6333
+
+      # ── RAG / documentos
+      - RAG_EMBEDDING_ENGINE=openai
+      - RAG_EMBEDDING_MODEL=text-embedding-3-small
+      - CHUNK_SIZE=1500
+      - CHUNK_OVERLAP=150
+
+      # ── Seguridad
+      - WEBUI_SECRET_KEY=sinkia-openwebui-2026
+      - ENABLE_SIGNUP=true
+      - DEFAULT_USER_ROLE=admin
+
+      # ── UI
+      - WEBUI_NAME=Sinkia AI
+      - DEFAULT_LOCALE=es
+      - ENABLE_COMMUNITY_SHARING=false
+      - ENABLE_MODEL_FILTER=false
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - searxng
+      - qdrant
+    networks:
+      - sinkia-net
+
+  # ── N8N — Automatizaciones, workflows, subagentes ────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: sinkia-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/home/node/workflows
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678
+      - N8N_ENCRYPTION_KEY=sinkia-n8n-key-2026
+      - GENERIC_TIMEZONE=Europe/Madrid
+      - N8N_LOG_LEVEL=warn
+
+      # ── IA: conecta con LiteLLM de Sinkia
+      - N8N_AI_ENABLED=true
+      - N8N_AI_PROVIDER=openai
+      - N8N_AI_OPENAI_API_KEY=local
+      - N8N_AI_OPENAI_BASE_URL=http://host.docker.internal:8082/v1
+
+      # ── Desactivar telemetría
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - sinkia-net
+
+# ── Volúmenes persistentes ────────────────────────────────────────────────
+volumes:
+  qdrant_data:
+    driver: local
+  openwebui_data:
+    driver: local
+  n8n_data:
+    driver: local
+
+# ── Red interna ───────────────────────────────────────────────────────────
+networks:
+  sinkia-net:
+    driver: bridge

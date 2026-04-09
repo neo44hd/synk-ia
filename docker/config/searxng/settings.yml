@@ -1,0 +1,77 @@
+# SearXNG — Configuración para uso local con Open WebUI
+# Documentación: https://docs.searxng.org/admin/settings/
+
+use_default_settings: true
+
+general:
+  debug: false
+  instance_name: "Sinkia Search"
+  contact_url: false
+  enable_metrics: false
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "es"
+  ban_time_on_fail: 0
+  max_ban_time_on_fail: 0
+  # CRÍTICO: habilitar formato JSON para que Open WebUI pueda usar SearXNG
+  formats:
+    - html
+    - json
+
+server:
+  # Clave secreta — cámbiala por cualquier string largo
+  secret_key: "sinkia-searxng-clave-secreta-2026-cambiame"
+  # Desactivar rate limiter para uso local (sin redis)
+  limiter: false
+  image_proxy: true
+  http_protocol_version: "1.0"
+  method: "GET"
+
+ui:
+  static_use_hash: true
+  default_theme: simple
+  theme_args:
+    simple_style: dark
+  infinite_scroll: false
+  center_alignment: true
+
+# Motores habilitados — los más útiles para uso profesional en España
+engines:
+  - name: google
+    engine: google
+    use_mobile_ui: false
+    disabled: false
+    weight: 2
+
+  - name: bing
+    engine: bing
+    disabled: false
+    weight: 1
+
+  - name: duckduckgo
+    engine: duckduckgo
+    disabled: false
+    weight: 1
+
+  - name: wikipedia
+    engine: wikipedia
+    language: "es"
+    disabled: false
+
+  - name: github
+    engine: github
+    disabled: false
+
+  - name: stackoverflow
+    engine: stackoverflow
+    disabled: false
+
+outgoing:
+  request_timeout: 10.0
+  max_request_timeout: 30.0
+  useragent_suffix: ""
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
