@@ -330,6 +330,33 @@ textarea::placeholder { color: var(--muted); }
   font-size: 11px;
   color: var(--muted);
 }
+
+  /* ── Thinking blocks ─────────────────────────────────────────────────────── */
+  .think-block {
+    background: #1a1a2e;
+    border: 1px solid #2a2a4a;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 0.82em;
+    color: #7878aa;
+  }
+  .think-block summary {
+    cursor: pointer;
+    padding: 6px 10px;
+    user-select: none;
+    color: #9090cc;
+  }
+  .think-block summary:hover { color: #aaaaee; }
+  .think-content {
+    padding: 8px 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: monospace;
+    font-size: 0.9em;
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 0;
+  }
 </style>
 </head>
 <body>
@@ -469,6 +496,8 @@ async function sendMessage() {
     const dec    = new TextDecoder();
     let   buf    = '';
     let   full   = '';
+    let   thinkFull = '';
+    let   thinkEl   = null;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -482,16 +511,50 @@ async function sendMessage() {
         if (raw === '[DONE]') continue;
         try {
           const d = JSON.parse(raw);
-          if (d.text) {
+
+          // ── Bloque de razonamiento (<think>) ────────────────────────
+          if (d.type === 'thinking' && d.text) {
+            thinkFull += d.text;
+            if (!thinkEl) {
+              // Crear bloque colapsable "Razonando..."
+              thinkEl = document.createElement('details');
+              thinkEl.className = 'think-block';
+              const summary = document.createElement('summary');
+              summary.textContent = '💭 Razonando...';
+              thinkEl.appendChild(summary);
+              const pre = document.createElement('pre');
+              pre.className = 'think-content';
+              thinkEl.appendChild(pre);
+              assistantEl.querySelector('.bubble')?.prepend(thinkEl);
+            }
+            thinkEl.querySelector('.think-content').textContent = thinkFull;
+            scrollToBottom();
+            continue;
+          }
+          if (d.type === 'thinking_done' && thinkEl) {
+            thinkEl.querySelector('summary').textContent = '💭 Ver razonamiento';
+            thinkEl.open = false;
+            continue;
+          }
+
+          // ── Texto final de la respuesta ──────────────────────────────
+          // Acepta {type:"text", text:"..."} (nuevo) y {text:"..."} (legacy)
+          if (d.text && d.type !== 'thinking') {
             full += d.text;
             renderBubble(assistantEl, full, true);
+            if (thinkEl) assistantEl.querySelector('.bubble')?.prepend(thinkEl);
             scrollToBottom();
+          }
+
+          if (d.type === 'error') {
+            renderBubble(assistantEl, `⚠ ${d.text}`, false);
           }
         } catch {}
       }
     }
 
-    renderBubble(assistantEl, full, false);
+    renderBubble(assistantEl, full || '…', false);
+    if (thinkEl) assistantEl.querySelector('.bubble')?.prepend(thinkEl);
     messages.push({ role: 'assistant', content: full });
 
   } catch (e) {
