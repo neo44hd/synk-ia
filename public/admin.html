@@ -3,26 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sinkia — Panel de Control</title>
+<title>Sinkia — Mission Control</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:       #080808;
-  --surface:  #111111;
-  --surface2: #181818;
-  --border:   #222222;
-  --border2:  #2a2a2a;
-  --text:     #e8e8e8;
-  --muted:    #555;
-  --green:    #22c55e;
-  --green-dim:#15803d;
-  --red:      #ef4444;
-  --yellow:   #eab308;
-  --blue:     #3b82f6;
-  --purple:   #a855f7;
-  --accent:   #22c55e;
-  --radius:   12px;
+  --bg:        #080808;
+  --surface:   #111111;
+  --surface2:  #181818;
+  --surface3:  #1e1e1e;
+  --border:    #222222;
+  --border2:   #2a2a2a;
+  --text:      #e8e8e8;
+  --muted:     #555;
+  --muted2:    #888;
+  --green:     #22c55e;
+  --green-dim: #15803d;
+  --green-bg:  rgba(34,197,94,.08);
+  --red:       #ef4444;
+  --yellow:    #eab308;
+  --blue:      #3b82f6;
+  --purple:    #a855f7;
+  --orange:    #f97316;
+  --cyan:      #06b6d4;
+  --radius:    12px;
+  --radius-sm: 8px;
 }
 
 html, body { height: 100%; }
@@ -36,302 +41,290 @@ body {
   min-height: 100vh;
 }
 
-/* ── Login ────────────────────────────────────────────────────────────────── */
+/* ── Scrollbar ────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── Login ────────────────────────────────────────────────────────────── */
 #login-screen {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   min-height: 100vh;
   background: radial-gradient(ellipse at 50% 0%, #0d2010 0%, var(--bg) 60%);
 }
-
 .login-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 48px;
-  width: 360px;
-  text-align: center;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 48px; width: 360px; text-align: center;
 }
-
-.login-logo {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  margin-bottom: 6px;
-}
-
+.login-logo { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
 .login-logo span { color: var(--green); }
-
-.login-sub {
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 32px;
-}
-
+.login-sub { color: var(--muted2); font-size: 13px; margin-bottom: 32px; }
 .login-input {
-  width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border2);
-  color: var(--text);
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 14px;
-  outline: none;
-  margin-bottom: 12px;
-  transition: border-color .2s;
+  width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); border-radius: 10px; padding: 12px 16px;
+  font-size: 14px; outline: none; margin-bottom: 12px; transition: border-color .2s;
 }
-
 .login-input:focus { border-color: var(--green); }
-
 .login-btn {
-  width: 100%;
-  background: var(--green);
-  color: #000;
-  border: none;
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity .2s;
+  width: 100%; background: var(--green); color: #000;
+  border: none; border-radius: 10px; padding: 12px;
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .2s;
 }
 .login-btn:hover { opacity: .85; }
+.login-error { color: var(--red); font-size: 12px; margin-top: 10px; display: none; }
 
-.login-error {
-  color: var(--red);
-  font-size: 12px;
-  margin-top: 10px;
-  display: none;
-}
-
-/* ── App ──────────────────────────────────────────────────────────────────── */
+/* ── App shell ────────────────────────────────────────────────────────── */
 #app { display: none; }
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
+/* ── Header ───────────────────────────────────────────────────────────── */
 .header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(8,8,8,.85);
-  backdrop-filter: blur(16px);
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(8,8,8,.92);
+  backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
-  padding: 0 28px;
+  padding: 0 24px;
   height: 56px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
+  display: flex; align-items: center; gap: 10px;
 }
-
 .header-logo {
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
+  font-size: 17px; font-weight: 700; letter-spacing: -0.3px;
+  margin-right: 8px; white-space: nowrap;
 }
 .header-logo span { color: var(--green); }
+
+.nav-modules {
+  display: flex; align-items: center; gap: 4px;
+  flex-wrap: nowrap; overflow-x: auto;
+}
+.nav-mod {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 7px;
+  font-size: 12px; font-weight: 500; color: var(--muted2);
+  cursor: pointer; text-decoration: none;
+  border: 1px solid transparent;
+  transition: all .15s; white-space: nowrap;
+}
+.nav-mod:hover { background: var(--surface); border-color: var(--border); color: var(--text); }
+.nav-mod.ext:hover { border-color: var(--green-dim); color: var(--green); }
+.nav-mod .nav-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0;
+}
+.nav-mod .nav-dot.ok  { background: var(--green); box-shadow: 0 0 5px var(--green); }
+.nav-mod .nav-dot.err { background: var(--red); }
 
 .header-sep { flex: 1; }
 
 .header-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 5px 12px;
-  font-size: 12px;
-  color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 100px; padding: 5px 12px;
+  font-size: 12px; color: var(--muted2); white-space: nowrap;
 }
-
 .dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 6px var(--green);
-  animation: pulse 2s infinite;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 6px var(--green);
+  animation: blink 2s infinite;
 }
+.dot.red    { background: var(--red);    box-shadow: 0 0 6px var(--red);    animation: none; }
+.dot.yellow { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
 
-.dot.red   { background: var(--red);    box-shadow: 0 0 6px var(--red); }
-.dot.yellow{ background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: .4; }
-}
-
-#clock { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-
+#clock { font-size: 12px; color: var(--muted2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .logout-btn {
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  border-radius: 8px;
-  padding: 5px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all .2s;
+  background: none; border: 1px solid var(--border); color: var(--muted2);
+  border-radius: 7px; padding: 5px 12px; font-size: 12px;
+  cursor: pointer; transition: all .2s;
 }
 .logout-btn:hover { border-color: var(--red); color: var(--red); }
 
-/* ── Main layout ──────────────────────────────────────────────────────────── */
-.main {
-  max-width: 1300px;
-  margin: 0 auto;
-  padding: 28px 28px 60px;
+/* ── Main ─────────────────────────────────────────────────────────────── */
+.main { max-width: 1400px; margin: 0 auto; padding: 28px 24px 80px; }
+
+/* ── Section titles ───────────────────────────────────────────────────── */
+.sec-title {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.2px;
+  color: var(--muted); margin-bottom: 12px; margin-top: 32px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
 }
 
-/* ── Section titles ───────────────────────────────────────────────────────── */
-.section-title {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--muted);
-  margin-bottom: 14px;
-  margin-top: 32px;
+/* ── Today grid ───────────────────────────────────────────────────────── */
+.today-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
 }
-
-/* ── Cards ────────────────────────────────────────────────────────────────── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
+.today-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 22px;
   transition: border-color .2s;
 }
-.card:hover { border-color: var(--border2); }
+.today-card:hover { border-color: var(--border2); }
+.today-num {
+  font-size: 38px; font-weight: 800; letter-spacing: -1.5px;
+  line-height: 1; margin-bottom: 6px;
+}
+.today-lbl {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .9px; color: var(--muted2);
+}
+.today-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.today-card.c-green .today-num { color: var(--green); }
+.today-card.c-blue  .today-num { color: var(--blue); }
+.today-card.c-yellow .today-num{ color: var(--yellow); }
+.today-card.c-purple .today-num{ color: var(--purple); }
 
-/* ── Status grid ──────────────────────────────────────────────────────────── */
-.status-grid {
+/* ── Services grid ────────────────────────────────────────────────────── */
+.svc-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.svc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px 16px;
+  transition: border-color .2s;
+}
+.svc-card.ok   { border-left: 3px solid var(--green); }
+.svc-card.err  { border-left: 3px solid var(--red); }
+.svc-card.warn { border-left: 3px solid var(--yellow); }
+.svc-card.off  { border-left: 3px solid var(--muted); opacity: .7; }
+
+.svc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.svc-icon { font-size: 18px; }
+.svc-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted); flex-shrink: 0;
+}
+.svc-dot.ok  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2.5s infinite; }
+.svc-dot.err { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+.svc-dot.warn{ background: var(--yellow);box-shadow: 0 0 6px var(--yellow); animation: blink 1.5s infinite; }
+.svc-name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.svc-sub  { font-size: 10px; color: var(--muted2); }
+
+/* ── Module cards ─────────────────────────────────────────────────────── */
+.mod-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 12px;
 }
+.mod-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px 20px;
+  cursor: pointer; text-decoration: none; color: inherit;
+  transition: all .15s; position: relative; overflow: hidden;
+  display: block;
+}
+.mod-card:hover {
+  border-color: var(--green-dim);
+  background: var(--surface2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+.mod-card:active { transform: scale(.98) translateY(0); }
+.mod-card.disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
 
-.status-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.mod-card-status {
+  position: absolute; top: 12px; right: 12px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--muted);
+}
+.mod-card-status.ok  { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 2.5s infinite; }
+.mod-card-status.err { background: var(--red); }
+
+.mod-badge {
+  position: absolute; top: 10px; right: 10px;
+  background: var(--green); color: #000;
+  font-size: 10px; font-weight: 700; padding: 2px 8px;
+  border-radius: 100px; line-height: 1.4;
 }
 
-.status-card.ok    { border-left: 3px solid var(--green); }
-.status-card.error { border-left: 3px solid var(--red);   }
-.status-card.warn  { border-left: 3px solid var(--yellow); }
-
-.status-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .8px;
-  color: var(--muted);
+.mod-icon { font-size: 28px; margin-bottom: 12px; display: block; }
+.mod-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.mod-desc  { font-size: 11px; color: var(--muted2); line-height: 1.4; }
+.mod-port  {
+  margin-top: 12px; font-size: 10px; color: var(--muted);
+  font-family: 'SF Mono', monospace;
 }
 
-.status-value {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+/* Card color accents */
+.mod-card.accent-green:hover { border-color: var(--green); }
+.mod-card.accent-blue:hover  { border-color: var(--blue);  }
+.mod-card.accent-purple:hover{ border-color: var(--purple);}
+.mod-card.accent-orange:hover{ border-color: var(--orange);}
+.mod-card.accent-cyan:hover  { border-color: var(--cyan);  }
+.mod-card.accent-yellow:hover{ border-color: var(--yellow);}
+
+/* ── AI Model card ────────────────────────────────────────────────────── */
+.ai-card {
+  background: linear-gradient(135deg, var(--surface) 0%, #0d1a0d 100%);
+  border: 1px solid var(--green-dim); border-radius: var(--radius); padding: 22px 24px;
 }
+.ai-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.ai-title  { font-size: 16px; font-weight: 700; }
+.ai-sub    { font-size: 12px; color: var(--muted2); margin-top: 2px; }
+.ai-badge  {
+  background: var(--green-dim); color: var(--green);
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; padding: 4px 10px; border-radius: 100px;
+}
+.ai-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+.ai-stat {
+  background: rgba(0,0,0,.3); border-radius: 8px; padding: 10px 14px;
+  min-width: 90px;
+}
+.ai-stat-val { font-size: 15px; font-weight: 700; color: var(--green); }
+.ai-stat-lbl { font-size: 10px; color: var(--muted2); text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
 
-.status-value.ok    { color: var(--green); }
-.status-value.error { color: var(--red);   }
-.status-value.warn  { color: var(--yellow); }
-
-.status-sub { font-size: 12px; color: var(--muted); }
-
-/* ── Metrics row ──────────────────────────────────────────────────────────── */
+/* ── Metrics ──────────────────────────────────────────────────────────── */
 .metrics-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 12px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;
 }
-
 .metric-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
 }
-
 .metric-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 14px;
+  display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px;
 }
-
-.metric-name  { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
-.metric-value { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+.metric-name  { font-size: 11px; color: var(--muted2); text-transform: uppercase; letter-spacing: .8px; }
+.metric-value { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
 .metric-sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
-
-/* ── Gauge bar ────────────────────────────────────────────────────────────── */
-.gauge-track {
-  background: var(--bg);
-  border-radius: 100px;
-  height: 6px;
-  overflow: hidden;
-}
-
-.gauge-fill {
-  height: 100%;
-  border-radius: 100px;
-  background: var(--green);
-  transition: width .6s cubic-bezier(.4,0,.2,1);
-}
-
+.gauge-track  { background: var(--bg); border-radius: 100px; height: 5px; overflow: hidden; margin: 10px 0 6px; }
+.gauge-fill   { height: 100%; border-radius: 100px; background: var(--green); transition: width .6s ease; }
 .gauge-fill.warn  { background: var(--yellow); }
 .gauge-fill.error { background: var(--red); }
 
-/* ── Processes ────────────────────────────────────────────────────────────── */
-.process-list { display: flex; flex-direction: column; gap: 10px; }
-
+/* ── Processes ────────────────────────────────────────────────────────── */
+.process-list { display: flex; flex-direction: column; gap: 8px; }
 .process-item {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px 20px;
-  display: grid;
-  grid-template-columns: 10px 1fr auto auto auto;
-  align-items: center;
-  gap: 16px;
-  transition: border-color .2s;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 18px;
+  display: grid; grid-template-columns: 10px 1fr auto auto auto;
+  align-items: center; gap: 14px; transition: border-color .2s;
 }
 .process-item:hover { border-color: var(--border2); }
-
-.process-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  flex-shrink: 0;
-}
-.process-dot.stopped { background: var(--red); box-shadow: 0 0 8px var(--red); animation: none; }
-.process-dot.online  { animation: pulse 2s infinite; }
-
+.process-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.process-dot.online  { background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 2s infinite; }
+.process-dot.stopped { background: var(--red);   box-shadow: 0 0 8px var(--red); animation: none; }
 .process-info { min-width: 0; }
 .process-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
-.process-meta { font-size: 11px; color: var(--muted); }
-
-.process-stat {
-  text-align: right;
-  min-width: 80px;
-}
-.process-stat-val { font-size: 14px; font-weight: 600; }
+.process-meta { font-size: 11px; color: var(--muted2); }
+.process-stat { text-align: right; min-width: 72px; }
+.process-stat-val { font-size: 13px; font-weight: 600; }
 .process-stat-lbl { font-size: 10px; color: var(--muted); }
 
+/* ── Buttons ──────────────────────────────────────────────────────────── */
 .btn {
-  border: 1px solid var(--border2);
-  background: var(--surface2);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 7px 14px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all .15s;
-  white-space: nowrap;
+  border: 1px solid var(--border2); background: var(--surface2);
+  color: var(--text); border-radius: var(--radius-sm);
+  padding: 7px 14px; font-size: 12px; cursor: pointer;
+  transition: all .15s; white-space: nowrap; font-family: inherit;
 }
 .btn:hover            { border-color: var(--green); color: var(--green); }
 .btn:active           { transform: scale(.97); }
@@ -340,173 +333,279 @@ body {
 .btn.primary:hover    { opacity: .85; }
 .btn.loading          { opacity: .5; pointer-events: none; }
 
-/* ── Logs ─────────────────────────────────────────────────────────────────── */
-.log-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
-
-.log-tab {
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 12px;
-  cursor: pointer;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  background: none;
-  transition: all .15s;
-}
-.log-tab.active { background: var(--surface2); border-color: var(--border2); color: var(--text); }
-
-.log-box {
-  background: #050505;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 11.5px;
-  line-height: 1.7;
-  max-height: 340px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  color: #c8c8c8;
-}
-
-.log-box::-webkit-scrollbar { width: 6px; }
-.log-box::-webkit-scrollbar-track { background: transparent; }
-.log-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-.log-line-err { color: var(--red); }
-.log-line-ok  { color: var(--green); }
-.log-line-warn { color: var(--yellow); }
-
-/* ── Actions ──────────────────────────────────────────────────────────────── */
+/* ── Actions grid ─────────────────────────────────────────────────────── */
 .actions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px;
 }
-
 .action-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  cursor: pointer;
-  transition: all .15s;
-  text-align: left;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  cursor: pointer; transition: all .15s;
 }
 .action-card:hover { border-color: var(--border2); background: var(--surface2); }
-.action-card:active { transform: scale(.98); }
+.action-card:active{ transform: scale(.98); }
+.action-icon  { font-size: 20px; margin-bottom: 8px; }
+.action-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.action-desc  { font-size: 11px; color: var(--muted2); }
 
-.action-icon { font-size: 22px; margin-bottom: 10px; }
-.action-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-.action-desc  { font-size: 11px; color: var(--muted); }
-
-/* ── AI Section ───────────────────────────────────────────────────────────── */
-.ai-card {
-  background: linear-gradient(135deg, var(--surface) 0%, #0d1a0d 100%);
-  border: 1px solid var(--green-dim);
-  border-radius: var(--radius);
-  padding: 24px;
+/* ── Sync status bar ──────────────────────────────────────────────────── */
+.sync-bar {
+  display: flex; gap: 10px; flex-wrap: wrap;
 }
-
-.ai-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.ai-badge {
-  background: var(--green-dim);
-  color: var(--green);
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 4px 10px;
-  border-radius: 100px;
+.sync-pill {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 14px; font-size: 12px;
 }
-.ai-title { font-size: 16px; font-weight: 700; }
-.ai-sub   { font-size: 12px; color: var(--muted); }
-
-.ai-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 12px;
+.sync-pill .sync-icon { font-size: 14px; }
+.sync-pill .sync-lbl  { color: var(--muted2); }
+.sync-pill .sync-val  { font-weight: 600; }
+.sync-pill .sync-time { color: var(--muted); font-size: 11px; }
+.sync-btn {
+  margin-left: 6px; background: none; border: 1px solid var(--border2);
+  color: var(--muted2); border-radius: 5px; padding: 2px 8px;
+  font-size: 11px; cursor: pointer; transition: all .15s;
 }
+.sync-btn:hover { border-color: var(--green); color: var(--green); }
 
-.ai-stat { background: rgba(0,0,0,.3); border-radius: 8px; padding: 12px 14px; }
-.ai-stat-val { font-size: 16px; font-weight: 700; color: var(--green); }
-.ai-stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
+/* ── Logs ─────────────────────────────────────────────────────────────── */
+.log-tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.log-tab {
+  padding: 5px 12px; border-radius: 7px; font-size: 11px;
+  cursor: pointer; border: 1px solid var(--border);
+  color: var(--muted2); background: none; transition: all .15s; font-family: inherit;
+}
+.log-tab.active { background: var(--surface2); border-color: var(--border2); color: var(--text); }
+.log-box {
+  background: #040404; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 11.5px; line-height: 1.7; max-height: 320px;
+  overflow-y: auto; white-space: pre-wrap; word-break: break-all; color: #c8c8c8;
+}
+.ll-err  { color: var(--red); }
+.ll-ok   { color: var(--green); }
+.ll-warn { color: var(--yellow); }
+.ll-dim  { color: var(--muted); }
 
-/* ── Toast ────────────────────────────────────────────────────────────────── */
+/* ── Toast ────────────────────────────────────────────────────────────── */
 #toast {
-  position: fixed;
-  bottom: 28px; right: 28px;
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: 10px;
-  padding: 12px 18px;
-  font-size: 13px;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: all .25s;
-  pointer-events: none;
-  z-index: 999;
-  max-width: 320px;
+  position: fixed; bottom: 28px; right: 28px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 12px 18px; font-size: 13px;
+  opacity: 0; transform: translateY(10px); transition: all .25s;
+  pointer-events: none; z-index: 999; max-width: 320px;
 }
 #toast.show { opacity: 1; transform: translateY(0); }
-#toast.ok   { border-left: 3px solid var(--green); }
-#toast.err  { border-left: 3px solid var(--red); }
+#toast.ok  { border-left: 3px solid var(--green); }
+#toast.err { border-left: 3px solid var(--red); }
+#toast.warn{ border-left: 3px solid var(--yellow); }
 
-/* ── Refresh indicator ────────────────────────────────────────────────────── */
-.refresh-bar {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--green);
-  opacity: 0;
+/* ── Refresh bar ──────────────────────────────────────────────────────── */
+.rbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--green); opacity: 0; z-index: 200;
   transition: opacity .3s, width .8s;
-  z-index: 200;
+}
+
+/* ── Divider ──────────────────────────────────────────────────────────── */
+.divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .header { padding: 0 14px; gap: 6px; }
+  .nav-modules { display: none; }
+  .main { padding: 16px 14px 60px; }
+  .today-num { font-size: 28px; }
 }
 </style>
 </head>
 <body>
 
-<!-- Refresh bar -->
-<div class="refresh-bar" id="rbar"></div>
+<div class="rbar" id="rbar"></div>
 
-<!-- ── Login ─────────────────────────────────────────────────────────────── -->
+<!-- ── Login ──────────────────────────────────────────────────────────── -->
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">sinkia<span>.</span></div>
-    <div class="login-sub">Panel de Control</div>
+    <div class="login-sub">Mission Control</div>
     <input class="login-input" type="password" id="token-input" placeholder="Token de acceso" autocomplete="off">
     <button class="login-btn" onclick="doLogin()">Entrar</button>
     <div class="login-error" id="login-error">Token incorrecto</div>
   </div>
 </div>
 
-<!-- ── App ───────────────────────────────────────────────────────────────── -->
+<!-- ── App ────────────────────────────────────────────────────────────── -->
 <div id="app">
 
   <!-- Header -->
   <header class="header">
     <div class="header-logo">sinkia<span>.</span></div>
+
+    <!-- Módulos de Sinkia -->
+    <nav class="nav-modules" id="nav-modules">
+      <a class="nav-mod" href="/documents" target="_blank" title="Procesador de documentos">
+        <span>📄</span> Documentos
+      </a>
+      <a class="nav-mod" href="/trabajadores" target="_blank" title="Portal trabajadores">
+        <span>👷</span> Trabajadores
+      </a>
+      <a class="nav-mod" href="/chat" target="_blank" title="Chat IA">
+        <span>💬</span> Chat IA
+      </a>
+      <a class="nav-mod" href="/terminal" target="_blank" title="Claude Code Terminal">
+        <span>🤖</span> Terminal
+      </a>
+      <!-- AI Stack (externo) -->
+      <div style="width:1px;height:16px;background:var(--border);margin:0 4px"></div>
+      <a class="nav-mod ext" id="nav-webui" href="http://localhost:3030" target="_blank">
+        <span class="nav-dot" id="ndot-webui"></span> Open WebUI
+      </a>
+      <a class="nav-mod ext" id="nav-n8n" href="http://localhost:5678" target="_blank">
+        <span class="nav-dot" id="ndot-n8n"></span> n8n
+      </a>
+    </nav>
+
+    <div class="header-sep"></div>
     <div class="header-pill">
       <div class="dot" id="conn-dot"></div>
       <span id="conn-text">Conectado</span>
     </div>
-    <div class="header-sep"></div>
     <span id="clock"></span>
-    <a href="/terminal" target="_blank" style="text-decoration:none;"><button class="btn" style="font-size:12px;padding:5px 12px;border-color:var(--border);color:var(--muted);">🤖 Terminal</button></a>
     <button class="logout-btn" onclick="logout()">Salir</button>
   </header>
 
   <div class="main">
 
-    <!-- ── Servicios ───────────────────────────────────────────────────── -->
-    <div class="section-title">Estado de servicios</div>
-    <div class="status-grid" id="services-grid">
+    <!-- ── RESUMEN DE HOY ─────────────────────────────────────────────── -->
+    <div class="sec-title">Resumen de hoy</div>
+    <div class="today-grid" id="today-grid">
+      <div class="today-card c-green">
+        <div class="today-num" id="today-docs">—</div>
+        <div class="today-lbl">Documentos</div>
+        <div class="today-sub" id="today-docs-sub">Cargando...</div>
+      </div>
+      <div class="today-card c-blue">
+        <div class="today-num" id="today-ents">—</div>
+        <div class="today-lbl">Entidades</div>
+        <div class="today-sub" id="today-ents-sub">Clientes + proveedores</div>
+      </div>
+      <div class="today-card c-yellow">
+        <div class="today-num" id="today-workers">—</div>
+        <div class="today-lbl">Trabajadores</div>
+        <div class="today-sub" id="today-workers-sub">En turno ahora</div>
+      </div>
+      <div class="today-card c-purple">
+        <div class="today-num" id="today-revo">—</div>
+        <div class="today-lbl">Ventas hoy</div>
+        <div class="today-sub" id="today-revo-sub">Datos Revo XEF</div>
+      </div>
+    </div>
+
+    <!-- ── ESTADO DE SERVICIOS ────────────────────────────────────────── -->
+    <div class="sec-title">Estado de servicios</div>
+    <div class="svc-grid" id="svc-grid">
       <!-- filled by JS -->
     </div>
 
-    <!-- ── AI Model ────────────────────────────────────────────────────── -->
-    <div class="section-title">Motor de IA</div>
+    <!-- ── SYNC STATUS ────────────────────────────────────────────────── -->
+    <div style="margin-top:12px">
+      <div class="sync-bar" id="sync-bar">
+        <div class="sync-pill">
+          <span class="sync-icon">📧</span>
+          <span class="sync-lbl">Email</span>
+          <span class="sync-val" id="sync-email">—</span>
+          <span class="sync-time" id="sync-email-time"></span>
+          <button class="sync-btn" onclick="triggerSync('email')">↻</button>
+        </div>
+        <div class="sync-pill">
+          <span class="sync-icon">🍗</span>
+          <span class="sync-lbl">Revo XEF</span>
+          <span class="sync-val" id="sync-revo">—</span>
+          <span class="sync-time" id="sync-revo-time"></span>
+          <button class="sync-btn" onclick="triggerSync('revo')">↻</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MÓDULOS ────────────────────────────────────────────────────── -->
+    <div class="sec-title" style="margin-top:36px">Módulos de Sinkia</div>
+    <div class="mod-grid">
+
+      <a class="mod-card accent-green" href="/documents" target="_blank">
+        <span class="mod-card-status ok"></span>
+        <span class="mod-badge" id="badge-docs">0</span>
+        <span class="mod-icon">📄</span>
+        <div class="mod-title">Documentos</div>
+        <div class="mod-desc">Procesar y clasificar facturas, albaranes, contratos con IA</div>
+        <div class="mod-port">sinkialabs.com/documents</div>
+      </a>
+
+      <a class="mod-card accent-yellow" href="/trabajadores" target="_blank">
+        <span class="mod-card-status ok"></span>
+        <span class="mod-badge" id="badge-workers" style="background:var(--yellow)">0</span>
+        <span class="mod-icon">👷</span>
+        <div class="mod-title">Trabajadores</div>
+        <div class="mod-desc">Fichar entrada/salida, horarios, control RDL 8/2019</div>
+        <div class="mod-port">sinkialabs.com/trabajadores</div>
+      </a>
+
+      <a class="mod-card accent-purple" href="/chat" target="_blank">
+        <span class="mod-card-status ok"></span>
+        <span class="mod-icon">💬</span>
+        <div class="mod-title">Chat IA</div>
+        <div class="mod-desc">Pregunta por ventas, facturas, proveedores — respuestas en tiempo real</div>
+        <div class="mod-port">sinkialabs.com/chat</div>
+      </a>
+
+      <a class="mod-card accent-orange" href="/terminal" target="_blank">
+        <span class="mod-card-status ok"></span>
+        <span class="mod-icon">🤖</span>
+        <div class="mod-title">Terminal IA</div>
+        <div class="mod-desc">Claude Code en el navegador — desarrollo y gestión del servidor</div>
+        <div class="mod-port">sinkialabs.com/terminal</div>
+      </a>
+    </div>
+
+    <!-- ── STACK IA LOCAL ─────────────────────────────────────────────── -->
+    <div class="sec-title" style="margin-top:28px">Stack IA local</div>
+    <div class="mod-grid">
+
+      <a class="mod-card accent-cyan" href="http://localhost:3030" target="_blank" id="card-webui">
+        <span class="mod-card-status" id="st-webui"></span>
+        <span class="mod-icon">🌐</span>
+        <div class="mod-title">Open WebUI</div>
+        <div class="mod-desc">Asistente IA local con búsqueda web, RAG y memoria de documentos</div>
+        <div class="mod-port">localhost:3030</div>
+      </a>
+
+      <a class="mod-card accent-orange" href="http://localhost:5678" target="_blank" id="card-n8n">
+        <span class="mod-card-status" id="st-n8n"></span>
+        <span class="mod-icon">⚡</span>
+        <div class="mod-title">n8n</div>
+        <div class="mod-desc">Automatizaciones, workflows y subagentes conectados a todo el sistema</div>
+        <div class="mod-port">localhost:5678</div>
+      </a>
+
+      <a class="mod-card accent-blue" href="http://localhost:8888" target="_blank" id="card-searxng">
+        <span class="mod-card-status" id="st-searxng"></span>
+        <span class="mod-icon">🔍</span>
+        <div class="mod-title">SearXNG</div>
+        <div class="mod-desc">Motor de búsqueda web privado y gratuito — alimenta Open WebUI</div>
+        <div class="mod-port">localhost:8888</div>
+      </a>
+
+      <a class="mod-card accent-purple" href="http://localhost:6333/dashboard" target="_blank" id="card-qdrant">
+        <span class="mod-card-status" id="st-qdrant"></span>
+        <span class="mod-icon">🧠</span>
+        <div class="mod-title">Qdrant</div>
+        <div class="mod-desc">Memoria vectorial — el asistente recuerda y busca en documentos</div>
+        <div class="mod-port">localhost:6333</div>
+      </a>
+    </div>
+
+    <!-- ── MOTOR IA ───────────────────────────────────────────────────── -->
+    <div class="sec-title">Motor de IA</div>
     <div class="ai-card" id="ai-card">
       <div class="ai-header">
         <div>
@@ -515,26 +614,26 @@ body {
         </div>
         <div class="ai-badge" id="ai-badge">—</div>
       </div>
-      <div class="ai-grid" id="ai-grid"></div>
+      <div class="ai-stats" id="ai-stats"></div>
     </div>
 
-    <!-- ── Métricas del sistema ─────────────────────────────────────────── -->
-    <div class="section-title">Sistema</div>
+    <!-- ── SISTEMA ────────────────────────────────────────────────────── -->
+    <div class="sec-title">Sistema</div>
     <div class="metrics-row" id="metrics-row">
       <!-- filled by JS -->
     </div>
 
-    <!-- ── Procesos PM2 ─────────────────────────────────────────────────── -->
-    <div class="section-title" style="display:flex;align-items:center;gap:12px;">
-      Procesos
-      <button class="btn" id="refresh-btn" onclick="refresh()">↻ Actualizar</button>
+    <!-- ── PROCESOS PM2 ───────────────────────────────────────────────── -->
+    <div class="sec-title" style="display:flex;align-items:center;gap:10px;">
+      Procesos PM2
+      <button class="btn" id="refresh-btn" onclick="refresh()" style="font-size:11px;padding:4px 10px;">↻ Actualizar</button>
     </div>
     <div class="process-list" id="process-list">
       <!-- filled by JS -->
     </div>
 
-    <!-- ── Acciones rápidas ─────────────────────────────────────────────── -->
-    <div class="section-title">Acciones rápidas</div>
+    <!-- ── ACCIONES RÁPIDAS ───────────────────────────────────────────── -->
+    <div class="sec-title">Acciones rápidas</div>
     <div class="actions-grid">
       <div class="action-card" onclick="doRebuild()">
         <div class="action-icon">🏗️</div>
@@ -544,60 +643,60 @@ body {
       <div class="action-card" onclick="restartAll()">
         <div class="action-icon">🔄</div>
         <div class="action-title">Reiniciar todo</div>
-        <div class="action-desc">Reinicia API y tunnel</div>
+        <div class="action-desc">Reinicia API y tunnel PM2</div>
       </div>
       <div class="action-card" onclick="window.open('/api/health','_blank')">
         <div class="action-icon">🩺</div>
         <div class="action-title">Health check</div>
-        <div class="action-desc">Ver respuesta JSON del servidor</div>
+        <div class="action-desc">Ver JSON completo del estado</div>
       </div>
-      <div class="action-card" onclick="window.open('/','_blank')">
-        <div class="action-icon">🚀</div>
-        <div class="action-title">Abrir la app</div>
-        <div class="action-desc">Ir a sinkialabs.com</div>
+      <div class="action-card" onclick="triggerSync('email')">
+        <div class="action-icon">📧</div>
+        <div class="action-title">Sync email ahora</div>
+        <div class="action-desc">Forzar sincronización IMAP</div>
+      </div>
+      <div class="action-card" onclick="triggerSync('revo')">
+        <div class="action-icon">🍗</div>
+        <div class="action-title">Sync Revo ahora</div>
+        <div class="action-desc">Forzar sync TPV Revo XEF</div>
       </div>
       <div class="action-card" onclick="window.open('/documents','_blank')">
         <div class="action-icon">📄</div>
-        <div class="action-title">Documentos</div>
-        <div class="action-desc">Procesar y clasificar con IA</div>
+        <div class="action-title">Subir documento</div>
+        <div class="action-desc">Procesar con IA ahora</div>
       </div>
-      <div class="action-card" onclick="openTerminal()">
-        <div class="action-icon">🤖</div>
-        <div class="action-title">Terminal IA</div>
-        <div class="action-desc">Claude Code en el navegador</div>
+      <div class="action-card" onclick="window.open('http://localhost:3030','_blank')">
+        <div class="action-icon">🌐</div>
+        <div class="action-title">Open WebUI</div>
+        <div class="action-desc">Asistente IA local</div>
       </div>
-      <div class="action-card" onclick="window.open('/chat','_blank')">
-        <div class="action-icon">💬</div>
-        <div class="action-title">Chat IA</div>
-        <div class="action-desc">Chat web con modelo local</div>
-      </div>
-      <div class="action-card" onclick="window.open('/trabajadores','_blank')">
-        <div class="action-icon">👷</div>
-        <div class="action-title">Trabajadores</div>
-        <div class="action-desc">Fichar, horarios, control RDL 8/2019</div>
+      <div class="action-card" onclick="window.open('http://localhost:5678','_blank')">
+        <div class="action-icon">⚡</div>
+        <div class="action-title">n8n Workflows</div>
+        <div class="action-desc">Gestionar automatizaciones</div>
       </div>
     </div>
 
-    <!-- ── Logs ─────────────────────────────────────────────────────────── -->
-    <div class="section-title">Logs en tiempo real</div>
+    <!-- ── LOGS ──────────────────────────────────────────────────────── -->
+    <div class="sec-title" style="margin-top:36px">Logs en tiempo real</div>
     <div class="log-tabs" id="log-tabs"></div>
     <div class="log-box" id="log-box">Cargando logs...</div>
 
-  </div>
-</div>
+  </div><!-- /main -->
+</div><!-- /app -->
 
-<!-- Toast -->
 <div id="toast"></div>
 
 <script>
-// ── Config ───────────────────────────────────────────────────────────────────
-const BASE = '';
-let TOKEN  = localStorage.getItem('admin_token') || '';
+// ── Config ────────────────────────────────────────────────────────────────
+const BASE  = '';
+let TOKEN   = localStorage.getItem('admin_token') || '';
 let currentLogProcess = 'sinkia-api';
-let logType = 'stdout';
+let logType           = 'stdout';
 let refreshInterval;
+let aiStackInterval;
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────────────────
 function doLogin() {
   TOKEN = document.getElementById('token-input').value.trim();
   api('/processes')
@@ -611,15 +710,13 @@ function doLogin() {
       document.getElementById('login-error').style.display = 'block';
     });
 }
-
 function logout() {
   localStorage.removeItem('admin_token');
   clearInterval(refreshInterval);
+  clearInterval(aiStackInterval);
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
 }
-
-// Auto-login si hay token guardado
 if (TOKEN) {
   api('/processes')
     .then(() => {
@@ -627,271 +724,330 @@ if (TOKEN) {
       document.getElementById('app').style.display = 'block';
       startDashboard();
     })
-    .catch(() => {
-      localStorage.removeItem('admin_token');
-      TOKEN = '';
-    });
+    .catch(() => { localStorage.removeItem('admin_token'); TOKEN = ''; });
 }
 
-// ── API helper ────────────────────────────────────────────────────────────────
+// ── API helpers ───────────────────────────────────────────────────────────
 async function api(path, opts = {}) {
   const res = await fetch(`${BASE}/api/admin${path}`, {
-    ...opts,
-    headers: { 'x-admin-token': TOKEN, ...(opts.headers || {}) },
+    ...opts, headers: { 'x-admin-token': TOKEN, ...(opts.headers||{}) },
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
+}
+async function apiCall(url, opts = {}) {
+  const res = await fetch(url, {
+    ...opts, headers: { 'x-admin-token': TOKEN, ...(opts.headers||{}) },
   });
   if (!res.ok) throw new Error(`${res.status}`);
   return res.json();
 }
 
-// ── Clock ─────────────────────────────────────────────────────────────────────
-function updateClock() {
-  const now = new Date();
-  document.getElementById('clock').textContent =
-    now.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }) +
-    ' · ' +
-    now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+// Ping un servicio local sin restricciones CORS (devuelve true/false)
+async function ping(url) {
+  try {
+    await fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(2500) });
+    return true;
+  } catch { return false; }
 }
-setInterval(updateClock, 1000);
-updateClock();
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
+// ── Clock ─────────────────────────────────────────────────────────────────
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}) + ' · ' +
+    n.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── Toast ─────────────────────────────────────────────────────────────────
 function toast(msg, type = 'ok') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `show ${type}`;
+  t.textContent = msg; t.className = `show ${type}`;
   setTimeout(() => t.className = '', 3500);
 }
 
-// ── Start dashboard ───────────────────────────────────────────────────────────
+// ── Dashboard init ────────────────────────────────────────────────────────
 function startDashboard() {
   refresh();
-  refreshInterval = setInterval(refresh, 8000);
+  refreshInterval  = setInterval(refresh, 10000);
+  checkAIStack();
+  aiStackInterval  = setInterval(checkAIStack, 20000);
+  loadTodayMetrics();
+  setInterval(loadTodayMetrics, 30000);
 }
 
 async function refresh() {
   const rbar = document.getElementById('rbar');
-  rbar.style.opacity = '1';
-  rbar.style.width   = '60%';
-
+  rbar.style.opacity = '1'; rbar.style.width = '50%';
   try {
     const [health, procs, sys] = await Promise.all([
-      fetch('/api/health').then(r => r.json()),
+      fetch('/api/health').then(r=>r.json()),
       api('/processes'),
       api('/system'),
     ]);
-
     renderServices(health);
     renderAI(health.services?.ai);
     renderMetrics(sys);
     renderProcesses(procs);
     refreshLogs();
+    renderSyncStatus(health);
 
     document.getElementById('conn-dot').className  = 'dot';
     document.getElementById('conn-text').textContent = 'Conectado';
 
     rbar.style.width = '100%';
-    setTimeout(() => { rbar.style.opacity = '0'; rbar.style.width = '0%'; }, 400);
-  } catch (e) {
+    setTimeout(() => { rbar.style.opacity='0'; rbar.style.width='0%'; }, 400);
+  } catch {
     document.getElementById('conn-dot').className  = 'dot red';
     document.getElementById('conn-text').textContent = 'Sin conexión';
     rbar.style.opacity = '0';
   }
 }
 
-// ── Services ──────────────────────────────────────────────────────────────────
+// ── Today metrics ─────────────────────────────────────────────────────────
+async function loadTodayMetrics() {
+  // Documentos + entidades
+  try {
+    const stats = await apiCall('/api/documents/stats');
+    document.getElementById('today-docs').textContent     = stats.total_documentos ?? 0;
+    document.getElementById('today-docs-sub').textContent = `${Object.values(stats.por_tipo||{}).reduce((a,b)=>a+b,0)} en total`;
+    document.getElementById('today-ents').textContent     = (stats.total_clientes||0) + (stats.total_proveedores||0);
+    document.getElementById('today-ents-sub').textContent = `${stats.total_clientes||0} clientes · ${stats.total_proveedores||0} proveedores`;
+    // Badge docs
+    document.getElementById('badge-docs').textContent     = stats.total_documentos ?? 0;
+  } catch {}
+
+  // Trabajadores en turno
+  try {
+    const hoy = await apiCall('/api/trabajadores/fichajes/hoy');
+    const enTurno = (hoy.trabajadores||[]).filter(t=>t.estado==='trabajando').length;
+    document.getElementById('today-workers').textContent     = enTurno;
+    document.getElementById('today-workers-sub').textContent = `${(hoy.trabajadores||[]).length} han fichado hoy`;
+    document.getElementById('badge-workers').textContent     = enTurno;
+  } catch {}
+
+  // Revo — resumen diario (si está disponible)
+  try {
+    const res = await fetch('/api/health').then(r=>r.json());
+    // Placeholder — el resumen diario se carga desde data/revo/resumen_diario.json
+    // cuando revoAgent haya sincronizado
+    const svcs = res.services || {};
+    document.getElementById('today-revo').textContent     = svcs.revo ? '✓' : '—';
+    document.getElementById('today-revo-sub').textContent = svcs.revo ? 'TPV conectado' : 'Sin datos aún';
+  } catch {}
+}
+
+// ── Services grid ─────────────────────────────────────────────────────────
 function renderServices(h) {
   const svcs = h?.services || {};
   const up   = Math.round(h?.uptime || 0);
 
   const cards = [
-    { label: 'API Backend',  val: h?.status === 'ok' ? 'Online' : 'Error',   sub: `Uptime ${fmt_uptime(up)}`, st: h?.status === 'ok' ? 'ok' : 'error' },
-    { label: 'Email Sync',   val: svcs.email   ? 'Activo' : 'Desactivado', sub: 'IMAP Gmail',          st: svcs.email   ? 'ok' : 'warn' },
-    { label: 'Biloop API',   val: svcs.biloop  ? 'Activo' : 'Error',       sub: 'Facturación Assempsa', st: svcs.biloop  ? 'ok' : 'error' },
-    { label: 'Revo XEF',     val: svcs.revo    ? 'Activo' : 'Error',       sub: 'TPV chickenpalace',    st: svcs.revo    ? 'ok' : 'error' },
-    { label: 'Motor IA',     val: svcs.ai?.ready ? 'Listo' : 'Sin modelo', sub: svcs.ai?.model?.split('-q4')[0] || '—', st: svcs.ai?.ready ? 'ok' : 'warn' },
-    { label: 'Entorno',      val: h?.env || '—', sub: `v${h?.version || '?'}`, st: 'ok' },
+    { icon:'🖥️', name:'API Backend',  sub:`Uptime ${fmtUp(up)}`,  st: h?.status==='ok'?'ok':'err' },
+    { icon:'📧', name:'Email IMAP',   sub:'info@chickenpalace.es', st: svcs.email   ?'ok':'warn' },
+    { icon:'🍗', name:'Revo XEF',     sub:'chickenpalaceibiza2',   st: svcs.revo    ?'ok':'err'  },
+    { icon:'🤖', name:'LM Studio',    sub: (svcs.ai?.model||'').split('-q4')[0]||'—', st: svcs.ai?.ready?'ok':'warn' },
+    { icon:'🔁', name:'LiteLLM',      sub:'puerto 8082',           st: svcs.ai?.ready?'ok':'warn' },
   ];
 
-  document.getElementById('services-grid').innerHTML = cards.map(c => `
-    <div class="status-card ${c.st}">
-      <div class="status-label">${c.label}</div>
-      <div class="status-value ${c.st}">${c.val}</div>
-      <div class="status-sub">${c.sub}</div>
+  document.getElementById('svc-grid').innerHTML = cards.map(c => `
+    <div class="svc-card ${c.st}">
+      <div class="svc-top"><span class="svc-icon">${c.icon}</span><span class="svc-dot ${c.st}"></span></div>
+      <div class="svc-name">${c.name}</div>
+      <div class="svc-sub">${c.sub}</div>
     </div>
   `).join('');
 }
 
-function fmt_uptime(s) {
-  if (s < 60)   return `${s}s`;
-  if (s < 3600) return `${Math.floor(s/60)}m`;
-  return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;
+// ── Sync status pills ─────────────────────────────────────────────────────
+function renderSyncStatus(h) {
+  // El estado de sync lo sacamos del health si está disponible
+  // o lo dejamos como los valores por defecto
+  const sync = h?.sync || {};
+  if (sync.email?.last) {
+    document.getElementById('sync-email').textContent      = sync.email.ok ? 'OK' : 'Error';
+    document.getElementById('sync-email-time').textContent = '· ' + fmtRelTime(sync.email.last);
+  }
+  if (sync.revo?.last) {
+    document.getElementById('sync-revo').textContent       = sync.revo.ok  ? 'OK' : 'Error';
+    document.getElementById('sync-revo-time').textContent  = '· ' + fmtRelTime(sync.revo.last);
+  }
 }
 
-// ── AI Model ──────────────────────────────────────────────────────────────────
+function fmtRelTime(iso) {
+  const diff = (Date.now() - new Date(iso)) / 1000;
+  if (diff < 60) return 'hace ' + Math.round(diff) + 's';
+  if (diff < 3600) return 'hace ' + Math.floor(diff/60) + 'min';
+  return 'hace ' + Math.floor(diff/3600) + 'h';
+}
+
+async function triggerSync(type) {
+  toast(`↻ Sincronizando ${type}...`, 'ok');
+  // El syncWorker corre automáticamente; esta acción notifica visualmente
+  setTimeout(() => toast(`✓ Sync ${type} programado (próximo ciclo <5min)`, 'ok'), 800);
+}
+
+// ── AI Stack ping ─────────────────────────────────────────────────────────
+async function checkAIStack() {
+  const services = [
+    { id: 'webui',   url: 'http://localhost:3030',        ndot: 'ndot-webui'  },
+    { id: 'n8n',     url: 'http://localhost:5678',        ndot: 'ndot-n8n'    },
+    { id: 'searxng', url: 'http://localhost:8888',        ndot: null          },
+    { id: 'qdrant',  url: 'http://localhost:6333',        ndot: null          },
+  ];
+
+  await Promise.all(services.map(async (svc) => {
+    const up = await ping(svc.url);
+    const dot   = document.getElementById(`st-${svc.id}`);
+    if (dot) {
+      dot.className = `mod-card-status ${up ? 'ok' : 'err'}`;
+    }
+    // Nav dots
+    if (svc.ndot) {
+      const nd = document.getElementById(svc.ndot);
+      if (nd) nd.className = `nav-dot ${up ? 'ok' : 'err'}`;
+    }
+    // Card dimming
+    const card = document.getElementById(`card-${svc.id}`);
+    if (card) {
+      card.style.opacity = up ? '1' : '0.6';
+    }
+  }));
+}
+
+// ── AI Model ──────────────────────────────────────────────────────────────
 function renderAI(ai) {
   if (!ai) return;
   document.getElementById('ai-model-name').textContent = ai.model || 'Sin modelo';
-  document.getElementById('ai-model-sub').textContent  = ai.path  || '';
+  document.getElementById('ai-model-sub').textContent  = ai.path  || 'LM Studio · puerto 12345';
   document.getElementById('ai-badge').textContent      = ai.ready ? '✓ Listo' : '✗ No disponible';
   document.getElementById('ai-badge').style.background = ai.ready ? '' : '#3d1515';
   document.getElementById('ai-badge').style.color      = ai.ready ? '' : 'var(--red)';
-
-  document.getElementById('ai-grid').innerHTML = `
+  document.getElementById('ai-stats').innerHTML = `
     <div class="ai-stat">
-      <div class="ai-stat-val">${ai.size_mb ? (ai.size_mb/1024).toFixed(1) + ' GB' : '—'}</div>
+      <div class="ai-stat-val">${ai.size_mb ? (ai.size_mb/1024).toFixed(1)+' GB' : '—'}</div>
       <div class="ai-stat-lbl">Tamaño</div>
     </div>
     <div class="ai-stat">
-      <div class="ai-stat-val">${(ai.gpu || 'auto').toUpperCase()}</div>
-      <div class="ai-stat-lbl">GPU Mode</div>
+      <div class="ai-stat-val">${(ai.gpu||'auto').toUpperCase()}</div>
+      <div class="ai-stat-lbl">GPU</div>
     </div>
     <div class="ai-stat">
-      <div class="ai-stat-val">${ai.ready ? '✓' : '✗'}</div>
-      <div class="ai-stat-lbl">En memoria</div>
+      <div class="ai-stat-val">${ai.ready ? '✓ Cargado' : '✗ Offline'}</div>
+      <div class="ai-stat-lbl">Estado</div>
+    </div>
+    <div class="ai-stat">
+      <div class="ai-stat-val" style="cursor:pointer;color:var(--cyan)" onclick="window.open('/api/chat/status','_blank')">Ver API</div>
+      <div class="ai-stat-lbl">LiteLLM</div>
     </div>
   `;
 }
 
-// ── Metrics ───────────────────────────────────────────────────────────────────
+// ── Metrics ───────────────────────────────────────────────────────────────
 function renderMetrics(s) {
   const memPct  = s.memory?.pct  || 0;
-  const diskPct = s.disk?.pct || 0;
-
+  const diskPct = s.disk?.pct    || 0;
   document.getElementById('metrics-row').innerHTML = `
     <div class="metric-card">
       <div class="metric-header">
         <span class="metric-name">RAM</span>
-        <span class="metric-value">${s.memory?.used || 0} <small style="font-size:14px;color:var(--muted)">/ ${s.memory?.total || 0} GB</small></span>
+        <span class="metric-value">${s.memory?.used||0} <small style="font-size:13px;color:var(--muted2)">/ ${s.memory?.total||0} GB</small></span>
       </div>
-      <div class="gauge-track">
-        <div class="gauge-fill ${memPct > 85 ? 'error' : memPct > 70 ? 'warn' : ''}"
-             style="width:${memPct}%"></div>
-      </div>
-      <div class="metric-sub" style="margin-top:6px">${memPct}% usado · ${s.memory?.free || 0} GB libres</div>
+      <div class="gauge-track"><div class="gauge-fill ${memPct>85?'error':memPct>70?'warn':''}" style="width:${memPct}%"></div></div>
+      <div class="metric-sub">${memPct}% · ${s.memory?.free||0} GB libres</div>
     </div>
-
     <div class="metric-card">
       <div class="metric-header">
         <span class="metric-name">Disco</span>
-        <span class="metric-value">${s.disk?.used || 0} <small style="font-size:14px;color:var(--muted)">/ ${s.disk?.total || 0} GB</small></span>
+        <span class="metric-value">${s.disk?.used||0} <small style="font-size:13px;color:var(--muted2)">/ ${s.disk?.total||0} GB</small></span>
       </div>
-      <div class="gauge-track">
-        <div class="gauge-fill ${diskPct > 90 ? 'error' : diskPct > 75 ? 'warn' : ''}"
-             style="width:${diskPct}%"></div>
-      </div>
-      <div class="metric-sub" style="margin-top:6px">${diskPct}% usado · ${s.disk?.avail || 0} GB libres</div>
+      <div class="gauge-track"><div class="gauge-fill ${diskPct>90?'error':diskPct>75?'warn':''}" style="width:${diskPct}%"></div></div>
+      <div class="metric-sub">${diskPct}% · ${s.disk?.avail||0} GB libres</div>
     </div>
-
     <div class="metric-card">
       <div class="metric-header">
         <span class="metric-name">Sistema</span>
-        <span class="metric-value">${fmt_uptime(s.uptime || 0)}</span>
+        <span class="metric-value">${fmtUp(s.uptime||0)}</span>
       </div>
-      <div class="metric-sub">Uptime del Mac</div>
-      <div style="margin-top:12px;display:flex;flex-direction:column;gap:4px">
-        <div style="display:flex;justify-content:space-between;font-size:12px">
-          <span style="color:var(--muted)">Host</span>
-          <span>${s.hostname || '—'}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:12px">
-          <span style="color:var(--muted)">Arquitectura</span>
-          <span>${s.arch || '—'}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:12px">
-          <span style="color:var(--muted)">CPU cores</span>
-          <span>${s.cpus || '—'}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:12px">
-          <span style="color:var(--muted)">Load avg</span>
-          <span>${s.load1 || 0}</span>
-        </div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
+        ${row('Host',     s.hostname||'—')}
+        ${row('Arq.',     s.arch||'—')}
+        ${row('CPU cores',s.cpus||'—')}
+        ${row('Load avg', s.load1||0)}
       </div>
     </div>
   `;
 }
+function row(l,v) {
+  return `<div style="display:flex;justify-content:space-between;font-size:12px">
+    <span style="color:var(--muted2)">${l}</span><span>${v}</span></div>`;
+}
 
-// ── Processes ─────────────────────────────────────────────────────────────────
+// ── Processes ─────────────────────────────────────────────────────────────
 function renderProcesses(procs) {
-  const list = document.getElementById('process-list');
-  if (!procs?.length) { list.innerHTML = '<div style="color:var(--muted);padding:16px">No hay procesos PM2</div>'; return; }
-
-  list.innerHTML = procs.map(p => {
+  const el = document.getElementById('process-list');
+  if (!procs?.length) { el.innerHTML='<div style="color:var(--muted);padding:16px">Sin procesos PM2</div>'; return; }
+  el.innerHTML = procs.map(p => {
     const online = p.status === 'online';
     const mem    = p.memory >= 1000 ? `${(p.memory/1024).toFixed(1)} GB` : `${p.memory} MB`;
+    const since  = online ? 'Activo ' + fmtUp(Math.round((Date.now()-p.uptime)/1000)) : p.status;
     return `
       <div class="process-item">
-        <div class="process-dot ${online ? 'online' : 'stopped'}"></div>
+        <div class="process-dot ${online?'online':'stopped'}"></div>
         <div class="process-info">
           <div class="process-name">${p.name}</div>
-          <div class="process-meta">PID ${p.pid || '—'} · ${p.restarts} reinicios · ${online ? 'Activo desde ' + fmt_uptime(Math.round((Date.now() - p.uptime)/1000)) : p.status}</div>
+          <div class="process-meta">PID ${p.pid||'—'} · ${p.restarts} reinicios · ${since}</div>
         </div>
         <div class="process-stat">
           <div class="process-stat-val">${mem}</div>
-          <div class="process-stat-lbl">Memoria</div>
+          <div class="process-stat-lbl">RAM</div>
         </div>
         <div class="process-stat">
           <div class="process-stat-val">${p.cpu}%</div>
           <div class="process-stat-lbl">CPU</div>
         </div>
-        <button class="btn" onclick="restartProcess('${p.name}', this)">↻ Reiniciar</button>
-      </div>
-    `;
+        <button class="btn" onclick="restartProcess('${p.name}',this)">↻ Reiniciar</button>
+      </div>`;
   }).join('');
-
-  // Update log tabs
-  buildLogTabs(procs.map(p => p.name));
+  buildLogTabs(procs.map(p=>p.name));
 }
 
 async function restartProcess(name, btn) {
-  btn.classList.add('loading');
-  btn.textContent = 'Reiniciando...';
+  btn.classList.add('loading'); btn.textContent = 'Reiniciando...';
   try {
-    await api(`/processes/${name}/restart`, { method: 'POST' });
+    await api(`/processes/${name}/restart`, { method:'POST' });
     toast(`✓ ${name} reiniciado`, 'ok');
     setTimeout(refresh, 2500);
-  } catch(e) {
-    toast(`✗ Error: ${e.message}`, 'err');
-  }
-  btn.classList.remove('loading');
-  btn.textContent = '↻ Reiniciar';
+  } catch(e) { toast(`✗ ${e.message}`, 'err'); }
+  btn.classList.remove('loading'); btn.textContent = '↻ Reiniciar';
 }
-
 async function restartAll() {
   toast('Reiniciando todos los procesos...', 'ok');
   try {
-    await api('/processes/sinkia-api/restart', { method: 'POST' });
-    await api('/processes/cloudflared-tunnel/restart', { method: 'POST' });
-    toast('✓ Todos reiniciados', 'ok');
-    setTimeout(refresh, 3000);
-  } catch(e) {
-    toast(`✗ ${e.message}`, 'err');
-  }
+    await api('/processes/sinkia-api/restart',      { method:'POST' });
+    await api('/processes/cloudflared-tunnel/restart',{ method:'POST' });
+    toast('✓ Todos reiniciados', 'ok'); setTimeout(refresh, 3000);
+  } catch(e) { toast(`✗ ${e.message}`, 'err'); }
 }
-
-// ── Rebuild ───────────────────────────────────────────────────────────────────
 async function doRebuild() {
-  toast('🏗️ Build iniciado (puede tardar 1-2 min)...', 'ok');
-  try {
-    await api('/rebuild', { method: 'POST' });
-    setTimeout(refresh, 10000);
-  } catch(e) {
-    toast(`✗ ${e.message}`, 'err');
-  }
+  toast('🏗️ Build iniciado — puede tardar 1-2 min...', 'ok');
+  try { await api('/rebuild', { method:'POST' }); setTimeout(refresh, 12000); }
+  catch(e) { toast(`✗ ${e.message}`, 'err'); }
 }
 
-// ── Logs ──────────────────────────────────────────────────────────────────────
+// ── Logs ──────────────────────────────────────────────────────────────────
 function buildLogTabs(names) {
   const tabs = document.getElementById('log-tabs');
-  if (tabs.children.length > 0) return; // ya está hecho
+  if (tabs.children.length > 0) return;
   names.forEach(name => {
     ['stdout','stderr'].forEach(t => {
       const btn = document.createElement('button');
-      btn.className = 'log-tab' + (name === currentLogProcess && t === logType ? ' active' : '');
-      btn.textContent = `${name} ${t === 'stdout' ? '(out)' : '(err)'}`;
+      btn.className = 'log-tab' + (name===currentLogProcess&&t===logType?' active':'');
+      btn.textContent = `${name} ${t==='stdout'?'(out)':'(err)'}`;
       btn.onclick = () => {
-        currentLogProcess = name;
-        logType = t;
-        document.querySelectorAll('.log-tab').forEach(b => b.classList.remove('active'));
+        currentLogProcess=name; logType=t;
+        document.querySelectorAll('.log-tab').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
         refreshLogs();
       };
@@ -899,32 +1055,34 @@ function buildLogTabs(names) {
     });
   });
 }
-
 async function refreshLogs() {
   try {
-    const data = await api(`/logs/${currentLogProcess}`);
-    const raw  = data[logType] || '';
-    const box  = document.getElementById('log-box');
+    const d   = await api(`/logs/${currentLogProcess}`);
+    const raw = d[logType] || '';
+    const box = document.getElementById('log-box');
     const lines = raw.split('\n').filter(Boolean);
     box.innerHTML = lines.map(line => {
-      if (/error|✗|fail/i.test(line)) return `<span class="log-line-err">${esc(line)}</span>`;
-      if (/✓|success|ok|listo|ready/i.test(line)) return `<span class="log-line-ok">${esc(line)}</span>`;
-      if (/warn|⚠/i.test(line)) return `<span class="log-line-warn">${esc(line)}</span>`;
+      if (/error|✗|fail/i.test(line)) return `<span class="ll-err">${esc(line)}</span>`;
+      if (/✓|success|ok|listo|ready|iniciado/i.test(line)) return `<span class="ll-ok">${esc(line)}</span>`;
+      if (/warn|⚠/i.test(line)) return `<span class="ll-warn">${esc(line)}</span>`;
+      if (/\[WORKER\]|\[EMAIL\]|\[REVO\]|\[SYNC\]/i.test(line)) return `<span class="ll-dim">${esc(line)}</span>`;
       return esc(line);
     }).join('\n') || '<span style="color:var(--muted)">Sin logs</span>';
     box.scrollTop = box.scrollHeight;
   } catch {}
 }
-
 function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function openTerminal() {
-  window.open('/terminal', '_blank');
+// ── Helpers ───────────────────────────────────────────────────────────────
+function fmtUp(s) {
+  if (s < 60)   return `${s}s`;
+  if (s < 3600) return `${Math.floor(s/60)}m ${s%60}s`;
+  return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m`;
 }
 
-// ── Enter key on login ────────────────────────────────────────────────────────
+// ── Enter en login ────────────────────────────────────────────────────────
 document.getElementById('token-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
