@@ -493,6 +493,7 @@ body {
     </div>
     <div class="header-sep"></div>
     <span id="clock"></span>
+    <a href="/terminal" target="_blank" style="text-decoration:none;"><button class="btn" style="font-size:12px;padding:5px 12px;border-color:var(--border);color:var(--muted);">🤖 Terminal</button></a>
     <button class="logout-btn" onclick="logout()">Salir</button>
   </header>
 
@@ -554,6 +555,16 @@ body {
         <div class="action-icon">🚀</div>
         <div class="action-title">Abrir la app</div>
         <div class="action-desc">Ir a sinkialabs.com</div>
+      </div>
+      <div class="action-card" onclick="openTerminal()">
+        <div class="action-icon">🤖</div>
+        <div class="action-title">Terminal IA</div>
+        <div class="action-desc">Claude Code en el navegador</div>
+      </div>
+      <div class="action-card" onclick="window.open('/chat','_blank')">
+        <div class="action-icon">💬</div>
+        <div class="action-title">Chat IA</div>
+        <div class="action-desc">Chat web con modelo local</div>
       </div>
     </div>
 
@@ -897,6 +908,10 @@ async function refreshLogs() {
 
 function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function openTerminal() {
+  window.open('/terminal', '_blank');
 }
 
 // ── Enter key on login ────────────────────────────────────────────────────────

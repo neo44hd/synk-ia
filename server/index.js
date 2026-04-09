@@ -13,6 +13,7 @@ import { filesRouter }       from './routes/files.js';
 import { adminRouter }       from './routes/admin.js';
 import { claudeProxyRouter } from './routes/claude-proxy.js';
 import { chatRouter }        from './routes/chat.js';
+import { setupTerminal }      from './routes/terminal.js';
 
 dotenv.config();
 
@@ -107,6 +108,12 @@ if (existsSync(chatHtml)) {
   console.log('[SERVER] ✓ Chat IA: /chat');
 }
 
+const terminalHtml = path.join(__dirname, '..', 'public', 'terminal.html');
+if (existsSync(terminalHtml)) {
+  app.get('/terminal', (_req, res) => res.sendFile(terminalHtml));
+  console.log('[SERVER] ✓ Terminal: /terminal');
+}
+
 if (existsSync(distPath)) {
   app.use(express.static(distPath));
   // SPA fallback — cualquier ruta no-API devuelve index.html
@@ -134,6 +141,9 @@ app.use((err, _req, res, _next) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n[SERVER] ✓ Puerto ${PORT} | ${new Date().toISOString()}`);
   console.log(`[SERVER] CORS: ${ALLOWED_ORIGINS.join(', ')}\n`);
+
+  // Terminal WebSocket (node-pty + ws)
+  try { setupTerminal(server); } catch (e) { console.error('[TERMINAL] ✗', e.message); }
 
   import('./syncWorker.js').then(({ startSyncWorker }) => {
     try {
