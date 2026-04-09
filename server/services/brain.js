@@ -5,25 +5,56 @@
 import { getDocuments, getEntities, getStats } from './documentProcessor.js';
 import { getRevoResumen, getRevoProductos, getRevoVentas } from '../agents/revoAgent.js';
 
-const LITELLM  = process.env.LITELLM_URL     || 'http://localhost:8082';
-const MODEL    = process.env.LOCAL_LLM_MODEL || 'medina-qwen3-14b-openclaw';
+const LM_STUDIO = process.env.LOCAL_LLM_URL   || 'http://localhost:12345';
+const LITELLM   = process.env.LITELLM_URL     || 'http://localhost:8082';
+const MODEL     = process.env.LOCAL_LLM_MODEL || 'qwen3-vl-32b-gemini-heretic-uncensored-thinking-i1';
+const SEARXNG   = process.env.SEARXNG_URL     || 'http://localhost:8888';
 
-// ── LLM helper ─────────────────────────────────────────────────────────────
+// ── Strip <think>...</think> del modelo Qwen3 thinking ─────────────────────
+function stripThinking(text) {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
+// ── Búsqueda web via SearXNG (cuando está disponible) ─────────────────────
+export async function searchWeb(query, n = 5) {
+  try {
+    const url = `${SEARXNG}/search?q=${encodeURIComponent(query)}&format=json&language=es&categories=general`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data.results || []).slice(0, n).map(r => ({
+      titulo:  r.title,
+      url:     r.url,
+      resumen: (r.content || '').slice(0, 400),
+    }));
+  } catch {
+    return null; // SearXNG no disponible
+  }
+}
+
+// ── LLM helper (LM Studio directo, strip thinking) ─────────────────────────
 async function llm(messages, { maxTokens = 1200, temp = 0.2 } = {}) {
-  const res = await fetch(`${LITELLM}/v1/chat/completions`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model:       MODEL,
-      messages,
-      temperature: temp,
-      max_tokens:  maxTokens,
-      stream:      false,
-    }),
-  });
-  if (!res.ok) throw new Error(`LLM ${res.status}`);
-  const d = await res.json();
-  return d.choices?.[0]?.message?.content?.trim() || '';
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 120_000);
+  try {
+    const res = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
+      signal:  controller.signal,
+      body: JSON.stringify({
+        model:       MODEL,
+        messages,
+        temperature: temp,
+        max_tokens:  maxTokens,
+        stream:      false,
+      }),
+    });
+    if (!res.ok) throw new Error(`LLM ${res.status}`);
+    const d = await res.json();
+    return stripThinking(d.choices?.[0]?.message?.content?.trim() || '');
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ── PASO 1: Clasificar intención ───────────────────────────────────────────
@@ -283,11 +314,15 @@ async function facturasPendientes() {
 }
 
 // ── PASO 3: Generar respuesta ──────────────────────────────────────────────
-const ANSWER_SYSTEM = `Eres el asistente de negocio de Sinkia. Respondes en español, de forma clara, directa y útil.
-Tienes acceso a los datos reales del negocio. Usa los datos proporcionados para dar respuestas concretas.
-Cuando hay números, cítalos exactamente. Cuando hay comparaciones, sé preciso.
-Si te piden crear un presupuesto, hazlo en formato estructurado con líneas, importes e IVA.
-Sé conciso pero completo. No inventes datos que no estén en el contexto.`;
+const ANSWER_SYSTEM = `Eres el asistente inteligente de Sinkia Labs, experto en gestión empresarial y hostelería.
+Respondes en español, de forma clara, directa y útil — como un CFO personal.
+REGLAS:
+- Usa los datos reales del negocio que se te proporcionan. Cita números exactos.
+- Si hay resultados_web en el contexto, úsalos para enriquecer la respuesta con info actual.
+- Si te piden crear un presupuesto, hazlo en formato estructurado con líneas, importes e IVA.
+- Sé conciso pero completo. Nunca inventes datos que no estén en el contexto.
+- Si el contexto está vacío o hay pocos documentos, dilo claramente y sugiere qué hacer.
+- Puedes razonar internamente, pero tu respuesta final debe ser limpia y directa.`;
 
 async function generateAnswer(question, contextData, intent, stream = false) {
   const contextStr = JSON.stringify(contextData, null, 2);
@@ -305,9 +340,9 @@ async function generateAnswer(question, contextData, intent, stream = false) {
   }
 
   // Streaming
-  const res = await fetch(`${LITELLM}/v1/chat/completions`, {
+  const res = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
     body: JSON.stringify({ model: MODEL, messages, temperature: 0.3, max_tokens: 1500, stream: true }),
   });
   return res; // devuelve el response para streaming
@@ -500,7 +535,14 @@ async function fetchContextByIntent(intent, params, question) {
         return (params.query || question).toLowerCase().split(' ')
           .filter(w => w.length > 3).some(w => text.includes(w));
       }).slice(0, 5);
-      return { documentos: relevant.map(d => d.analisis), stats: await getStats() };
+      const stats = await getStats();
+      // Búsqueda web si SearXNG está disponible
+      const webResults = await searchWeb(params.query || question);
+      return {
+        documentos: relevant.map(d => d.analisis),
+        stats,
+        ...(webResults ? { resultados_web: webResults } : {}),
+      };
     }
   }
 }
