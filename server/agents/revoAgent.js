@@ -9,8 +9,9 @@ import path from 'path';
 const DATA_DIR = process.env.DATA_DIR || '/Users/davidnows/sinkia/data';
 const REVO_DIR = path.join(DATA_DIR, 'revo');
 const REVO_BASE = 'https://integrations.revoxef.works/api/v1';
+const CACHE_FILE = path.join(REVO_DIR, 'endpoints-cache.json');
 
-// Endpoints conocidos de Revo XEF (orden de preferencia)
+// Endpoints conocidos de Revo XEF (orden de preferencia — fallback completo)
 const ENDPOINTS = {
   productos:  ['/catalog/products', '/catalog/items', '/items', '/products'],
   categorias: ['/catalog/categories', '/categories'],
@@ -19,6 +20,40 @@ const ENDPOINTS = {
   mesas:      ['/tables', '/table/list'],
   empleados:  ['/staff', '/employees', '/users'],
 };
+
+// ── Cache de endpoints válidos (se carga al arrancar) ────────────────────────
+// Estructura: { recurso: '/endpoint-que-funciona' }
+let endpointCache = {};
+let cacheLoaded = false;
+
+async function loadEndpointCache() {
+  if (cacheLoaded) return;
+  try {
+    if (existsSync(CACHE_FILE)) {
+      const raw = JSON.parse(await readFile(CACHE_FILE, 'utf8'));
+      endpointCache = raw?.endpoints || {};
+      const n = Object.keys(endpointCache).length;
+      if (n > 0) console.log(`[REVO] Cache cargado: ${n} endpoints optimizados`);
+    }
+  } catch (err) {
+    console.log(`[REVO] Cache no disponible (${err.message}), usando fallback completo`);
+    endpointCache = {};
+  }
+  cacheLoaded = true;
+}
+
+async function updateCacheEntry(recurso, endpoint) {
+  if (endpointCache[recurso] === endpoint) return; // ya está
+  endpointCache[recurso] = endpoint;
+  try {
+    await mkdir(path.dirname(CACHE_FILE), { recursive: true });
+    await writeFile(CACHE_FILE, JSON.stringify({
+      generado: new Date().toISOString(),
+      nota: 'Auto-actualizado por revoAgent.js en producción.',
+      endpoints: endpointCache,
+    }, null, 2));
+  } catch {} // no crítico — si falla, seguimos
+}
 
 async function loadJSON(file, def = []) {
   try { return existsSync(file) ? JSON.parse(await readFile(file, 'utf8')) : def; }
@@ -35,16 +70,39 @@ function revoHeaders() {
   return h;
 }
 
-// Prueba múltiples endpoints hasta encontrar uno que funcione
-async function fetchAny(endpoints, params = '') {
+// Prueba endpoints: primero el cacheado, luego el resto como fallback
+// Si el cacheado falla, recorre todos y actualiza el cache con el que funcione
+async function fetchAny(recurso, endpoints, params = '') {
+  await loadEndpointCache();
   const headers = revoHeaders();
-  for (const ep of endpoints) {
+
+  // 1. Intentar primero el endpoint cacheado (0 latencia de descubrimiento)
+  const cached = endpointCache[recurso];
+  if (cached) {
     try {
-      const url = `${REVO_BASE}${ep}${params}`;
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
+      const url = `${REVO_BASE}${cached}${params}`;
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
       if (res.ok) {
         const data = await res.json();
-        console.log(`[REVO] ✓ ${ep}`);
+        console.log(`[REVO] ✓ ${cached} (cache)`);
+        return { data: data?.data || data, endpoint: cached };
+      }
+    } catch {}
+    // Cache falló — log y continuar con fallback
+    console.log(`[REVO] ⚠ Cache ${cached} falló para ${recurso}, probando alternativas...`);
+  }
+
+  // 2. Fallback: probar todos los endpoints (excepto el cacheado que ya falló)
+  for (const ep of endpoints) {
+    if (ep === cached) continue; // ya lo probamos
+    try {
+      const url = `${REVO_BASE}${ep}${params}`;
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+      if (res.ok) {
+        const data = await res.json();
+        console.log(`[REVO] ✓ ${ep} (descubierto)`);
+        // Actualizar cache con el endpoint que funciona
+        await updateCacheEntry(recurso, ep);
         return { data: data?.data || data, endpoint: ep };
       }
     } catch {}
@@ -54,7 +112,7 @@ async function fetchAny(endpoints, params = '') {
 
 // ── Sync productos/artículos ────────────────────────────────────────────────
 async function syncProductos() {
-  const result = await fetchAny(ENDPOINTS.productos);
+  const result = await fetchAny('productos', ENDPOINTS.productos);
   if (!result) return null;
   const items = Array.isArray(result.data) ? result.data : [];
   await saveJSON(path.join(REVO_DIR, 'productos.json'), {
@@ -67,7 +125,7 @@ async function syncProductos() {
 
 // ── Sync categorías ─────────────────────────────────────────────────────────
 async function syncCategorias() {
-  const result = await fetchAny(ENDPOINTS.categorias);
+  const result = await fetchAny('categorias', ENDPOINTS.categorias);
   if (!result) return null;
   const items = Array.isArray(result.data) ? result.data : [];
   await saveJSON(path.join(REVO_DIR, 'categorias.json'), {
@@ -83,7 +141,7 @@ async function syncVentas(dias = 7) {
   desde.setDate(desde.getDate() - dias);
   const desdeStr = desde.toISOString().split('T')[0];
 
-  const result = await fetchAny(ENDPOINTS.ventas, `?since=${desdeStr}&per_page=500`);
+  const result = await fetchAny('ventas', ENDPOINTS.ventas, `?since=${desdeStr}&per_page=500`);
   if (!result) return null;
 
   const nuevas    = Array.isArray(result.data) ? result.data : [];
@@ -102,7 +160,7 @@ async function syncVentas(dias = 7) {
 
 // ── Sync cajas (sesiones de caja) ───────────────────────────────────────────
 async function syncCajas() {
-  const result = await fetchAny(ENDPOINTS.cajas);
+  const result = await fetchAny('cajas', ENDPOINTS.cajas);
   if (!result) return null;
   const items = Array.isArray(result.data) ? result.data : [];
   await saveJSON(path.join(REVO_DIR, 'cajas.json'), {
