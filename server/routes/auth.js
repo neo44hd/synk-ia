@@ -93,6 +93,20 @@ async function ensureAdminExists() {
 // Crear admin al importar el módulo
 ensureAdminExists().catch(e => console.error('[AUTH] Error creando admin:', e.message));
 
+// ── Helper: extraer usuario de JWT o legacy token ────────────────────────────
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'sinkia2026';
+function extractUser(req) {
+  // Legacy x-admin-token (compat con admin.html, documents.html, etc.)
+  const legacyToken = req.headers['x-admin-token'] || req.query.token;
+  if (legacyToken === ADMIN_TOKEN) {
+    return { id: 'admin-001', email: 'david@sinkialabs.com', role: 'admin' };
+  }
+  // JWT Bearer
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return null;
+  return verifyJWT(authHeader.slice(7));
+}
+
 // ── POST /api/auth/login ────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
@@ -115,13 +129,11 @@ router.post('/login', async (req, res) => {
 
 // ── POST /api/auth/register (solo admin) ────────────────────────────────────
 router.post('/register', async (req, res) => {
-  // Verificar que quien registra es admin
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
+  const payload = extractUser(req);
+  if (!payload) {
     return res.status(401).json({ error: 'Token requerido' });
   }
-  const payload = verifyJWT(authHeader.slice(7));
-  if (!payload || payload.role !== 'admin') {
+  if (payload.role !== 'admin') {
     return res.status(403).json({ error: 'Solo admin puede registrar usuarios' });
   }
 
@@ -157,13 +169,9 @@ router.post('/register', async (req, res) => {
 
 // ── GET /api/auth/me ────────────────────────────────────────────────────────
 router.get('/me', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token requerido' });
-  }
-  const payload = verifyJWT(authHeader.slice(7));
+  const payload = extractUser(req);
   if (!payload) {
-    return res.status(401).json({ error: 'Token inválido o expirado' });
+    return res.status(401).json({ error: 'Token requerido' });
   }
 
   const users = await loadUsers();
@@ -178,13 +186,9 @@ router.get('/me', async (req, res) => {
 
 // ── POST /api/auth/change-password ──────────────────────────────────────────
 router.post('/change-password', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token requerido' });
-  }
-  const payload = verifyJWT(authHeader.slice(7));
+  const payload = extractUser(req);
   if (!payload) {
-    return res.status(401).json({ error: 'Token inválido' });
+    return res.status(401).json({ error: 'Token requerido' });
   }
 
   const { current_password, new_password } = req.body;
@@ -215,13 +219,9 @@ router.post('/change-password', async (req, res) => {
 
 // ── PUT /api/auth/profile ───────────────────────────────────────────────────
 router.put('/profile', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token requerido' });
-  }
-  const payload = verifyJWT(authHeader.slice(7));
+  const payload = extractUser(req);
   if (!payload) {
-    return res.status(401).json({ error: 'Token inválido' });
+    return res.status(401).json({ error: 'Token requerido' });
   }
 
   const { full_name, department, avatar_url } = req.body;
