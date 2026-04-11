@@ -26,11 +26,6 @@
         "type": "ollama",
         "baseUrl": "http://localhost:11434",
         "apiKey": "ollama-local"
-      },
-      "lmstudio": {
-        "type": "openai",
-        "baseUrl": "http://localhost:12345/v1",
-        "apiKey": "lm-studio-local"
       }
     },
     "defaults": {

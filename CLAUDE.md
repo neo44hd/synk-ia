@@ -39,7 +39,6 @@ Cuando David dice "hazlo", lo haces. Sin preguntar "¿estás seguro?", sin lista
 
 ### Herramientas disponibles en esta máquina
 - **Ollama**: `ollama` — modelos IA locales (qwen3-coder, qwen3.5, etc.)
-- **LM Studio**: `http://localhost:12345` — servidor de modelos con GUI, múltiples modelos cargados
 - **OrbStack**: Docker ligero para macOS — usa `docker` normalmente
 - **Open WebUI**: Interfaz web para modelos locales
 - **PM2**: Gestor de procesos Node
@@ -101,7 +100,7 @@ synk-ia/
 │   │   ├── documents.js        # Gestión documental
 │   │   ├── admin.js            # Panel admin
 │   │   ├── chat.js             # Chat IA local
-│   │   ├── claude-proxy.js     # Proxy LM Studio/Ollama
+│   │   ├── claude-proxy.js     # Proxy Ollama
 │   │   ├── terminal.js         # Terminal web (node-pty + WS)
 │   │   └── trabajadores.js     # Portal trabajador
 │   ├── agents/
