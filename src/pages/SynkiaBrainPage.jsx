@@ -42,13 +42,14 @@ export default function SynkiaBrainPage() {
 
   // Cargar historial y stats al montar
   useEffect(() => {
-    const history = SynkiaBrainService.loadChatHistory();
-    if (history.length > 0) {
-      setMessages(history);
-    } else {
-      setMessages([{
-        role: 'assistant',
-        content: `🧠 **¡Bienvenido a SYNK-IA BRAIN!**
+    (async () => {
+      const history = await SynkiaBrainService.loadChatHistory();
+      if (history.length > 0) {
+        setMessages(history);
+      } else {
+        setMessages([{
+          role: 'assistant',
+          content: `🧠 **¡Bienvenido a SYNK-IA BRAIN!**
 
 Soy tu asistente de inteligencia empresarial unificado. Tengo acceso completo a todos los datos de tu negocio:
 
@@ -60,11 +61,11 @@ Soy tu asistente de inteligencia empresarial unificado. Tengo acceso completo a 
 **Comandos rápidos disponibles:** \`/facturas\`, \`/empleados\`, \`/ventas\`, \`/proveedores\`, \`/gastos\`, \`/ayuda\`
 
 ¿En qué puedo ayudarte hoy?`,
-        timestamp: new Date().toISOString(),
-        type: 'welcome'
-      }]);
-    }
-    
+          timestamp: new Date().toISOString(),
+          type: 'welcome'
+        }]);
+      }
+    })();
     loadStats();
   }, []);
 
@@ -207,7 +208,7 @@ Soy tu asistente de inteligencia empresarial unificado. Tengo acceso completo a 
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      SynkiaBrainService.saveChatMessage(assistantMessage);
+      await SynkiaBrainService.saveChatMessage(assistantMessage);
       speak(assistantContent);
 
     } catch (error) {
@@ -224,9 +225,9 @@ Soy tu asistente de inteligencia empresarial unificado. Tengo acceso completo a 
   };
 
   // Limpiar chat
-  const clearChat = () => {
+  const clearChat = async () => {
     if (window.confirm('¿Estás seguro de que quieres limpiar el historial?')) {
-      SynkiaBrainService.clearChatHistory();
+      await SynkiaBrainService.clearChatHistory();
       setMessages([{
         role: 'assistant',
         content: '🧹 Historial limpiado. ¿En qué puedo ayudarte?',

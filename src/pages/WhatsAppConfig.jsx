@@ -67,20 +67,20 @@ export default function WhatsAppConfig() {
     loadStats();
   }, []);
 
-  const loadConfig = () => {
-    const currentConfig = whatsappService.getConfig();
+  const loadConfig = async () => {
+    const currentConfig = await whatsappService.getConfig();
     setConfig(currentConfig);
   };
 
-  const loadStats = () => {
-    const statistics = whatsappService.getStatistics(30);
+  const loadStats = async () => {
+    const statistics = await whatsappService.getStatistics(30);
     setStats(statistics);
   };
 
   const handleSave = () => {
     setLoading(true);
-    setTimeout(() => {
-      whatsappService.saveConfig(config);
+    setTimeout(async () => {
+      await whatsappService.saveConfig(config);
       setSaved(true);
       setLoading(false);
       setTimeout(() => setSaved(false), 3000);
