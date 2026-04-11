@@ -8,13 +8,9 @@
       "Edit(*)",
       "Glob(*)",
       "Grep(*)",
-      "WebFetch(*)"
+      "WebFetch(*)",
+      "mcp__*"
     ],
-    "deny": [
-      "Bash(rm -rf /)",
-      "Bash(rm -rf ~)",
-      "Bash(DROP DATABASE)",
-      "Bash(DELETE FROM)"
-    ]
+    "deny": []
   }
 }
