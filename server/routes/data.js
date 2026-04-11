@@ -6,8 +6,10 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 
-// Use /opt/sinkia-backend/data or fallback
-const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+// Ruta absoluta basada en la ubicación de este archivo (no depende de process.cwd())
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', '..', 'data');
 
 try {
   if (!fs.existsSync(DATA_DIR)) {
