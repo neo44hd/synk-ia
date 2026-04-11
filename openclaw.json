@@ -1,0 +1,169 @@
+{
+  "env": {
+    "OLLAMA_API_KEY": "ollama-local",
+    "OLLAMA_MAX_LOADED_MODELS": "2",
+    "OLLAMA_KEEP_ALIVE": "10m",
+    "OLLAMA_NUM_PARALLEL": "2",
+    "OLLAMA_HOST": "http://localhost:11434"
+  },
+
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "sinkia-openclaw-2026"
+    },
+    "service": {
+      "type": "node"
+    }
+  },
+
+  "models": {
+    "providers": {
+      "ollama": {
+        "type": "ollama",
+        "baseUrl": "http://localhost:11434",
+        "apiKey": "ollama-local"
+      },
+      "lmstudio": {
+        "type": "openai",
+        "baseUrl": "http://localhost:12345/v1",
+        "apiKey": "lm-studio-local"
+      }
+    },
+    "defaults": {
+      "model": "ollama/qwen3:14b",
+      "subagentModel": "ollama/qwen3-coder",
+      "contextWindow": 32768,
+      "temperature": 0.7
+    }
+  },
+
+  "agents": {
+    "defaults": {
+      "workspace": "~/.openclaw/workspace",
+      "subagents": {
+        "runTimeoutSeconds": 300,
+        "maxConcurrent": 2
+      }
+    },
+    "list": [
+      {
+        "id": "brain",
+        "default": true,
+        "name": "SYNKIA Brain",
+        "workspace": "~/.openclaw/workspace-brain",
+        "agentDir": "~/.openclaw/agents/brain/agent",
+        "model": "ollama/qwen3:14b",
+        "sandbox": {
+          "mode": "off"
+        },
+        "tools": {
+          "allow": [
+            "read", "write", "edit", "glob", "grep",
+            "exec", "fetch", "apply_patch",
+            "subagent", "agent_message"
+          ]
+        }
+      },
+      {
+        "id": "coder",
+        "name": "Coder",
+        "workspace": "/Users/davidnows/sinkia",
+        "agentDir": "~/.openclaw/agents/coder/agent",
+        "model": "ollama/qwen3-coder",
+        "sandbox": {
+          "mode": "off"
+        },
+        "tools": {
+          "allow": [
+            "read", "write", "edit", "glob", "grep",
+            "exec", "apply_patch"
+          ]
+        }
+      },
+      {
+        "id": "docs",
+        "name": "DocBrain",
+        "workspace": "~/.openclaw/workspace-docs",
+        "agentDir": "~/.openclaw/agents/docs/agent",
+        "model": "ollama/qwen3.5",
+        "sandbox": {
+          "mode": "off"
+        },
+        "tools": {
+          "allow": [
+            "read", "write", "exec", "glob", "grep"
+          ]
+        }
+      },
+      {
+        "id": "monitor",
+        "name": "Monitor",
+        "workspace": "~/.openclaw/workspace-monitor",
+        "agentDir": "~/.openclaw/agents/monitor/agent",
+        "model": "ollama/qwen3-coder",
+        "sandbox": {
+          "mode": "off"
+        },
+        "tools": {
+          "allow": [
+            "read", "exec", "glob", "grep", "fetch"
+          ]
+        }
+      }
+    ]
+  },
+
+  "tools": {
+    "agentToAgent": {
+      "enabled": true,
+      "allow": ["brain", "coder", "docs", "monitor"]
+    },
+    "exec": {
+      "shell": "/bin/zsh",
+      "env": {
+        "PATH": "/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/davidnows/.local/bin",
+        "HOME": "/Users/davidnows",
+        "SINKIA_DIR": "/Users/davidnows/sinkia",
+        "NODE_ENV": "production",
+        "PM2_HOME": "/Users/davidnows/.pm2"
+      },
+      "timeout": 120000
+    },
+    "fetch": {
+      "enabled": true,
+      "allowedDomains": ["*"]
+    }
+  },
+
+  "sessions": {
+    "history": {
+      "maxTokens": 16384,
+      "summarize": true
+    },
+    "persistence": {
+      "enabled": true,
+      "dir": "~/.openclaw/sessions"
+    }
+  },
+
+  "automation": {
+    "cron": [
+      {
+        "id": "health-check",
+        "schedule": "*/5 * * * *",
+        "agentId": "monitor",
+        "task": "Ejecuta: pm2 jlist | python3 -c \"import sys,json; procs=json.load(sys.stdin); caidos=[p['name'] for p in procs if p['pm2_env']['status']!='online']; print(f'ALERTA: {caidos} caídos' if caidos else 'OK: todos online')\" && curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/api/health. Si algo falla, intenta pm2 restart del servicio caído."
+      },
+      {
+        "id": "disk-check",
+        "schedule": "0 */6 * * *",
+        "agentId": "monitor",
+        "task": "Comprueba el espacio en disco con df -h ~/. Si queda menos de 15GB libres, avisa con los directorios más grandes usando du -sh ~/*/."
+      }
+    ]
+  }
+}
