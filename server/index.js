@@ -16,6 +16,7 @@ import { chatRouter }        from './routes/chat.js';
 import { setupTerminal }      from './routes/terminal.js';
 import documentsRouter        from './routes/documents.js';
 import trabajadoresRouter     from './routes/trabajadores.js';
+import { authRouter }         from './routes/auth.js';
 
 dotenv.config();
 
@@ -52,7 +53,10 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// ── Rutas estáticas ───────────────────────────────────────────────────────────
+// ── Auth (JWT) ────────────────────────────────────────────────────────────────
+app.use('/api/auth', authRouter);
+
+// ── Rutas de negocio ──────────────────────────────────────────────────────────
 app.use('/api/email',  emailRouter);
 app.use('/api/biloop', biloopRouter);
 app.use('/api/biloop', biloopPortalRouter);
