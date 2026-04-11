@@ -1,5 +1,5 @@
 /**
- * chat.js — Chat con Qwen3-VL via LM Studio (OpenAI format)
+ * chat.js — Chat con Qwen3 via Ollama (OpenAI-compatible format)
  *
  * Endpoints:
  *   POST /api/chat         → chat libre, SSE streaming con think tags separados
@@ -16,9 +16,8 @@ import { Router } from 'express';
 import { askBrainStream, classifyIntent, searchWeb } from '../services/brain.js';
 
 const router     = Router();
-const LM_STUDIO  = process.env.LOCAL_LLM_URL   || 'http://localhost:12345';
-const LITELLM    = process.env.LITELLM_URL      || 'http://localhost:8082';
-const MODEL      = process.env.LOCAL_LLM_MODEL  || 'qwen3-vl-32b-gemini-heretic-uncensored-thinking-i1';
+const OLLAMA_URL = process.env.OLLAMA_URL       || 'http://localhost:11434';
+const MODEL      = process.env.OLLAMA_MODEL     || 'qwen3:14b';
 
 // ── ThinkingFilter: separa <think>...</think> del texto final ─────────────
 // Funciona en streaming, acumula buffer para manejar tags partidos entre chunks
@@ -94,9 +93,9 @@ router.post('/', async (req, res) => {
   if (!stream) {
     // ── Respuesta sin streaming ──────────────────────────────────────────
     try {
-      const r = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
+      const r = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
+        headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ model: MODEL, messages: allMessages, stream: false, max_tokens: 8192 }),
       });
       const d    = await r.json();
@@ -118,14 +117,14 @@ router.post('/', async (req, res) => {
   const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
 
   try {
-    const upstream = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
+    const upstream = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
+      headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ model: MODEL, messages: allMessages, stream: true, max_tokens: 8192 }),
     });
 
     if (!upstream.ok) {
-      send({ type: 'error', text: `LM Studio ${upstream.status}` });
+      send({ type: 'error', text: `Ollama ${upstream.status}` });
       res.write('data: [DONE]\n\n');
       return res.end();
     }
@@ -219,8 +218,7 @@ router.post('/search', async (req, res) => {
 router.get('/status', async (_req, res) => {
   try {
     const [lm, searxng] = await Promise.allSettled([
-      fetch(`${LM_STUDIO}/v1/models`, {
-        headers: { Authorization: 'Bearer local' },
+      fetch(`${OLLAMA_URL}/v1/models`, {
         signal: AbortSignal.timeout(3000),
       }),
       fetch('http://localhost:8888/healthz', { signal: AbortSignal.timeout(2000) }),
@@ -232,13 +230,13 @@ router.get('/status', async (_req, res) => {
       : [];
 
     res.json({
-      lm_studio:  lmOk,
+      ollama:     lmOk,
       searxng:    searxng.status === 'fulfilled' && searxng.value.ok,
       models,
       active_model: MODEL,
     });
   } catch (e) {
-    res.json({ lm_studio: false, searxng: false, models: [], error: e.message });
+    res.json({ ollama: false, searxng: false, models: [], error: e.message });
   }
 });
 

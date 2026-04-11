@@ -1,0 +1,30 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  SYNK-IA — Configuración de aider para desarrollo local
+#  Motor: Ollama (qwen3:14b) en Mac Mini M4 Pro
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Modelo principal (14B — equilibrio velocidad/calidad)
+model: ollama_chat/qwen3:14b
+
+# Formato de edición diff — más eficiente que whole-file
+edit-format: diff
+
+# No auto-commit — revisamos antes de commitear
+no-auto-commits: true
+
+# Incluir archivos ignorados por git (node_modules sigue excluido por .gitignore)
+no-gitignore: true
+
+# Archivos de contexto que aider lee siempre (read-only)
+read:
+  - CLAUDE.md
+  - SOUL.md
+
+# Linting automático tras cada edición
+auto-lint: true
+
+# Encoding
+encoding: utf-8
+
+# Mostrar diffs tras cada edición
+show-diffs: true
