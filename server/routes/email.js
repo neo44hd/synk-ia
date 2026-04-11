@@ -57,32 +57,6 @@ function extractProvider(from) {
   return from;
 }
 
-// Debug: verificar DATA_DIR y archivos existentes
-emailRouter.get('/debug-data', (req, res) => {
-  const files = fs.existsSync(DATA_DIR) ? fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json')) : [];
-  const sizes = {};
-  files.forEach(f => {
-    try {
-      const content = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8'));
-      sizes[f] = Array.isArray(content) ? content.length : 'not-array';
-    } catch { sizes[f] = 'parse-error'; }
-  });
-  // También verificar qué lee data.js
-  const dataJsDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
-  const provFile = path.join(dataJsDir, 'provider.json');
-  let providerDirect = null;
-  try {
-    if (fs.existsSync(provFile)) {
-      const raw = fs.readFileSync(provFile, 'utf8');
-      const parsed = JSON.parse(raw);
-      providerDirect = { exists: true, isArray: Array.isArray(parsed), length: Array.isArray(parsed) ? parsed.length : null, first: Array.isArray(parsed) ? parsed[0] : null, rawFirst100: raw.substring(0, 100) };
-    } else {
-      providerDirect = { exists: false, path: provFile };
-    }
-  } catch (e) { providerDirect = { error: e.message }; }
-  res.json({ DATA_DIR, dataJsDir, cwd: process.cwd(), files, sizes, providerDirect });
-});
-
 // Test connection
 emailRouter.get('/test', async (req, res) => {
   try {
