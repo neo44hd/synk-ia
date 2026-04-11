@@ -1,89 +1,67 @@
 /**
- * SYNK-IA - Servicio de Autenticación Local
- * © 2024 David Roldan - Chicken Palace Ibiza
- * Futuro: SYNK-IA LABS
+ * SYNK-IA — Servicio de Autenticación (JWT real)
+ * Conecta con backend /api/auth/* — zero localStorage para datos de sesión
+ * Solo localStorage para el token JWT (necesario para persistir entre recargas)
  */
 
-const AUTH_STORAGE_KEY = 'synkia_auth_user';
 const AUTH_TOKEN_KEY = 'synkia_auth_token';
+const AUTH_USER_KEY  = 'synkia_auth_user'; // Cache local del usuario (se revalida con /me)
 
-// Usuario administrador por defecto
-const DEFAULT_ADMIN = {
-  id: 'admin-001',
-  email: 'admin@chickenpalace.es',
-  full_name: 'David Roldan',
-  role: 'admin',
-  permission_level: 'admin',
-  department: 'Dirección',
-  avatar_url: null,
-  created_at: new Date().toISOString()
-};
+const API_BASE = '/api/auth';
 
-// Usuarios de demo
-const DEMO_USERS = [
-  DEFAULT_ADMIN,
-  {
-    id: 'user-002',
-    email: 'gerente@chickenpalace.es',
-    full_name: 'Gerente Chicken Palace',
-    role: 'gerente',
-    department: 'Gestión',
-    avatar_url: null,
-    created_at: new Date().toISOString()
-  },
-  {
-    id: 'user-003',
-    email: 'empleado@chickenpalace.es',
-    full_name: 'Empleado Demo',
-    role: 'empleado',
-    department: 'Cocina',
-    avatar_url: null,
-    created_at: new Date().toISOString()
-  }
-];
+async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+  return data;
+}
 
 class AuthService {
   constructor() {
-    this._initializeUsers();
-  }
-
-  _initializeUsers() {
-    const storedUsers = localStorage.getItem('synkia_users');
-    if (!storedUsers) {
-      localStorage.setItem('synkia_users', JSON.stringify(DEMO_USERS));
-    }
+    // No inicializamos nada — el backend crea el admin automáticamente
   }
 
   /**
    * Obtiene el usuario actual autenticado
+   * Primero intenta /api/auth/me, si falla limpia el token
    */
   async me() {
-    const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (storedUser) {
-      return JSON.parse(storedUser);
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) return null;
+
+    try {
+      const { user } = await apiFetch('/me');
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      return user;
+    } catch {
+      // Token inválido o expirado — limpiar
+      this.logout();
+      return null;
     }
-    // Auto-login con admin para desarrollo
-    const user = DEFAULT_ADMIN;
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-    localStorage.setItem(AUTH_TOKEN_KEY, 'synkia-local-token-' + Date.now());
-    return user;
   }
 
   /**
-   * Inicia sesión (simulado para desarrollo local)
+   * Inicia sesión con email + password
    */
-  async login(email = 'admin@chickenpalace.es', password = '') {
-    const users = JSON.parse(localStorage.getItem('synkia_users') || '[]');
-    let user = users.find(u => u.email === email);
-    
-    if (!user) {
-      // Auto-crear usuario si no existe
-      user = DEFAULT_ADMIN;
+  async login(email, password) {
+    if (!email || !password) {
+      throw new Error('Email y contraseña requeridos');
     }
-    
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-    localStorage.setItem(AUTH_TOKEN_KEY, 'synkia-local-token-' + Date.now());
-    
+
+    const { token, user } = await apiFetch('/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+
     return user;
   }
 
@@ -91,57 +69,74 @@ class AuthService {
    * Cierra sesión
    */
   async logout() {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
     localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USER_KEY);
     return true;
   }
 
   /**
-   * Verifica si el usuario está autenticado
+   * Verifica si el usuario está autenticado (check local rápido)
+   * Para verificación real, usar me()
    */
   isAuthenticated() {
-    return !!localStorage.getItem(AUTH_STORAGE_KEY);
+    return !!localStorage.getItem(AUTH_TOKEN_KEY);
   }
 
   /**
-   * Obtiene el token de autenticación
+   * Obtiene el token JWT
    */
   getToken() {
     return localStorage.getItem(AUTH_TOKEN_KEY);
   }
 
   /**
-   * Registra un nuevo usuario
+   * Obtiene el usuario cacheado (sin llamar al backend)
+   * Para datos frescos, usar me()
    */
-  async register(userData) {
-    const users = JSON.parse(localStorage.getItem('synkia_users') || '[]');
-    const newUser = {
-      id: 'user-' + Date.now(),
-      ...userData,
-      created_at: new Date().toISOString()
-    };
-    users.push(newUser);
-    localStorage.setItem('synkia_users', JSON.stringify(users));
-    return newUser;
+  getCachedUser() {
+    try {
+      const cached = localStorage.getItem(AUTH_USER_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
   }
 
   /**
-   * Actualiza el perfil del usuario
+   * Registra un nuevo usuario (solo admin)
+   */
+  async register(userData) {
+    const { user } = await apiFetch('/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+    return user;
+  }
+
+  /**
+   * Actualiza el perfil del usuario actual
    */
   async updateProfile(updates) {
-    const user = await this.me();
-    const updatedUser = { ...user, ...updates };
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));
-    
-    // Actualizar también en la lista de usuarios
-    const users = JSON.parse(localStorage.getItem('synkia_users') || '[]');
-    const idx = users.findIndex(u => u.id === user.id);
-    if (idx >= 0) {
-      users[idx] = updatedUser;
-      localStorage.setItem('synkia_users', JSON.stringify(users));
-    }
-    
-    return updatedUser;
+    const { user } = await apiFetch('/profile', {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    return user;
+  }
+
+  /**
+   * Cambia la contraseña del usuario actual
+   */
+  async changePassword(currentPassword, newPassword) {
+    const result = await apiFetch('/change-password', {
+      method: 'POST',
+      body: JSON.stringify({
+        current_password: currentPassword,
+        new_password: newPassword,
+      }),
+    });
+    return result;
   }
 }
 
