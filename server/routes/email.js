@@ -67,7 +67,20 @@ emailRouter.get('/debug-data', (req, res) => {
       sizes[f] = Array.isArray(content) ? content.length : 'not-array';
     } catch { sizes[f] = 'parse-error'; }
   });
-  res.json({ DATA_DIR, cwd: process.cwd(), files, sizes });
+  // También verificar qué lee data.js
+  const dataJsDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+  const provFile = path.join(dataJsDir, 'provider.json');
+  let providerDirect = null;
+  try {
+    if (fs.existsSync(provFile)) {
+      const raw = fs.readFileSync(provFile, 'utf8');
+      const parsed = JSON.parse(raw);
+      providerDirect = { exists: true, isArray: Array.isArray(parsed), length: Array.isArray(parsed) ? parsed.length : null, first: Array.isArray(parsed) ? parsed[0] : null, rawFirst100: raw.substring(0, 100) };
+    } else {
+      providerDirect = { exists: false, path: provFile };
+    }
+  } catch (e) { providerDirect = { error: e.message }; }
+  res.json({ DATA_DIR, dataJsDir, cwd: process.cwd(), files, sizes, providerDirect });
 });
 
 // Test connection
