@@ -57,6 +57,19 @@ function extractProvider(from) {
   return from;
 }
 
+// Debug: verificar DATA_DIR y archivos existentes
+emailRouter.get('/debug-data', (req, res) => {
+  const files = fs.existsSync(DATA_DIR) ? fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json')) : [];
+  const sizes = {};
+  files.forEach(f => {
+    try {
+      const content = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8'));
+      sizes[f] = Array.isArray(content) ? content.length : 'not-array';
+    } catch { sizes[f] = 'parse-error'; }
+  });
+  res.json({ DATA_DIR, cwd: process.cwd(), files, sizes });
+});
+
 // Test connection
 emailRouter.get('/test', async (req, res) => {
   try {
