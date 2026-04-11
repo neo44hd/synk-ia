@@ -84,7 +84,7 @@ export function setupTerminal(httpServer) {
     const env = { ...process.env };
     delete env.ANTHROPIC_API_KEY;          // eliminar clave real si existiera
     env.ANTHROPIC_AUTH_TOKEN = 'ollama';   // bypass auth → LiteLLM
-    env.ANTHROPIC_BASE_URL   = 'http://localhost:8082';
+    env.ANTHROPIC_BASE_URL   = process.env.OLLAMA_URL || 'http://localhost:11434';
     env.HOME  = '/Users/davidnows';
     env.TERM  = 'xterm-256color';
     env.LANG  = 'en_US.UTF-8';

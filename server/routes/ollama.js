@@ -66,7 +66,7 @@ ollamaRouter.post('/generate', async (req, res) => {
 ollamaRouter.post('/classify', async (req, res) => {
   try {
     const { text, filename, model } = req.body;
-    const useModel = model || process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+    const useModel = model || process.env.OLLAMA_MODEL || 'qwen3:14b';
     const systemPrompt = `Eres un asistente de clasificacion de documentos empresariales.
 Analiza el texto y devuelve SOLO un JSON con:
 {
@@ -99,7 +99,7 @@ Analiza el texto y devuelve SOLO un JSON con:
 ollamaRouter.post('/classify-email', async (req, res) => {
   try {
     const { subject, body: emailBody, from, model } = req.body;
-    const useModel = model || process.env.OLLAMA_MODEL || 'qwen2.5:7b';
+    const useModel = model || process.env.OLLAMA_MODEL || 'qwen3:14b';
     const systemPrompt = `Eres un asistente de clasificacion de emails empresariales.
 Clasifica el email y devuelve SOLO un JSON con:
 {

@@ -11,9 +11,8 @@ import { fileURLToPath } from 'url';
 const __dirname     = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Config ─────────────────────────────────────────────────────────────────
-const LITELLM    = process.env.LITELLM_URL     || 'http://localhost:8082';
-const LM_STUDIO  = process.env.LOCAL_LLM_URL   || 'http://localhost:12345';
-const MODEL      = process.env.LOCAL_LLM_MODEL || 'medina-qwen3-14b-openclaw';
+const OLLAMA_URL = process.env.OLLAMA_URL      || 'http://localhost:11434';
+const MODEL      = process.env.OLLAMA_MODEL    || 'qwen3:14b';
 const DATA_DIR   = process.env.DATA_DIR        || '/Users/davidnows/sinkia/data';
 const DOCS_FILE  = path.join(DATA_DIR, 'documents.json');
 const ENT_FILE   = path.join(DATA_DIR, 'entities.json');
@@ -188,13 +187,13 @@ async function llmCallVision(messages, maxTokens = 1600, temp = 0.05) {
   const controller = new AbortController();
   const timer      = setTimeout(() => controller.abort(), 240_000); // 4 min (VL es más lento)
   try {
-    const res = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
+    const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
+      headers: { 'Content-Type': 'application/json' },
       signal:  controller.signal,
       body:    JSON.stringify({ model: MODEL, messages, temperature: temp, max_tokens: maxTokens, stream: false }),
     });
-    if (!res.ok) throw new Error(`LLM-VL ${res.status}: ${await res.text().catch(() => '')}`);
+    if (!res.ok) throw new Error(`Ollama-VL ${res.status}: ${await res.text().catch(() => '')}`);
     const d = await res.json();
     return d.choices?.[0]?.message?.content?.trim() || '';
   } finally {
@@ -611,13 +610,14 @@ async function llmCall(messages, maxTokens = 1200, temp = 0.1) {
   const controller = new AbortController();
   const timer      = setTimeout(() => controller.abort(), 180_000); // 3 min
   try {
-    const res = await fetch(`${LITELLM}/v1/chat/completions`, {
+    const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       signal:  controller.signal,
       body:    JSON.stringify({ model: MODEL, messages, temperature: temp, max_tokens: maxTokens, stream: false }),
     });
-    if (!res.ok) throw new Error(`LLM ${res.status}: ${await res.text().catch(() => '')}`);
+    if (!res.ok) throw new Error(`Ollama ${res.status}: ${await res.text().catch(() => '')}`);
+    // Nota: VL_MODEL ya no aplica — qwen3:14b no es multimodal
     const d = await res.json();
     return d.choices?.[0]?.message?.content?.trim() || '';
   } finally {

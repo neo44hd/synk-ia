@@ -1,14 +1,14 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  SINKIA BRAIN — Agente de negocio con contexto real
 //  Flujo: Pregunta → Clasificar intención → Buscar datos → Responder
+//  LLM: Ollama (localhost:11434) — qwen3:14b
 // ═══════════════════════════════════════════════════════════════════════════
 import { getDocuments, getEntities, getStats } from './documentProcessor.js';
 import { getRevoResumen, getRevoProductos, getRevoVentas } from '../agents/revoAgent.js';
 
-const LM_STUDIO = process.env.LOCAL_LLM_URL   || 'http://localhost:12345';
-const LITELLM   = process.env.LITELLM_URL     || 'http://localhost:8082';
-const MODEL     = process.env.LOCAL_LLM_MODEL || 'qwen3-vl-32b-gemini-heretic-uncensored-thinking-i1';
-const SEARXNG   = process.env.SEARXNG_URL     || 'http://localhost:8888';
+const OLLAMA_URL = process.env.OLLAMA_URL     || 'http://localhost:11434';
+const MODEL      = process.env.OLLAMA_MODEL   || 'qwen3:14b';
+const SEARXNG    = process.env.SEARXNG_URL    || 'http://localhost:8888';
 
 // ── Strip <think>...</think> del modelo Qwen3 thinking ─────────────────────
 function stripThinking(text) {
@@ -32,14 +32,14 @@ export async function searchWeb(query, n = 5) {
   }
 }
 
-// ── LLM helper (LM Studio directo, strip thinking) ─────────────────────────
+// ── LLM helper (Ollama OpenAI-compatible API, strip thinking) ───────────────
 async function llm(messages, { maxTokens = 1200, temp = 0.2 } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 120_000);
   try {
-    const res = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
+    const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
+      headers: { 'Content-Type': 'application/json' },
       signal:  controller.signal,
       body: JSON.stringify({
         model:       MODEL,
@@ -49,7 +49,7 @@ async function llm(messages, { maxTokens = 1200, temp = 0.2 } = {}) {
         stream:      false,
       }),
     });
-    if (!res.ok) throw new Error(`LLM ${res.status}`);
+    if (!res.ok) throw new Error(`Ollama ${res.status}`);
     const d = await res.json();
     return stripThinking(d.choices?.[0]?.message?.content?.trim() || '');
   } finally {
@@ -340,9 +340,9 @@ async function generateAnswer(question, contextData, intent, stream = false) {
   }
 
   // Streaming
-  const res = await fetch(`${LM_STUDIO}/v1/chat/completions`, {
+  const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer local' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ model: MODEL, messages, temperature: 0.3, max_tokens: 1500, stream: true }),
   });
   return res; // devuelve el response para streaming
