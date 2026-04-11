@@ -1,15 +1,18 @@
 /**
  * SYNK-IA Email Service - FASE 2A.1
  * Servicio mejorado para sincronización Gmail con clasificación IA
+ * Migrado: localStorage.lastEmailSync → /api/data/emailintegration (persistencia en servidor)
  */
 
 import { base44 } from '../api/base44Client';
 
+const API_BASE = '/api/data/emailintegration';
+
 // Constantes de configuración
 const CONFIG = {
-  MAX_EMAILS: 500, // Máximo de emails a sincronizar
-  MONTHS_BACK: 2, // Meses hacia atrás para sincronizar
-  BATCH_SIZE: 50, // Tamaño del lote para procesamiento
+  MAX_EMAILS: 500,
+  MONTHS_BACK: 2,
+  BATCH_SIZE: 50,
 };
 
 // Categorías de clasificación
@@ -31,24 +34,53 @@ const INVOICE_PATTERNS = [
   /base\s*imponible/i, /vencimiento/i, /payment/i
 ];
 
-// Patrones para detectar proveedores conocidos
 const PROVIDER_PATTERNS = [
   /presupuesto/i, /pedido/i, /albarán/i, /delivery/i,
   /envío/i, /shipping/i, /order\s*confirmation/i
 ];
 
-// Patrones de marketing/spam
 const MARKETING_PATTERNS = [
   /newsletter/i, /promoción/i, /oferta/i, /descuento/i,
   /unsubscribe/i, /baja\s*lista/i, /no\s*reply/i,
   /noreply/i, /marketing/i, /campaign/i
 ];
 
-// Patrones de RRHH
 const RRHH_PATTERNS = [
   /nómina/i, /payroll/i, /vacaciones/i, /contrato/i,
   /baja\s*médica/i, /permiso/i, /recursos\s*humanos/i
 ];
+
+// Helper para guardar lastSync en API
+async function saveLastSync(timestamp) {
+  try {
+    // Intentar actualizar el registro existente o crear uno nuevo
+    const res = await fetch(`${API_BASE}/bulk`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        records: [{ id: 'email_sync_meta', lastSync: timestamp }],
+        merge: false
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  } catch (err) {
+    console.warn('[EmailService] Error guardando lastSync:', err.message);
+  }
+}
+
+async function getLastSync() {
+  try {
+    const res = await fetch(`${API_BASE}/email_sync_meta`, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.data?.lastSync || null;
+  } catch (err) {
+    console.warn('[EmailService] Error leyendo lastSync:', err.message);
+    return null;
+  }
+}
 
 class EmailService {
   constructor() {
@@ -56,7 +88,6 @@ class EmailService {
     this.listeners = [];
   }
 
-  // Suscribirse a actualizaciones de progreso
   onProgressUpdate(callback) {
     this.listeners.push(callback);
     return () => {
@@ -64,15 +95,11 @@ class EmailService {
     };
   }
 
-  // Notificar progreso
   _notifyProgress(progress) {
     this.syncProgress = progress;
     this.listeners.forEach(callback => callback(progress));
   }
 
-  /**
-   * Clasificar email usando análisis de contenido
-   */
   classifyEmail(email) {
     const subject = email.subject || '';
     const body = email.body_preview || email.snippet || '';
@@ -81,13 +108,10 @@ class EmailService {
     const hasAttachments = email.has_attachments || false;
     const attachmentNames = (email.attachments || []).map(a => a.filename || '').join(' ').toLowerCase();
 
-    // Verificar si tiene adjuntos de factura
     const hasInvoiceAttachment = attachmentNames.match(/factura|invoice|fra[\._-]/i) ||
       (hasAttachments && attachmentNames.match(/\.pdf$/i) && INVOICE_PATTERNS.some(p => subject.match(p)));
 
-    // Prioridad 1: Facturas
     if (hasInvoiceAttachment || INVOICE_PATTERNS.some(p => content.match(p))) {
-      // Verificar si es de proveedor
       const isFromProvider = this._isFromProvider(sender);
       return {
         category: 'factura',
@@ -98,7 +122,6 @@ class EmailService {
       };
     }
 
-    // Prioridad 2: Marketing/Spam
     if (MARKETING_PATTERNS.some(p => content.match(p))) {
       return {
         category: 'marketing',
@@ -109,7 +132,6 @@ class EmailService {
       };
     }
 
-    // Prioridad 3: RRHH
     if (RRHH_PATTERNS.some(p => content.match(p))) {
       return {
         category: 'rrhh',
@@ -120,7 +142,6 @@ class EmailService {
       };
     }
 
-    // Prioridad 4: Proveedores
     if (this._isFromProvider(sender) || PROVIDER_PATTERNS.some(p => content.match(p))) {
       return {
         category: 'proveedor',
@@ -131,7 +152,6 @@ class EmailService {
       };
     }
 
-    // Prioridad 5: Interno (mismo dominio)
     if (this._isInternalEmail(sender)) {
       return {
         category: 'interno',
@@ -142,7 +162,6 @@ class EmailService {
       };
     }
 
-    // Prioridad 6: Gestoría
     if (this._isFromGestoria(sender) || content.match(/gestor|asesor|contab|fiscal|impuesto/i)) {
       return {
         category: 'gestoria',
@@ -153,7 +172,6 @@ class EmailService {
       };
     }
 
-    // Default: Cliente u Otros
     if (content.match(/pedido|reserva|consulta|información|precio/i)) {
       return {
         category: 'cliente',
@@ -174,7 +192,6 @@ class EmailService {
   }
 
   _isFromProvider(email) {
-    // Lista de dominios conocidos de proveedores
     const providerDomains = [
       'makro.es', 'sysco.com', 'metro.es', 'fripozo.com',
       'transgourmet.es', 'coca-cola.com', 'damm.com',
@@ -184,7 +201,6 @@ class EmailService {
   }
 
   _isInternalEmail(email) {
-    // Detectar emails del mismo dominio
     const companyDomain = 'chickenpalace.es';
     return email.includes(companyDomain);
   }
@@ -201,9 +217,6 @@ class EmailService {
     return 'general';
   }
 
-  /**
-   * Detectar y analizar adjuntos
-   */
   analyzeAttachments(email) {
     const attachments = email.attachments || [];
     const analysis = {
@@ -220,7 +233,6 @@ class EmailService {
 
       if (mimeType.includes('pdf') || filename.endsWith('.pdf')) {
         analysis.pdfs.push(att);
-        // Detectar si es factura
         if (filename.match(/factura|invoice|fra[\._-]/i)) {
           analysis.invoices.push({
             ...att,
@@ -238,25 +250,19 @@ class EmailService {
     return analysis;
   }
 
-  /**
-   * Generar resumen AI del email
-   */
   generateAISummary(email) {
     const subject = email.subject || '';
     const body = email.body_preview || '';
-    
-    // Resumen básico basado en el contenido
+
     let summary = '';
-    
+
     if (body.length > 200) {
-      // Extraer primera oración relevante
       const sentences = body.split(/[.!?]+/).filter(s => s.trim().length > 20);
       summary = sentences[0] ? sentences[0].trim().substring(0, 150) + '...' : '';
     } else {
       summary = body.trim();
     }
 
-    // Detectar acción requerida
     let actionRequired = null;
     if (body.match(/urgente|inmediato|fecha\s*límite|deadline/i)) {
       actionRequired = 'Requiere atención urgente';
@@ -277,20 +283,17 @@ class EmailService {
 
   _extractKeyEntities(text) {
     const entities = [];
-    
-    // Extraer importes
+
     const amounts = text.match(/(\d{1,3}(?:\.\d{3})*(?:,\d{2})?)\s*€/g);
     if (amounts) {
       entities.push({ type: 'amount', values: amounts });
     }
 
-    // Extraer fechas
     const dates = text.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g);
     if (dates) {
       entities.push({ type: 'date', values: dates });
     }
 
-    // Extraer referencias
     const refs = text.match(/(?:ref|nº|num|factura)[:\s]*([A-Z0-9\-\/]+)/gi);
     if (refs) {
       entities.push({ type: 'reference', values: refs });
@@ -299,34 +302,27 @@ class EmailService {
     return entities;
   }
 
-  /**
-   * Sincronizar emails con Gmail API (simulado para frontend)
-   * En producción, esto se conectaría con el backend
-   */
   async syncEmails(options = {}) {
-    const { 
+    const {
       maxEmails = CONFIG.MAX_EMAILS,
       monthsBack = CONFIG.MONTHS_BACK,
       folders = ['INBOX', 'SENT']
     } = options;
 
-    this._notifyProgress({ 
-      status: 'starting', 
-      current: 0, 
+    this._notifyProgress({
+      status: 'starting',
+      current: 0,
       total: maxEmails,
       message: 'Iniciando sincronización...'
     });
 
     try {
-      // Calcular fecha límite
       const startDate = new Date();
       startDate.setMonth(startDate.getMonth() - monthsBack);
 
-      // En producción, aquí llamaríamos a Gmail API
-      // Por ahora usamos la función del backend
-      this._notifyProgress({ 
-        status: 'fetching', 
-        current: 0, 
+      this._notifyProgress({
+        status: 'fetching',
+        current: 0,
         total: maxEmails,
         message: 'Conectando con Gmail...'
       });
@@ -339,11 +335,10 @@ class EmailService {
 
       if (response.data?.success) {
         const emails = response.data.results?.emails || [];
-        
-        // Clasificar emails
-        this._notifyProgress({ 
-          status: 'classifying', 
-          current: 0, 
+
+        this._notifyProgress({
+          status: 'classifying',
+          current: 0,
           total: emails.length,
           message: 'Clasificando emails con IA...'
         });
@@ -367,18 +362,21 @@ class EmailService {
           });
 
           if (i % 10 === 0) {
-            this._notifyProgress({ 
-              status: 'classifying', 
-              current: i, 
+            this._notifyProgress({
+              status: 'classifying',
+              current: i,
               total: emails.length,
               message: `Clasificando emails... ${i}/${emails.length}`
             });
           }
         }
 
-        this._notifyProgress({ 
-          status: 'complete', 
-          current: emails.length, 
+        // Guardar timestamp de última sincronización en API
+        await saveLastSync(new Date().toISOString());
+
+        this._notifyProgress({
+          status: 'complete',
+          current: emails.length,
           total: emails.length,
           message: `Sincronización completada: ${emails.length} emails procesados`
         });
@@ -397,9 +395,9 @@ class EmailService {
         throw new Error(response.data?.error || 'Error en sincronización');
       }
     } catch (error) {
-      this._notifyProgress({ 
-        status: 'error', 
-        current: 0, 
+      this._notifyProgress({
+        status: 'error',
+        current: 0,
         total: 0,
         message: `Error: ${error.message}`
       });
@@ -415,11 +413,8 @@ class EmailService {
     }, {});
   }
 
-  /**
-   * Procesar adjuntos de facturas automáticamente
-   */
   async processInvoiceAttachments(emails) {
-    const invoiceEmails = emails.filter(e => 
+    const invoiceEmails = emails.filter(e =>
       e.ai_category === 'factura' && e.attachment_analysis?.invoices?.length > 0
     );
 
@@ -427,7 +422,6 @@ class EmailService {
     for (const email of invoiceEmails) {
       for (const invoice of email.attachment_analysis.invoices) {
         try {
-          // Crear entrada en el sistema de facturas
           const invoiceData = {
             source_email_id: email.id,
             filename: invoice.filename,
@@ -438,7 +432,6 @@ class EmailService {
             auto_detected: true
           };
 
-          // Intentar vincular con proveedor existente
           const provider = await this._findOrCreateProvider(email);
           if (provider) {
             invoiceData.provider_id = provider.id;
@@ -465,7 +458,6 @@ class EmailService {
 
   async _findOrCreateProvider(email) {
     try {
-      // Buscar proveedor por email
       const providers = await base44.entities.Provider.filter({
         email: email.sender_email
       });
@@ -474,8 +466,7 @@ class EmailService {
         return providers[0];
       }
 
-      // Si no existe, extraer info y crear
-      const providerName = email.sender_name || 
+      const providerName = email.sender_name ||
         email.sender_email.split('@')[0].replace(/[._-]/g, ' ');
 
       const newProvider = await base44.entities.Provider.create({
@@ -493,13 +484,12 @@ class EmailService {
     }
   }
 
-  /**
-   * Obtener estadísticas de emails
-   */
   async getEmailStats() {
     try {
       const allEmails = await base44.entities.EmailMessage.list("-received_date", 500);
-      
+
+      const lastSync = await getLastSync();
+
       const stats = {
         total: allEmails.length,
         unread: allEmails.filter(e => !e.is_read).length,
@@ -507,7 +497,7 @@ class EmailService {
         byPriority: { alta: 0, media: 0, baja: 0 },
         withAttachments: allEmails.filter(e => e.has_attachments).length,
         invoices: allEmails.filter(e => e.category === 'factura').length,
-        lastSync: localStorage.getItem('lastEmailSync') || null,
+        lastSync: lastSync,
         recentActivity: allEmails.filter(e => {
           const date = new Date(e.received_date);
           const weekAgo = new Date();
@@ -534,6 +524,5 @@ class EmailService {
   }
 }
 
-// Exportar instancia singleton
 export const emailService = new EmailService();
 export default emailService;

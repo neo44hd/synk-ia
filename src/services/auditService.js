@@ -1,53 +1,44 @@
 /**
  * SYNK-IA Audit Service
- * Logs critical actions for security and compliance tracking
+ * Registra acciones críticas para seguimiento de seguridad y cumplimiento
+ * Migrado: localStorage → /api/data/auditlog (persistencia en servidor)
  */
 
-const AUDIT_LOG_KEY = 'synkia_audit_logs';
-const MAX_LOGS = 1000; // Maximum logs to keep
+import authService from './authService';
 
-// Action types for categorization
+const API_BASE = '/api/data/auditlog';
+const MAX_LOGS = 1000;
+
+// Caché en memoria para lecturas rápidas
+let _logsCache = null;
+
+// Tipos de acción para categorización
 export const AUDIT_ACTIONS = {
-  // Authentication
   LOGIN: 'LOGIN',
   LOGOUT: 'LOGOUT',
   LOGIN_FAILED: 'LOGIN_FAILED',
-  
-  // Data modifications
   CREATE: 'CREATE',
   UPDATE: 'UPDATE',
   DELETE: 'DELETE',
-  
-  // Exports and downloads
   EXPORT_DATA: 'EXPORT_DATA',
   EXPORT_BACKUP: 'EXPORT_BACKUP',
   DOWNLOAD_DOCUMENT: 'DOWNLOAD_DOCUMENT',
-  
-  // Critical operations
   IMPORT_DATA: 'IMPORT_DATA',
   SYNC_EXTERNAL: 'SYNC_EXTERNAL',
   CONFIG_CHANGE: 'CONFIG_CHANGE',
-  
-  // User management
   USER_CREATE: 'USER_CREATE',
   USER_UPDATE: 'USER_UPDATE',
   USER_DELETE: 'USER_DELETE',
   PERMISSION_CHANGE: 'PERMISSION_CHANGE',
-  
-  // Compliance
   COMPLIANCE_CHECK: 'COMPLIANCE_CHECK',
   INSPECTION_EXPORT: 'INSPECTION_EXPORT',
-  
-  // Financial
   INVOICE_PAID: 'INVOICE_PAID',
   PAYROLL_PROCESSED: 'PAYROLL_PROCESSED',
-  
-  // Error tracking
   ERROR: 'ERROR',
   WARNING: 'WARNING'
 };
 
-// Severity levels
+// Niveles de severidad
 export const SEVERITY = {
   INFO: 'info',
   WARNING: 'warning',
@@ -55,44 +46,72 @@ export const SEVERITY = {
   ERROR: 'error'
 };
 
+// Helpers para API
+async function apiGet(url) {
+  try {
+    const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('[AuditService] API no disponible:', err.message);
+    return null;
+  }
+}
+
+async function apiPost(url, body) {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('[AuditService] Error guardando:', err.message);
+    return null;
+  }
+}
+
+async function apiBulkReplace(records) {
+  try {
+    const res = await fetch(`${API_BASE}/bulk`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ records, merge: false }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('[AuditService] Error en bulk replace:', err.message);
+    return null;
+  }
+}
+
 class AuditService {
   constructor() {
     this.currentUser = null;
   }
 
-  /**
-   * Set the current user for audit logging
-   */
   setCurrentUser(user) {
     this.currentUser = user;
   }
 
-  /**
-   * Get current user info
-   */
   getCurrentUser() {
     if (this.currentUser) return this.currentUser;
-    
-    // Try to get from localStorage
-    try {
-      const userData = localStorage.getItem('synkia_current_user');
-      if (userData) {
-        return JSON.parse(userData);
-      }
-    } catch (e) {
-      console.warn('Could not get user from storage');
-    }
-    
+    // Obtener del authService (ya migrado a JWT)
+    const cached = authService.getCachedUser();
+    if (cached) return cached;
     return { id: 'anonymous', name: 'Usuario Anónimo', email: '' };
   }
 
   /**
-   * Log an audit event
+   * Registrar un evento de auditoría
    */
-  log(action, details = {}, severity = SEVERITY.INFO) {
+  async log(action, details = {}, severity = SEVERITY.INFO) {
     const user = this.getCurrentUser();
     const timestamp = new Date().toISOString();
-    
+
     const logEntry = {
       id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp,
@@ -105,15 +124,14 @@ class AuditService {
       },
       details: {
         ...details,
-        userAgent: navigator.userAgent,
-        url: window.location.href
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+        url: typeof window !== 'undefined' ? window.location.href : ''
       },
-      ip: 'client-side' // Note: Real IP would need server-side logging
+      ip: 'client-side'
     };
 
-    this.saveLog(logEntry);
-    
-    // Also log to console in development
+    await this.saveLog(logEntry);
+
     if (process.env.NODE_ENV === 'development') {
       console.log('[AUDIT]', logEntry);
     }
@@ -122,86 +140,80 @@ class AuditService {
   }
 
   /**
-   * Save log to localStorage
+   * Guardar log en el servidor vía API
    */
-  saveLog(logEntry) {
-    try {
-      const logs = this.getLogs();
-      logs.unshift(logEntry);
-      
-      // Trim to max logs
-      if (logs.length > MAX_LOGS) {
-        logs.splice(MAX_LOGS);
-      }
-      
-      localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(logs));
-    } catch (e) {
-      console.error('Failed to save audit log:', e);
+  async saveLog(logEntry) {
+    // Actualizar caché en memoria
+    const logs = await this.getLogs();
+    logs.unshift(logEntry);
+    if (logs.length > MAX_LOGS) {
+      logs.splice(MAX_LOGS);
     }
+    _logsCache = logs;
+
+    // Persistir en servidor
+    await apiPost(API_BASE, logEntry);
   }
 
   /**
-   * Get all audit logs
+   * Obtener todos los logs de auditoría
    */
-  getLogs() {
+  async getLogs() {
+    if (_logsCache) return _logsCache;
     try {
-      const data = localStorage.getItem(AUDIT_LOG_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch (e) {
-      console.error('Failed to get audit logs:', e);
+      const result = await apiGet(`${API_BASE}?sort=-timestamp&limit=${MAX_LOGS}`);
+      _logsCache = result?.data || [];
+      return _logsCache;
+    } catch (err) {
+      console.warn('[AuditService] Error cargando logs:', err.message);
       return [];
     }
   }
 
   /**
-   * Get logs with filters
+   * Obtener logs con filtros
    */
-  getFilteredLogs(filters = {}) {
-    let logs = this.getLogs();
-    
+  async getFilteredLogs(filters = {}) {
+    let logs = await this.getLogs();
+
     if (filters.action) {
       logs = logs.filter(log => log.action === filters.action);
     }
-    
     if (filters.severity) {
       logs = logs.filter(log => log.severity === filters.severity);
     }
-    
     if (filters.userId) {
       logs = logs.filter(log => log.user?.id === filters.userId);
     }
-    
     if (filters.startDate) {
       const start = new Date(filters.startDate);
       logs = logs.filter(log => new Date(log.timestamp) >= start);
     }
-    
     if (filters.endDate) {
       const end = new Date(filters.endDate);
       logs = logs.filter(log => new Date(log.timestamp) <= end);
     }
-    
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      logs = logs.filter(log => 
+      logs = logs.filter(log =>
         log.action.toLowerCase().includes(searchLower) ||
         log.user?.name?.toLowerCase().includes(searchLower) ||
         JSON.stringify(log.details).toLowerCase().includes(searchLower)
       );
     }
-    
+
     return logs;
   }
 
   /**
-   * Get audit statistics
+   * Estadísticas de auditoría
    */
-  getStats() {
-    const logs = this.getLogs();
+  async getStats() {
+    const logs = await this.getLogs();
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
+
     return {
       total: logs.length,
       today: logs.filter(l => new Date(l.timestamp) >= today).length,
@@ -220,65 +232,64 @@ class AuditService {
   }
 
   /**
-   * Clear all logs (admin only)
+   * Limpiar todos los logs (solo admin)
    */
-  clearLogs() {
-    this.log(AUDIT_ACTIONS.DELETE, { target: 'audit_logs', message: 'Audit logs cleared' }, SEVERITY.CRITICAL);
-    localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify([]));
+  async clearLogs() {
+    await this.log(AUDIT_ACTIONS.DELETE, { target: 'audit_logs', message: 'Audit logs cleared' }, SEVERITY.CRITICAL);
+    _logsCache = [];
+    await apiBulkReplace([]);
   }
 
   /**
-   * Export logs to JSON
+   * Exportar logs a JSON
    */
-  exportLogs() {
-    const logs = this.getLogs();
+  async exportLogs() {
+    const logs = await this.getLogs();
     const exportData = {
       exportDate: new Date().toISOString(),
       totalLogs: logs.length,
       logs
     };
-    
-    this.log(AUDIT_ACTIONS.EXPORT_DATA, { target: 'audit_logs', count: logs.length });
-    
+
+    await this.log(AUDIT_ACTIONS.EXPORT_DATA, { target: 'audit_logs', count: logs.length });
+
     return exportData;
   }
 
-  // Convenience methods for common actions
-  logLogin(user) {
+  // Métodos de conveniencia
+  async logLogin(user) {
     this.setCurrentUser(user);
-    localStorage.setItem('synkia_current_user', JSON.stringify(user));
-    return this.log(AUDIT_ACTIONS.LOGIN, { userId: user?.id, email: user?.email });
+    return await this.log(AUDIT_ACTIONS.LOGIN, { userId: user?.id, email: user?.email });
   }
 
-  logLogout() {
-    const result = this.log(AUDIT_ACTIONS.LOGOUT);
+  async logLogout() {
+    const result = await this.log(AUDIT_ACTIONS.LOGOUT);
     this.currentUser = null;
-    localStorage.removeItem('synkia_current_user');
     return result;
   }
 
-  logCreate(entity, entityId, details = {}) {
-    return this.log(AUDIT_ACTIONS.CREATE, { entity, entityId, ...details });
+  async logCreate(entity, entityId, details = {}) {
+    return await this.log(AUDIT_ACTIONS.CREATE, { entity, entityId, ...details });
   }
 
-  logUpdate(entity, entityId, changes = {}) {
-    return this.log(AUDIT_ACTIONS.UPDATE, { entity, entityId, changes });
+  async logUpdate(entity, entityId, changes = {}) {
+    return await this.log(AUDIT_ACTIONS.UPDATE, { entity, entityId, changes });
   }
 
-  logDelete(entity, entityId, details = {}) {
-    return this.log(AUDIT_ACTIONS.DELETE, { entity, entityId, ...details }, SEVERITY.WARNING);
+  async logDelete(entity, entityId, details = {}) {
+    return await this.log(AUDIT_ACTIONS.DELETE, { entity, entityId, ...details }, SEVERITY.WARNING);
   }
 
-  logExport(exportType, details = {}) {
-    return this.log(AUDIT_ACTIONS.EXPORT_DATA, { exportType, ...details });
+  async logExport(exportType, details = {}) {
+    return await this.log(AUDIT_ACTIONS.EXPORT_DATA, { exportType, ...details });
   }
 
-  logError(errorMessage, details = {}) {
-    return this.log(AUDIT_ACTIONS.ERROR, { error: errorMessage, ...details }, SEVERITY.ERROR);
+  async logError(errorMessage, details = {}) {
+    return await this.log(AUDIT_ACTIONS.ERROR, { error: errorMessage, ...details }, SEVERITY.ERROR);
   }
 
-  logConfigChange(configKey, oldValue, newValue) {
-    return this.log(AUDIT_ACTIONS.CONFIG_CHANGE, { configKey, oldValue, newValue }, SEVERITY.WARNING);
+  async logConfigChange(configKey, oldValue, newValue) {
+    return await this.log(AUDIT_ACTIONS.CONFIG_CHANGE, { configKey, oldValue, newValue }, SEVERITY.WARNING);
   }
 }
 

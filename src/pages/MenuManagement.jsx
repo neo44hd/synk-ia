@@ -219,11 +219,11 @@ export default function MenuManagement() {
     loadData();
   }, []);
 
-  const loadData = () => {
-    const allProducts = RevoSyncService.getProducts();
+  const loadData = async () => {
+    const allProducts = await RevoSyncService.getProducts();
     const allCategories = RevoSyncService.getCategories();
-    const status = RevoSyncService.getSyncStatus();
-    const events = RevoSyncService.getSyncEvents(10);
+    const status = await RevoSyncService.getSyncStatus();
+    const events = await RevoSyncService.getSyncEvents(10);
 
     setProducts(allProducts);
     setCategories(allCategories);

@@ -25,7 +25,11 @@ const ALLOWED_ENTITIES = [
   'companydocument', 'sale', 'menuitem', 'revoemployee', 'websync',
   'albaran', 'verifactu', 'emailaccount', 'order', 'emailmessage',
   'emailcontact', 'quote', 'client', 'salesinvoice', 'product',
-  'productpurchase', 'employee', 'uploadedfile'
+  'productpurchase', 'employee', 'uploadedfile',
+  // Entidades añadidas para migración localStorage → API
+  'auditlog', 'docbrainqueue', 'docbrainlog', 'revoconfig',
+  'revosyncstatus', 'revosyncevents', 'chathistory',
+  'whatsappconfig', 'whatsappmessage'
 ];
 
 function getEntityFile(entity) {

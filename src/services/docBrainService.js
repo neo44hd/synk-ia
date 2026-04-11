@@ -1,11 +1,11 @@
 /**
  * DOCBRAIN SERVICE - El Cerebro Magico de Archivo Inteligente
- * 
+ *
  * Pipeline completo: Archivo entra -> se lee -> se entiende -> se clasifica -> se archiva
  * Auto-crea proveedores, detecta duplicados, asigna rutas inteligentes.
- * 
- * Usa: invoiceExtractorService (regex), ocrService (Tesseract), dataService (localStorage)
- * Futuro: LLM local (Qwen2.5-7B) para clasificacion contextual avanzada
+ *
+ * Migrado: localStorage → /api/data (persistencia en servidor)
+ * Entidades: document (existente), docbrainqueue, docbrainlog
  */
 
 import { invoiceExtractor, DOCUMENT_TYPES } from './invoiceExtractorService';
@@ -15,9 +15,36 @@ import { base44 } from '@/api/base44Client';
 // CONSTANTES Y CONFIGURACION
 // ==========================================
 
-const STORAGE_KEY = 'docbrain_processed';
-const STORAGE_LOG = 'docbrain_activity_log';
+const API_QUEUE = '/api/data/docbrainqueue';
+const API_LOG = '/api/data/docbrainlog';
+const API_DOCS = '/api/data/document';
 const MAX_LOG_ENTRIES = 500;
+
+// Cachés en memoria
+let _processedCache = null;
+let _logCache = null;
+
+// Helpers API
+async function apiFetch(url, options = {}) {
+  try {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('[DocBrain] API no disponible:', err.message);
+    return null;
+  }
+}
+
+async function apiBulkReplace(endpoint, records) {
+  return apiFetch(`${endpoint}/bulk`, {
+    method: 'PUT',
+    body: JSON.stringify({ records, merge: false }),
+  });
+}
 
 // Secciones de negocio para clasificacion
 const BUSINESS_SECTIONS = {
@@ -30,10 +57,9 @@ const BUSINESS_SECTIONS = {
   OTROS: { id: 'otros', label: 'Otros', icon: 'File', color: 'zinc' }
 };
 
-// Reglas de clasificacion por tipo de documento + contexto
+// Reglas de clasificacion
 const CLASSIFICATION_RULES = {
   factura: {
-    // Si tiene CIF de empresa conocida como proveedor -> proveedores
     defaultSection: 'proveedores',
     pathTemplate: (data) => {
       const provider = data.provider?.name?.value || 'Sin_Nombre';
@@ -87,7 +113,6 @@ const CLASSIFICATION_RULES = {
   }
 };
 
-// Utilidad para limpiar nombres de ruta
 function sanitizePath(str) {
   if (!str) return 'Sin_Nombre';
   return str
@@ -103,27 +128,28 @@ function sanitizePath(str) {
 
 class DocBrainService {
   constructor() {
-    this.processedDocs = this._loadProcessed();
-    this.activityLog = this._loadLog();
+    this.processedDocs = [];
+    this.activityLog = [];
+    this._initialized = false;
+  }
+
+  async _ensureLoaded() {
+    if (this._initialized) return;
+    this._initialized = true;
+    this.processedDocs = await this._loadProcessed();
+    this.activityLog = await this._loadLog();
   }
 
   // ========================================
-  // PIPELINE PRINCIPAL - LA MAGIA
+  // PIPELINE PRINCIPAL
   // ========================================
 
-  /**
-   * Procesa un archivo completo: extrae, clasifica, archiva, crea entidades
-   * @param {File} file - Archivo subido
-   * @param {string} text - Texto ya extraido (si viene de OCR o PDF previo)
-   * @param {object} emailContext - Contexto del email si viene del harvester
-   * @returns {object} Resultado completo del procesamiento
-   */
   async processDocument(file, text = null, emailContext = null) {
+    await this._ensureLoaded();
     const startTime = Date.now();
     const docId = 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
     try {
-      // PASO 1: Extraer texto si no lo tenemos
       let extractedText = text;
       if (!extractedText && file) {
         extractedText = await this._extractText(file);
@@ -136,19 +162,11 @@ class DocBrainService {
         });
       }
 
-      // PASO 2: Extraer datos estructurados (invoiceExtractor)
       const extracted = invoiceExtractor.extractInvoiceData(extractedText);
-
-      // PASO 3: Clasificar documento (tipo + seccion + ruta)
       const classification = this._classifyDocument(extracted, emailContext);
-
-      // PASO 4: Buscar o crear entidad (proveedor/cliente/empleado)
       const entityResult = await this._resolveEntity(extracted, classification);
-
-      // PASO 5: Detectar duplicados
       const isDuplicate = this._checkDuplicate(extracted);
 
-      // PASO 6: Crear registro del documento procesado
       const result = this._createResult(docId, file, isDuplicate ? 'duplicate' : 'processed', {
         extracted,
         classification,
@@ -159,17 +177,14 @@ class DocBrainService {
         confidence: extracted.confidence || 0
       });
 
-      // PASO 7: Guardar en BD local
       if (!isDuplicate) {
         await this._saveDocument(result);
-        // Si es factura, crear Invoice en el sistema
         if (classification.docType === 'factura' && extracted.total?.value) {
           await this._createInvoiceRecord(result);
         }
       }
 
-      // PASO 8: Log de actividad
-      this._logActivity({
+      await this._logActivity({
         action: isDuplicate ? 'duplicate_detected' : 'document_processed',
         docId,
         docType: classification.docType,
@@ -185,7 +200,7 @@ class DocBrainService {
 
     } catch (error) {
       console.error('DocBrain processing error:', error);
-      this._logActivity({
+      await this._logActivity({
         action: 'processing_error',
         docId,
         error: error.message,
@@ -206,27 +221,18 @@ class DocBrainService {
     const type = file.type || '';
     const name = (file.name || '').toLowerCase();
 
-    // PDF -> usar pdf.js o texto plano si es texto-based PDF
     if (type === 'application/pdf' || name.endsWith('.pdf')) {
       return await this._extractFromPDF(file);
     }
-
-    // Imagenes -> OCR con Tesseract
     if (type.startsWith('image/') || /\.(jpg|jpeg|png|gif|bmp|tiff|webp)$/.test(name)) {
       return await this._extractFromImage(file);
     }
-
-    // Texto plano, CSV, etc
     if (type.startsWith('text/') || name.endsWith('.txt') || name.endsWith('.csv')) {
       return await file.text();
     }
-
-    // XML (factura electronica)
     if (type === 'text/xml' || type === 'application/xml' || name.endsWith('.xml')) {
       return await this._extractFromXML(file);
     }
-
-    // Fallback: intentar como texto
     try {
       return await file.text();
     } catch {
@@ -236,7 +242,6 @@ class DocBrainService {
 
   async _extractFromPDF(file) {
     try {
-      // Intentar con pdf.js si esta disponible
       if (typeof window !== 'undefined' && window.pdfjsLib) {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -249,7 +254,6 @@ class DocBrainService {
         }
         if (fullText.trim().length > 20) return fullText;
       }
-      // Fallback: leer como texto bruto
       return await file.text();
     } catch (error) {
       console.warn('PDF extraction failed, trying raw text:', error);
@@ -259,7 +263,6 @@ class DocBrainService {
 
   async _extractFromImage(file) {
     try {
-      // Usar OCR service si esta disponible
       const { default: ocrService } = await import('./ocrService');
       if (ocrService && ocrService.recognizeImage) {
         const result = await ocrService.recognizeImage(file);
@@ -275,7 +278,6 @@ class DocBrainService {
   async _extractFromXML(file) {
     try {
       const xmlText = await file.text();
-      // Extraer texto visible del XML (quitar tags)
       const cleanText = xmlText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
       return cleanText;
     } catch {
@@ -291,12 +293,9 @@ class DocBrainService {
     const docType = extracted.documentType?.id || 'otros';
     const rule = CLASSIFICATION_RULES[docType] || CLASSIFICATION_RULES.otros;
 
-    // Determinar seccion
     let section = rule.defaultSection;
 
-    // Reglas contextuales avanzadas
     if (docType === 'factura') {
-      // Si el email viene de un cliente conocido -> clientes
       if (emailContext?.direction === 'outbound') {
         section = 'clientes';
       }
@@ -305,7 +304,6 @@ class DocBrainService {
       section = 'empleados';
     }
 
-    // Generar ruta sugerida
     const suggestedPath = rule.pathTemplate(extracted);
 
     return {
@@ -319,7 +317,7 @@ class DocBrainService {
   }
 
   // ========================================
-  // RESOLUCION DE ENTIDADES (AUTO-CREAR)
+  // RESOLUCION DE ENTIDADES
   // ========================================
 
   async _resolveEntity(extracted, classification) {
@@ -332,12 +330,11 @@ class DocBrainService {
     }
 
     try {
-      // Buscar proveedor existente por CIF o nombre
       const existingProviders = await base44.entities.Provider.list();
-      
+
       let found = null;
       if (providerCIF) {
-        found = existingProviders.find(p => 
+        found = existingProviders.find(p =>
           p.cif === providerCIF || p.tax_id === providerCIF
         );
       }
@@ -345,8 +342,8 @@ class DocBrainService {
         const normalizedName = providerName.toLowerCase().replace(/\s+/g, ' ').trim();
         found = existingProviders.find(p => {
           const pName = (p.name || p.company_name || '').toLowerCase().replace(/\s+/g, ' ').trim();
-          return pName === normalizedName || 
-                 pName.includes(normalizedName) || 
+          return pName === normalizedName ||
+                 pName.includes(normalizedName) ||
                  normalizedName.includes(pName);
         });
       }
@@ -360,7 +357,6 @@ class DocBrainService {
         };
       }
 
-      // NO EXISTE -> CREAR AUTOMATICAMENTE
       if (classification.section === 'proveedores' || classification.docType === 'factura') {
         const newProvider = await base44.entities.Provider.create({
           name: providerName || 'Proveedor ' + (providerCIF || 'Nuevo'),
@@ -375,7 +371,7 @@ class DocBrainService {
           notes: 'Creado automaticamente por DocBrain IA'
         });
 
-        this._logActivity({
+        await this._logActivity({
           action: 'provider_auto_created',
           entityName: providerName,
           entityCIF: providerCIF,
@@ -398,7 +394,6 @@ class DocBrainService {
     }
   }
 
-  // Adivinar categoria del proveedor por contexto
   _guessCategory(extracted) {
     const text = (extracted.rawText || '').toLowerCase();
     if (/aliment|comida|bebida|fruta|verdura|carne|pescado|pan|lacteo/i.test(text)) return 'alimentacion';
@@ -425,12 +420,10 @@ class DocBrainService {
     if (!invoiceNum && !total) return false;
 
     return this.processedDocs.some(doc => {
-      // Match exacto por numero de factura + CIF
       if (invoiceNum && doc.invoiceNumber === invoiceNum && doc.providerCIF === providerCIF) {
         return true;
       }
-      // Match por CIF + total + fecha (misma factura sin numero)
-      if (providerCIF && doc.providerCIF === providerCIF && 
+      if (providerCIF && doc.providerCIF === providerCIF &&
           doc.total === total && doc.date === date) {
         return true;
       }
@@ -439,13 +432,13 @@ class DocBrainService {
   }
 
   // ========================================
-  // ALMACENAMIENTO
+  // ALMACENAMIENTO (API)
   // ========================================
 
   _createResult(docId, file, status, data = {}) {
     return {
       id: docId,
-      status, // 'processed' | 'duplicate' | 'error' | 'pending_review'
+      status,
       fileName: file?.name || data.emailContext?.attachmentName || 'unknown',
       fileType: file?.type || 'unknown',
       fileSize: file?.size || 0,
@@ -455,7 +448,6 @@ class DocBrainService {
   }
 
   async _saveDocument(result) {
-    // Guardar en lista de procesados (para duplicados)
     this.processedDocs.push({
       docId: result.id,
       invoiceNumber: result.extracted?.invoiceNumber?.value,
@@ -465,12 +457,11 @@ class DocBrainService {
       path: result.classification?.suggestedPath,
       timestamp: result.timestamp
     });
-    this._saveProcessed();
+    await this._saveProcessed();
 
-    // Guardar documento completo en storage
+    // Guardar documento completo en API
     try {
-      const docs = JSON.parse(localStorage.getItem('docbrain_documents') || '[]');
-      docs.unshift({
+      const docRecord = {
         id: result.id,
         fileName: result.fileName,
         docType: result.classification?.docType,
@@ -486,11 +477,13 @@ class DocBrainService {
         confidence: result.confidence,
         status: result.status,
         timestamp: result.timestamp
+      };
+      await apiFetch(API_DOCS, {
+        method: 'POST',
+        body: JSON.stringify(docRecord),
       });
-      // Limitar a 1000 documentos
-      localStorage.setItem('docbrain_documents', JSON.stringify(docs.slice(0, 1000)));
     } catch (e) {
-      console.warn('Error saving document to storage:', e);
+      console.warn('[DocBrain] Error guardando documento en API:', e.message);
     }
   }
 
@@ -521,64 +514,82 @@ class DocBrainService {
   // ESTADISTICAS Y LOG
   // ========================================
 
-  getStats() {
-    const docs = JSON.parse(localStorage.getItem('docbrain_documents') || '[]');
-    const today = new Date().toISOString().split('T')[0];
-    const todayDocs = docs.filter(d => d.timestamp?.startsWith(today));
+  async getStats() {
+    await this._ensureLoaded();
+    try {
+      const result = await apiFetch(`${API_DOCS}?sort=-timestamp&limit=1000`);
+      const docs = result?.data || [];
+      const today = new Date().toISOString().split('T')[0];
+      const todayDocs = docs.filter(d => d.timestamp?.startsWith(today));
 
-    const byType = {};
-    const bySection = {};
-    let totalAutoCreated = 0;
-    let totalConfidence = 0;
+      const byType = {};
+      const bySection = {};
+      let totalAutoCreated = 0;
+      let totalConfidence = 0;
 
-    docs.forEach(d => {
-      byType[d.docType] = (byType[d.docType] || 0) + 1;
-      bySection[d.section] = (bySection[d.section] || 0) + 1;
-      if (d.entityCreated) totalAutoCreated++;
-      totalConfidence += d.confidence || 0;
-    });
+      docs.forEach(d => {
+        byType[d.docType] = (byType[d.docType] || 0) + 1;
+        bySection[d.section] = (bySection[d.section] || 0) + 1;
+        if (d.entityCreated) totalAutoCreated++;
+        totalConfidence += d.confidence || 0;
+      });
 
-    return {
-      totalProcessed: docs.length,
-      processedToday: todayDocs.length,
-      byDocumentType: byType,
-      bySection: bySection,
-      providersAutoCreated: totalAutoCreated,
-      averageConfidence: docs.length > 0 ? Math.round(totalConfidence / docs.length) : 0,
-      lastDocument: docs[0] || null,
-      recentDocuments: docs.slice(0, 20)
-    };
+      return {
+        totalProcessed: docs.length,
+        processedToday: todayDocs.length,
+        byDocumentType: byType,
+        bySection: bySection,
+        providersAutoCreated: totalAutoCreated,
+        averageConfidence: docs.length > 0 ? Math.round(totalConfidence / docs.length) : 0,
+        lastDocument: docs[0] || null,
+        recentDocuments: docs.slice(0, 20)
+      };
+    } catch (e) {
+      console.warn('[DocBrain] Error obteniendo stats:', e.message);
+      return {
+        totalProcessed: 0, processedToday: 0,
+        byDocumentType: {}, bySection: {},
+        providersAutoCreated: 0, averageConfidence: 0,
+        lastDocument: null, recentDocuments: []
+      };
+    }
   }
 
-  getActivityLog(limit = 50) {
+  async getActivityLog(limit = 50) {
+    await this._ensureLoaded();
     return this.activityLog.slice(0, limit);
   }
 
-  getDocuments(filters = {}) {
-    let docs = JSON.parse(localStorage.getItem('docbrain_documents') || '[]');
-    
-    if (filters.section) {
-      docs = docs.filter(d => d.section === filters.section);
-    }
-    if (filters.docType) {
-      docs = docs.filter(d => d.docType === filters.docType);
-    }
-    if (filters.status) {
-      docs = docs.filter(d => d.status === filters.status);
-    }
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      docs = docs.filter(d => 
-        (d.providerName || '').toLowerCase().includes(q) ||
-        (d.fileName || '').toLowerCase().includes(q) ||
-        (d.invoiceNumber || '').toLowerCase().includes(q)
-      );
-    }
+  async getDocuments(filters = {}) {
+    try {
+      const result = await apiFetch(`${API_DOCS}?sort=-timestamp&limit=1000`);
+      let docs = result?.data || [];
 
-    return docs;
+      if (filters.section) {
+        docs = docs.filter(d => d.section === filters.section);
+      }
+      if (filters.docType) {
+        docs = docs.filter(d => d.docType === filters.docType);
+      }
+      if (filters.status) {
+        docs = docs.filter(d => d.status === filters.status);
+      }
+      if (filters.search) {
+        const q = filters.search.toLowerCase();
+        docs = docs.filter(d =>
+          (d.providerName || '').toLowerCase().includes(q) ||
+          (d.fileName || '').toLowerCase().includes(q) ||
+          (d.invoiceNumber || '').toLowerCase().includes(q)
+        );
+      }
+
+      return docs;
+    } catch (e) {
+      console.warn('[DocBrain] Error obteniendo documentos:', e.message);
+      return [];
+    }
   }
 
-  // Procesar multiples archivos en batch
   async processBatch(files, emailContext = null) {
     const results = [];
     for (const file of files) {
@@ -595,7 +606,7 @@ class DocBrainService {
       results
     };
 
-    this._logActivity({
+    await this._logActivity({
       action: 'batch_processed',
       total: summary.total,
       processed: summary.processed,
@@ -607,51 +618,64 @@ class DocBrainService {
   }
 
   // ========================================
-  // HELPERS DE STORAGE
+  // HELPERS DE STORAGE (API)
   // ========================================
 
-  _loadProcessed() {
+  async _loadProcessed() {
+    if (_processedCache) return _processedCache;
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    } catch { return []; }
-  }
-
-  _saveProcessed() {
-    try {
-      const trimmed = this.processedDocs.slice(-2000);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-    } catch (e) {
-      console.warn('Error saving processed docs:', e);
+      const result = await apiFetch(`${API_QUEUE}?sort=-created_date`);
+      _processedCache = result?.data || [];
+      return _processedCache;
+    } catch {
+      return [];
     }
   }
 
-  _loadLog() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_LOG) || '[]');
-    } catch { return []; }
+  async _saveProcessed() {
+    const trimmed = this.processedDocs.slice(-2000);
+    _processedCache = trimmed;
+    const records = trimmed.map((d, i) => ({ id: d.docId || `q_${i}`, ...d }));
+    await apiBulkReplace(API_QUEUE, records);
   }
 
-  _logActivity(entry) {
-    this.activityLog.unshift({
+  async _loadLog() {
+    if (_logCache) return _logCache;
+    try {
+      const result = await apiFetch(`${API_LOG}?sort=-created_date&limit=${MAX_LOG_ENTRIES}`);
+      _logCache = result?.data || [];
+      return _logCache;
+    } catch {
+      return [];
+    }
+  }
+
+  async _logActivity(entry) {
+    const record = {
       ...entry,
+      id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
       timestamp: new Date().toISOString()
-    });
+    };
+    this.activityLog.unshift(record);
     const trimmed = this.activityLog.slice(0, MAX_LOG_ENTRIES);
     this.activityLog = trimmed;
-    try {
-      localStorage.setItem(STORAGE_LOG, JSON.stringify(trimmed));
-    } catch (e) {
-      console.warn('Error saving activity log:', e);
-    }
+    _logCache = trimmed;
+
+    // Guardar en API
+    await apiFetch(API_LOG, {
+      method: 'POST',
+      body: JSON.stringify(record),
+    });
   }
 
-  // Limpiar todo (reset)
-  clearAll() {
+  async clearAll() {
     this.processedDocs = [];
     this.activityLog = [];
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(STORAGE_LOG);
-    localStorage.removeItem('docbrain_documents');
+    _processedCache = null;
+    _logCache = null;
+    await apiBulkReplace(API_QUEUE, []);
+    await apiBulkReplace(API_LOG, []);
+    await apiBulkReplace(API_DOCS, []);
   }
 }
 

@@ -1,37 +1,21 @@
 /**
- * integrationsService.js — FIXED v2
+ * integrationsService.js — FIXED v3
  *
- * CORRECCIONES EN ESTA VERSIÓN:
- * 1. UploadFile — guarda el objeto File en _pendingFiles (módulo en memoria) cuando
- *    el backend /api/files/upload no está disponible y se usa el fallback local://.
- *    Esto permite que ExtractDataFromUploadedFile acceda al archivo original.
- *
- * 2. ExtractDataFromUploadedFile — pipeline completo de extracción:
- *    a) Recupera el archivo de _pendingFiles (o hace fetch si es URL real)
- *    b) Extrae texto del PDF con PDF.js (client-side, sin backend)
- *    c) Intenta extracción estructurada con LLM → /api/ai/extract-document
- *    d) Fallback regex → invoiceExtractorService (sin LLM, 100% offline)
- *
- * ANTES: apiPost('/api/ai/classify', { text: `Archivo: ${file_url}` })
- *        → LLM solo veía la URL, nunca el contenido → resultado vacío
- * AHORA: Extrae texto real del PDF → LLM/regex → JSON estructurado
- *
- * 3. getPendingFile(url) — exportado para que useDocBrain.js pueda
- *    recuperar el File object cuando trabaja con URLs local://
+ * Migrado parcialmente: mantiene localStorage como fallback para archivos
+ * cuando el backend /api/files/upload no está disponible, pero registra
+ * un warning en consola. El fallback es temporal y se loggea.
  */
 
 const API = '';
 
-// ─── Mapa en memoria: file_url → File object ─────────────────────────────────
-// Se rellena en UploadFile y se vacía al extraer.
-// Exportamos el getter para que otros servicios (useDocBrain) puedan usarlo.
+// Mapa en memoria: file_url → File object
 const _pendingFiles = new Map();
 
 export function getPendingFile(url) {
   return _pendingFiles.get(url) || null;
 }
 
-// ─── Helpers HTTP ─────────────────────────────────────────────────────────────
+// Helpers HTTP
 async function apiPost(path, body) {
   const res = await fetch(`${API}${path}`, {
     method: 'POST',
@@ -48,7 +32,7 @@ async function apiGet(path) {
   return res.json();
 }
 
-// ─── AI / LLM ─────────────────────────────────────────────────────────────────
+// AI / LLM
 export async function InvokeLLM({ prompt, response_json_schema, add_context_from_internet = false }) {
   const format = response_json_schema ? 'json' : 'text';
   const data = await apiPost('/api/ai/generate', {
@@ -87,13 +71,13 @@ Responde SIEMPRE en español. Sé conciso y directo. Si no tienes datos exactos,
   return { message: data.response, model: data.model };
 }
 
-// ─── Email ─────────────────────────────────────────────────────────────────────
+// Email
 export async function SendEmail({ to, subject, body, from_name = 'SYNKIA' }) {
   console.log('[SendEmail] To:', to, '| Subject:', subject);
   return { success: true, message: `Email preparado para ${to}` };
 }
 
-// ─── PDF.js loader (lazy, una sola vez) ───────────────────────────────────────
+// PDF.js loader (lazy)
 let _pdfJsLoading = null;
 async function _loadPdfJs() {
   if (window.pdfjsLib) return;
@@ -112,14 +96,7 @@ async function _loadPdfJs() {
   return _pdfJsLoading;
 }
 
-// ─── Extracción de texto de un File/Blob (client-side) ───────────────────────
-/**
- * Extrae texto de un archivo PDF (o texto plano) en el navegador.
- * Para PDFs: usa PDF.js para leer el texto embebido.
- * Para otros tipos: usa File.text().
- * @param {File|Blob} fileOrBlob
- * @returns {Promise<string>}
- */
+// Extracción de texto de un File/Blob (client-side)
 export async function extractTextFromFile(fileOrBlob) {
   if (!fileOrBlob) return '';
 
@@ -148,7 +125,7 @@ export async function extractTextFromFile(fileOrBlob) {
   }
 }
 
-// ─── Mapeo regex → schema biloopSchema (invoices array) ─────────────────────
+// Mapeo regex → schema biloopSchema (invoices array)
 function _regexToInvoices(r) {
   return {
     invoices: [{
@@ -166,7 +143,7 @@ function _regexToInvoices(r) {
   };
 }
 
-// ─── Mapeo regex → schema genérico de DocumentArchive ────────────────────────
+// Mapeo regex → schema genérico de DocumentArchive
 function _regexToGeneric(r) {
   return {
     document_type:       r.documentType?.label || 'Otros',
@@ -184,7 +161,7 @@ function _regexToGeneric(r) {
   };
 }
 
-// ─── Archivos ─────────────────────────────────────────────────────────────────
+// Archivos — mantiene localStorage como fallback con warning
 export async function UploadFile({ file }) {
   try {
     const formData = new FormData();
@@ -192,18 +169,20 @@ export async function UploadFile({ file }) {
     const res = await fetch('/api/files/upload', { method: 'POST', body: formData });
     if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
     const data = await res.json();
-    // Guardamos también en memoria para que ExtractDataFromUploadedFile
-    // pueda acceder al contenido del archivo si lo necesita
     if (data.url) _pendingFiles.set(data.url, file);
     return { file_url: data.url, file_id: data.id };
   } catch (err) {
-    console.warn('[UploadFile] Backend no disponible, usando localStorage:', err.message);
+    // Fallback: localStorage con warning (temporal, se mantiene por compatibilidad)
+    console.warn('[UploadFile] Backend no disponible, usando fallback localStorage temporal:', err.message);
     const fileId = `file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const fileUrl = `local://files/${fileId}`;
-    const files = JSON.parse(localStorage.getItem('synkia_files') || '{}');
-    files[fileId] = { name: file?.name, size: file?.size, type: file?.type, url: fileUrl, created: new Date().toISOString() };
-    localStorage.setItem('synkia_files', JSON.stringify(files));
-    // ← CLAVE: guardamos el File real para usar en ExtractDataFromUploadedFile
+    try {
+      const files = JSON.parse(localStorage.getItem('synkia_files') || '{}');
+      files[fileId] = { name: file?.name, size: file?.size, type: file?.type, url: fileUrl, created: new Date().toISOString() };
+      localStorage.setItem('synkia_files', JSON.stringify(files));
+    } catch (storageErr) {
+      console.warn('[UploadFile] Fallback localStorage también falló:', storageErr.message);
+    }
     _pendingFiles.set(fileUrl, file);
     return { file_url: fileUrl, file_id: fileId };
   }
@@ -212,10 +191,8 @@ export async function UploadFile({ file }) {
 export async function ExtractDataFromUploadedFile({ file_url, json_schema, extraction_schema }) {
   const schema = json_schema || extraction_schema;
 
-  // 1. Intentar obtener el archivo real desde el mapa en memoria
   let file = _pendingFiles.get(file_url);
 
-  // 2. Si no está en memoria y la URL es accesible, hacer fetch
   if (!file && file_url && !file_url.startsWith('local://')) {
     try {
       const response = await fetch(file_url);
@@ -229,7 +206,6 @@ export async function ExtractDataFromUploadedFile({ file_url, json_schema, extra
     }
   }
 
-  // 3. Sin archivo disponible → error con mensaje claro
   if (!file) {
     console.warn('[ExtractDataFromUploadedFile] Archivo no disponible:', file_url);
     return {
@@ -239,9 +215,8 @@ export async function ExtractDataFromUploadedFile({ file_url, json_schema, extra
     };
   }
 
-  // 4. Extraer texto del PDF con PDF.js (client-side)
   const text = await extractTextFromFile(file);
-  _pendingFiles.delete(file_url); // liberar memoria
+  _pendingFiles.delete(file_url);
 
   if (!text || text.trim().length < 20) {
     console.warn('[ExtractDataFromUploadedFile] PDF sin texto seleccionable');
@@ -252,7 +227,6 @@ export async function ExtractDataFromUploadedFile({ file_url, json_schema, extra
     };
   }
 
-  // 5. Intentar extracción estructurada con LLM (si el backend está disponible)
   try {
     const data = await apiPost('/api/ai/extract-document', {
       text: text.substring(0, 8000),
@@ -267,12 +241,10 @@ export async function ExtractDataFromUploadedFile({ file_url, json_schema, extra
     console.warn('[ExtractDataFromUploadedFile] LLM no disponible, usando regex:', llmErr.message);
   }
 
-  // 6. Fallback regex con invoiceExtractorService
   try {
     const { invoiceExtractor } = await import('./invoiceExtractorService.js');
     const regexResult = invoiceExtractor.extractInvoiceData(text);
     if (regexResult?.success) {
-      // Si el schema espera { invoices: [...] }, usamos ese mapping; si no, el genérico
       const hasInvoicesKey = schema?.properties?.invoices;
       const output = hasInvoicesKey ? _regexToInvoices(regexResult) : _regexToGeneric(regexResult);
       if (output) {
@@ -291,7 +263,7 @@ export async function ExtractDataFromUploadedFile({ file_url, json_schema, extra
   };
 }
 
-// ─── Clasificación de documentos ─────────────────────────────────────────────
+// Clasificación de documentos
 export async function ClassifyDocument({ text, filename }) {
   const data = await apiPost('/api/ai/classify', { text, filename });
   if (!data.success) throw new Error(data.error || 'Classification error');
@@ -304,7 +276,7 @@ export async function ClassifyEmail({ subject, body, from }) {
   return data.classification;
 }
 
-// ─── Namespace compatible con base44 ─────────────────────────────────────────
+// Namespace compatible con base44
 export const AI = { GetChatResponse };
 export const Core = { UploadFile, ExtractDataFromUploadedFile, InvokeLLM, UploadPrivateFile: UploadFile };
 

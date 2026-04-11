@@ -3,18 +3,46 @@ import { base44 } from "@/api/base44Client";
 /**
  * SYNK-IA BRAIN SERVICE
  * Agente único unificado que combina CEO Brain, HR Agent, Biloop Agent y Central Agent
+ * Migrado: localStorage → /api/data/chathistory (persistencia en servidor)
  */
 
-// Constantes de configuración
-const STORAGE_KEY = 'synkia_brain_history';
+const API_BASE = '/api/data/chathistory';
 const MAX_MESSAGES = 100;
 
+// Caché en memoria para el historial de chat
+let _chatCache = null;
+
+// Helpers para API
+async function apiGet(url) {
+  try {
+    const res = await fetch(url, { headers: { 'Content-Type': 'application/json' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('[SynkiaBrain] API no disponible:', err.message);
+    return null;
+  }
+}
+
+async function apiBulkReplace(records) {
+  try {
+    const res = await fetch(`${API_BASE}/bulk`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ records, merge: false }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('[SynkiaBrain] Error guardando:', err.message);
+    return null;
+  }
+}
+
 export const SynkiaBrainService = {
-  // Configuración del agente unificado
   agentName: "synkia_brain",
   agentTitle: "SYNK-IA Brain - Inteligencia Empresarial Unificada",
-  
-  // Prompt del sistema unificado
+
   systemPrompt: `Eres SYNK-IA BRAIN, el cerebro único y omnipotente de la plataforma SYNK-IA. Combinas las capacidades de análisis estratégico, recursos humanos, procesamiento de documentos y coordinación central.
 
 🧠 TUS CAPACIDADES PRINCIPALES:
@@ -69,71 +97,72 @@ CONTEXTO:
 Tienes acceso completo a todos los datos empresariales: facturas, clientes, proveedores, empleados, nóminas, emails y documentos.`,
 
   // ==========================================
-  // GESTIÓN DE MEMORIA PERSISTENTE
+  // GESTIÓN DE MEMORIA PERSISTENTE (API)
   // ==========================================
-  
-  /**
-   * Cargar historial de conversaciones desde localStorage
-   */
-  loadChatHistory() {
+
+  async loadChatHistory() {
+    if (_chatCache) return _chatCache;
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const data = JSON.parse(stored);
-        return data.messages || [];
+      const result = await apiGet(`${API_BASE}?sort=-created_date`);
+      const records = result?.data || [];
+      // Los mensajes se guardan como registros individuales, extraer el array
+      if (records.length > 0 && records[0].messages) {
+        _chatCache = records[0].messages;
+      } else {
+        _chatCache = records.map(r => ({
+          role: r.role,
+          content: r.content,
+          type: r.type,
+          timestamp: r.timestamp || r.created_date
+        }));
       }
-      return [];
+      return _chatCache;
     } catch (error) {
-      console.error("Error loading chat history:", error);
+      console.warn("[SynkiaBrain] Error cargando historial:", error.message);
       return [];
     }
   },
 
-  /**
-   * Guardar mensaje en el historial
-   */
-  saveChatMessage(message) {
+  async saveChatMessage(message) {
     try {
-      const history = this.loadChatHistory();
+      const history = await this.loadChatHistory();
       history.push({
         ...message,
         timestamp: new Date().toISOString()
       });
-      
-      // Limitar a últimos MAX_MESSAGES
       const trimmed = history.slice(-MAX_MESSAGES);
-      
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        messages: trimmed,
-        lastUpdated: new Date().toISOString()
+      _chatCache = trimmed;
+
+      // Guardar todo el historial como un registro bulk
+      const records = trimmed.map((m, i) => ({
+        id: `chat_${i}`,
+        role: m.role,
+        content: m.content,
+        type: m.type || 'chat',
+        timestamp: m.timestamp
       }));
-      
+      await apiBulkReplace(records);
       return true;
     } catch (error) {
-      console.error("Error saving chat message:", error);
+      console.warn("[SynkiaBrain] Error guardando mensaje:", error.message);
       return false;
     }
   },
 
-  /**
-   * Limpiar historial de chat
-   */
-  clearChatHistory() {
+  async clearChatHistory() {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      _chatCache = [];
+      await apiBulkReplace([]);
       return true;
     } catch (error) {
-      console.error("Error clearing chat history:", error);
+      console.warn("[SynkiaBrain] Error limpiando historial:", error.message);
       return false;
     }
   },
 
-  /**
-   * Exportar historial de chat
-   */
   exportChatHistory() {
     try {
-      const history = this.loadChatHistory();
+      const history = _chatCache || [];
       const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -153,13 +182,10 @@ Tienes acceso completo a todos los datos empresariales: facturas, clientes, prov
   // ==========================================
   // COMANDOS RÁPIDOS
   // ==========================================
-  
-  /**
-   * Procesar comando rápido
-   */
+
   async processCommand(command) {
     const cmd = command.toLowerCase().trim();
-    
+
     switch (cmd) {
       case '/facturas':
         return await this.getInvoiceSummary();
@@ -174,16 +200,13 @@ Tienes acceso completo a todos los datos empresariales: facturas, clientes, prov
       case '/ayuda':
         return this.getHelpMessage();
       case '/limpiar':
-        this.clearChatHistory();
+        await this.clearChatHistory();
         return { type: 'system', content: '🧹 Historial de chat limpiado correctamente.' };
       default:
         return null;
     }
   },
 
-  /**
-   * Mensaje de ayuda con comandos disponibles
-   */
   getHelpMessage() {
     return {
       type: 'help',
@@ -213,9 +236,6 @@ Tienes acceso completo a todos los datos empresariales: facturas, clientes, prov
   // FUNCIONALIDADES CEO BRAIN
   // ==========================================
 
-  /**
-   * Resumen de facturas
-   */
   async getInvoiceSummary() {
     try {
       const invoices = await base44.entities.Invoice.list();
@@ -243,26 +263,20 @@ ${pending.length > 0 ? `\n⚠️ Tienes ${pending.length} facturas pendientes de
     }
   },
 
-  /**
-   * Resumen de ventas
-   */
   async getSalesSummary() {
     try {
       const invoices = await base44.entities.Invoice.list();
       const now = new Date();
-      
-      // Hoy
+
       const today = invoices.filter(inv => {
         const date = new Date(inv.created_at);
         return date.toDateString() === now.toDateString();
       });
-      
-      // Esta semana
+
       const weekAgo = new Date(now);
       weekAgo.setDate(weekAgo.getDate() - 7);
       const thisWeek = invoices.filter(inv => new Date(inv.created_at) >= weekAgo);
-      
-      // Este mes
+
       const monthAgo = new Date(now);
       monthAgo.setDate(monthAgo.getDate() - 30);
       const thisMonth = invoices.filter(inv => new Date(inv.created_at) >= monthAgo);
@@ -288,9 +302,6 @@ ${pending.length > 0 ? `\n⚠️ Tienes ${pending.length} facturas pendientes de
     }
   },
 
-  /**
-   * Métricas empresariales completas
-   */
   async getBusinessMetrics() {
     try {
       const [invoices, clients] = await Promise.all([
@@ -325,17 +336,12 @@ ${pending.length > 0 ? `\n⚠️ Tienes ${pending.length} facturas pendientes de
   // FUNCIONALIDADES HR AGENT
   // ==========================================
 
-  /**
-   * Lista de empleados
-   */
   async getEmployeesList() {
     try {
-      // Intentar obtener empleados de la entidad correspondiente
       let employees = [];
       try {
         employees = await base44.entities.Employee.list();
       } catch {
-        // Si no existe la entidad Employee, intentar con User o Staff
         try {
           employees = await base44.entities.User.list();
         } catch {
@@ -354,7 +360,7 @@ ${pending.length > 0 ? `\n⚠️ Tienes ${pending.length} facturas pendientes de
         };
       }
 
-      const employeeList = employees.slice(0, 10).map(emp => 
+      const employeeList = employees.slice(0, 10).map(emp =>
         `• ${emp.name || emp.email || 'Sin nombre'} - ${emp.role || emp.position || 'Sin rol'}`
       ).join('\n');
 
@@ -372,9 +378,6 @@ ${employees.length > 10 ? `\n... y ${employees.length - 10} más` : ''}`,
     }
   },
 
-  /**
-   * Obtener nóminas de un empleado
-   */
   async getEmployeePayrolls(employeeEmail) {
     try {
       const payrolls = await base44.entities.Payroll.list({
@@ -387,9 +390,6 @@ ${employees.length > 10 ? `\n... y ${employees.length - 10} más` : ''}`,
     }
   },
 
-  /**
-   * Información de vacaciones
-   */
   async getVacationInfo(employeeEmail) {
     return {
       totalDays: 23,
@@ -403,9 +403,6 @@ ${employees.length > 10 ? `\n... y ${employees.length - 10} más` : ''}`,
   // FUNCIONALIDADES BILOOP AGENT
   // ==========================================
 
-  /**
-   * Lista de proveedores
-   */
   async getProvidersList() {
     try {
       let providers = [];
@@ -430,7 +427,7 @@ ${employees.length > 10 ? `\n... y ${employees.length - 10} más` : ''}`,
         };
       }
 
-      const providerList = providers.slice(0, 10).map(prov => 
+      const providerList = providers.slice(0, 10).map(prov =>
         `• ${prov.name || prov.company_name || 'Sin nombre'} - ${prov.category || 'General'}`
       ).join('\n');
 
@@ -448,22 +445,18 @@ ${providers.length > 10 ? `\n... y ${providers.length - 10} más` : ''}`,
     }
   },
 
-  /**
-   * Resumen de gastos
-   */
   async getExpenseSummary() {
     try {
       const invoices = await base44.entities.Invoice.list();
       const expenses = invoices.filter(inv => inv.type === 'expense' || inv.type === 'gasto');
-      
+
       const now = new Date();
       const monthAgo = new Date(now);
       monthAgo.setDate(monthAgo.getDate() - 30);
-      
+
       const recentExpenses = expenses.filter(exp => new Date(exp.created_at) >= monthAgo);
       const totalExpenses = recentExpenses.reduce((sum, exp) => sum + (exp.total || 0), 0);
 
-      // Agrupar por categoría
       const byCategory = {};
       recentExpenses.forEach(exp => {
         const cat = exp.category || 'Sin categoría';
@@ -494,9 +487,6 @@ ${categoryList || '• Sin datos de categorías'}`,
     }
   },
 
-  /**
-   * Procesar archivo de Biloop
-   */
   async processBiloopFile(fileUrl, fileName) {
     try {
       const extraction = await base44.integrations.Core.ExtractData({
@@ -520,23 +510,20 @@ ${categoryList || '• Sin datos de categorías'}`,
   // FUNCIONALIDADES CENTRAL AGENT
   // ==========================================
 
-  /**
-   * Búsqueda global
-   */
   async searchAll(query) {
     try {
       const results = { invoices: [], clients: [], providers: [] };
 
       try {
         const invoices = await base44.entities.Invoice.list();
-        results.invoices = invoices.filter(inv => 
+        results.invoices = invoices.filter(inv =>
           JSON.stringify(inv).toLowerCase().includes(query.toLowerCase())
         ).slice(0, 5);
       } catch {}
 
       try {
         const clients = await base44.entities.Client.list();
-        results.clients = clients.filter(client => 
+        results.clients = clients.filter(client =>
           JSON.stringify(client).toLowerCase().includes(query.toLowerCase())
         ).slice(0, 5);
       } catch {}
@@ -548,15 +535,11 @@ ${categoryList || '• Sin datos de categorías'}`,
     }
   },
 
-  /**
-   * Analizar oportunidades de ahorro
-   */
   async analyzeSavingsOpportunities() {
     try {
       const invoices = await base44.entities.Invoice.list();
       const opportunities = [];
-      
-      // Agrupar por proveedor
+
       const byProvider = {};
       invoices.forEach(inv => {
         const provider = inv.provider_name || 'unknown';
@@ -564,14 +547,13 @@ ${categoryList || '• Sin datos de categorías'}`,
         byProvider[provider].push(inv);
       });
 
-      // Detectar variaciones de precio
       Object.entries(byProvider).forEach(([provider, providerInvoices]) => {
         if (providerInvoices.length > 1) {
           const amounts = providerInvoices.map(inv => inv.total || 0);
           const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
           const max = Math.max(...amounts);
           const min = Math.min(...amounts);
-          
+
           if (avg > 0 && (max - min) / avg > 0.2) {
             opportunities.push({
               type: 'price_variation',
@@ -590,9 +572,6 @@ ${categoryList || '• Sin datos de categorías'}`,
     }
   },
 
-  /**
-   * Generar resumen del sistema
-   */
   async generateSystemOverview() {
     try {
       const overview = {
@@ -627,14 +606,9 @@ ${categoryList || '• Sin datos de categorías'}`,
   // PROCESAMIENTO DE MENSAJES
   // ==========================================
 
-  /**
-   * Enriquecer mensaje con contexto empresarial
-   */
   async enrichMessageWithContext(userMessage) {
     try {
       let context = {};
-
-      // Detectar tipo de consulta y enriquecer con datos relevantes
       const lowerMessage = userMessage.toLowerCase();
 
       if (/factura|importe|cobro|pago/i.test(lowerMessage)) {
@@ -671,21 +645,16 @@ ${categoryList || '• Sin datos de categorías'}`,
     }
   },
 
-  /**
-   * Procesar mensaje del usuario
-   */
   async processMessage(message, userEmail = null) {
-    // Guardar mensaje del usuario
-    this.saveChatMessage({
+    await this.saveChatMessage({
       role: 'user',
       content: message
     });
 
-    // Verificar si es un comando rápido
     if (message.startsWith('/')) {
       const commandResult = await this.processCommand(message);
       if (commandResult) {
-        this.saveChatMessage({
+        await this.saveChatMessage({
           role: 'assistant',
           content: commandResult.content,
           type: commandResult.type
@@ -694,7 +663,6 @@ ${categoryList || '• Sin datos de categorías'}`,
       }
     }
 
-    // Enriquecer mensaje con contexto
     const enriched = await this.enrichMessageWithContext(message);
 
     return {
@@ -704,9 +672,6 @@ ${categoryList || '• Sin datos de categorías'}`,
     };
   },
 
-  /**
-   * Acciones sugeridas basadas en el contexto
-   */
   getSuggestedActions(context) {
     const actions = [];
 

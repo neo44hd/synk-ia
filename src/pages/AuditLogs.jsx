@@ -53,14 +53,14 @@ export default function AuditLogs() {
     loadLogs();
   }, [filters]);
 
-  const loadLogs = () => {
-    const filteredLogs = auditService.getFilteredLogs(filters);
+  const loadLogs = async () => {
+    const filteredLogs = await auditService.getFilteredLogs(filters);
     setLogs(filteredLogs);
-    setStats(auditService.getStats());
+    setStats(await auditService.getStats());
   };
 
-  const handleExportLogs = () => {
-    const exportData = auditService.exportLogs();
+  const handleExportLogs = async () => {
+    const exportData = await auditService.exportLogs();
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const date = new Date().toISOString().split('T')[0];
@@ -72,9 +72,9 @@ export default function AuditLogs() {
     toast.success('Logs de auditoría exportados correctamente');
   };
 
-  const handleClearLogs = () => {
-    auditService.clearLogs();
-    loadLogs();
+  const handleClearLogs = async () => {
+    await auditService.clearLogs();
+    await loadLogs();
     setIsClearDialogOpen(false);
     toast.success('Logs de auditoría eliminados');
   };

@@ -1,8 +1,11 @@
 /**
  * REVO XEF Synchronization Service
- * 
- * Este servicio gestiona la sincronización con la plataforma REVO XEF
+ *
+ * Gestiona la sincronización con la plataforma REVO XEF
  * para mantener actualizados los productos, precios y disponibilidad.
+ *
+ * Migrado: localStorage → /api/data (persistencia en servidor)
+ * Entidades: revoconfig, revosyncstatus, revosyncevents
  */
 
 import productosMapping from '@/data/productosMapping.json';
@@ -14,31 +17,48 @@ const REVO_CONFIG = {
   storageUrl: 'https://storage.googleapis.com/revo-cloud-bucket/xef/chickenpalaceibiza2/images',
 };
 
-// Cache local para productos
-const STORAGE_KEY = 'revo_products_cache';
-const SYNC_STATUS_KEY = 'revo_sync_status';
+// Endpoints API para persistencia
+const API_CACHE = '/api/data/revoconfig';
+const API_STATUS = '/api/data/revosyncstatus';
+const API_EVENTS = '/api/data/revosyncevents';
 
-/**
- * Parsea el precio del formato español al número
- */
+// Caché en memoria para productos (evita llamadas API en cada lectura)
+let _productsCache = null;
+let _productsCacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+// Helpers API
+async function apiFetch(url, options = {}) {
+  try {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('[RevoSync] API no disponible:', err.message);
+    return null;
+  }
+}
+
+async function apiBulkReplace(endpoint, records) {
+  return apiFetch(`${endpoint}/bulk`, {
+    method: 'PUT',
+    body: JSON.stringify({ records, merge: false }),
+  });
+}
+
 const parsePrice = (priceStr) => {
   if (!priceStr) return 0;
-  
-  // Si tiene dos precios (ej: "8,00 € / 11,00 €"), tomar el primero
   const firstPrice = priceStr.split('/')[0].trim();
-  
-  // Limpiar el precio
   const cleaned = firstPrice
     .replace('€', '')
     .replace(/\s/g, '')
     .replace(',', '.');
-  
   return parseFloat(cleaned) || 0;
 };
 
-/**
- * Genera un ID único para un producto
- */
 const generateProductId = (categoryId, productName) => {
   const normalized = productName
     .toLowerCase()
@@ -48,9 +68,6 @@ const generateProductId = (categoryId, productName) => {
   return `${categoryId}_${normalized}`;
 };
 
-/**
- * Procesa los productos del mapping y los convierte al formato interno
- */
 const processProducts = () => {
   const products = [];
   const categoryNames = {
@@ -63,12 +80,12 @@ const processProducts = () => {
 
   Object.entries(productosMapping.categorias).forEach(([categoryKey, categoryData]) => {
     const categoryInfo = categoryNames[categoryKey] || { name: categoryKey, icon: '📦', order: 99 };
-    
+
     categoryData.productos.forEach((producto, index) => {
       const productId = generateProductId(categoryData.category_id, producto.nombre);
       const priceValue = parsePrice(producto.precio);
       const hasMultiplePrices = producto.precio?.includes('/');
-      
+
       products.push({
         id: productId,
         name: producto.nombre,
@@ -96,56 +113,52 @@ const processProducts = () => {
   });
 };
 
-/**
- * Servicio principal de sincronización con REVO XEF
- */
 const RevoSyncService = {
   /**
-   * Obtiene todos los productos procesados
+   * Obtiene todos los productos (caché en memoria + API)
    */
-  getProducts: () => {
+  getProducts: async () => {
+    // Comprobar caché en memoria
+    if (_productsCache && (Date.now() - _productsCacheTimestamp < CACHE_TTL)) {
+      return _productsCache;
+    }
+
+    // Intentar cargar del servidor
     try {
-      // Intentar obtener del cache local primero
-      const cached = localStorage.getItem(STORAGE_KEY);
-      if (cached) {
-        const { products, timestamp } = JSON.parse(cached);
-        // Cache válido por 5 minutos
-        if (Date.now() - timestamp < 5 * 60 * 1000) {
-          return products;
+      const result = await apiFetch(`${API_CACHE}?sort=-created_date&limit=1`);
+      const cached = result?.data?.[0];
+      if (cached?.products && cached?.timestamp) {
+        if (Date.now() - cached.timestamp < CACHE_TTL) {
+          _productsCache = cached.products;
+          _productsCacheTimestamp = cached.timestamp;
+          return _productsCache;
         }
       }
     } catch (e) {
-      console.warn('Error reading from cache:', e);
+      console.warn('[RevoSync] Error leyendo caché API:', e.message);
     }
 
     // Procesar productos del mapping
     const products = processProducts();
-    
-    // Guardar en cache
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        products,
-        timestamp: Date.now(),
-      }));
-    } catch (e) {
-      console.warn('Error saving to cache:', e);
-    }
+    _productsCache = products;
+    _productsCacheTimestamp = Date.now();
+
+    // Guardar en API
+    await apiBulkReplace(API_CACHE, [{
+      id: 'revo_products_cache',
+      products,
+      timestamp: Date.now(),
+    }]);
 
     return products;
   },
 
-  /**
-   * Obtiene productos por categoría
-   */
-  getProductsByCategory: (category) => {
-    const products = RevoSyncService.getProducts();
+  getProductsByCategory: async (category) => {
+    const products = await RevoSyncService.getProducts();
     if (!category || category === 'all') return products;
     return products.filter(p => p.category === category);
   },
 
-  /**
-   * Obtiene las categorías disponibles
-   */
   getCategories: () => {
     const categoryNames = {
       comidas: { name: 'Comidas', icon: '🍗', order: 1 },
@@ -165,36 +178,27 @@ const RevoSyncService = {
     })).sort((a, b) => a.order - b.order);
   },
 
-  /**
-   * Obtiene productos destacados
-   */
-  getFeaturedProducts: () => {
-    const products = RevoSyncService.getProducts();
+  getFeaturedProducts: async () => {
+    const products = await RevoSyncService.getProducts();
     return products.filter(p => p.featured);
   },
 
-  /**
-   * Busca productos por nombre
-   */
-  searchProducts: (query) => {
+  searchProducts: async (query) => {
     if (!query || query.length < 2) return [];
-    
-    const products = RevoSyncService.getProducts();
+
+    const products = await RevoSyncService.getProducts();
     const normalizedQuery = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    
+
     return products.filter(p => {
       const normalizedName = p.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       return normalizedName.includes(normalizedQuery);
     });
   },
 
-  /**
-   * Actualiza un producto (sincronización local)
-   */
   updateProduct: async (productId, updates) => {
-    const products = RevoSyncService.getProducts();
+    const products = await RevoSyncService.getProducts();
     const productIndex = products.findIndex(p => p.id === productId);
-    
+
     if (productIndex === -1) {
       throw new Error('Producto no encontrado');
     }
@@ -205,37 +209,33 @@ const RevoSyncService = {
       lastSync: new Date().toISOString(),
     };
 
-    // Guardar en cache
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    // Actualizar caché en memoria y API
+    _productsCache = products;
+    _productsCacheTimestamp = Date.now();
+    await apiBulkReplace(API_CACHE, [{
+      id: 'revo_products_cache',
       products,
       timestamp: Date.now(),
-    }));
+    }]);
 
-    // Registrar la actualización para sincronización
-    RevoSyncService.logSyncEvent('product_update', { productId, updates });
+    await RevoSyncService.logSyncEvent('product_update', { productId, updates });
 
     return products[productIndex];
   },
 
-  /**
-   * Cambia la disponibilidad de un producto
-   */
   toggleProductAvailability: async (productId) => {
-    const products = RevoSyncService.getProducts();
+    const products = await RevoSyncService.getProducts();
     const product = products.find(p => p.id === productId);
-    
+
     if (!product) {
       throw new Error('Producto no encontrado');
     }
 
-    return RevoSyncService.updateProduct(productId, { 
-      available: !product.available 
+    return RevoSyncService.updateProduct(productId, {
+      available: !product.available
     });
   },
 
-  /**
-   * Actualiza el precio de un producto
-   */
   updateProductPrice: async (productId, newPrice) => {
     return RevoSyncService.updateProduct(productId, {
       price: parseFloat(newPrice),
@@ -243,86 +243,71 @@ const RevoSyncService = {
     });
   },
 
-  /**
-   * Fuerza la resincronización con REVO XEF
-   */
   forceSync: async () => {
-    // Limpiar cache
-    localStorage.removeItem(STORAGE_KEY);
-    
-    // Obtener productos frescos
+    // Limpiar caché
+    _productsCache = null;
+    _productsCacheTimestamp = 0;
+
     const products = processProducts();
-    
-    // Guardar en cache
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    _productsCache = products;
+    _productsCacheTimestamp = Date.now();
+
+    // Guardar productos en API
+    await apiBulkReplace(API_CACHE, [{
+      id: 'revo_products_cache',
       products,
       timestamp: Date.now(),
-    }));
+    }]);
 
-    // Actualizar estado de sincronización
+    // Guardar estado de sincronización en API
     const syncStatus = {
+      id: 'revo_sync_status',
       lastSync: new Date().toISOString(),
       status: 'success',
       productCount: products.length,
     };
-    
-    localStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(syncStatus));
-    
-    RevoSyncService.logSyncEvent('force_sync', syncStatus);
+
+    await apiBulkReplace(API_STATUS, [syncStatus]);
+    await RevoSyncService.logSyncEvent('force_sync', syncStatus);
 
     return syncStatus;
   },
 
-  /**
-   * Obtiene el estado de la última sincronización
-   */
-  getSyncStatus: () => {
+  getSyncStatus: async () => {
     try {
-      const status = localStorage.getItem(SYNC_STATUS_KEY);
-      return status ? JSON.parse(status) : null;
+      const result = await apiFetch(`${API_STATUS}/revo_sync_status`);
+      return result?.data || null;
     } catch (e) {
+      console.warn('[RevoSync] Error leyendo estado sync:', e.message);
       return null;
     }
   },
 
-  /**
-   * Registra eventos de sincronización para auditoría
-   */
-  logSyncEvent: (eventType, data) => {
+  logSyncEvent: async (eventType, data) => {
     try {
-      const events = JSON.parse(localStorage.getItem('revo_sync_events') || '[]');
-      events.push({
-        type: eventType,
-        data,
-        timestamp: new Date().toISOString(),
+      await apiFetch(API_EVENTS, {
+        method: 'POST',
+        body: JSON.stringify({
+          type: eventType,
+          data,
+          timestamp: new Date().toISOString(),
+        }),
       });
-      
-      // Mantener solo los últimos 100 eventos
-      if (events.length > 100) {
-        events.splice(0, events.length - 100);
-      }
-      
-      localStorage.setItem('revo_sync_events', JSON.stringify(events));
     } catch (e) {
-      console.warn('Error logging sync event:', e);
+      console.warn('[RevoSync] Error registrando evento:', e.message);
     }
   },
 
-  /**
-   * Obtiene los eventos de sincronización
-   */
-  getSyncEvents: (limit = 20) => {
+  getSyncEvents: async (limit = 20) => {
     try {
-      const events = JSON.parse(localStorage.getItem('revo_sync_events') || '[]');
-      return events.slice(-limit).reverse();
+      const result = await apiFetch(`${API_EVENTS}?sort=-created_date&limit=${limit}`);
+      return result?.data || [];
     } catch (e) {
+      console.warn('[RevoSync] Error leyendo eventos:', e.message);
       return [];
     }
   },
 
-  /**
-   * Información del negocio
-   */
   getBusinessInfo: () => ({
     name: 'Chicken Palace',
     address: 'C/ Sant Jaume, 52, 07800 Ibiza',
@@ -339,9 +324,6 @@ const RevoSyncService = {
     deliveryFee: 2.50,
   }),
 
-  /**
-   * Obtiene la metadata del catálogo
-   */
   getMetadata: () => productosMapping.metadata,
 };
 

@@ -98,12 +98,12 @@ export default function WhatsAppHistory() {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     setLoading(true);
-    const allMessages = whatsappService.getMessages();
-    const allOrders = whatsappService.getOrders();
-    const statistics = whatsappService.getStatistics(30);
-    
+    const allMessages = await whatsappService.getMessages();
+    const allOrders = await whatsappService.getOrders();
+    const statistics = await whatsappService.getStatistics(30);
+
     setMessages(allMessages);
     setOrders(allOrders);
     setStats(statistics);

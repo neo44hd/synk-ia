@@ -38,14 +38,14 @@ export default function SynkiaBrain({ isOpen, onClose, onToggle }) {
 
   // Cargar historial al montar
   useEffect(() => {
-    const history = SynkiaBrainService.loadChatHistory();
-    if (history.length > 0) {
-      setMessages(history);
-    } else {
-      // Mensaje de bienvenida
-      setMessages([{
-        role: 'assistant',
-        content: `🧠 **¡Hola! Soy SYNK-IA BRAIN**
+    (async () => {
+      const history = await SynkiaBrainService.loadChatHistory();
+      if (history.length > 0) {
+        setMessages(history);
+      } else {
+        setMessages([{
+          role: 'assistant',
+          content: `🧠 **¡Hola! Soy SYNK-IA BRAIN**
 
 Tu asistente de inteligencia empresarial unificado. Tengo acceso a toda la información de tu negocio:
 
@@ -55,12 +55,11 @@ Tu asistente de inteligencia empresarial unificado. Tengo acceso a toda la infor
 • 💸 Gastos y análisis
 
 **Escribe un mensaje o usa un comando rápido** (escribe \`/ayuda\` para ver todos los comandos).`,
-        timestamp: new Date().toISOString(),
-        type: 'welcome'
-      }]);
-    }
-    
-    // Acciones sugeridas iniciales
+          timestamp: new Date().toISOString(),
+          type: 'welcome'
+        }]);
+      }
+    })();
     setSuggestedActions(SynkiaBrainService.getSuggestedActions());
   }, []);
 
@@ -225,8 +224,8 @@ Tu asistente de inteligencia empresarial unificado. Tengo acceso a toda la infor
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      SynkiaBrainService.saveChatMessage(assistantMessage);
-      
+      await SynkiaBrainService.saveChatMessage(assistantMessage);
+
       // Hablar respuesta si está habilitado
       speak(assistantContent);
 
@@ -245,9 +244,9 @@ Tu asistente de inteligencia empresarial unificado. Tengo acceso a toda la infor
   };
 
   // Limpiar chat
-  const clearChat = () => {
+  const clearChat = async () => {
     if (window.confirm('¿Estás seguro de que quieres limpiar el historial de chat?')) {
-      SynkiaBrainService.clearChatHistory();
+      await SynkiaBrainService.clearChatHistory();
       setMessages([{
         role: 'assistant',
         content: '🧹 Historial limpiado. ¿En qué puedo ayudarte?',

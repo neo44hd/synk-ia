@@ -1,19 +1,47 @@
 /**
  * WhatsApp Business Service for SYNK-IA
- * Handles WhatsApp messaging, notifications, and order communications
+ * Gestiona mensajería WhatsApp, notificaciones y comunicaciones de pedidos
+ * Migrado: localStorage → /api/data (persistencia en servidor)
+ * Entidades: whatsappconfig, whatsappmessage, order (existente)
  */
 
-const STORAGE_KEY = 'synkia_whatsapp_config';
-const MESSAGES_KEY = 'synkia_whatsapp_messages';
-const ORDERS_KEY = 'synkia_whatsapp_orders';
+const API_CONFIG = '/api/data/whatsappconfig';
+const API_MESSAGES = '/api/data/whatsappmessage';
+const API_ORDERS = '/api/data/order';
 
-// Default configuration
+// Caché en memoria
+let _configCache = null;
+let _messagesCache = null;
+
+// Helpers API
+async function apiFetch(url, options = {}) {
+  try {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('[WhatsApp] API no disponible:', err.message);
+    return null;
+  }
+}
+
+async function apiBulkReplace(endpoint, records) {
+  return apiFetch(`${endpoint}/bulk`, {
+    method: 'PUT',
+    body: JSON.stringify({ records, merge: false }),
+  });
+}
+
+// Configuración por defecto
 const defaultConfig = {
   businessPhone: '+34 600 000 000',
   businessName: 'Chicken Palace',
   ceoPhone: '',
   kitchenPhone: '',
-  apiProvider: 'whatsapp-web', // whatsapp-web, twilio, meta-api
+  apiProvider: 'whatsapp-web',
   twilioAccountSid: '',
   twilioAuthToken: '',
   metaAccessToken: '',
@@ -31,53 +59,78 @@ const defaultConfig = {
 
 class WhatsAppService {
   constructor() {
-    this.config = this.loadConfig();
-    this.messages = this.loadMessages();
+    this.config = { ...defaultConfig };
+    this.messages = [];
+    this._initialized = false;
+  }
+
+  async _ensureLoaded() {
+    if (this._initialized) return;
+    this._initialized = true;
+    this.config = await this.loadConfig();
+    this.messages = await this.loadMessages();
   }
 
   // ============ Configuration Management ============
-  
-  loadConfig() {
+
+  async loadConfig() {
+    if (_configCache) return _configCache;
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? { ...defaultConfig, ...JSON.parse(stored) } : { ...defaultConfig };
-    } catch {
-      return { ...defaultConfig };
+      const result = await apiFetch(`${API_CONFIG}/wa_config`);
+      if (result?.data) {
+        _configCache = { ...defaultConfig, ...result.data };
+        return _configCache;
+      }
+    } catch (e) {
+      console.warn('[WhatsApp] Error cargando config:', e.message);
     }
+    return { ...defaultConfig };
   }
 
-  saveConfig(config) {
+  async saveConfig(config) {
     this.config = { ...this.config, ...config };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.config));
+    _configCache = this.config;
+    await apiBulkReplace(API_CONFIG, [{ id: 'wa_config', ...this.config }]);
     return this.config;
   }
 
-  getConfig() {
+  async getConfig() {
+    await this._ensureLoaded();
     return { ...this.config };
   }
 
   // ============ Message History ============
-  
-  loadMessages() {
+
+  async loadMessages() {
+    if (_messagesCache) return _messagesCache;
     try {
-      const stored = localStorage.getItem(MESSAGES_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
+      const result = await apiFetch(`${API_MESSAGES}?sort=-created_date&limit=500`);
+      _messagesCache = result?.data || [];
+      return _messagesCache;
+    } catch (e) {
+      console.warn('[WhatsApp] Error cargando mensajes:', e.message);
       return [];
     }
   }
 
-  saveMessage(message) {
+  async saveMessage(message) {
+    await this._ensureLoaded();
     this.messages.unshift(message);
-    // Keep only last 500 messages
     this.messages = this.messages.slice(0, 500);
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(this.messages));
+    _messagesCache = this.messages;
+
+    // Guardar mensaje individual en API
+    await apiFetch(API_MESSAGES, {
+      method: 'POST',
+      body: JSON.stringify(message),
+    });
     return message;
   }
 
-  getMessages(filters = {}) {
+  async getMessages(filters = {}) {
+    await this._ensureLoaded();
     let filtered = [...this.messages];
-    
+
     if (filters.phone) {
       filtered = filtered.filter(m => m.to === filters.phone || m.from === filters.phone);
     }
@@ -96,19 +149,16 @@ class WhatsAppService {
     if (filters.dateTo) {
       filtered = filtered.filter(m => new Date(m.timestamp) <= new Date(filters.dateTo));
     }
-    
+
     return filtered;
   }
 
   // ============ Phone Number Utilities ============
-  
+
   formatPhoneNumber(phone) {
     if (!phone) return null;
-    // Remove all non-numeric characters except +
     let cleaned = phone.replace(/[^\d+]/g, '');
-    // Ensure it starts with country code
     if (!cleaned.startsWith('+')) {
-      // Default to Spain (+34)
       if (cleaned.startsWith('34')) {
         cleaned = '+' + cleaned;
       } else {
@@ -121,8 +171,7 @@ class WhatsAppService {
   validatePhoneNumber(phone) {
     const formatted = this.formatPhoneNumber(phone);
     if (!formatted) return { valid: false, error: 'Número de teléfono requerido' };
-    
-    // Basic validation: should have at least 9 digits after country code
+
     const digits = formatted.replace(/\D/g, '');
     if (digits.length < 9) {
       return { valid: false, error: 'Número de teléfono muy corto' };
@@ -130,14 +179,14 @@ class WhatsAppService {
     if (digits.length > 15) {
       return { valid: false, error: 'Número de teléfono muy largo' };
     }
-    
+
     return { valid: true, formatted };
   }
 
   // ============ Message Formatting ============
-  
+
   formatOrderProducts(items) {
-    return items.map(item => 
+    return items.map(item =>
       `• ${item.quantity}x ${item.name} - ${(item.price * item.quantity).toFixed(2)}€`
     ).join('\n');
   }
@@ -152,18 +201,19 @@ class WhatsAppService {
 
   formatMessage(template, data) {
     let message = template;
-    
+
     Object.keys(data).forEach(key => {
       const regex = new RegExp(`\\{${key}\\}`, 'g');
       message = message.replace(regex, data[key] || '');
     });
-    
+
     return message;
   }
 
   // ============ WhatsApp API Integration ============
-  
+
   async sendMessage(to, body, options = {}) {
+    await this._ensureLoaded();
     const formattedPhone = this.formatPhoneNumber(to);
     if (!formattedPhone) {
       return { success: false, error: 'Número de teléfono inválido' };
@@ -183,7 +233,6 @@ class WhatsAppService {
     };
 
     try {
-      // Determine which API to use based on configuration
       let result;
       switch (this.config.apiProvider) {
         case 'twilio':
@@ -210,21 +259,17 @@ class WhatsAppService {
       message.attempts = 1;
     }
 
-    this.saveMessage(message);
+    await this.saveMessage(message);
     return message;
   }
 
-  // WhatsApp Web API (opens wa.me link - for testing/demo)
   async sendViaWhatsAppWeb(phone, body) {
-    // This creates a WhatsApp Web link that can be opened
     const encodedMessage = encodeURIComponent(body);
     const cleanPhone = phone.replace(/[^\d]/g, '');
     const waLink = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
-    
-    // In a real implementation, this would open the link or use WhatsApp Web API
+
     console.log('WhatsApp Web Link:', waLink);
-    
-    // Simulate sending (for demo purposes, mark as sent)
+
     return {
       success: true,
       messageId: `wa_${Date.now()}`,
@@ -232,10 +277,9 @@ class WhatsAppService {
     };
   }
 
-  // Twilio WhatsApp API
   async sendViaTwilio(phone, body) {
     const { twilioAccountSid, twilioAuthToken, businessPhone } = this.config;
-    
+
     if (!twilioAccountSid || !twilioAuthToken) {
       return { success: false, error: 'Credenciales de Twilio no configuradas' };
     }
@@ -258,7 +302,7 @@ class WhatsAppService {
       );
 
       const data = await response.json();
-      
+
       if (response.ok) {
         return { success: true, messageId: data.sid };
       } else {
@@ -269,10 +313,9 @@ class WhatsAppService {
     }
   }
 
-  // Meta WhatsApp Business API
   async sendViaMetaApi(phone, body) {
     const { metaAccessToken, metaPhoneNumberId } = this.config;
-    
+
     if (!metaAccessToken || !metaPhoneNumberId) {
       return { success: false, error: 'Credenciales de Meta API no configuradas' };
     }
@@ -296,7 +339,7 @@ class WhatsAppService {
       );
 
       const data = await response.json();
-      
+
       if (response.ok && data.messages?.[0]?.id) {
         return { success: true, messageId: data.messages[0].id };
       } else {
@@ -308,16 +351,11 @@ class WhatsAppService {
   }
 
   // ============ Order Notifications ============
-  
+
   async sendOrderConfirmation(order) {
+    await this._ensureLoaded();
     const {
-      orderNumber,
-      customer,
-      items,
-      total,
-      orderType,
-      pickupTime,
-      deliveryAddress,
+      orderNumber, customer, items, total, orderType, pickupTime, deliveryAddress,
     } = order;
 
     const messageData = {
@@ -332,7 +370,7 @@ class WhatsAppService {
     };
 
     const body = this.formatMessage(this.config.orderConfirmTemplate, messageData);
-    
+
     return await this.sendMessage(customer.phone, body, {
       type: 'order_confirmation',
       orderId: orderNumber,
@@ -340,18 +378,13 @@ class WhatsAppService {
   }
 
   async sendCeoNotification(order) {
+    await this._ensureLoaded();
     if (!this.config.ceoPhone || !this.config.autoNotifyCeo) {
       return { success: false, error: 'Notificación CEO desactivada o número no configurado' };
     }
 
     const {
-      orderNumber,
-      customer,
-      items,
-      total,
-      orderType,
-      pickupTime,
-      deliveryAddress,
+      orderNumber, customer, items, total, orderType, pickupTime, deliveryAddress,
     } = order;
 
     const baseUrl = window.location.origin;
@@ -370,7 +403,7 @@ class WhatsAppService {
     };
 
     const body = this.formatMessage(this.config.ceoAlertTemplate, messageData);
-    
+
     return await this.sendMessage(this.config.ceoPhone, body, {
       type: 'ceo_notification',
       orderId: orderNumber,
@@ -378,16 +411,12 @@ class WhatsAppService {
   }
 
   async sendKitchenNotification(order) {
+    await this._ensureLoaded();
     if (!this.config.kitchenPhone || !this.config.autoNotifyKitchen) {
       return { success: false, error: 'Notificación cocina desactivada o número no configurado' };
     }
 
-    const {
-      orderNumber,
-      items,
-      orderType,
-      pickupTime,
-    } = order;
+    const { orderNumber, items, orderType, pickupTime } = order;
 
     const messageData = {
       orderNumber,
@@ -397,7 +426,7 @@ class WhatsAppService {
     };
 
     const body = this.formatMessage(this.config.kitchenAlertTemplate, messageData);
-    
+
     return await this.sendMessage(this.config.kitchenPhone, body, {
       type: 'kitchen_notification',
       orderId: orderNumber,
@@ -405,13 +434,12 @@ class WhatsAppService {
   }
 
   // ============ Complete Order Processing ============
-  
+
   async processNewOrder(orderData) {
     const orderNumber = this.generateOrderNumber();
     const order = { ...orderData, orderNumber };
 
-    // Save order
-    this.saveOrder(order);
+    await this.saveOrder(order);
 
     const results = {
       orderNumber,
@@ -420,17 +448,14 @@ class WhatsAppService {
       kitchenNotification: null,
     };
 
-    // Send customer confirmation
     if (this.config.autoNotifyCustomer && order.customer.phone) {
       results.customerNotification = await this.sendOrderConfirmation(order);
     }
 
-    // Send CEO notification
     if (this.config.autoNotifyCeo) {
       results.ceoNotification = await this.sendCeoNotification(order);
     }
 
-    // Send Kitchen notification
     if (this.config.autoNotifyKitchen) {
       results.kitchenNotification = await this.sendKitchenNotification(order);
     }
@@ -438,34 +463,36 @@ class WhatsAppService {
     return results;
   }
 
-  // ============ Order Management ============
-  
-  saveOrder(order) {
+  // ============ Order Management (API) ============
+
+  async saveOrder(order) {
     try {
-      const orders = this.getOrders();
-      orders.unshift({
-        ...order,
-        createdAt: new Date().toISOString(),
-        status: 'pending',
-        whatsappConfirmed: true,
+      await apiFetch(API_ORDERS, {
+        method: 'POST',
+        body: JSON.stringify({
+          ...order,
+          createdAt: new Date().toISOString(),
+          status: 'pending',
+          whatsappConfirmed: true,
+        }),
       });
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(orders.slice(0, 1000)));
       return order;
-    } catch {
+    } catch (e) {
+      console.warn('[WhatsApp] Error guardando pedido:', e.message);
       return null;
     }
   }
 
-  getOrders(filters = {}) {
+  async getOrders(filters = {}) {
     try {
-      const stored = localStorage.getItem(ORDERS_KEY);
-      let orders = stored ? JSON.parse(stored) : [];
-      
+      const result = await apiFetch(`${API_ORDERS}?sort=-created_date&limit=1000`);
+      let orders = result?.data || [];
+
       if (filters.status) {
         orders = orders.filter(o => o.status === filters.status);
       }
       if (filters.orderNumber) {
-        orders = orders.filter(o => o.orderNumber.includes(filters.orderNumber));
+        orders = orders.filter(o => (o.orderNumber || '').includes(filters.orderNumber));
       }
       if (filters.customerPhone) {
         orders = orders.filter(o => o.customer?.phone?.includes(filters.customerPhone));
@@ -476,32 +503,37 @@ class WhatsAppService {
       if (filters.dateTo) {
         orders = orders.filter(o => new Date(o.createdAt) <= new Date(filters.dateTo));
       }
-      
+
       return orders;
-    } catch {
+    } catch (e) {
+      console.warn('[WhatsApp] Error obteniendo pedidos:', e.message);
       return [];
     }
   }
 
-  updateOrderStatus(orderNumber, status) {
+  async updateOrderStatus(orderNumber, status) {
     try {
-      const orders = this.getOrders();
-      const index = orders.findIndex(o => o.orderNumber === orderNumber);
-      if (index !== -1) {
-        orders[index].status = status;
-        orders[index].updatedAt = new Date().toISOString();
-        localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-        return orders[index];
+      const result = await apiFetch(`${API_ORDERS}?sort=-created_date&limit=1000`);
+      const orders = result?.data || [];
+      const order = orders.find(o => o.orderNumber === orderNumber);
+      if (order) {
+        await apiFetch(`${API_ORDERS}/${order.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ status, updatedAt: new Date().toISOString() }),
+        });
+        return { ...order, status, updatedAt: new Date().toISOString() };
       }
       return null;
-    } catch {
+    } catch (e) {
+      console.warn('[WhatsApp] Error actualizando pedido:', e.message);
       return null;
     }
   }
 
   // ============ Retry Failed Messages ============
-  
+
   async retryFailedMessage(messageId) {
+    await this._ensureLoaded();
     const message = this.messages.find(m => m.id === messageId);
     if (!message || message.status !== 'failed') {
       return { success: false, error: 'Mensaje no encontrado o no fallido' };
@@ -518,8 +550,9 @@ class WhatsAppService {
   }
 
   // ============ Statistics ============
-  
-  getStatistics(days = 30) {
+
+  async getStatistics(days = 30) {
+    await this._ensureLoaded();
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
@@ -527,7 +560,8 @@ class WhatsAppService {
       m => new Date(m.timestamp) >= cutoffDate
     );
 
-    const recentOrders = this.getOrders().filter(
+    const orders = await this.getOrders();
+    const recentOrders = orders.filter(
       o => new Date(o.createdAt) >= cutoffDate
     );
 
@@ -545,16 +579,14 @@ class WhatsAppService {
     };
   }
 
-  // Generate WhatsApp Web link for manual messaging
   getWhatsAppLink(phone, message = '') {
     const cleanPhone = this.formatPhoneNumber(phone)?.replace(/[^\d]/g, '');
     if (!cleanPhone) return null;
-    
+
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${cleanPhone}${message ? `?text=${encodedMessage}` : ''}`;
   }
 }
 
-// Export singleton instance
 const whatsappService = new WhatsAppService();
 export default whatsappService;

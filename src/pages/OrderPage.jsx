@@ -98,12 +98,12 @@ export default function OrderPage() {
 
   // Load data on mount
   useEffect(() => {
-    const loadData = () => {
-      const allProducts = RevoSyncService.getProducts();
+    const loadData = async () => {
+      const allProducts = await RevoSyncService.getProducts();
       const allCategories = RevoSyncService.getCategories();
       const info = RevoSyncService.getBusinessInfo();
-      const waConfig = whatsappService.getConfig();
-      
+      const waConfig = await whatsappService.getConfig();
+
       setProducts(allProducts);
       setCategories(allCategories);
       setBusinessInfo(info);
