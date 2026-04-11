@@ -8,9 +8,9 @@ import crypto from 'crypto';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { DATA_DIR } from './data.js';
 
 const router = Router();
-const DATA_DIR   = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'sinkia-jwt-secret-2026-' + crypto.randomBytes(8).toString('hex');
 const JWT_EXPIRY = 7 * 24 * 60 * 60; // 7 días en segundos

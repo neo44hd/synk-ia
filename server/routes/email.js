@@ -3,11 +3,11 @@ import Imap from 'imap';
 import { simpleParser } from 'mailparser';
 import fs from 'fs';
 import path from 'path';
+import { DATA_DIR } from './data.js';
 
 export const emailRouter = Router();
 
-// ── Persistencia directa en /data/*.json ────────────────────────────────────
-const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+// ── Persistencia directa en /data/*.json (usa DATA_DIR de data.js) ───────────
 function readJSON(entity) {
   const file = path.join(DATA_DIR, `${entity}.json`);
   try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []; } catch { return []; }
