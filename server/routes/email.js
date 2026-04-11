@@ -1,8 +1,21 @@
 import { Router } from 'express';
 import Imap from 'imap';
 import { simpleParser } from 'mailparser';
+import fs from 'fs';
+import path from 'path';
 
 export const emailRouter = Router();
+
+// ── Persistencia directa en /data/*.json ────────────────────────────────────
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+function readJSON(entity) {
+  const file = path.join(DATA_DIR, `${entity}.json`);
+  try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []; } catch { return []; }
+}
+function writeJSON(entity, data) {
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(path.join(DATA_DIR, `${entity}.json`), JSON.stringify(data, null, 2));
+}
 
 const getImapConfig = () => ({
   user: process.env.EMAIL_USER || 'info@chickenpalace.es',
@@ -461,4 +474,128 @@ emailRouter.get('/fetch-page', async (req, res) => {
     await new Promise(r => setTimeout(r, 1000));
     res.json({ success: true, count: emails.length, page: parseInt(page), emails });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  POST /api/email/sync — Sincronización completa: IMAP → proveedores + facturas
+//  Escanea emails, extrae documentos, persiste en /data/provider.json e invoice.json
+//  Idempotente: usa messageId+filename como clave única para no duplicar
+// ═══════════════════════════════════════════════════════════════════════════════
+emailRouter.post('/sync', async (req, res) => {
+  try {
+    const { since = '2025-01-01', limit = 300 } = req.body || {};
+    console.log(`[EMAIL-SYNC] Iniciando sincronización desde ${since}, límite ${limit}...`);
+
+    // 1. Escanear emails vía IMAP
+    const { documents, providers: providerMap, totalEmails } = await scanEmails({ since, limit, includeContent: false });
+    console.log(`[EMAIL-SYNC] ${documents.length} documentos de ${providerMap.size} proveedores`);
+
+    // 2. Cargar proveedores existentes
+    let existingProviders = readJSON('provider');
+    const providerByEmail = new Map(existingProviders.map(p => [p.email, p]));
+    let newProviders = 0;
+    let updatedProviders = 0;
+
+    for (const [email, pData] of providerMap) {
+      if (providerByEmail.has(email)) {
+        // Actualizar conteo
+        const existing = providerByEmail.get(email);
+        existing.doc_count = pData.docCount;
+        existing.updated_date = new Date().toISOString();
+        updatedProviders++;
+      } else {
+        // Nuevo proveedor
+        const newProv = {
+          id: 'prov_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          name: pData.name,
+          email: pData.email,
+          doc_count: pData.docCount,
+          category: 'auto-detected',
+          status: 'active',
+          source: 'email-sync',
+          created_date: new Date().toISOString(),
+          updated_date: new Date().toISOString()
+        };
+        existingProviders.push(newProv);
+        providerByEmail.set(email, newProv);
+        newProviders++;
+      }
+    }
+    writeJSON('provider', existingProviders);
+
+    // 3. Cargar facturas/documentos existentes
+    let existingInvoices = readJSON('invoice');
+    const invoiceKeys = new Set(existingInvoices.map(i => `${i.message_id}::${i.filename}`));
+    let newInvoices = 0;
+    let skippedDuplicates = 0;
+
+    for (const doc of documents) {
+      const key = `${doc.messageId}::${doc.filename}`;
+      if (invoiceKeys.has(key)) {
+        skippedDuplicates++;
+        continue;
+      }
+
+      const provider = providerByEmail.get(doc.providerEmail);
+      const newInv = {
+        id: 'inv_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        type: doc.type,
+        provider_name: doc.provider,
+        provider_email: doc.providerEmail,
+        provider_id: provider?.id || null,
+        subject: doc.subject,
+        date: doc.date,
+        filename: doc.filename,
+        file_size: doc.fileSize,
+        content_type: doc.contentType,
+        message_id: doc.messageId,
+        status: 'pending_review',
+        source: 'email-sync',
+        created_date: new Date().toISOString(),
+        updated_date: new Date().toISOString()
+      };
+      existingInvoices.push(newInv);
+      invoiceKeys.add(key);
+      newInvoices++;
+    }
+    writeJSON('invoice', existingInvoices);
+
+    // 4. Guardar estado de sincronización
+    const syncState = readJSON('emailintegration');
+    const syncRecord = {
+      id: syncState[0]?.id || 'emailsync_main',
+      last_sync: new Date().toISOString(),
+      account: process.env.EMAIL_USER || 'info@chickenpalace.es',
+      total_emails_scanned: totalEmails,
+      documents_found: documents.length,
+      providers_total: existingProviders.length,
+      invoices_total: existingInvoices.length,
+      updated_date: new Date().toISOString()
+    };
+    writeJSON('emailintegration', [syncRecord]);
+
+    const result = {
+      success: true,
+      sync: {
+        scanned_since: since,
+        total_emails_in_box: totalEmails,
+        documents_found: documents.length,
+        providers: {
+          new: newProviders,
+          updated: updatedProviders,
+          total: existingProviders.length
+        },
+        invoices: {
+          new: newInvoices,
+          duplicates_skipped: skippedDuplicates,
+          total: existingInvoices.length
+        }
+      }
+    };
+    console.log(`[EMAIL-SYNC] Completado:`, JSON.stringify(result.sync, null, 2));
+    res.json(result);
+  } catch (err) {
+    console.error('[EMAIL-SYNC] Error:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
