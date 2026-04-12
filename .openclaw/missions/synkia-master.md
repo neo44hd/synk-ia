@@ -20,7 +20,15 @@ Eres el agente autónomo de SYNK-IA, la plataforma de gestión inteligente de Ch
 ### Datos reales en producción
 - **22 proveedores** clasificados (alimentación, suministros, servicios, laboral, tecnología)
 - **144 documentos** (103 facturas, 13 recibos, 6 nóminas, 18 otros, 4 documentos)
-- **3 trabajadores seed**: David (PIN 0001, Director), Empleado Demo (PIN 1234, Cocinero), Camarero Demo (PIN 5678, Camarero)
+- **8 trabajadores reales** (extraídos de nóminas):
+  - David Roldan Hueso (PIN 0001, Director General, admin)
+  - Fernando Roldan Hueso (PIN 0002, Gerente)
+  - Tolia Gallegos Ordoñez (PIN 0003, Cocinera)
+  - Sandy Yadira Aguirre Gallegos (PIN 0004, Cocinera)
+  - Carlos Fabian Aguirre Gallegos (PIN 0005, Cocinero)
+  - Evelyn Beatriz Ramos (PIN 0006, Cocinera)
+  - Davis Fabian Aguirre Farfan (PIN 0007, Ayudante de cocina)
+  - Humberto Pino Macias (PIN 0008, Cocinero — BAJA por despido 2026-03-06)
 - **2 usuarios** auth (admin David + test)
 - Rango temporal: Feb 2026 — Abr 2026
 
@@ -176,7 +184,10 @@ GET    /api/trabajadores              — Listar todos (admin)
 POST   /api/trabajadores              — Crear trabajador (admin)
 PUT    /api/trabajadores/:id          — Actualizar trabajador (admin)
 DELETE /api/trabajadores/:id          — Desactivar (nunca borrar, requisito legal)
-POST   /api/trabajadores/seed         — Insertar 3 trabajadores de prueba (admin)
+POST   /api/trabajadores/seed         — Insertar 8 trabajadores reales (admin)
+POST   /api/trabajadores/from-payslips — Extraer trabajadores de nóminas PDF automáticamente (admin)
+                                          Flujo: descarga nóminas → decodifica PDF → parsea datos → crea/actualiza trabajadores
+                                          Deduplicación por NSS. Usa pdf-parse.
 POST   /api/trabajadores/fichar       — Fichar con PIN { pin, tipo? } (auto-detecta entrada/salida)
 GET    /api/trabajadores/fichajes     — Historial fichajes (admin) ?desde=&hasta=&trabajador_id=&fecha=
 GET    /api/trabajadores/fichajes/hoy — Estado actual: quién está trabajando, horas acumuladas
@@ -215,9 +226,9 @@ GET    /api/trabajadores/:id/nominas  — Mis nóminas (PIN o admin)
 ### FileBrain — Vinculación automática de nóminas
 ```
 POST   /api/filebrain/link-payslips  — Vincula nóminas a trabajadores automáticamente
-                                        Matching: nombre_completo o apellidos en filename/subject/provider
+                                        Matching: DNI, nombre_completo, apellidos (case-insensitive, sin acentos)
                                         Idempotente: salta las ya vinculadas
-                                        Devuelve: { total_nominas, vinculadas, sin_vincular }
+                                        Devuelve: { total_nominas, vinculadas, sin_vincular, trabajadores_vinculados }
 ```
 
 ### IA
@@ -298,6 +309,8 @@ POST /api/documents/upload — Subir y procesar documento
 - Reclasificar documentos: `curl -X POST localhost:3001/api/filebrain/classify-all`
 - Ver estadísticas: `curl localhost:3001/api/filebrain/stats`
 - Vincular nóminas a trabajadores: `curl -X POST localhost:3001/api/filebrain/link-payslips -H "x-admin-token: sinkia2026"`
+- Extraer trabajadores de nóminas: `curl -X POST localhost:3001/api/trabajadores/from-payslips -H "x-admin-token: sinkia2026"`
+- **Flujo automático completo**: email sync → classify-all → from-payslips → link-payslips
 
 ### Portal del Trabajador
 - Seed trabajadores: `curl -X POST localhost:3001/api/trabajadores/seed -H "x-admin-token: sinkia2026"`
