@@ -453,6 +453,58 @@ filebrainRouter.get('/providers', (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  POST /api/filebrain/link-payslips
+//  Vincula nóminas (type='nomina') a trabajadores automáticamente
+//  Busca coincidencias por nombre en filename, email del proveedor laboral, subject
+// ═══════════════════════════════════════════════════════════════════════════════
+filebrainRouter.post('/link-payslips', (req, res) => {
+  try {
+    const invoices = readJSON('invoice');
+    const trabajadores = readJSON('trabajadores');
+    const nominas = invoices.filter(i => i.type === 'nomina');
+    let vinculadas = 0;
+
+    for (const nomina of nominas) {
+      if (nomina.trabajador_id) continue; // ya vinculada
+
+      const textoRef = [
+        nomina.filename || '',
+        nomina.subject || '',
+        nomina.provider_name || '',
+      ].join(' ').toLowerCase();
+
+      // Intentar vincular por nombre del trabajador
+      for (const trab of trabajadores) {
+        const nombre = (trab.nombre_completo || '').toLowerCase();
+        const apellido = (trab.apellidos || '').toLowerCase();
+        if (
+          (nombre && textoRef.includes(nombre)) ||
+          (apellido && apellido.length > 2 && textoRef.includes(apellido))
+        ) {
+          nomina.trabajador_id = trab.id;
+          nomina.trabajador_nombre = trab.nombre_completo;
+          nomina.updated_date = new Date().toISOString();
+          vinculadas++;
+          break;
+        }
+      }
+    }
+
+    writeJSON('invoice', invoices);
+    console.log(`[FILEBRAIN] Nóminas vinculadas: ${vinculadas} de ${nominas.length}`);
+    res.json({
+      success: true,
+      total_nominas: nominas.length,
+      vinculadas,
+      sin_vincular: nominas.filter(n => !n.trabajador_id).length,
+    });
+  } catch (err) {
+    console.error('[FILEBRAIN] Error link-payslips:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 function sanitizeName(str) {
   return (str || 'desconocido')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
