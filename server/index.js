@@ -17,6 +17,7 @@ import { setupTerminal }      from './routes/terminal.js';
 import documentsRouter        from './routes/documents.js';
 import trabajadoresRouter     from './routes/trabajadores.js';
 import { authRouter }         from './routes/auth.js';
+import { filebrainRouter }    from './routes/filebrain.js';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // ── Auth (JWT) ────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRouter);
+app.use('/api/filebrain', filebrainRouter);
 
 // ── Rutas de negocio ──────────────────────────────────────────────────────────
 app.use('/api/email',  emailRouter);
