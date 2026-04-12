@@ -7,11 +7,14 @@ import { Router }    from 'express';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path          from 'path';
+import { DATA_DIR } from './data.js';
 
 const router   = Router();
-const DATA_DIR = process.env.DATA_DIR || '/Users/davidnows/sinkia/data';
-const TRAB_FILE   = path.join(DATA_DIR, 'trabajadores.json');
+const TRAB_FILE     = path.join(DATA_DIR, 'trabajadores.json');
 const FICHAJES_FILE = path.join(DATA_DIR, 'fichajes.json');
+const VAC_FILE      = path.join(DATA_DIR, 'vacaciones.json');
+const DOCS_FILE     = path.join(DATA_DIR, 'trabajador_docs.json');
+const INVOICE_FILE  = path.join(DATA_DIR, 'invoice.json');
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'sinkia2026';
 
 // ── Helpers DB ──────────────────────────────────────────────────────────────
@@ -284,5 +287,197 @@ function timeToMinutes(hora) {
   const [h, m, s] = hora.split(':').map(Number);
   return h * 60 + m + (s || 0) / 60;
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+//  SEED — Crear trabajadores de prueba (Chicken Palace Ibiza)
+// ══════════════════════════════════════════════════════════════════════════
+
+const SEED_WORKERS = [
+  {
+    id: 'trab_001', nombre: 'David', apellidos: 'Roldan',
+    nombre_completo: 'David Roldan', email: 'david@sinkialabs.com',
+    pin: '0001', puesto: 'Director General', departamento: 'Dirección',
+    tipo_contrato: 'indefinido', fecha_alta: '2024-01-01',
+    salario_hora: 25, activo: true, es_admin: true
+  },
+  {
+    id: 'trab_002', nombre: 'Empleado', apellidos: 'Demo',
+    nombre_completo: 'Empleado Demo', email: 'demo@chickenpalace.es',
+    pin: '1234', puesto: 'Cocinero', departamento: 'Cocina',
+    tipo_contrato: 'indefinido', fecha_alta: '2024-06-01',
+    salario_hora: 12, activo: true, es_admin: false
+  },
+  {
+    id: 'trab_003', nombre: 'Camarero', apellidos: 'Demo',
+    nombre_completo: 'Camarero Demo', email: 'camarero@chickenpalace.es',
+    pin: '5678', puesto: 'Camarero', departamento: 'Sala',
+    tipo_contrato: 'temporal', fecha_alta: '2025-04-01',
+    salario_hora: 10, activo: true, es_admin: false
+  }
+];
+
+// POST /api/trabajadores/seed — insertar trabajadores de prueba
+router.post('/seed', adminOnly, async (req, res) => {
+  const trabajadores = await load(TRAB_FILE, []);
+  let insertados = 0;
+
+  for (const seed of SEED_WORKERS) {
+    if (trabajadores.some(t => t.id === seed.id || t.pin === seed.pin)) continue;
+    trabajadores.push({ ...seed, creado: new Date().toISOString() });
+    insertados++;
+  }
+
+  await save(TRAB_FILE, trabajadores);
+  console.log(`[SEED] ${insertados} trabajadores insertados`);
+  res.json({ ok: true, insertados, total: trabajadores.length });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+//  VACACIONES — Solicitudes y resolución
+// ══════════════════════════════════════════════════════════════════════════
+
+// POST /api/trabajadores/:id/vacaciones — solicitar vacaciones
+router.post('/:id/vacaciones', async (req, res) => {
+  const { pin, fecha_inicio, fecha_fin, tipo, notas } = req.body;
+  if (!fecha_inicio || !fecha_fin) return res.status(400).json({ error: 'fecha_inicio y fecha_fin son obligatorios' });
+
+  // Auth: PIN en body o admin token
+  const trab = isAdmin(req)
+    ? await getTrabajadorById(req.params.id)
+    : await getTrabajadorByPin(pin);
+  if (!trab || trab.id !== req.params.id) return res.status(401).json({ error: 'No autorizado' });
+
+  const vacaciones = await load(VAC_FILE, []);
+  const solicitud = {
+    id: `vac_${Date.now()}`,
+    trabajador_id: trab.id,
+    trabajador_nombre: trab.nombre_completo,
+    fecha_inicio,
+    fecha_fin,
+    tipo: tipo || 'vacaciones',
+    estado: 'pendiente',
+    notas: notas || null,
+    notas_admin: null,
+    created_at: new Date().toISOString(),
+  };
+
+  vacaciones.push(solicitud);
+  await save(VAC_FILE, vacaciones);
+  console.log(`[VACACIONES] ${trab.nombre_completo} solicitó ${solicitud.tipo} del ${fecha_inicio} al ${fecha_fin}`);
+  res.json({ ok: true, solicitud });
+});
+
+// GET /api/trabajadores/:id/vacaciones — ver solicitudes
+router.get('/:id/vacaciones', async (req, res) => {
+  const { pin } = req.query;
+  const trab = isAdmin(req)
+    ? await getTrabajadorById(req.params.id)
+    : await getTrabajadorByPin(pin);
+  if (!trab || trab.id !== req.params.id) return res.status(401).json({ error: 'No autorizado' });
+
+  const vacaciones = await load(VAC_FILE, []);
+  const mis = vacaciones
+    .filter(v => v.trabajador_id === req.params.id)
+    .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  res.json(mis);
+});
+
+// PUT /api/trabajadores/vacaciones/:vacId/resolver — admin aprueba/rechaza
+router.put('/vacaciones/:vacId/resolver', adminOnly, async (req, res) => {
+  const { estado, notas_admin } = req.body;
+  if (!['aprobada', 'rechazada'].includes(estado)) {
+    return res.status(400).json({ error: 'estado debe ser aprobada o rechazada' });
+  }
+
+  const vacaciones = await load(VAC_FILE, []);
+  const vac = vacaciones.find(v => v.id === req.params.vacId);
+  if (!vac) return res.status(404).json({ error: 'Solicitud no encontrada' });
+
+  vac.estado = estado;
+  vac.notas_admin = notas_admin || null;
+  vac.resuelto_at = new Date().toISOString();
+  await save(VAC_FILE, vacaciones);
+
+  console.log(`[VACACIONES] ${vac.trabajador_nombre} — ${estado}`);
+  res.json({ ok: true, solicitud: vac });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+//  DOCUMENTOS — Documentos vinculados al trabajador
+// ══════════════════════════════════════════════════════════════════════════
+
+// GET /api/trabajadores/:id/documentos — mis documentos
+router.get('/:id/documentos', async (req, res) => {
+  const { pin } = req.query;
+  const trab = isAdmin(req)
+    ? await getTrabajadorById(req.params.id)
+    : await getTrabajadorByPin(pin);
+  if (!trab || trab.id !== req.params.id) return res.status(401).json({ error: 'No autorizado' });
+
+  // Documentos asignados manualmente
+  const asignaciones = await load(DOCS_FILE, []);
+  const misAsignaciones = asignaciones.filter(d => d.trabajador_id === req.params.id);
+
+  // Documentos vinculados en invoice.json (nóminas, contratos, etc.)
+  const invoices = await load(INVOICE_FILE, []);
+  const misInvoices = invoices.filter(i => i.trabajador_id === req.params.id);
+
+  res.json({
+    asignaciones: misAsignaciones,
+    documentos_vinculados: misInvoices.map(i => ({
+      id: i.id, filename: i.filename, type: i.type,
+      date: i.date, subject: i.subject, status: i.status,
+    })),
+  });
+});
+
+// POST /api/trabajadores/:id/documentos — admin asigna documento
+router.post('/:id/documentos', adminOnly, async (req, res) => {
+  const { invoice_id, tipo, descripcion } = req.body;
+  if (!invoice_id) return res.status(400).json({ error: 'invoice_id es obligatorio' });
+
+  const trab = await getTrabajadorById(req.params.id);
+  if (!trab) return res.status(404).json({ error: 'Trabajador no encontrado' });
+
+  const asignaciones = await load(DOCS_FILE, []);
+  const nueva = {
+    id: `doc_${Date.now()}`,
+    trabajador_id: req.params.id,
+    trabajador_nombre: trab.nombre_completo,
+    invoice_id,
+    tipo: tipo || 'documento',
+    descripcion: descripcion || null,
+    created_at: new Date().toISOString(),
+  };
+
+  asignaciones.push(nueva);
+  await save(DOCS_FILE, asignaciones);
+  res.json({ ok: true, asignacion: nueva });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+//  NÓMINAS — Nóminas vinculadas al trabajador
+// ══════════════════════════════════════════════════════════════════════════
+
+// GET /api/trabajadores/:id/nominas — mis nóminas
+router.get('/:id/nominas', async (req, res) => {
+  const { pin } = req.query;
+  const trab = isAdmin(req)
+    ? await getTrabajadorById(req.params.id)
+    : await getTrabajadorByPin(pin);
+  if (!trab || trab.id !== req.params.id) return res.status(401).json({ error: 'No autorizado' });
+
+  const invoices = await load(INVOICE_FILE, []);
+  const nominas = invoices
+    .filter(i => i.type === 'nomina' && i.trabajador_id === req.params.id)
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    .map(i => ({
+      id: i.id, filename: i.filename, date: i.date,
+      subject: i.subject, provider_name: i.provider_name,
+      status: i.status,
+    }));
+
+  res.json({ trabajador: trab.nombre_completo, nominas });
+});
 
 export default router;
