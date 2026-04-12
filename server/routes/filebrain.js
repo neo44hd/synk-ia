@@ -456,36 +456,76 @@ filebrainRouter.get('/providers', (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 //  POST /api/filebrain/link-payslips
 //  Vincula nóminas (type='nomina') a trabajadores automáticamente
-//  Busca coincidencias por nombre en filename, email del proveedor laboral, subject
+//  Matching: DNI, nombre_completo, apellidos — case-insensitive, sin acentos
 // ═══════════════════════════════════════════════════════════════════════════════
+
+// Normalizar texto: minúsculas, sin acentos
+function normalizarTexto(str) {
+  return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
 filebrainRouter.post('/link-payslips', (req, res) => {
   try {
     const invoices = readJSON('invoice');
     const trabajadores = readJSON('trabajadores');
     const nominas = invoices.filter(i => i.type === 'nomina');
     let vinculadas = 0;
+    const nombresVinculados = [];
 
     for (const nomina of nominas) {
       if (nomina.trabajador_id) continue; // ya vinculada
 
-      const textoRef = [
+      const textoRef = normalizarTexto([
         nomina.filename || '',
         nomina.subject || '',
         nomina.provider_name || '',
-      ].join(' ').toLowerCase();
+      ].join(' '));
 
-      // Intentar vincular por nombre del trabajador
+      let encontrado = false;
+
       for (const trab of trabajadores) {
-        const nombre = (trab.nombre_completo || '').toLowerCase();
-        const apellido = (trab.apellidos || '').toLowerCase();
-        if (
-          (nombre && textoRef.includes(nombre)) ||
-          (apellido && apellido.length > 2 && textoRef.includes(apellido))
-        ) {
+        // 1. Matching por DNI (si está disponible en los metadatos de la nómina)
+        if (trab.dni) {
+          const dniNorm = trab.dni.toUpperCase();
+          const textoOriginal = [
+            nomina.filename || '',
+            nomina.subject || '',
+            nomina.provider_name || '',
+            nomina.metadata?.dni || '',
+            nomina.dni || '',
+          ].join(' ').toUpperCase();
+          if (textoOriginal.includes(dniNorm)) {
+            nomina.trabajador_id = trab.id;
+            nomina.trabajador_nombre = trab.nombre_completo;
+            nomina.updated_date = new Date().toISOString();
+            vinculadas++;
+            nombresVinculados.push(trab.nombre_completo);
+            encontrado = true;
+            break;
+          }
+        }
+
+        // 2. Matching por nombre completo (sin acentos, case-insensitive)
+        const nombreNorm = normalizarTexto(trab.nombre_completo);
+        if (nombreNorm && nombreNorm.length > 3 && textoRef.includes(nombreNorm)) {
           nomina.trabajador_id = trab.id;
           nomina.trabajador_nombre = trab.nombre_completo;
           nomina.updated_date = new Date().toISOString();
           vinculadas++;
+          nombresVinculados.push(trab.nombre_completo);
+          encontrado = true;
+          break;
+        }
+
+        // 3. Matching por apellidos (sin acentos, case-insensitive)
+        const apellidoNorm = normalizarTexto(trab.apellidos);
+        if (apellidoNorm && apellidoNorm.length > 3 && textoRef.includes(apellidoNorm)) {
+          nomina.trabajador_id = trab.id;
+          nomina.trabajador_nombre = trab.nombre_completo;
+          nomina.updated_date = new Date().toISOString();
+          vinculadas++;
+          nombresVinculados.push(trab.nombre_completo);
+          encontrado = true;
           break;
         }
       }
@@ -498,6 +538,7 @@ filebrainRouter.post('/link-payslips', (req, res) => {
       total_nominas: nominas.length,
       vinculadas,
       sin_vincular: nominas.filter(n => !n.trabajador_id).length,
+      trabajadores_vinculados: [...new Set(nombresVinculados)],
     });
   } catch (err) {
     console.error('[FILEBRAIN] Error link-payslips:', err.message);

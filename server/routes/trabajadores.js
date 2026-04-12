@@ -289,30 +289,284 @@ function timeToMinutes(hora) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  SEED — Crear trabajadores de prueba (Chicken Palace Ibiza)
+//  FROM-PAYSLIPS — Extraer trabajadores de nóminas PDF automáticamente
+// ══════════════════════════════════════════════════════════════════════════
+
+// POST /api/trabajadores/from-payslips — procesar nóminas y crear/actualizar trabajadores
+router.post('/from-payslips', adminOnly, async (req, res) => {
+  try {
+    const pdfParse = (await import('pdf-parse')).default;
+
+    // 1. Obtener nóminas del endpoint de email
+    console.log('[FROM-PAYSLIPS] Descargando nóminas desde email/payslips...');
+    const payslipsRes = await fetch('http://localhost:3001/api/email/payslips?since=2024-01-01&limit=300', {
+      headers: { 'x-admin-token': ADMIN_TOKEN }
+    });
+    if (!payslipsRes.ok) {
+      return res.status(502).json({ error: `Error al obtener nóminas: ${payslipsRes.status}` });
+    }
+
+    const payslipsData = await payslipsRes.json();
+    const meses = payslipsData.data || payslipsData.months || payslipsData || [];
+    // Aplanar: los payslips pueden venir agrupados por mes o como array directo
+    const payslips = Array.isArray(meses)
+      ? meses.flatMap(m => m.payslips || m.documents || [m])
+      : [];
+
+    console.log(`[FROM-PAYSLIPS] ${payslips.length} nóminas encontradas`);
+
+    // 2. Procesar cada PDF
+    const trabajadoresMap = new Map(); // clave: NSS
+    let pdfsOk = 0, pdfsError = 0;
+
+    for (const slip of payslips) {
+      const content = slip.content || slip.content_base64 || slip.base64;
+      if (!content) continue;
+
+      try {
+        const buffer = Buffer.from(content, 'base64');
+        const pdf = await pdfParse(buffer);
+        const texto = pdf.text || '';
+
+        // Parsear cada página del PDF
+        const paginas = texto.split(/\f/).filter(p => p.trim());
+        for (const pagina of paginas) {
+          const datos = parsearPaginaNomina(pagina);
+          if (datos && datos.nss) {
+            // Deduplicar por NSS — acumular datos más recientes
+            const existente = trabajadoresMap.get(datos.nss);
+            if (existente) {
+              trabajadoresMap.set(datos.nss, { ...existente, ...datos });
+            } else {
+              trabajadoresMap.set(datos.nss, datos);
+            }
+          }
+        }
+        pdfsOk++;
+      } catch (err) {
+        console.warn(`[FROM-PAYSLIPS] Error procesando PDF: ${err.message}`);
+        pdfsError++;
+      }
+    }
+
+    // 3. Crear/actualizar trabajadores en trabajadores.json
+    const trabajadores = await load(TRAB_FILE, []);
+    let creados = 0, actualizados = 0;
+
+    // Calcular siguiente PIN disponible
+    const pinesUsados = trabajadores.map(t => parseInt(t.pin) || 0);
+    let siguientePin = Math.max(0, ...pinesUsados) + 1;
+
+    for (const [nss, datos] of trabajadoresMap) {
+      // Buscar existente por NSS o DNI
+      const idx = trabajadores.findIndex(t =>
+        t.nss === nss || (datos.dni && t.dni === datos.dni)
+      );
+
+      if (idx >= 0) {
+        // Actualizar datos existentes (no sobreescribir pin, id, es_admin)
+        const preservar = ['id', 'pin', 'es_admin', 'creado'];
+        for (const [key, val] of Object.entries(datos)) {
+          if (val && !preservar.includes(key)) {
+            trabajadores[idx][key] = val;
+          }
+        }
+        trabajadores[idx].nombre_completo = `${trabajadores[idx].nombre || datos.nombre || ''} ${trabajadores[idx].apellidos || datos.apellidos || ''}`.trim();
+        trabajadores[idx].actualizado = new Date().toISOString();
+        actualizados++;
+      } else {
+        // Crear nuevo trabajador
+        const pin = String(siguientePin).padStart(4, '0');
+        siguientePin++;
+        const nuevo = {
+          id: `trab_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          nombre: datos.nombre || 'Sin nombre',
+          apellidos: datos.apellidos || '',
+          nombre_completo: `${datos.nombre || ''} ${datos.apellidos || ''}`.trim(),
+          dni: datos.dni || null,
+          nss: datos.nss,
+          pin,
+          puesto: datos.puesto || 'Empleado',
+          departamento: datos.departamento || 'Cocina',
+          tipo_contrato: 'indefinido',
+          fecha_alta: datos.fecha_alta || null,
+          salario_base_mensual: datos.salario_base_mensual || null,
+          activo: datos.activo !== false,
+          es_admin: false,
+          creado: new Date().toISOString(),
+        };
+        if (datos.motivo_baja) nuevo.motivo_baja = datos.motivo_baja;
+        if (datos.fecha_baja) nuevo.fecha_baja = datos.fecha_baja;
+        trabajadores.push(nuevo);
+        creados++;
+      }
+    }
+
+    await save(TRAB_FILE, trabajadores);
+
+    const resultado = {
+      ok: true,
+      pdfs_procesados: pdfsOk,
+      pdfs_error: pdfsError,
+      trabajadores_encontrados: trabajadoresMap.size,
+      creados,
+      actualizados,
+      total_trabajadores: trabajadores.length,
+    };
+    console.log(`[FROM-PAYSLIPS] Resultado: ${JSON.stringify(resultado)}`);
+    res.json(resultado);
+
+  } catch (err) {
+    console.error('[FROM-PAYSLIPS] Error general:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Parsear una página de nómina ────────────────────────────────────────────
+function parsearPaginaNomina(texto) {
+  const datos = {};
+
+  // Extraer DNI (formatos: D.N.I. XX123456X, DNI: XX123456X, NIF: XX123456X)
+  const dniMatch = texto.match(/(?:D\.?N\.?I\.?|NIF|N\.I\.F\.?)\s*:?\s*([A-Z0-9]\d{7}[A-Z]|[XYZ]\d{7}[A-Z])/i);
+  if (dniMatch) datos.dni = dniMatch[1].toUpperCase();
+
+  // Extraer NSS (formato XX/XXXXXXXX-XX)
+  const nssMatch = texto.match(/(\d{2}\/\d{8}-\d{2})/);
+  if (nssMatch) datos.nss = nssMatch[1];
+
+  // Sin NSS no podemos identificar al trabajador de forma única
+  if (!datos.nss) return null;
+
+  // Extraer nombre y apellidos
+  // Formato hoja de salario: "APELLIDOS, NOMBRE" en primeras líneas
+  const nombreMatch = texto.match(/^([A-ZÁÉÍÓÚÑ\s]+),\s*([A-ZÁÉÍÓÚÑ\s]+)/m);
+  if (nombreMatch) {
+    datos.apellidos = nombreMatch[1].trim().split(' ').map(w =>
+      w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+    ).join(' ');
+    datos.nombre = nombreMatch[2].trim().split(' ').map(w =>
+      w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+    ).join(' ');
+  }
+
+  // Formato certificado/finiquito: "Nombre y apellidos NOMBRE APELLIDOS"
+  if (!datos.nombre) {
+    const certMatch = texto.match(/Nombre\s+y\s+apellidos\s+([A-ZÁÉÍÓÚÑ\s]+)/i);
+    if (certMatch) {
+      const partes = certMatch[1].trim().split(/\s+/);
+      if (partes.length >= 2) {
+        datos.nombre = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        datos.apellidos = partes.slice(1).map(w =>
+          w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+        ).join(' ');
+      }
+    }
+  }
+
+  // Formato registro horario: "Trabajador: APELLIDOS, NOMBRE"
+  if (!datos.nombre) {
+    const regMatch = texto.match(/Trabajador\s*:\s*([A-ZÁÉÍÓÚÑ\s]+),\s*([A-ZÁÉÍÓÚÑ\s]+)/i);
+    if (regMatch) {
+      datos.apellidos = regMatch[1].trim().split(' ').map(w =>
+        w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+      ).join(' ');
+      datos.nombre = regMatch[2].trim().split(' ').map(w =>
+        w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+      ).join(' ');
+    }
+  }
+
+  // Extraer salario base mensual
+  const salarioMatch = texto.match(/(?:salario\s+base|s\.?\s*base)\s*[:\s]*(\d[\d.,]+)/i);
+  if (salarioMatch) {
+    datos.salario_base_mensual = parseFloat(salarioMatch[1].replace('.', '').replace(',', '.'));
+  }
+
+  // Extraer antigüedad / fecha alta
+  const altaMatch = texto.match(/(?:antig[üu]edad|fecha\s+alta|alta\s+empresa)\s*:?\s*(\d{2}[\/-]\d{2}[\/-]\d{4})/i);
+  if (altaMatch) {
+    const partes = altaMatch[1].split(/[\/-]/);
+    datos.fecha_alta = `${partes[2]}-${partes[1]}-${partes[0]}`;
+  }
+
+  // Extraer puesto
+  const puestoMatch = texto.match(/(?:categor[ií]a|puesto|cargo)\s*:?\s*([^\n\r]+)/i);
+  if (puestoMatch) {
+    datos.puesto = puestoMatch[1].trim().substring(0, 50);
+  }
+
+  return datos;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  SEED — Crear trabajadores reales de Chicken Palace Ibiza
 // ══════════════════════════════════════════════════════════════════════════
 
 const SEED_WORKERS = [
   {
-    id: 'trab_001', nombre: 'David', apellidos: 'Roldan',
-    nombre_completo: 'David Roldan', email: 'david@sinkialabs.com',
+    id: 'trab_001', nombre: 'David', apellidos: 'Roldan Hueso',
+    nombre_completo: 'David Roldan Hueso',
+    dni: '53357205B', nss: '46/10223734-71',
     pin: '0001', puesto: 'Director General', departamento: 'Dirección',
     tipo_contrato: 'indefinido', fecha_alta: '2024-01-01',
-    salario_hora: 25, activo: true, es_admin: true
+    salario_base_mensual: 1700, activo: true, es_admin: true
   },
   {
-    id: 'trab_002', nombre: 'Empleado', apellidos: 'Demo',
-    nombre_completo: 'Empleado Demo', email: 'demo@chickenpalace.es',
-    pin: '1234', puesto: 'Cocinero', departamento: 'Cocina',
-    tipo_contrato: 'indefinido', fecha_alta: '2024-06-01',
-    salario_hora: 12, activo: true, es_admin: false
+    id: 'trab_002', nombre: 'Fernando', apellidos: 'Roldan Hueso',
+    nombre_completo: 'Fernando Roldan Hueso',
+    dni: '53092395T', nss: '46/10047483-69',
+    pin: '0002', puesto: 'Gerente', departamento: 'Dirección',
+    tipo_contrato: 'indefinido', fecha_alta: '2024-02-01',
+    salario_base_mensual: 1700, activo: true, es_admin: false
   },
   {
-    id: 'trab_003', nombre: 'Camarero', apellidos: 'Demo',
-    nombre_completo: 'Camarero Demo', email: 'camarero@chickenpalace.es',
-    pin: '5678', puesto: 'Camarero', departamento: 'Sala',
-    tipo_contrato: 'temporal', fecha_alta: '2025-04-01',
-    salario_hora: 10, activo: true, es_admin: false
+    id: 'trab_003', nombre: 'Tolia', apellidos: 'Gallegos Ordoñez',
+    nombre_completo: 'Tolia Gallegos Ordoñez',
+    dni: '55465294N', nss: '07/10552543-92',
+    pin: '0003', puesto: 'Cocinera', departamento: 'Cocina',
+    tipo_contrato: 'indefinido', fecha_alta: '2022-03-17',
+    salario_base_mensual: 1168, activo: true, es_admin: false
+  },
+  {
+    id: 'trab_004', nombre: 'Sandy Yadira', apellidos: 'Aguirre Gallegos',
+    nombre_completo: 'Sandy Yadira Aguirre Gallegos',
+    dni: '11456218X', nss: '07/10552545-94',
+    pin: '0004', puesto: 'Cocinera', departamento: 'Cocina',
+    tipo_contrato: 'indefinido', fecha_alta: '2022-03-03',
+    salario_base_mensual: 1168, activo: true, es_admin: false
+  },
+  {
+    id: 'trab_005', nombre: 'Carlos Fabian', apellidos: 'Aguirre Gallegos',
+    nombre_completo: 'Carlos Fabian Aguirre Gallegos',
+    dni: 'Y6582736N', nss: '07/11126247-41',
+    pin: '0005', puesto: 'Cocinero', departamento: 'Cocina',
+    tipo_contrato: 'indefinido', fecha_alta: '2023-11-10',
+    salario_base_mensual: 1168, activo: true, es_admin: false
+  },
+  {
+    id: 'trab_006', nombre: 'Evelyn Beatriz', apellidos: 'Ramos',
+    nombre_completo: 'Evelyn Beatriz Ramos',
+    dni: 'Y8472087M', nss: '07/11027632-75',
+    pin: '0006', puesto: 'Cocinera', departamento: 'Cocina',
+    tipo_contrato: 'indefinido', fecha_alta: '2024-04-02',
+    salario_base_mensual: 1168, activo: true, es_admin: false
+  },
+  {
+    id: 'trab_007', nombre: 'Davis Fabian', apellidos: 'Aguirre Farfan',
+    nombre_completo: 'Davis Fabian Aguirre Farfan',
+    dni: 'Z2558594X', nss: '07/11211343-68',
+    pin: '0007', puesto: 'Ayudante de cocina', departamento: 'Cocina',
+    tipo_contrato: 'indefinido', fecha_alta: '2025-11-01',
+    salario_base_mensual: 1168, activo: true, es_admin: false
+  },
+  {
+    id: 'trab_008', nombre: 'Humberto', apellidos: 'Pino Macias',
+    nombre_completo: 'Humberto Pino Macias',
+    dni: 'Y9492798E', nss: '07/11082155-84',
+    pin: '0008', puesto: 'Cocinero', departamento: 'Cocina',
+    tipo_contrato: 'indefinido', fecha_alta: '2025-08-01',
+    salario_base_mensual: 1168, activo: false, es_admin: false,
+    motivo_baja: 'Despido', fecha_baja: '2026-03-06'
   }
 ];
 
