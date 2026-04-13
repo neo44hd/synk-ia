@@ -1,12 +1,17 @@
 /**
- * claude-proxy.js — Proxy Anthropic API → OpenAI-compatible local (LM Studio / llama-server)
+ * claude-proxy.js — Proxy Anthropic API → Ollama nativo (/api/chat)
  *
  * Permite usar Claude Code con un modelo local gratuito:
  *   export ANTHROPIC_BASE_URL=http://localhost:3001/claude
  *   export ANTHROPIC_API_KEY=local-free
  *
  * Requiere Ollama corriendo en http://localhost:11434
- * (usa la API compatible OpenAI de Ollama)
+ * Usa la API nativa /api/chat (soporta num_ctx para ventana de contexto)
+ *
+ * Variables de entorno:
+ *   LOCAL_LLM_URL   = http://localhost:11434  (Ollama)
+ *   LOCAL_LLM_MODEL = qwen2.5-coder:14b       (modelo a usar)
+ *   LOCAL_LLM_CTX   = 16384                   (ventana de contexto en tokens)
  */
 
 import { Router } from 'express';
@@ -14,6 +19,7 @@ import { Router } from 'express';
 const router = Router();
 const LOCAL_BASE = process.env.LOCAL_LLM_URL || 'http://localhost:11434';
 const LOCAL_MODEL = process.env.LOCAL_LLM_MODEL || 'qwen2.5-coder:14b';
+const LOCAL_CTX   = parseInt(process.env.LOCAL_LLM_CTX || '16384', 10);
 
 // ── Conversión de mensajes Anthropic → OpenAI ────────────────────────────────
 function toOpenAIMessages(messages) {
@@ -66,48 +72,6 @@ function toOpenAITools(tools) {
   }));
 }
 
-// ── Conversión respuesta OpenAI → Anthropic ──────────────────────────────────
-function toAnthropicResponse(oai, model) {
-  const choice  = oai.choices?.[0];
-  const message = choice?.message || {};
-  const content = [];
-
-  if (message.content) {
-    content.push({ type: 'text', text: message.content });
-  }
-
-  if (message.tool_calls?.length) {
-    for (const tc of message.tool_calls) {
-      let input = {};
-      try { input = JSON.parse(tc.function.arguments || '{}'); } catch {}
-      content.push({
-        type:  'tool_use',
-        id:    tc.id,
-        name:  tc.function.name,
-        input,
-      });
-    }
-  }
-
-  const stop_reason =
-    choice?.finish_reason === 'tool_calls' ? 'tool_use' :
-    choice?.finish_reason === 'stop'       ? 'end_turn'  : 'end_turn';
-
-  return {
-    id:           `msg_local_${Date.now()}`,
-    type:         'message',
-    role:         'assistant',
-    content,
-    model:        model || LOCAL_MODEL,
-    stop_reason,
-    stop_sequence: null,
-    usage: {
-      input_tokens:  oai.usage?.prompt_tokens    || 0,
-      output_tokens: oai.usage?.completion_tokens || 0,
-    },
-  };
-}
-
 // ── POST /claude/v1/messages ──────────────────────────────────────────────────
 router.post('/v1/messages', async (req, res) => {
   try {
@@ -120,18 +84,30 @@ router.post('/v1/messages', async (req, res) => {
 
     const oaiTools = toOpenAITools(tools);
 
+    // Usar API nativa Ollama /api/chat (soporta options.num_ctx)
+    const ollamaMessages = oaiMessages.map(m => {
+      // Convertir role:tool → role:assistant (Ollama nativo no soporta role:tool)
+      if (m.role === 'tool') return { role: 'assistant', content: m.content || '' };
+      return { role: m.role, content: m.content || '' };
+    });
+
     const body = {
-      model:       LOCAL_MODEL,
-      messages:    oaiMessages,
-      max_tokens,
-      temperature,
-      ...(oaiTools ? { tools: oaiTools, tool_choice: 'auto' } : {}),
+      model:   LOCAL_MODEL,
+      messages: ollamaMessages,
+      stream:  false,
+      options: {
+        num_ctx:     LOCAL_CTX,
+        temperature,
+      },
+      ...(oaiTools ? { tools: oaiTools } : {}),
     };
 
-    // Llamada al servidor local
-    const resp = await fetch(`${LOCAL_BASE}/v1/chat/completions`, {
+    console.log(`[PROXY] → Ollama /api/chat | model=${LOCAL_MODEL} ctx=${LOCAL_CTX} msgs=${ollamaMessages.length}`);
+
+    // Llamada a la API nativa de Ollama
+    const resp = await fetch(`${LOCAL_BASE}/api/chat`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer local' },
+      headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(body),
     });
 
@@ -141,8 +117,41 @@ router.post('/v1/messages', async (req, res) => {
       return res.status(resp.status).json({ error: err });
     }
 
-    const oai = await resp.json();
-    res.json(toAnthropicResponse(oai, model));
+    const ollResp = await resp.json();
+
+    // Convertir respuesta Ollama nativa → formato Anthropic
+    const content = [];
+    if (ollResp.message?.content) {
+      content.push({ type: 'text', text: ollResp.message.content });
+    }
+    if (ollResp.message?.tool_calls?.length) {
+      for (const tc of ollResp.message.tool_calls) {
+        content.push({
+          type:  'tool_use',
+          id:    `toolu_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          name:  tc.function.name,
+          input: typeof tc.function.arguments === 'string'
+            ? JSON.parse(tc.function.arguments || '{}')
+            : (tc.function.arguments || {}),
+        });
+      }
+    }
+
+    const stop_reason = ollResp.message?.tool_calls?.length ? 'tool_use' : 'end_turn';
+
+    res.json({
+      id:            `msg_local_${Date.now()}`,
+      type:          'message',
+      role:          'assistant',
+      content,
+      model:         model || LOCAL_MODEL,
+      stop_reason,
+      stop_sequence: null,
+      usage: {
+        input_tokens:  ollResp.prompt_eval_count   || 0,
+        output_tokens: ollResp.eval_count           || 0,
+      },
+    });
 
   } catch (e) {
     console.error('[PROXY]', e.message);
