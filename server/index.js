@@ -15,6 +15,7 @@ import { claudeProxyRouter } from './routes/claude-proxy.js';
 import { chatRouter }        from './routes/chat.js';
 import { setupTerminal }      from './routes/terminal.js';
 import { setupOpenClawProxy } from './routes/openclaw-proxy.js';
+import { setupShellTerminal }  from './routes/shell-terminal.js';
 import documentsRouter        from './routes/documents.js';
 import trabajadoresRouter     from './routes/trabajadores.js';
 import { authRouter }         from './routes/auth.js';
@@ -73,6 +74,15 @@ app.use('/api/documents',    documentsRouter);
 app.use('/api/trabajadores', trabajadoresRouter);
 app.use('/claude',     claudeProxyRouter);  // Proxy local para Claude Code
 app.use('/api/chat',   chatRouter);          // Chat IA local
+
+// ── Aiden (control de agentes OpenClaw) ──────────────────────────────────────
+try {
+  const { aidenRouter } = await import('./routes/aiden.js');
+  app.use('/api/aiden', aidenRouter);
+  console.log('[SERVER] ✓ Aiden: /api/aiden (control de agentes OpenClaw)');
+} catch (e) {
+  console.error('[SERVER] ✗ Aiden falló al cargar:', e.message);
+}
 
 // ── Aider (Claude Code coding assistant) ─────────────────────────────────────
 try {
@@ -169,9 +179,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // ── WebSocket handlers ──────────────────────────────────────────────────────
   let terminalWss = null;
   let openclawWss = null;
+  let shellWss    = null;
 
   try { terminalWss = setupTerminal(server); } catch (e) { console.error('[TERMINAL] ✗', e.message); }
   try { openclawWss = setupOpenClawProxy(server); } catch (e) { console.error('[OPENCLAW-PROXY] ✗', e.message); }
+  try { shellWss    = setupShellTerminal(server); } catch (e) { console.error('[SHELL-TERMINAL] ✗', e.message); }
 
   // ── Dispatcher centralizado de WebSocket upgrades ──────────────────────────
   server.on('upgrade', (req, socket, head) => {
@@ -183,6 +195,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
       terminalWss.handleUpgradeRequest(req, socket, head);
     } else if (pathname === '/ws/openclaw' && openclawWss) {
       openclawWss.handleUpgradeRequest(req, socket, head);
+    } else if (pathname === '/ws/shell' && shellWss) {
+      shellWss.handleUpgradeRequest(req, socket, head);
     } else {
       socket.destroy();
     }
