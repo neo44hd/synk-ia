@@ -700,7 +700,7 @@ export async function processDocument(filePath, mimeType, originalName) {
 //  HELPERS
 // ══════════════════════════════════════════════════════════════════════════
 
-async function llmCall(messages, maxTokens = 2000, temp = 0.1) {
+async function llmCall(messages, maxTokens = 3000, temp = 0.1) {
   const controller = new AbortController();
   const timer      = setTimeout(() => controller.abort(), 180_000);
   try {
@@ -723,9 +723,9 @@ function stripThinking(text) {
 }
 
 function parseJSON(text) {
-  // 0. Limpiar thinking blocks y markdown fences
+  // 0. Limpiar thinking blocks y markdown fences (en cualquier posición)
   text = stripThinking(text);
-  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  text = text.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
   // 1. Parse directo
   try { return JSON.parse(text); } catch {}
   // 2. Extraer bloque JSON (el más grande)
@@ -738,16 +738,19 @@ function parseJSON(text) {
     .replace(/:\s*'([^']*)'/g, ': "$1"')
     .replace(/""\s*([,}\]])/g, 'null$1');  // "" → null
   try { return JSON.parse(fixed); } catch {}
-  // 4. JSON truncado — intentar cerrar llaves
-  if (m) {
-    let truncated = m[0];
-    const opens = (truncated.match(/\{/g) || []).length;
-    const closes = (truncated.match(/\}/g) || []).length;
-    if (opens > closes) {
-      truncated = truncated.replace(/,\s*"[^"]*"?\s*:?\s*[^,}]*$/, '');
-      truncated += '}'.repeat(opens - closes);
-      try { return JSON.parse(truncated); } catch {}
-    }
+  // 4. JSON truncado — cerrar llaves/corchetes que falten
+  let candidate = m?.[0] || text;
+  candidate = candidate
+    .replace(/,\s*"[^"]*"?\s*:\s*"[^"]*$/, '')
+    .replace(/,\s*"[^"]*"?\s*:\s*\[?[^\]},]*$/, '')
+    .replace(/,\s*"[^"]*"?\s*:?\s*$/, '');
+  const opens  = (candidate.match(/\{/g) || []).length;
+  const closes = (candidate.match(/\}/g) || []).length;
+  if (opens > closes) {
+    candidate += '}'.repeat(opens - closes);
+    try { return JSON.parse(candidate); } catch {}
+    candidate = candidate.replace(/,\s*}/g, '}');
+    try { return JSON.parse(candidate); } catch {}
   }
   console.warn('[DOCS] ⚠ No se pudo parsear JSON del LLM:', text.slice(0, 300));
   return null;
