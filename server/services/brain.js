@@ -1,7 +1,13 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  SINKIA BRAIN — Agente de negocio con contexto real
+//  SINKIA BRAIN v2 — Agente de negocio con contexto real ampliado
 //  Flujo: Pregunta → Clasificar intención → Buscar datos → Responder
-//  LLM: Ollama (localhost:11434) — qwen3.5
+//  LLM: Ollama (localhost:11434)
+//
+//  CAMBIOS v2:
+//  - Límite de contexto subido de 3000 → 8000 chars
+//  - Datos pasados como metadatos estructurados (no JSON raw)
+//  - Función compactContext() que prioriza datos relevantes sin perder info
+//  - maxTokens de respuesta subido de 1200 → 2000
 // ═══════════════════════════════════════════════════════════════════════════
 import { getDocuments, getEntities, getStats } from './documentProcessor.js';
 import { getRevoResumen, getRevoProductos, getRevoVentas } from '../agents/revoAgent.js';
@@ -9,6 +15,10 @@ import { getRevoResumen, getRevoProductos, getRevoVentas } from '../agents/revoA
 const OLLAMA_URL = process.env.OLLAMA_URL            || 'http://localhost:11434';
 const MODEL      = process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3.5';
 const SEARXNG    = process.env.SEARXNG_URL    || 'http://localhost:8888';
+
+// ── Contexto ampliado: 8K chars para datos, 2K tokens de respuesta ──────────
+const MAX_CONTEXT_CHARS  = 8000;
+const MAX_RESPONSE_TOKENS = 2000;
 
 // ── Strip <think>...</think> del modelo Qwen3 thinking ─────────────────────
 function stripThinking(text) {
@@ -33,7 +43,7 @@ export async function searchWeb(query, n = 5) {
 }
 
 // ── LLM helper (Ollama OpenAI-compatible API, strip thinking) ───────────────
-async function llm(messages, { maxTokens = 1200, temp = 0.2 } = {}) {
+async function llm(messages, { maxTokens = MAX_RESPONSE_TOKENS, temp = 0.2 } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 120_000);
   try {
@@ -313,39 +323,226 @@ async function facturasPendientes() {
   }));
 }
 
-// ── PASO 3: Generar respuesta ──────────────────────────────────────────────
+// ── PASO 3: Generar respuesta (contexto ampliado y estructurado) ───────────
 const ANSWER_SYSTEM = `Eres el asistente inteligente de Sinkia Labs, experto en gestión empresarial y hostelería.
 Respondes en español, de forma clara, directa y útil — como un CFO personal.
 REGLAS:
 - Usa los datos reales del negocio que se te proporcionan. Cita números exactos.
-- Si hay resultados_web en el contexto, úsalos para enriquecer la respuesta con info actual.
+- Los datos vienen en formato estructurado con secciones claras. Léelos todos.
+- Si hay RESULTADOS WEB en el contexto, úsalos para enriquecer con info actual.
 - Si te piden crear un presupuesto, hazlo en formato estructurado con líneas, importes e IVA.
 - Sé conciso pero completo. Nunca inventes datos que no estén en el contexto.
 - Si el contexto está vacío o hay pocos documentos, dilo claramente y sugiere qué hacer.
 - Puedes razonar internamente, pero tu respuesta final debe ser limpia y directa.`;
 
+// ── Compactar contexto: datos crudos → texto estructurado legible ────────────
+// En vez de JSON raw (que desperdicia tokens en llaves/comillas),
+// formateamos como texto plano con secciones priorizando datos útiles.
+function compactContext(contextData, maxChars = MAX_CONTEXT_CHARS) {
+  const sections = [];
+
+  // Facturas / documentos encontrados
+  if (contextData.facturas?.length) {
+    sections.push(formatDocList('FACTURAS ENCONTRADAS', contextData.facturas));
+  }
+
+  // Precio de artículo
+  if (contextData.articulo_buscado) {
+    sections.push(`ARTÍCULO BUSCADO: ${contextData.articulo_buscado}`);
+    if (contextData.total_registros !== undefined) {
+      sections.push(`Registros encontrados: ${contextData.total_registros}`);
+    }
+    if (contextData.por_proveedor?.length) {
+      sections.push('PRECIOS POR PROVEEDOR:');
+      for (const p of contextData.por_proveedor) {
+        sections.push(`  • ${p.proveedor}: ${p.precio_unit}€/ud (${p.cantidad} uds, fecha: ${p.fecha || 'n/a'})`);
+      }
+    }
+    if (contextData.todos?.length) {
+      sections.push('HISTORIAL DE COMPRAS:');
+      for (const r of contextData.todos.slice(0, 15)) {
+        sections.push(`  ${r.fecha || 'n/a'} | ${r.proveedor} | ${r.articulo} | ${r.precio_unit}€ x${r.cantidad}`);
+      }
+    }
+  }
+
+  // Resumen de proveedor
+  if (contextData.proveedor) {
+    const p = contextData.proveedor;
+    sections.push(`PROVEEDOR: ${p.nombre || 'Desconocido'}`);
+    if (p.cif_nif)  sections.push(`  CIF/NIF: ${p.cif_nif}`);
+    if (p.email)    sections.push(`  Email: ${p.email}`);
+    if (p.telefono) sections.push(`  Tel: ${p.telefono}`);
+  }
+  if (contextData.total_facturas !== undefined) {
+    sections.push(`Total facturas: ${contextData.total_facturas} | Gastado: ${contextData.total_gastado}€`);
+    if (contextData.ultima_factura) sections.push(`Última factura: ${contextData.ultima_factura}`);
+  }
+  if (contextData.articulos_frecuentes?.length) {
+    sections.push('ARTÍCULOS MÁS FRECUENTES:');
+    for (const a of contextData.articulos_frecuentes) {
+      sections.push(`  • ${a.descripcion} — ${a.veces}x comprado (${a.precio_min}€ - ${a.precio_max}€)`);
+    }
+  }
+  if (contextData.ultimas_facturas?.length) {
+    sections.push('FACTURAS RECIENTES:');
+    for (const f of contextData.ultimas_facturas) {
+      sections.push(`  ${f.fecha || 'n/a'} | Nº ${f.numero || 'n/a'} | ${f.total}€`);
+    }
+  }
+
+  // Análisis de gastos
+  if (contextData.gastos_por_mes) {
+    sections.push('GASTOS POR MES:');
+    for (const [mes, total] of Object.entries(contextData.gastos_por_mes).sort()) {
+      sections.push(`  ${mes}: ${total}€`);
+    }
+  }
+  if (contextData.ingresos_por_mes) {
+    sections.push('INGRESOS POR MES:');
+    for (const [mes, total] of Object.entries(contextData.ingresos_por_mes).sort()) {
+      sections.push(`  ${mes}: ${total}€`);
+    }
+  }
+  if (contextData.total_gastos !== undefined || contextData.total_ingresos !== undefined) {
+    sections.push(`TOTALES: Gastos=${contextData.total_gastos}€ | Ingresos=${contextData.total_ingresos}€`);
+  }
+  if (contextData.top_proveedores?.length) {
+    sections.push('TOP PROVEEDORES POR GASTO:');
+    for (const p of contextData.top_proveedores) {
+      sections.push(`  • ${p.nombre}: ${p.total}€`);
+    }
+  }
+
+  // Ventas TPV (Revo)
+  if (contextData.top_productos?.length) {
+    sections.push('TOP PRODUCTOS (TPV):');
+    for (const p of contextData.top_productos) {
+      sections.push(`  • ${p.nombre || p.name}: ${p.ventas || p.total || 'n/a'} ventas`);
+    }
+  }
+  if (contextData.total_ventas !== undefined) {
+    sections.push(`Total ventas TPV: ${contextData.total_ventas}€ | Tickets: ${contextData.total_tickets}`);
+  }
+
+  // Pendientes
+  if (contextData.pendientes?.length) {
+    sections.push('FACTURAS PENDIENTES:');
+    for (const p of contextData.pendientes) {
+      sections.push(`  • ${p.emisor || p.receptor} | ${p.total}€ | Vence: ${p.vencimiento || 'n/a'} | ${p.tipo}`);
+    }
+  }
+
+  // Cliente
+  if (contextData.cliente) {
+    const c = contextData.cliente;
+    sections.push(`CLIENTE: ${c.nombre || 'Desconocido'}`);
+    if (c.cif_nif) sections.push(`  CIF/NIF: ${c.cif_nif}`);
+  }
+
+  // Presupuesto
+  if (contextData.accion === 'crear_presupuesto') {
+    sections.push(`CREAR PRESUPUESTO PARA: ${contextData.cliente?.nombre || 'n/a'}`);
+    if (contextData.presupuestos_anteriores?.length) {
+      sections.push('Presupuestos anteriores:');
+      for (const p of contextData.presupuestos_anteriores) {
+        sections.push(`  ${p.fecha}: ${p.total}€`);
+      }
+    }
+    sections.push(`Instrucción original: ${contextData.instruccion}`);
+  }
+
+  // Documentos relevantes (búsqueda general)
+  if (contextData.documentos_relevantes?.length || contextData.documentos?.length) {
+    const lista = contextData.documentos_relevantes || contextData.documentos;
+    sections.push(formatDocList('DOCUMENTOS RELEVANTES', lista));
+  }
+
+  // Estadísticas generales
+  if (contextData.estadisticas || contextData.stats) {
+    const s = contextData.estadisticas || contextData.stats;
+    sections.push(`ESTADÍSTICAS: ${s.total_documentos || 0} docs, ${s.total_proveedores || 0} proveedores, ${s.total_clientes || 0} clientes`);
+  }
+
+  // Web results
+  if (contextData.resultados_web?.length) {
+    sections.push('RESULTADOS WEB:');
+    for (const r of contextData.resultados_web) {
+      sections.push(`  • ${r.titulo}: ${r.resumen}`);
+    }
+  }
+
+  // Error
+  if (contextData.error) {
+    sections.push(`ERROR: ${contextData.error}`);
+    if (contextData.nota) sections.push(contextData.nota);
+  }
+
+  // Fallback: si no se mapeó nada, JSON compacto
+  if (sections.length === 0) {
+    const raw = JSON.stringify(contextData, null, 1);
+    return raw.length > maxChars ? raw.slice(0, maxChars) + '\n[datos truncados]' : raw;
+  }
+
+  let result = sections.join('\n');
+  if (result.length > maxChars) {
+    result = result.slice(0, maxChars) + '\n[... datos truncados por límite de contexto]';
+  }
+  return result;
+}
+
+// Helper: formatear lista de documentos/facturas como texto legible
+function formatDocList(title, docs) {
+  const lines = [title + ':'];
+  for (const d of (docs || []).slice(0, 20)) {
+    const parts = [];
+    if (d.fecha)             parts.push(d.fecha);
+    if (d.tipo)              parts.push(d.tipo);
+    if (d.emisor?.nombre)    parts.push(`de ${d.emisor.nombre}`);
+    else if (d.emisor)       parts.push(`de ${d.emisor}`);
+    if (d.receptor?.nombre)  parts.push(`para ${d.receptor.nombre}`);
+    else if (d.receptor)     parts.push(`para ${d.receptor}`);
+    if (d.total)             parts.push(`${d.total}€`);
+    if (d.numero_documento || d.numero) parts.push(`Nº ${d.numero_documento || d.numero}`);
+    if (d.resumen)           parts.push(`— ${d.resumen}`);
+
+    lines.push(`  • ${parts.join(' | ')}`);
+
+    // Incluir líneas de detalle si hay espacio
+    if (d.lineas?.length) {
+      for (const l of d.lineas.slice(0, 8)) {
+        lines.push(`      ${l.descripcion || 'n/a'}: ${l.cantidad || 1} x ${l.precio_unitario || 0}€ = ${l.total_linea || 0}€`);
+      }
+      if (d.lineas.length > 8) lines.push(`      ... y ${d.lineas.length - 8} líneas más`);
+    }
+  }
+  return lines.join('\n');
+}
+
 async function generateAnswer(question, contextData, intent, stream = false) {
-  const contextStr = JSON.stringify(contextData, null, 2);
-  const truncated  = contextStr.length > 3000
-    ? contextStr.slice(0, 3000) + '\n... [datos truncados]'
-    : contextStr;
+  const compacted = compactContext(contextData);
 
   const messages = [
     { role: 'system', content: ANSWER_SYSTEM },
-    { role: 'user',   content: `PREGUNTA: ${question}\n\nDATOS DISPONIBLES:\n${truncated}\n\nResponde a la pregunta usando los datos anteriores.` },
+    { role: 'user',   content: `PREGUNTA: ${question}
+
+DATOS DEL NEGOCIO:
+${compacted}
+
+Responde a la pregunta usando los datos anteriores.` },
   ];
 
   if (!stream) {
-    return llm(messages, { maxTokens: 1500, temp: 0.3 });
+    return llm(messages, { maxTokens: MAX_RESPONSE_TOKENS, temp: 0.3 });
   }
 
   // Streaming
   const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, messages, temperature: 0.3, max_tokens: 1500, stream: true }),
+    body: JSON.stringify({ model: MODEL, messages, temperature: 0.3, max_tokens: MAX_RESPONSE_TOKENS, stream: true }),
   });
-  return res; // devuelve el response para streaming
+  return res;
 }
 
 // ── API PÚBLICA ────────────────────────────────────────────────────────────

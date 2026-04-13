@@ -93,34 +93,164 @@ export async function extractText(filePath, mimeType = '') {
   };
 }
 
-// OCR con Tesseract
-async function ocrFile(filePath, type) {
-  try {
-    const { execFile } = await import('child_process');
-    const { promisify } = await import('util');
-    const exec = promisify(execFile);
+// ══════════════════════════════════════════════════════════════════════════
+//  OCR con Tesseract — detección automática + conversión PDF→imagen
+//
+//  Para Mac Mini M4 Pro:
+//    brew install tesseract tesseract-lang
+//    brew install poppler   (para pdftoppm — convierte PDF→PNG para OCR)
+//
+//  El pipeline para PDFs escaneados es:
+//    PDF → pdftoppm (a PNG) → tesseract (OCR) → texto
+//  Para imágenes directas:
+//    imagen → tesseract (OCR) → texto
+// ══════════════════════════════════════════════════════════════════════════
 
-    let args;
+let _tesseractChecked = false;
+let _tesseractAvailable = false;
+let _pdftoppmAvailable = false;
+
+async function checkOcrDeps() {
+  if (_tesseractChecked) return;
+  const { execFile } = await import('child_process');
+  const { promisify } = await import('util');
+  const exec = promisify(execFile);
+
+  // Tesseract
+  try {
+    const { stdout } = await exec('tesseract', ['--version'], { timeout: 5000 });
+    _tesseractAvailable = true;
+    const version = stdout.split('\n')[0];
+    console.log(`[OCR] ✓ Tesseract disponible: ${version}`);
+
+    // Verificar idiomas instalados
+    try {
+      const { stdout: langs } = await exec('tesseract', ['--list-langs'], { timeout: 5000 });
+      const hasSpa = langs.includes('spa');
+      const hasEng = langs.includes('eng');
+      if (!hasSpa) console.warn('[OCR] ⚠ Idioma español (spa) no instalado. Ejecuta: brew install tesseract-lang');
+      if (!hasEng) console.warn('[OCR] ⚠ Idioma inglés (eng) no instalado');
+      console.log(`[OCR]   Idiomas: spa=${hasSpa ? '✓' : '✗'} eng=${hasEng ? '✓' : '✗'}`);
+    } catch {}
+  } catch (e) {
+    _tesseractAvailable = false;
+    console.error('[OCR] ✗ Tesseract NO disponible. PDFs escaneados no se podrán procesar.');
+    console.error('[OCR]   Instalar: brew install tesseract tesseract-lang');
+  }
+
+  // pdftoppm (de poppler — para convertir PDF escaneado → imagen → OCR)
+  try {
+    await exec('pdftoppm', ['-v'], { timeout: 5000 });
+    _pdftoppmAvailable = true;
+    console.log('[OCR] ✓ pdftoppm disponible (poppler)');
+  } catch {
+    _pdftoppmAvailable = false;
+    console.warn('[OCR] ⚠ pdftoppm no disponible. PDFs escaneados usarán modo directo.');
+    console.warn('[OCR]   Para mejor OCR en PDFs: brew install poppler');
+  }
+
+  _tesseractChecked = true;
+}
+
+async function ocrFile(filePath, type) {
+  await checkOcrDeps();
+
+  if (!_tesseractAvailable) {
+    return {
+      text: '', method: 'ocr-no-instalado', ok: false,
+      hint: 'Tesseract no instalado. Ejecuta:\n  brew install tesseract tesseract-lang\n  brew install poppler',
+    };
+  }
+
+  const { execFile } = await import('child_process');
+  const { promisify } = await import('util');
+  const exec = promisify(execFile);
+
+  try {
+    // Detectar idiomas disponibles
+    let lang = 'eng';
+    try {
+      const { stdout: langs } = await exec('tesseract', ['--list-langs'], { timeout: 3000 });
+      if (langs.includes('spa') && langs.includes('eng')) lang = 'spa+eng';
+      else if (langs.includes('spa')) lang = 'spa';
+    } catch {}
+
+    // ── PDF escaneado ─────────────────────────────────────────────────
     if (type === 'pdf') {
-      // Convertir PDF a imagen con ImageMagick si está disponible, luego OCR
-      // Si no, tesseract puede leer PDFs directamente en versiones recientes
-      args = [filePath, 'stdout', '-l', 'spa+eng', '--dpi', '300', '--psm', '1'];
-    } else {
-      args = [filePath, 'stdout', '-l', 'spa+eng', '--dpi', '300', '--psm', '3'];
+      // Método 1: pdftoppm → convertir cada página a PNG → OCR
+      if (_pdftoppmAvailable) {
+        return await ocrPdfViaImages(filePath, lang, exec);
+      }
+      // Método 2: tesseract directo sobre PDF (menos fiable)
+      try {
+        const { stdout } = await exec('tesseract', [filePath, 'stdout', '-l', lang, '--dpi', '300', '--psm', '1'], { timeout: 120_000 });
+        const text = cleanText(stdout);
+        if (text.length > 20) return { text, method: 'tesseract-pdf-directo', ok: true };
+      } catch (e) {
+        console.warn(`[OCR] tesseract directo en PDF falló: ${e.message}`);
+      }
+      return { text: '', method: 'ocr-pdf-fallido', ok: false, hint: 'Instala poppler para OCR de PDFs: brew install poppler' };
     }
 
-    const { stdout } = await exec('tesseract', args, { timeout: 90_000 });
+    // ── Imagen directa ────────────────────────────────────────────────
+    const { stdout } = await exec('tesseract', [filePath, 'stdout', '-l', lang, '--dpi', '300', '--psm', '3'], { timeout: 90_000 });
     const text = cleanText(stdout);
     if (text.length > 20) return { text, method: 'tesseract-ocr', ok: true };
-    return { text: '', method: 'ocr-sin-texto', ok: false, hint: 'OCR no encontró texto legible' };
+    return { text: '', method: 'ocr-sin-texto', ok: false, hint: 'OCR no encontró texto legible en la imagen' };
+
   } catch (e) {
-    const notFound = e.code === 'ENOENT' || e.message?.includes('not found');
     return {
-      text: '', method: 'ocr-fallido', ok: false,
-      hint: notFound
-        ? 'Tesseract no instalado. Ejecuta: brew install tesseract tesseract-lang'
-        : `OCR error: ${e.message}`,
+      text: '', method: 'ocr-error', ok: false,
+      hint: `OCR error: ${e.message}`,
     };
+  }
+}
+
+// PDF → imagen por página → OCR → unir texto
+async function ocrPdfViaImages(pdfPath, lang, exec) {
+  const tmpDir = path.join(path.dirname(pdfPath), '_ocr_tmp_' + Date.now());
+  try {
+    await mkdir(tmpDir, { recursive: true });
+    const prefix = path.join(tmpDir, 'page');
+
+    // Convertir PDF a PNGs (máx 10 páginas, 300 DPI)
+    await exec('pdftoppm', ['-png', '-r', '300', '-l', '10', pdfPath, prefix], { timeout: 60_000 });
+
+    // Buscar imágenes generadas
+    const { readdir } = await import('fs/promises');
+    const files = (await readdir(tmpDir)).filter(f => f.endsWith('.png')).sort();
+
+    if (files.length === 0) {
+      return { text: '', method: 'ocr-pdf-sin-paginas', ok: false, hint: 'pdftoppm no generó imágenes del PDF' };
+    }
+
+    // OCR cada página
+    const pageTexts = [];
+    for (const file of files) {
+      try {
+        const imgPath = path.join(tmpDir, file);
+        const { stdout } = await exec('tesseract', [imgPath, 'stdout', '-l', lang, '--dpi', '300', '--psm', '1'], { timeout: 60_000 });
+        const text = cleanText(stdout);
+        if (text.length > 5) pageTexts.push(text);
+      } catch {}
+    }
+
+    // Limpiar temporales
+    for (const file of files) {
+      try { const { unlink } = await import('fs/promises'); await unlink(path.join(tmpDir, file)); } catch {}
+    }
+    try { const { rmdir } = await import('fs/promises'); await rmdir(tmpDir); } catch {}
+
+    const fullText = pageTexts.join('\n\n--- Página ---\n\n');
+    if (fullText.length > 20) {
+      console.log(`[OCR] ✓ PDF escaneado: ${files.length} páginas, ${fullText.length} chars extraídos`);
+      return { text: fullText, method: 'tesseract-pdf-via-images', ok: true, pages: files.length };
+    }
+    return { text: '', method: 'ocr-pdf-sin-texto', ok: false, hint: 'OCR no encontró texto legible en el PDF escaneado' };
+  } catch (e) {
+    // Limpiar en caso de error
+    try { const { rm } = await import('fs/promises'); await rm(tmpDir, { recursive: true }); } catch {}
+    return { text: '', method: 'ocr-pdf-error', ok: false, hint: `Error OCR PDF: ${e.message}` };
   }
 }
 
@@ -156,7 +286,7 @@ function cleanText(text) {
 // ── Truncado inteligente ───────────────────────────────────────────────────
 // Para documentos largos: mantiene cabecera + pie (donde van los totales)
 // y un resumen del centro. Así caben en 4096 tokens.
-function smartTruncate(text, maxChars = 3200) {
+function smartTruncate(text, maxChars = 6000) {
   if (text.length <= maxChars) return text;
 
   const head = text.slice(0, Math.floor(maxChars * 0.6));   // 60% inicio
@@ -360,7 +490,7 @@ REGLAS:
 
 async function extract(text, tipo) {
   const instructions = TYPE_INSTRUCTIONS[tipo] || TYPE_INSTRUCTIONS.otro;
-  const truncated    = smartTruncate(text, 3000);
+  const truncated    = smartTruncate(text, 5500);
 
   const userPrompt = `TIPO DE DOCUMENTO: ${tipo}
 ${instructions}
