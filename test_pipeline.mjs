@@ -2,10 +2,12 @@
 //  TEST PIPELINE — Procesa PDFs reales contra documentProcessor
 //  
 //  Uso local (Mac Mini con Ollama):
-//    node test_pipeline.mjs
+//    node test_pipeline.mjs [carpeta_pdfs]
 //  
-//  Uso sin Ollama (solo extracción texto + clasificación heurística):
-//    NO_LLM=1 node test_pipeline.mjs
+//  Ejemplos:
+//    node test_pipeline.mjs                      # usa ./test_pdfs o ./uploads
+//    node test_pipeline.mjs ~/facturas            # carpeta custom
+//    NO_LLM=1 node test_pipeline.mjs              # sin Ollama (solo texto)
 // ═══════════════════════════════════════════════════════════════════════
 
 import { readFile, writeFile, readdir } from 'fs/promises';
@@ -13,7 +15,13 @@ import { existsSync } from 'fs';
 import path from 'path';
 import pdfParse from 'pdf-parse';
 
-const TEST_DIR  = path.resolve('../test_pdfs');
+// Carpeta de PDFs: argumento CLI > ./test_pdfs > ./uploads
+const customDir = process.argv[2];
+const TEST_DIR  = customDir
+  ? path.resolve(customDir)
+  : existsSync(path.resolve('test_pdfs'))
+    ? path.resolve('test_pdfs')
+    : path.resolve('uploads');
 const RESULTS   = path.resolve('test_results.json');
 const NO_LLM    = process.env.NO_LLM === '1';
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
