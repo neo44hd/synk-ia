@@ -14,6 +14,7 @@
 
 import { Router } from 'express';
 import { askBrainStream, classifyIntent, searchWeb } from '../services/brain.js';
+import { buildContextBlock } from '../services/fileContext.js';
 
 const router     = Router();
 const OLLAMA_URL = process.env.OLLAMA_URL            || 'http://localhost:11434';
@@ -84,10 +85,19 @@ class ThinkingFilter {
 // Body: { messages, system?, stream?, thinking? }
 // thinking=true → envía eventos type:"thinking" además de type:"text"
 router.post('/', async (req, res) => {
-  const { messages = [], system, stream = true, thinking = true } = req.body;
+  const { messages = [], system, stream = true, thinking = true, contextFiles = [], autoContext = false } = req.body;
+
+  // Construir contexto de archivos si se solicita
+  let fileContext = '';
+  try {
+    const lastUserMsg = autoContext ? messages.filter(m => m.role === 'user').pop()?.content : null;
+    fileContext = await buildContextBlock(contextFiles, lastUserMsg);
+    if (fileContext) console.log(`[CHAT] Context injected: ${fileContext.length} chars`);
+  } catch (e) { console.error('[CHAT] Error building context:', e.message); }
 
   const allMessages = [];
-  if (system) allMessages.push({ role: 'system', content: system });
+  const systemContent = (system || '') + fileContext;
+  if (systemContent) allMessages.push({ role: 'system', content: systemContent });
   allMessages.push(...messages);
 
   if (!stream) {
@@ -176,8 +186,15 @@ router.post('/', async (req, res) => {
 // Body: { message }
 // SSE: {type:"step",...} | {type:"thinking",...} | {type:"text",...} | [DONE]
 router.post('/brain', async (req, res) => {
-  const { message } = req.body;
+  const { message, contextFiles = [], autoContext = false } = req.body;
   if (!message?.trim()) return res.status(400).json({ error: 'Mensaje requerido' });
+
+  // Construir contexto de archivos
+  let fileContext = '';
+  try {
+    fileContext = await buildContextBlock(contextFiles, autoContext ? message : null);
+    if (fileContext) console.log(`[BRAIN] Context injected: ${fileContext.length} chars`);
+  } catch (e) { console.error('[BRAIN] Error building context:', e.message); }
 
   res.setHeader('Content-Type',      'text/event-stream');
   res.setHeader('Cache-Control',     'no-cache');
@@ -195,6 +212,7 @@ router.post('/brain', async (req, res) => {
         // Solo para el stream final de generateAnswer, filtramos aquí también
         send({ type: 'text', text: chunk });
       },
+      fileContext,
     );
   } catch (err) {
     send({ type: 'error', text: err.message });

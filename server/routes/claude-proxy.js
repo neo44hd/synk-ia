@@ -15,8 +15,7 @@
  */
 
 import { Router } from 'express';
-import { readdir, readFile, stat } from 'fs/promises';
-import { join, relative, extname } from 'path';
+import { getFileTree, readFiles, searchFiles, buildContextBlock, PROJECT_DIR } from '../services/fileContext.js';
 
 const router = Router();
 const LOCAL_BASE  = process.env.LOCAL_LLM_URL   || 'http://localhost:11434';
@@ -214,36 +213,10 @@ router.post('/v1/messages', async (req, res) => {
   }
 });
 
-// ── Directorio del proyecto (configurable) ──────────────────────────────────
-const PROJECT_DIR = process.env.SINKIA_PROJECT_DIR || '/Users/davidnows/sinkia';
-const MAX_FILE_SIZE = 100_000; // 100KB max per file
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', '.next', '.nuxt', 'coverage', '.cache', '__pycache__', '.DS_Store']);
-const CODE_EXTS = new Set(['.js','.ts','.jsx','.tsx','.vue','.svelte','.py','.go','.rs','.rb','.java','.c','.cpp','.h','.css','.scss','.html','.json','.yaml','.yml','.toml','.md','.sh','.sql','.env','.mjs','.cjs']);
-
 // ── GET /claude/files — árbol de archivos del proyecto ───────────────────────
-async function walkDir(dir, base, depth = 0) {
-  if (depth > 5) return [];
-  const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
-  const results = [];
-  for (const e of entries) {
-    if (SKIP_DIRS.has(e.name) || e.name.startsWith('._')) continue;
-    const full = join(dir, e.name);
-    const rel = relative(base, full);
-    if (e.isDirectory()) {
-      results.push({ name: e.name, path: rel, type: 'dir', children: await walkDir(full, base, depth + 1) });
-    } else if (CODE_EXTS.has(extname(e.name).toLowerCase())) {
-      const s = await stat(full).catch(() => null);
-      if (s && s.size <= MAX_FILE_SIZE) {
-        results.push({ name: e.name, path: rel, type: 'file', size: s.size });
-      }
-    }
-  }
-  return results.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
-}
-
 router.get('/files', async (_req, res) => {
   try {
-    const tree = await walkDir(PROJECT_DIR, PROJECT_DIR);
+    const tree = await getFileTree();
     res.json({ ok: true, root: PROJECT_DIR, tree });
   } catch (e) {
     res.json({ ok: false, error: e.message, tree: [] });
@@ -254,23 +227,16 @@ router.get('/files', async (_req, res) => {
 router.post('/files/read', async (req, res) => {
   const { paths = [] } = req.body;
   if (!paths.length) return res.json({ ok: true, files: [] });
-  const files = [];
-  for (const p of paths.slice(0, 20)) { // max 20 files
-    const full = join(PROJECT_DIR, p);
-    // Seguridad: no permitir path traversal
-    if (!full.startsWith(PROJECT_DIR)) continue;
-    try {
-      const content = await readFile(full, 'utf-8');
-      if (content.length <= MAX_FILE_SIZE) {
-        files.push({ path: p, content });
-      } else {
-        files.push({ path: p, content: content.slice(0, MAX_FILE_SIZE) + '\n... [truncado]' });
-      }
-    } catch (e) {
-      files.push({ path: p, content: `[Error: ${e.message}]` });
-    }
-  }
+  const files = await readFiles(paths);
   res.json({ ok: true, files });
+});
+
+// ── GET /claude/files/search — búsqueda de archivos por query ───────────────
+router.get('/files/search', async (req, res) => {
+  const q = req.query.q;
+  if (!q) return res.json({ ok: true, results: [] });
+  const results = await searchFiles(q);
+  res.json({ ok: true, query: q, results });
 });
 
 // ── GET /claude/chat/status — estado del proxy para la pestaña web ────────────
@@ -289,7 +255,7 @@ router.get('/chat/status', async (_req, res) => {
 // Acepta { messages, contextFiles?: string[], stream }
 // Si contextFiles tiene rutas, lee los archivos y los inyecta en el system prompt
 router.post('/chat', async (req, res) => {
-  const { messages = [], contextFiles = [], stream = true } = req.body;
+  const { messages = [], contextFiles = [], autoContext = false, stream = true } = req.body;
 
   // Headers SSE
   res.writeHead(200, {
@@ -301,24 +267,9 @@ router.post('/chat', async (req, res) => {
   const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
 
   try {
-    // Leer archivos de contexto si los hay
-    let contextBlock = '';
-    if (contextFiles.length > 0) {
-      const fileContents = [];
-      for (const p of contextFiles.slice(0, 15)) {
-        const full = join(PROJECT_DIR, p);
-        if (!full.startsWith(PROJECT_DIR)) continue;
-        try {
-          let content = await readFile(full, 'utf-8');
-          if (content.length > MAX_FILE_SIZE) content = content.slice(0, MAX_FILE_SIZE) + '\n... [truncado]';
-          fileContents.push(`── ${p} ──\n${content}`);
-        } catch {}
-      }
-      if (fileContents.length) {
-        contextBlock = `\n\nThe user has loaded these project files as context:\n\n${fileContents.join('\n\n')}`;
-      }
-      console.log(`[PROXY-WEB] Context files: ${contextFiles.length} → ${contextBlock.length} chars`);
-    }
+    // Construir bloque de contexto (manual + auto)
+    const contextBlock = await buildContextBlock(contextFiles, autoContext ? messages[messages.length - 1]?.content : null);
+    if (contextBlock) console.log(`[PROXY-WEB] Context injected: ${contextBlock.length} chars`);
 
     // Construir mensajes para Ollama
     const ollamaMsgs = [

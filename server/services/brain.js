@@ -648,7 +648,7 @@ export async function askBrain(question, { stream = false } = {}) {
 }
 
 // Streaming version para SSE
-export async function askBrainStream(question, onStep, onChunk) {
+export async function askBrainStream(question, onStep, onChunk, extraContext = '') {
   // 1. Clasificar
   const { intent, params } = await classifyIntent(question);
   const stepLabel = getStepLabel(intent, params);
@@ -660,6 +660,11 @@ export async function askBrainStream(question, onStep, onChunk) {
     contextData = await fetchContextByIntent(intent, params, question);
   } catch (err) {
     contextData = { error: err.message };
+  }
+
+  // Inyectar contexto extra de archivos si existe
+  if (extraContext) {
+    contextData._fileContext = extraContext;
   }
 
   onStep({ intent, stepLabel: 'Generando respuesta...' });

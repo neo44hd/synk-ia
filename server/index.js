@@ -13,6 +13,7 @@ import { filesRouter }       from './routes/files.js';
 import { adminRouter }       from './routes/admin.js';
 import { claudeProxyRouter } from './routes/claude-proxy.js';
 import { chatRouter }        from './routes/chat.js';
+import { getFileTree, readFiles, searchFiles } from './services/fileContext.js';
 import { setupTerminal }      from './routes/terminal.js';
 import { setupOpenClawProxy } from './routes/openclaw-proxy.js';
 import { setupShellTerminal }  from './routes/shell-terminal.js';
@@ -74,6 +75,22 @@ app.use('/api/documents',    documentsRouter);
 app.use('/api/trabajadores', trabajadoresRouter);
 app.use('/claude',     claudeProxyRouter);  // Proxy local para Claude Code
 app.use('/api/chat',   chatRouter);          // Chat IA local
+
+// ── API de archivos compartida (todos los chats) ───────────────────────────
+app.get('/api/files/tree', async (_req, res) => {
+  try { res.json({ ok: true, tree: await getFileTree() }); }
+  catch (e) { res.json({ ok: false, error: e.message, tree: [] }); }
+});
+app.get('/api/files/search', async (req, res) => {
+  const q = req.query.q;
+  if (!q) return res.json({ ok: true, results: [] });
+  res.json({ ok: true, results: await searchFiles(q) });
+});
+app.post('/api/files/read', express.json(), async (req, res) => {
+  const files = await readFiles(req.body.paths || []);
+  res.json({ ok: true, files });
+});
+console.log('[SERVER] ✓ File Context API: /api/files/{tree,search,read}');
 
 // ── Aiden (control de agentes OpenClaw) ──────────────────────────────────────
 try {
