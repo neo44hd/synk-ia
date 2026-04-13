@@ -179,6 +179,7 @@ async function main() {
             { role: 'system', content: 'Eres un experto en extracción de datos de documentos financieros y laborales españoles. Responde SOLO con el JSON pedido, sin explicaciones.' },
             { role: 'user', content: userPrompt },
           ]);
+          console.log(`  📦 Raw LLM (first 500): ${raw.slice(0, 500)}`);
           llmResult = parseJSON(raw);
           if (llmResult) {
             console.log(`  ✓ LLM respondió — emisor: ${llmResult.emisor?.nombre || 'n/a'}, total: ${llmResult.total || 'n/a'}`);
@@ -187,6 +188,7 @@ async function main() {
             }
           } else {
             console.log('  ⚠ LLM respondió pero no pudo parsear JSON');
+            console.log(`  🔍 Full raw response (${raw.length} chars): ${raw.slice(0, 1000)}`);
           }
         } catch (err) {
           console.log(`  ✗ LLM error: ${err.message}`);
