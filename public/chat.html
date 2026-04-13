@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sinkia — Chat IA</title>
+<title>Sinkia — 4 Cerebros</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -18,6 +18,9 @@
   --green:   #22c55e;
   --red:     #ef4444;
   --blue:    #3b82f6;
+  --purple:  #8b5cf6;
+  --orange:  #f59e0b;
+  --cyan:    #06b6d4;
   --radius:  14px;
 }
 
@@ -37,8 +40,8 @@ body {
 .header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 20px;
+  gap: 12px;
+  padding: 0 16px;
   height: 54px;
   border-bottom: 1px solid var(--border);
   background: rgba(8,8,8,.9);
@@ -46,33 +49,43 @@ body {
   flex-shrink: 0;
 }
 
-.logo { font-size: 17px; font-weight: 700; }
+.logo { font-size: 17px; font-weight: 700; white-space: nowrap; }
 .logo span { color: var(--green); }
 
-.model-badge {
+/* ── Tabs ──────────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 2px;
   background: var(--surface);
   border: 1px solid var(--border2);
-  border-radius: 100px;
-  padding: 4px 12px;
-  font-size: 12px;
+  border-radius: 10px;
+  padding: 3px;
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border: none;
+  background: none;
   color: var(--muted);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all .15s;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  white-space: nowrap;
 }
 
-.status-dot {
+.tab:hover { color: var(--text); }
+.tab.active { background: var(--surface2); color: var(--text); }
+
+.tab .dot {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 5px var(--green);
-  animation: blink 2s infinite;
-}
-
-.status-dot.offline { background: var(--red); box-shadow: 0 0 5px var(--red); animation: none; }
-
-@keyframes blink {
-  0%,100%{ opacity:1 } 50%{ opacity:.3 }
+  flex-shrink: 0;
 }
 
 .spacer { flex: 1; }
@@ -86,194 +99,34 @@ body {
   font-size: 12px;
   cursor: pointer;
   transition: all .15s;
+  white-space: nowrap;
 }
-.header-btn:hover { color: var(--text); border-color: var(--border2); background: var(--surface); }
+.header-btn:hover { color: var(--text); background: var(--surface); }
 
-/* ── Messages area ───────────────────────────────────────────────────────────── */
-.messages {
+/* ── Shared panel styles ────────────────────────────────────────────────────── */
+.panel { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.panel.active { display: flex; }
+
+.chat-area {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 0;
+  padding: 20px 0;
   scroll-behavior: smooth;
 }
+.chat-area::-webkit-scrollbar { width: 4px; }
+.chat-area::-webkit-scrollbar-track { background: transparent; }
+.chat-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-.messages::-webkit-scrollbar { width: 4px; }
-.messages::-webkit-scrollbar-track { background: transparent; }
-.messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.chat-wrap { max-width: 780px; margin: 0 auto; padding: 0 20px; }
 
-.msg-wrap {
-  max-width: 780px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.msg {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-  animation: fadeIn .2s ease;
-}
-
-@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-
-.msg.user { flex-direction: row-reverse; }
-
-.avatar {
-  width: 32px; height: 32px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.msg.user .avatar { background: var(--green); }
-.msg.assistant .avatar { background: var(--surface2); border: 1px solid var(--border2); }
-
-.bubble {
-  max-width: calc(100% - 48px);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 16px;
-  line-height: 1.65;
-  font-size: 14.5px;
-}
-
-.msg.user .bubble {
-  background: #0f1f0f;
-  border-color: #1a3a1a;
-}
-
-/* Markdown-like rendering */
-.bubble p { margin-bottom: 10px; }
-.bubble p:last-child { margin-bottom: 0; }
-
-.bubble code {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 13px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid var(--border2);
-  border-radius: 5px;
-  padding: 1px 5px;
-}
-
-.bubble pre {
-  background: #050505;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px;
-  overflow-x: auto;
-  margin: 10px 0;
-  position: relative;
-}
-
-.bubble pre code {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 13px;
-  color: #c8c8c8;
-  line-height: 1.6;
-}
-
-.copy-btn {
-  position: absolute;
-  top: 8px; right: 8px;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--muted);
-  border-radius: 6px;
-  padding: 3px 8px;
-  font-size: 11px;
-  cursor: pointer;
-  transition: all .15s;
-  font-family: -apple-system, sans-serif;
-}
-.copy-btn:hover { color: var(--text); border-color: var(--border2); }
-
-.bubble h1,.bubble h2,.bubble h3 {
-  font-weight: 600;
-  margin: 16px 0 8px;
-  line-height: 1.3;
-}
-.bubble h1 { font-size: 18px; }
-.bubble h2 { font-size: 16px; }
-.bubble h3 { font-size: 14px; color: var(--muted); }
-
-.bubble ul, .bubble ol {
-  padding-left: 20px;
-  margin: 8px 0;
-}
-.bubble li { margin-bottom: 4px; }
-
-.bubble strong { font-weight: 600; color: #fff; }
-.bubble em { font-style: italic; color: #bbb; }
-
-.bubble hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
-
-.bubble blockquote {
-  border-left: 3px solid var(--green);
-  padding-left: 14px;
-  color: var(--muted);
-  margin: 10px 0;
-}
-
-/* Cursor de typing */
-.typing-cursor::after {
-  content: '▋';
-  animation: cursor .8s steps(1) infinite;
-  color: var(--green);
-}
-@keyframes cursor { 0%,100%{ opacity:1 } 50%{ opacity:0 } }
-
-/* Empty state */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  gap: 12px;
-  color: var(--muted);
-}
-
-.empty-logo { font-size: 40px; font-weight: 700; margin-bottom: 4px; }
-.empty-logo span { color: var(--green); }
-.empty-sub { font-size: 14px; }
-
-.suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-top: 20px;
-  max-width: 560px;
-}
-
-.suggestion {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 7px 16px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all .15s;
-  color: var(--muted);
-}
-.suggestion:hover { border-color: var(--green); color: var(--text); }
-
-/* ── Input area ──────────────────────────────────────────────────────────────── */
-.input-area {
-  padding: 16px 20px 20px;
+.input-bar {
+  padding: 14px 20px 18px;
   border-top: 1px solid var(--border);
   background: var(--bg);
   flex-shrink: 0;
 }
 
-.input-wrap {
+.input-row {
   max-width: 780px;
   margin: 0 auto;
   background: var(--surface);
@@ -286,28 +139,29 @@ body {
   transition: border-color .2s;
 }
 
-.input-wrap:focus-within { border-color: var(--green); }
+.input-row:focus-within { border-color: var(--green); }
+.input-row.purple:focus-within { border-color: var(--purple); }
+.input-row.orange:focus-within { border-color: var(--orange); }
+.input-row.cyan:focus-within   { border-color: var(--cyan); }
 
-textarea {
+.input-row textarea {
   flex: 1;
   background: none;
   border: none;
   outline: none;
   color: var(--text);
-  font-size: 14.5px;
+  font-size: 14px;
   font-family: inherit;
   resize: none;
   line-height: 1.5;
-  max-height: 180px;
-  min-height: 24px;
+  max-height: 160px;
+  min-height: 22px;
 }
+.input-row textarea::placeholder { color: var(--muted); }
 
-textarea::placeholder { color: var(--muted); }
-
-.send-btn {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  background: var(--green);
+.send {
+  width: 34px; height: 34px;
+  border-radius: 9px;
   border: none;
   cursor: pointer;
   display: flex;
@@ -316,368 +170,524 @@ textarea::placeholder { color: var(--muted); }
   transition: all .15s;
   flex-shrink: 0;
 }
-.send-btn:hover  { opacity: .85; }
-.send-btn:active { transform: scale(.95); }
-.send-btn:disabled { background: var(--border2); cursor: not-allowed; }
+.send:hover  { opacity: .85; }
+.send:active { transform: scale(.95); }
+.send:disabled { background: var(--border2) !important; cursor: not-allowed; }
+.send svg { width: 15px; height: 15px; fill: #000; }
 
-.send-btn svg { width: 16px; height: 16px; fill: #000; }
+.send.green  { background: var(--green); }
+.send.purple { background: var(--purple); }
+.send.orange { background: var(--orange); }
+.send.cyan   { background: var(--cyan); }
 
-.input-meta {
+.input-footer {
   max-width: 780px;
-  margin: 6px auto 0;
+  margin: 5px auto 0;
   display: flex;
   justify-content: space-between;
   font-size: 11px;
   color: var(--muted);
 }
 
-  /* ── Thinking blocks ─────────────────────────────────────────────────────── */
-  .think-block {
-    background: #1a1a2e;
-    border: 1px solid #2a2a4a;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    font-size: 0.82em;
-    color: #7878aa;
-  }
-  .think-block summary {
-    cursor: pointer;
-    padding: 6px 10px;
-    user-select: none;
-    color: #9090cc;
-  }
-  .think-block summary:hover { color: #aaaaee; }
-  .think-content {
-    padding: 8px 12px;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-family: monospace;
-    font-size: 0.9em;
-    max-height: 200px;
-    overflow-y: auto;
-    margin: 0;
-  }
+/* ── Messages ────────────────────────────────────────────────────────────────── */
+.msg { display: flex; gap: 12px; margin-bottom: 22px; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.msg.user { flex-direction: row-reverse; }
+
+.avatar {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bubble {
+  max-width: calc(100% - 46px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 11px 15px;
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+.msg.user .bubble { background: #0f1f0f; border-color: #1a3a1a; }
+
+/* Markdown */
+.bubble p { margin-bottom: 10px; } .bubble p:last-child { margin-bottom: 0; }
+.bubble code { font-family:'SF Mono','Fira Code',monospace; font-size:12.5px; background:rgba(255,255,255,.06); border:1px solid var(--border2); border-radius:5px; padding:1px 5px; }
+.bubble pre { background:#050505; border:1px solid var(--border); border-radius:10px; padding:13px; overflow-x:auto; margin:10px 0; position:relative; }
+.bubble pre code { background:none; border:none; padding:0; font-size:12.5px; color:#c8c8c8; line-height:1.6; }
+.copy-btn { position:absolute; top:7px; right:7px; background:var(--surface2); border:1px solid var(--border2); color:var(--muted); border-radius:5px; padding:2px 7px; font-size:11px; cursor:pointer; font-family:inherit; }
+.copy-btn:hover { color:var(--text); }
+.bubble h1,.bubble h2,.bubble h3 { font-weight:600; margin:14px 0 6px; line-height:1.3; }
+.bubble h1 { font-size:17px; } .bubble h2 { font-size:15px; } .bubble h3 { font-size:13.5px; color:var(--muted); }
+.bubble ul,.bubble ol { padding-left:18px; margin:6px 0; } .bubble li { margin-bottom:3px; }
+.bubble strong { font-weight:600; color:#fff; } .bubble em { font-style:italic; color:#bbb; }
+.bubble hr { border:none; border-top:1px solid var(--border); margin:12px 0; }
+.bubble blockquote { border-left:3px solid var(--green); padding-left:12px; color:var(--muted); margin:10px 0; }
+
+.typing-cursor::after { content:'▋'; animation:cursor .8s steps(1) infinite; color:var(--green); }
+@keyframes cursor { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Think blocks */
+.think-block { background:#1a1a2e; border:1px solid #2a2a4a; border-radius:6px; margin-bottom:8px; font-size:.82em; color:#7878aa; }
+.think-block summary { cursor:pointer; padding:6px 10px; user-select:none; color:#9090cc; }
+.think-block summary:hover { color:#aaaaee; }
+.think-content { padding:8px 12px; white-space:pre-wrap; word-break:break-word; font-family:monospace; font-size:.9em; max-height:200px; overflow-y:auto; margin:0; }
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+.empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:10px; color:var(--muted); }
+.empty-icon { font-size:36px; margin-bottom:4px; }
+.empty-title { font-size:18px; font-weight:600; color:var(--text); }
+.empty-sub { font-size:13px; max-width:400px; text-align:center; line-height:1.5; }
+.suggestions { display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:16px; max-width:560px; }
+.suggestion { background:var(--surface); border:1px solid var(--border); border-radius:100px; padding:6px 14px; font-size:12.5px; cursor:pointer; transition:all .15s; color:var(--muted); }
+.suggestion:hover { border-color:var(--green); color:var(--text); }
+
+/* ── Step indicator (Brain) ──────────────────────────────────────────────────── */
+.step-indicator { padding:6px 14px; background:rgba(6,182,212,.08); border-left:3px solid var(--cyan); border-radius:0 8px 8px 0; font-size:12.5px; color:var(--cyan); margin-bottom:12px; animation:fadeIn .2s ease; }
+
+/* ── Status bar (OpenClaw) ───────────────────────────────────────────────────── */
+.status-bar { display:flex; align-items:center; gap:12px; padding:8px 20px; background:var(--surface); border-bottom:1px solid var(--border); font-size:12px; flex-shrink:0; }
+.status-item { display:flex; align-items:center; gap:5px; color:var(--muted); }
+.status-item .sdot { width:7px; height:7px; border-radius:50%; }
+.sdot.on { background:var(--purple); box-shadow:0 0 5px var(--purple); }
+.sdot.off { background:var(--red); box-shadow:0 0 5px var(--red); }
+.sdot.wait { background:var(--orange); box-shadow:0 0 5px var(--orange); animation:blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+@media(max-width:640px) {
+  .header { gap:6px; padding:0 10px; }
+  .header-btn { display:none; }
+  .tab { padding:5px 8px; font-size:11px; }
+}
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <header class="header">
-  <div class="logo">sinkia<span>.</span>chat</div>
-  <div class="model-badge">
-    <div class="status-dot" id="status-dot"></div>
-    <span id="model-name">Cargando...</span>
+  <div class="logo">sinkia<span>.</span></div>
+  <div class="tabs">
+    <button class="tab active" data-tab="chat"><div class="dot" style="background:var(--green);box-shadow:0 0 5px var(--green)"></div>Chat IA</button>
+    <button class="tab" data-tab="brain"><div class="dot" style="background:var(--cyan);box-shadow:0 0 5px var(--cyan)"></div>Brain</button>
+    <button class="tab" data-tab="claw"><div class="dot" id="claw-dot" style="background:var(--purple);box-shadow:0 0 5px var(--purple)"></div>OpenClaw</button>
+    <button class="tab" data-tab="aider"><div class="dot" style="background:var(--orange);box-shadow:0 0 5px var(--orange)"></div>Claude Code</button>
   </div>
   <div class="spacer"></div>
-  <button class="header-btn" onclick="clearChat()">✕ Nueva conversación</button>
-  <button class="header-btn" onclick="window.location='/admin'">⚙ Admin</button>
+  <button class="header-btn" onclick="clearActive()">✕ Nueva</button>
+  <button class="header-btn" onclick="location='/admin'">⚙</button>
 </header>
 
-<!-- Messages -->
-<div class="messages" id="messages">
-  <div class="msg-wrap">
-    <div class="empty-state" id="empty-state">
-      <div class="empty-logo">sinkia<span>.</span></div>
-      <div class="empty-sub">Asistente IA local — modelo en ejecución en tu Mac</div>
-      <div class="suggestions">
-        <div class="suggestion" onclick="sendSuggestion(this)">¿Qué hace esta app?</div>
-        <div class="suggestion" onclick="sendSuggestion(this)">Explica la estructura del proyecto</div>
-        <div class="suggestion" onclick="sendSuggestion(this)">¿Cómo funciona la extracción de facturas?</div>
-        <div class="suggestion" onclick="sendSuggestion(this)">¿Qué APIs externas usa sinkia?</div>
-        <div class="suggestion" onclick="sendSuggestion(this)">Dame ideas para mejorar la app</div>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PANEL 1 — CHAT IA (qwen3.5)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="panel active" id="p-chat">
+  <div class="chat-area" id="chat-scroll">
+    <div class="chat-wrap" id="chat-wrap">
+      <div class="empty" id="chat-empty">
+        <div class="empty-icon">✦</div>
+        <div class="empty-title">Chat IA · qwen3.5</div>
+        <div class="empty-sub">Conversación libre con tu modelo local</div>
+        <div class="suggestions">
+          <div class="suggestion" onclick="chatSuggest(this)">¿Qué hace esta app?</div>
+          <div class="suggestion" onclick="chatSuggest(this)">Explica la estructura del proyecto</div>
+          <div class="suggestion" onclick="chatSuggest(this)">Dame ideas para mejorar la app</div>
+        </div>
       </div>
     </div>
   </div>
+  <div class="input-bar">
+    <div class="input-row" id="chat-input-row">
+      <textarea id="chat-in" rows="1" placeholder="Escribe un mensaje..." onkeydown="kd(event,'chat')" oninput="ar(this)"></textarea>
+      <button class="send green" id="chat-send" onclick="chatSend()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    </div>
+    <div class="input-footer"><span id="chat-status">Conectando...</span><span>⏎ Enter · Shift+⏎ línea</span></div>
+  </div>
 </div>
 
-<!-- Input -->
-<div class="input-area">
-  <div class="input-wrap">
-    <textarea
-      id="input"
-      rows="1"
-      placeholder="Escribe un mensaje..."
-      onkeydown="handleKey(event)"
-      oninput="autoResize(this)"
-    ></textarea>
-    <button class="send-btn" id="send-btn" onclick="sendMessage()">
-      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-    </button>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PANEL 2 — SINKIA BRAIN (codegemma:7b)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="panel" id="p-brain">
+  <div class="chat-area" id="brain-scroll">
+    <div class="chat-wrap" id="brain-wrap">
+      <div class="empty" id="brain-empty">
+        <div class="empty-icon">🧠</div>
+        <div class="empty-title">SynK-IA Brain · codegemma:7b</div>
+        <div class="empty-sub">Cerebro de negocio — facturas, ventas, proveedores, clientes. Conectado a tus datos reales.</div>
+        <div class="suggestions">
+          <div class="suggestion" onclick="brainSuggest(this)">¿Cuánto he gastado este mes?</div>
+          <div class="suggestion" onclick="brainSuggest(this)">¿Qué facturas tengo pendientes?</div>
+          <div class="suggestion" onclick="brainSuggest(this)">¿Cuál es el artículo más vendido?</div>
+          <div class="suggestion" onclick="brainSuggest(this)">Resumen de proveedor Makro</div>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="input-meta">
-    <span id="status-text">Conectando...</span>
-    <span>⏎ Enter para enviar · Shift+Enter para nueva línea</span>
+  <div class="input-bar">
+    <div class="input-row cyan">
+      <textarea id="brain-in" rows="1" placeholder="Pregunta sobre tu negocio..." onkeydown="kd(event,'brain')" oninput="ar(this)"></textarea>
+      <button class="send cyan" id="brain-send" onclick="brainSend()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    </div>
+    <div class="input-footer"><span id="brain-status">Conectado · codegemma:7b</span><span>⏎ Enter · Shift+⏎ línea</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PANEL 3 — OPENCLAW (functiongemma)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="panel" id="p-claw">
+  <div class="status-bar">
+    <div class="status-item"><div class="sdot wait" id="claw-conn"></div><span id="claw-conn-txt">Conectando...</span></div>
+    <div class="spacer"></div>
+    <div class="status-item"><span id="claw-session">Session: —</span></div>
+  </div>
+  <div class="chat-area" id="claw-scroll">
+    <div class="chat-wrap" id="claw-wrap">
+      <div class="empty" id="claw-empty">
+        <div class="empty-icon">🐾</div>
+        <div class="empty-title">OpenClaw · functiongemma</div>
+        <div class="empty-sub">Agente de funciones con Claude Code via WebSocket</div>
+      </div>
+    </div>
+  </div>
+  <div class="input-bar">
+    <div class="input-row purple">
+      <textarea id="claw-in" rows="1" placeholder="Comando para OpenClaw..." onkeydown="kd(event,'claw')" oninput="ar(this)"></textarea>
+      <button class="send purple" id="claw-send" onclick="clawSend()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    </div>
+    <div class="input-footer"><span id="claw-status">WebSocket: conectando...</span><span>⏎ Enter · Shift+⏎ línea</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PANEL 4 — CLAUDE CODE / AIDER
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<div class="panel" id="p-aider">
+  <div class="chat-area" id="aider-scroll">
+    <div class="chat-wrap" id="aider-wrap">
+      <div class="empty" id="aider-empty">
+        <div class="empty-icon">⚡</div>
+        <div class="empty-title">Claude Code · Aider</div>
+        <div class="empty-sub">Asistente de código — edita archivos, refactoriza, genera tests. Trabaja sobre ~/sinkia.</div>
+        <div class="suggestions">
+          <div class="suggestion" onclick="aiderSuggest(this)">Revisa server/index.js y sugiere mejoras</div>
+          <div class="suggestion" onclick="aiderSuggest(this)">Añade manejo de errores al chat endpoint</div>
+          <div class="suggestion" onclick="aiderSuggest(this)">Genera tests para brain.js</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="input-bar">
+    <div class="input-row orange">
+      <textarea id="aider-in" rows="1" placeholder="Instrucción para Aider..." onkeydown="kd(event,'aider')" oninput="ar(this)"></textarea>
+      <button class="send orange" id="aider-send" onclick="aiderSend()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    </div>
+    <div class="input-footer"><span id="aider-status">Verificando Aider...</span><span>⏎ Enter · Shift+⏎ línea</span></div>
   </div>
 </div>
 
 <script>
-// ── Estado ─────────────────────────────────────────────────────────────────────
-let messages     = [];
-let isGenerating = false;
+// ══════════════════════════════════════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════════════════════════════════════
+let active = 'chat';
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    active = t.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('p-' + active).classList.add('active');
+    const inp = document.getElementById(active + '-in');
+    if (inp) inp.focus();
+    if (active === 'claw' && !clawWs) connectClaw();
+  });
+});
 
-// ── Init ───────────────────────────────────────────────────────────────────────
-async function init() {
-  try {
-    const r    = await fetch('/api/chat/status');
-    const data = await r.json();
-    const dot  = document.getElementById('status-dot');
-    const name = document.getElementById('model-name');
-
-    if (data.ollama || data.lm_studio || data.litellm) {
-      dot.className    = 'status-dot';
-      name.textContent = data.active_model || 'Modelo local';
-      document.getElementById('status-text').textContent =
-        `Conectado · ${data.active_model || 'modelo local'}`;
-    } else {
-      dot.className    = 'status-dot offline';
-      name.textContent = 'Sin conexión';
-      document.getElementById('status-text').textContent =
-        '⚠ Ollama no disponible — asegúrate de que está corriendo';
-    }
-  } catch {
-    document.getElementById('status-dot').className = 'status-dot offline';
-    document.getElementById('status-text').textContent = '⚠ Error al conectar';
-  }
+function clearActive() {
+  if (active === 'chat')  return clearPanel('chat', '✦', 'Chat IA · qwen3.5', 'Conversación libre con tu modelo local');
+  if (active === 'brain') return clearPanel('brain', '🧠', 'SynK-IA Brain · codegemma:7b', 'Cerebro de negocio');
+  if (active === 'claw')  return clearPanel('claw', '🐾', 'OpenClaw · functiongemma', 'Agente de funciones');
+  if (active === 'aider') return clearPanel('aider', '⚡', 'Claude Code · Aider', 'Asistente de código');
 }
 
-init();
-
-// ── Auto-resize textarea ────────────────────────────────────────────────────────
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+function clearPanel(id, icon, title, sub) {
+  const w = document.getElementById(id + '-wrap');
+  w.innerHTML = `<div class="empty" id="${id}-empty"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;
+  if (id === 'chat') chatMsgs = [];
 }
 
-// ── Key handler ─────────────────────────────────────────────────────────────────
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
+// ── Shared ────────────────────────────────────────────────────────────────────
+function ar(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px'; }
+function kd(e, panel) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ({chat:chatSend,brain:brainSend,claw:clawSend,aider:aiderSend})[panel](); } }
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function scrollB(id) { const el = document.getElementById(id + '-scroll'); el.scrollTop = el.scrollHeight; }
+
+function md(t) {
+  return t
+    .replace(/```(\w*)\n([\s\S]*?)```/g,(_,l,c)=>`<pre><code class="lang-${l}">${esc(c.trim())}</code></pre>`)
+    .replace(/`([^`]+)`/g,(_,c)=>`<code>${esc(c)}</code>`)
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/^[\-\*] (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)(\n(?!<li>)|$)/g,'<ul>$1</ul>\n')
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>')
+    .split('\n\n').map(p=>p.trim()?(p.startsWith('<')?p:`<p>${p.replace(/\n/g,'<br>')}</p>`):'').join('');
 }
 
-// ── Suggestions ─────────────────────────────────────────────────────────────────
-function sendSuggestion(el) {
-  document.getElementById('input').value = el.textContent;
-  sendMessage();
+function addMsg(wrap, role, html, avatar) {
+  const e = document.getElementById(wrap + '-empty'); if (e) e.style.display = 'none';
+  const w = document.getElementById(wrap + '-wrap');
+  const m = document.createElement('div'); m.className = `msg ${role}`;
+  const a = document.createElement('div'); a.className = 'avatar'; a.textContent = avatar;
+  const b = document.createElement('div'); b.className = 'bubble'; b.innerHTML = html;
+  if (role === 'user') { a.style.background = 'var(--green)'; }
+  else { a.style.background = 'var(--surface2)'; a.style.border = '1px solid var(--border2)'; }
+  m.appendChild(a); m.appendChild(b); w.appendChild(m);
+  addCopyBtns(b);
+  scrollB(wrap);
+  return b;
 }
 
-// ── Send message ────────────────────────────────────────────────────────────────
-async function sendMessage() {
-  const input = document.getElementById('input');
-  const text  = input.value.trim();
-  if (!text || isGenerating) return;
-
-  // Hide empty state
-  const es = document.getElementById('empty-state');
-  if (es) es.style.display = 'none';
-
-  // Add user message
-  messages.push({ role: 'user', content: text });
-  appendMessage('user', text);
-  input.value = '';
-  input.style.height = 'auto';
-
-  // Add assistant placeholder
-  const assistantEl = appendMessage('assistant', '', true);
-  isGenerating = true;
-  document.getElementById('send-btn').disabled = true;
-
-  try {
-    const res = await fetch('/api/chat', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ messages, stream: true }),
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const reader = res.body.getReader();
-    const dec    = new TextDecoder();
-    let   buf    = '';
-    let   full   = '';
-    let   thinkFull = '';
-    let   thinkEl   = null;
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop() || '';
-      for (const line of lines) {
-        if (!line.startsWith('data:')) continue;
-        const raw = line.slice(5).trim();
-        if (raw === '[DONE]') continue;
-        try {
-          const d = JSON.parse(raw);
-
-          // ── Bloque de razonamiento (<think>) ────────────────────────
-          if (d.type === 'thinking' && d.text) {
-            thinkFull += d.text;
-            if (!thinkEl) {
-              // Crear bloque colapsable "Razonando..."
-              thinkEl = document.createElement('details');
-              thinkEl.className = 'think-block';
-              const summary = document.createElement('summary');
-              summary.textContent = '💭 Razonando...';
-              thinkEl.appendChild(summary);
-              const pre = document.createElement('pre');
-              pre.className = 'think-content';
-              thinkEl.appendChild(pre);
-              assistantEl.querySelector('.bubble')?.prepend(thinkEl);
-            }
-            thinkEl.querySelector('.think-content').textContent = thinkFull;
-            scrollToBottom();
-            continue;
-          }
-          if (d.type === 'thinking_done' && thinkEl) {
-            thinkEl.querySelector('summary').textContent = '💭 Ver razonamiento';
-            thinkEl.open = false;
-            continue;
-          }
-
-          // ── Texto final de la respuesta ──────────────────────────────
-          // Acepta {type:"text", text:"..."} (nuevo) y {text:"..."} (legacy)
-          if (d.text && d.type !== 'thinking') {
-            full += d.text;
-            renderBubble(assistantEl, full, true);
-            if (thinkEl) assistantEl.querySelector('.bubble')?.prepend(thinkEl);
-            scrollToBottom();
-          }
-
-          if (d.type === 'error') {
-            renderBubble(assistantEl, `⚠ ${d.text}`, false);
-          }
-        } catch {}
-      }
-    }
-
-    renderBubble(assistantEl, full || '…', false);
-    if (thinkEl) assistantEl.querySelector('.bubble')?.prepend(thinkEl);
-    messages.push({ role: 'assistant', content: full });
-
-  } catch (e) {
-    renderBubble(assistantEl, `⚠ Error: ${e.message}`, false);
-  }
-
-  isGenerating = false;
-  document.getElementById('send-btn').disabled = false;
-  scrollToBottom();
-}
-
-// ── DOM helpers ──────────────────────────────────────────────────────────────────
-function appendMessage(role, text, streaming = false) {
-  const wrap = document.getElementById('messages').querySelector('.msg-wrap') ||
-               (() => {
-                 const d = document.createElement('div');
-                 d.className = 'msg-wrap';
-                 document.getElementById('messages').appendChild(d);
-                 return d;
-               })();
-
-  const msg = document.createElement('div');
-  msg.className = `msg ${role}`;
-
-  const avatar = document.createElement('div');
-  avatar.className = 'avatar';
-  avatar.textContent = role === 'user' ? '👤' : '✦';
-
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble';
-  if (streaming) bubble.classList.add('typing-cursor');
-
-  if (text) renderBubble(bubble, text, streaming);
-
-  msg.appendChild(avatar);
-  msg.appendChild(bubble);
-  wrap.appendChild(msg);
-  scrollToBottom();
-  return bubble;
-}
-
-function renderBubble(el, text, streaming) {
-  el.classList.toggle('typing-cursor', !!streaming);
-  el.innerHTML = mdToHtml(text);
-  // Add copy buttons to code blocks
+function addCopyBtns(el) {
   el.querySelectorAll('pre').forEach(pre => {
     if (pre.querySelector('.copy-btn')) return;
-    const btn = document.createElement('button');
-    btn.className = 'copy-btn';
-    btn.textContent = 'Copiar';
-    btn.onclick = () => {
-      navigator.clipboard.writeText(pre.querySelector('code')?.textContent || '');
-      btn.textContent = '✓';
-      setTimeout(() => btn.textContent = 'Copiar', 1500);
-    };
-    pre.style.position = 'relative';
-    pre.insertBefore(btn, pre.firstChild);
+    const b = document.createElement('button'); b.className='copy-btn'; b.textContent='Copiar';
+    b.onclick=()=>{navigator.clipboard.writeText(pre.querySelector('code')?.textContent||'');b.textContent='✓';setTimeout(()=>b.textContent='Copiar',1500);};
+    pre.style.position='relative'; pre.insertBefore(b,pre.firstChild);
   });
 }
 
-// ── Simple Markdown → HTML ────────────────────────────────────────────────────────
-function mdToHtml(md) {
-  let html = md
-    // Code blocks
-    .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) =>
-      `<pre><code class="lang-${lang}">${esc(code.trim())}</code></pre>`)
-    // Inline code
-    .replace(/`([^`]+)`/g, (_, c) => `<code>${esc(c)}</code>`)
-    // Bold
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    // Headers
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm,  '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm,   '<h1>$1</h1>')
-    // Blockquote
-    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-    // HR
-    .replace(/^---$/gm, '<hr>')
-    // Lists
-    .replace(/^[\-\*] (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>[\s\S]*?<\/li>)(\n(?!<li>)|$)/g, '<ul>$1</ul>\n')
-    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-    // Paragraphs
-    .split('\n\n')
-    .map(p => p.trim()
-      ? (p.startsWith('<') ? p : `<p>${p.replace(/\n/g, '<br>')}</p>`)
-      : '')
-    .join('');
-  return html;
+function addSysMsg(wrap, text) {
+  const e = document.getElementById(wrap + '-empty'); if (e) e.style.display = 'none';
+  const w = document.getElementById(wrap + '-wrap');
+  const d = document.createElement('div');
+  d.style.cssText = 'text-align:center;font-size:12px;color:var(--muted);padding:6px;animation:fadeIn .2s ease';
+  d.textContent = text; w.appendChild(d); scrollB(wrap);
 }
 
-function esc(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// ══════════════════════════════════════════════════════════════════════════════
+//  1. CHAT IA — qwen3.5 via /api/chat
+// ══════════════════════════════════════════════════════════════════════════════
+let chatMsgs = [], chatBusy = false;
+
+async function initChat() {
+  try {
+    const r = await fetch('/api/chat/status');
+    const d = await r.json();
+    document.getElementById('chat-status').textContent =
+      (d.ollama ? 'Conectado · ' : '⚠ Sin conexión · ') + (d.active_model || '—');
+  } catch { document.getElementById('chat-status').textContent = '⚠ Error al conectar'; }
+}
+initChat();
+
+function chatSuggest(el) { document.getElementById('chat-in').value = el.textContent; chatSend(); }
+
+async function chatSend() {
+  const inp = document.getElementById('chat-in'), text = inp.value.trim();
+  if (!text || chatBusy) return;
+  chatMsgs.push({role:'user',content:text});
+  addMsg('chat','user',`<p>${esc(text)}</p>`,'👤');
+  inp.value=''; inp.style.height='auto';
+
+  const bub = addMsg('chat','assistant','','✦');
+  bub.classList.add('typing-cursor');
+  chatBusy = true; document.getElementById('chat-send').disabled = true;
+
+  let full='', thinkFull='', thinkEl=null;
+  try {
+    const res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:chatMsgs,stream:true})});
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const reader=res.body.getReader(), dec=new TextDecoder(); let buf='';
+    while(true){
+      const{done,value}=await reader.read(); if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop()||'';
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        const raw=line.slice(5).trim(); if(raw==='[DONE]')continue;
+        try{
+          const d=JSON.parse(raw);
+          if(d.type==='thinking'&&d.text){
+            thinkFull+=d.text;
+            if(!thinkEl){thinkEl=document.createElement('details');thinkEl.className='think-block';const s=document.createElement('summary');s.textContent='💭 Razonando...';thinkEl.appendChild(s);const p=document.createElement('pre');p.className='think-content';thinkEl.appendChild(p);bub.prepend(thinkEl);}
+            thinkEl.querySelector('.think-content').textContent=thinkFull;scrollB('chat');continue;
+          }
+          if(d.type==='thinking_done'&&thinkEl){thinkEl.querySelector('summary').textContent='💭 Ver razonamiento';thinkEl.open=false;continue;}
+          if(d.text&&d.type!=='thinking'){full+=d.text;bub.innerHTML=md(full);if(thinkEl)bub.prepend(thinkEl);addCopyBtns(bub);scrollB('chat');}
+          if(d.type==='error'){bub.innerHTML=`<p>⚠ ${esc(d.text)}</p>`;}
+        }catch{}
+      }
+    }
+    bub.classList.remove('typing-cursor');
+    bub.innerHTML=md(full||'…');if(thinkEl)bub.prepend(thinkEl);addCopyBtns(bub);
+    chatMsgs.push({role:'assistant',content:full});
+  }catch(e){bub.classList.remove('typing-cursor');bub.innerHTML=`<p>⚠ ${esc(e.message)}</p>`;}
+  chatBusy=false;document.getElementById('chat-send').disabled=false;scrollB('chat');
 }
 
-function scrollToBottom() {
-  const el = document.getElementById('messages');
-  el.scrollTop = el.scrollHeight;
+// ══════════════════════════════════════════════════════════════════════════════
+//  2. BRAIN — codegemma:7b via /api/chat/brain
+// ══════════════════════════════════════════════════════════════════════════════
+let brainBusy = false;
+
+function brainSuggest(el) { document.getElementById('brain-in').value = el.textContent; brainSend(); }
+
+async function brainSend() {
+  const inp = document.getElementById('brain-in'), text = inp.value.trim();
+  if (!text || brainBusy) return;
+  addMsg('brain','user',`<p>${esc(text)}</p>`,'👤');
+  inp.value=''; inp.style.height='auto';
+
+  const bub = addMsg('brain','assistant','','🧠');
+  bub.classList.add('typing-cursor');
+  brainBusy=true; document.getElementById('brain-send').disabled=true;
+
+  let full='';
+  try{
+    const res=await fetch('/api/chat/brain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');buf=lines.pop()||'';
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        const raw=line.slice(5).trim();if(raw==='[DONE]')continue;
+        try{
+          const d=JSON.parse(raw);
+          if(d.type==='step'){
+            const w=document.getElementById('brain-wrap');
+            const s=document.createElement('div');s.className='step-indicator';s.textContent=d.stepLabel||d.intent||'Procesando...';
+            w.appendChild(s);scrollB('brain');continue;
+          }
+          if(d.type==='text'&&d.text){full+=d.text;bub.innerHTML=md(full);addCopyBtns(bub);scrollB('brain');}
+          if(d.type==='error'){bub.innerHTML=`<p>⚠ ${esc(d.text)}</p>`;}
+        }catch{}
+      }
+    }
+    bub.classList.remove('typing-cursor');
+    bub.innerHTML=md(full||'…');addCopyBtns(bub);
+  }catch(e){bub.classList.remove('typing-cursor');bub.innerHTML=`<p>⚠ ${esc(e.message)}</p>`;}
+  brainBusy=false;document.getElementById('brain-send').disabled=false;scrollB('brain');
 }
 
-function clearChat() {
-  messages = [];
-  const wrap = document.querySelector('.msg-wrap');
-  if (wrap) {
-    wrap.innerHTML = `
-      <div class="empty-state" id="empty-state">
-        <div class="empty-logo">sinkia<span>.</span></div>
-        <div class="empty-sub">Asistente IA local — modelo en ejecución en tu Mac</div>
-        <div class="suggestions">
-          <div class="suggestion" onclick="sendSuggestion(this)">¿Qué hace esta app?</div>
-          <div class="suggestion" onclick="sendSuggestion(this)">Explica la estructura del proyecto</div>
-          <div class="suggestion" onclick="sendSuggestion(this)">¿Cómo funciona la extracción de facturas?</div>
-          <div class="suggestion" onclick="sendSuggestion(this)">¿Qué APIs externas usa sinkia?</div>
-          <div class="suggestion" onclick="sendSuggestion(this)">Dame ideas para mejorar la app</div>
-        </div>
-      </div>`;
-  }
+// ══════════════════════════════════════════════════════════════════════════════
+//  3. OPENCLAW — functiongemma via WebSocket
+// ══════════════════════════════════════════════════════════════════════════════
+let clawWs=null, clawConn=false;
+
+function connectClaw() {
+  if(clawWs&&clawWs.readyState<=1)return;
+  const proto=location.protocol==='https:'?'wss:':'ws:';
+  const url=`${proto}//${location.hostname}:18790`;
+  updClaw('wait','Conectando...');
+  try{
+    clawWs=new WebSocket(url);
+    clawWs.onopen=()=>{clawConn=true;updClaw('on','Conectado');addSysMsg('claw','✓ Conectado a OpenClaw');};
+    clawWs.onmessage=(e)=>{try{const m=JSON.parse(e.data);handleClaw(m);}catch{addClawResp(e.data);}};
+    clawWs.onerror=()=>updClaw('off','Error de conexión');
+    clawWs.onclose=()=>{clawConn=false;updClaw('off','Desconectado');addSysMsg('claw','✗ Desconectado');setTimeout(connectClaw,5000);};
+  }catch(e){updClaw('off',e.message);}
 }
 
-// Focus on load
-window.addEventListener('load', () => document.getElementById('input').focus());
+function handleClaw(m){
+  if(m.type==='connected'){document.getElementById('claw-session').textContent='Session: '+(m.sessionId||'').slice(0,8)+'...';return;}
+  if(m.type==='processing'){addSysMsg('claw','⏳ '+m.task);return;}
+  if(m.type==='response'){addClawResp(m.response);return;}
+  if(m.type==='error'){addClawErr(m.error||m.message);return;}
+  if(m.text||m.content||m.response)addClawResp(m.text||m.content||m.response);
+}
+
+function clawSend(){
+  const inp=document.getElementById('claw-in'),text=inp.value.trim();
+  if(!text)return;
+  if(!clawConn){addSysMsg('claw','⚠ No conectado');connectClaw();return;}
+  const e=document.getElementById('claw-empty');if(e)e.style.display='none';
+  const w=document.getElementById('claw-wrap'),d=document.createElement('div');
+  d.className='msg user';d.style.cssText='margin-bottom:10px;padding:9px 13px;background:rgba(139,92,246,.1);border-left:3px solid var(--purple);border-radius:0 10px 10px 0;margin-left:40px;font-size:13.5px;animation:fadeIn .2s ease';
+  d.textContent=text;w.appendChild(d);
+  inp.value='';inp.style.height='auto';
+  clawWs.send(JSON.stringify({type:'ask',task:text}));scrollB('claw');
+}
+
+function addClawResp(t){const w=document.getElementById('claw-wrap'),d=document.createElement('div');d.style.cssText='margin-bottom:10px;padding:9px 13px;background:rgba(34,197,94,.06);border-left:3px solid var(--green);border-radius:0 10px 10px 0;margin-right:40px;font-size:13.5px;white-space:pre-wrap;word-break:break-word;animation:fadeIn .2s ease';d.textContent=t;w.appendChild(d);scrollB('claw');}
+function addClawErr(t){const w=document.getElementById('claw-wrap'),d=document.createElement('div');d.style.cssText='margin-bottom:10px;padding:9px 13px;background:rgba(239,68,68,.1);border-left:3px solid var(--red);border-radius:0 10px 10px 0;font-size:13.5px;color:#fca5a5;animation:fadeIn .2s ease';d.textContent='⚠ '+t;w.appendChild(d);scrollB('claw');}
+function updClaw(s,t){
+  document.getElementById('claw-conn').className='sdot '+(s==='on'?'on':s==='wait'?'wait':'off');
+  document.getElementById('claw-conn-txt').textContent=t;
+  document.getElementById('claw-status').textContent='WebSocket: '+t;
+  document.getElementById('claw-dot').style.background=s==='on'?'var(--purple)':'var(--red)';
+  document.getElementById('claw-dot').style.boxShadow=s==='on'?'0 0 5px var(--purple)':'0 0 5px var(--red)';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  4. CLAUDE CODE / AIDER via /api/aider
+// ══════════════════════════════════════════════════════════════════════════════
+let aiderBusy=false;
+
+async function initAider(){
+  try{
+    const r=await fetch('/api/aider/status');const d=await r.json();
+    document.getElementById('aider-status').textContent=d.available?'Aider '+d.version+' · '+d.model:'⚠ Aider no disponible';
+  }catch{document.getElementById('aider-status').textContent='⚠ Error al verificar Aider';}
+}
+initAider();
+
+function aiderSuggest(el){document.getElementById('aider-in').value=el.textContent;aiderSend();}
+
+async function aiderSend(){
+  const inp=document.getElementById('aider-in'),text=inp.value.trim();
+  if(!text||aiderBusy)return;
+  addMsg('aider','user',`<p>${esc(text)}</p>`,'👤');
+  inp.value='';inp.style.height='auto';
+
+  const bub=addMsg('aider','assistant','','⚡');
+  bub.classList.add('typing-cursor');
+  bub.style.fontFamily="'SF Mono','Fira Code',monospace";
+  bub.style.fontSize='13px';
+  aiderBusy=true;document.getElementById('aider-send').disabled=true;
+
+  let full='';
+  try{
+    const res=await fetch('/api/aider',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
+    while(true){
+      const{done,value}=await reader.read();if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n');buf=lines.pop()||'';
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        const raw=line.slice(5).trim();if(raw==='[DONE]')continue;
+        try{
+          const d=JSON.parse(raw);
+          if(d.type==='status'){addSysMsg('aider',d.text);continue;}
+          if(d.type==='text'&&d.text){full+=d.text;bub.innerHTML='<pre style="margin:0;background:none;border:none;padding:0"><code>'+esc(full)+'</code></pre>';scrollB('aider');}
+          if(d.type==='error'){bub.innerHTML=`<p style="color:#fca5a5">⚠ ${esc(d.text)}</p>`;}
+        }catch{}
+      }
+    }
+    bub.classList.remove('typing-cursor');
+    if(!full.trim())bub.innerHTML='<p style="color:var(--muted)">(Sin salida)</p>';
+  }catch(e){bub.classList.remove('typing-cursor');bub.innerHTML=`<p>⚠ ${esc(e.message)}</p>`;}
+  aiderBusy=false;document.getElementById('aider-send').disabled=false;scrollB('aider');
+}
+
+// ── Focus ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load',()=>document.getElementById('chat-in').focus());
 </script>
 </body>
 </html>
