@@ -1,52 +1,28 @@
-// ═══════════════════════════════════════════════════════════════════════
-//  TEST PIPELINE — Procesa PDFs reales contra documentProcessor
-//  
-//  Uso local (Mac Mini con Ollama):
-//    node test_pipeline.mjs [carpeta_pdfs]
-//  
-//  Ejemplos:
-//    node test_pipeline.mjs                      # usa ./test_pdfs o ./uploads
-//    node test_pipeline.mjs ~/facturas            # carpeta custom
-//    NO_LLM=1 node test_pipeline.mjs              # sin Ollama (solo texto)
-// ═══════════════════════════════════════════════════════════════════════
-
+#!/usr/bin/env node
+// ═══════════════════════════════════════════════════════════════════════════
+//  SynK-IA — Test del pipeline v3 (motor universal)
+//
+//  Uso:
+//    node test_pipeline.mjs ./uploads          # procesa todos los PDFs
+//    node test_pipeline.mjs ./uploads 5        # solo los primeros 5
+//    NO_LLM=1 node test_pipeline.mjs           # sin Ollama (solo texto)
+// ═══════════════════════════════════════════════════════════════════════════
 import { readFile, writeFile, readdir } from 'fs/promises';
-import { existsSync } from 'fs';
 import path from 'path';
 import pdfParse from 'pdf-parse';
 
-// Carpeta de PDFs: argumento CLI > ./test_pdfs > ./uploads
-const customDir = process.argv[2];
-const TEST_DIR  = customDir
-  ? path.resolve(customDir)
-  : existsSync(path.resolve('test_pdfs'))
-    ? path.resolve('test_pdfs')
+// ── Config ──────────────────────────────────────────────────────────
+const TEST_DIR  = process.argv[2]
+    ? path.resolve(process.argv[2])
     : path.resolve('uploads');
+const MAX_FILES = parseInt(process.argv[3]) || 0; // 0 = todos
 const RESULTS   = path.resolve('test_results.json');
 const NO_LLM    = process.env.NO_LLM === '1';
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const MODEL      = process.env.MODEL || 'phi4-mini';
 
-// ── Heuristic classifier (same logic as documentProcessor) ──────────
-function classifyHeuristic(text, filename) {
-  const t = (text + ' ' + filename).toLowerCase();
-  if (t.includes('nomina') || t.includes('nómina') || t.includes('hoja de salario') || t.includes('hojas de salario'))
-    return 'nomina';
-  if (t.includes('finiquito') || t.includes('liquidación') || t.includes('liquidacion'))
-    return 'nomina'; // finiquitos/liquidaciones van como nómina
-  if (t.includes('albarán') || t.includes('albaran') || t.includes('nota de entrega'))
-    return 'albaran';
-  if (t.includes('presupuesto') || t.includes('oferta'))
-    return 'presupuesto';
-  if (t.includes('factura') || t.includes('invoice') || t.includes('fra.'))
-    return 'factura_recibida';
-  if (t.includes('contrato'))
-    return 'contrato';
-  return 'otro';
-}
-
-// ── LLM call (only when Ollama is available) ────────────────────────
-async function llmCall(messages, maxTokens = 1600) {
+// ── LLM call ────────────────────────────────────────────────────────
+async function llmCall(messages, maxTokens = 2000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 180_000);
   try {
@@ -65,7 +41,6 @@ async function llmCall(messages, maxTokens = 1600) {
   }
 }
 
-// ── Strip <think>...</think> de modelos Qwen3 thinking ─────────────────────
 function stripThinking(text) {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
@@ -82,117 +57,150 @@ function parseJSON(text) {
   return null;
 }
 
-// ── Extraction schema + type prompts (from documentProcessor) ───────
-const BASE_SCHEMA = `{
-  "numero_documento": null,
-  "fecha": null, "fecha_vencimiento": null,
-  "emisor": { "nombre": null, "cif_nif": null, "direccion": null, "email": null, "telefono": null },
-  "receptor": { "nombre": null, "cif_nif": null, "direccion": null, "email": null, "telefono": null },
-  "lineas": [{ "descripcion": null, "cantidad": 1.0, "precio_unitario": 0.0, "iva_porcentaje": 21.0, "total_linea": 0.0 }],
-  "base_imponible": null, "iva_total": null, "total": null,
-  "moneda": "EUR", "forma_pago": null, "notas": null,
-  "confianza": 0.9, "resumen": null, "accion_recomendada": null
-}`;
-
-const TYPE_INSTRUCTIONS = {
-  factura_recibida: `Es una FACTURA RECIBIDA (proveedor → empresa).
-- emisor = el PROVEEDOR que emite la factura
-- receptor = TU EMPRESA que recibe la factura
-- accion_recomendada = "registrar_gasto"`,
-
-  nomina: `Es una NÓMINA / HOJA DE SALARIO / FINIQUITO / LIQUIDACIÓN.
-- emisor = empresa empleadora
-- receptor = el EMPLEADO (nombre y apellidos, DNI/NIF en cif_nif)
-- accion_recomendada = "registrar_gasto"
-- total = salario neto (líquido a percibir). base_imponible = salario bruto
-- Extrae SIEMPRE el campo "trabajador" con datos laborales:
-  "trabajador": {
-    "nss": "número Seguridad Social (formato XX/XXXXXXXX-XX)",
-    "categoria_profesional": "categoría o grupo profesional",
-    "antiguedad": "fecha antigüedad/alta en empresa (YYYY-MM-DD)",
-    "tipo_contrato": "indefinido/temporal/etc",
-    "grupo_cotizacion": "grupo de cotización"
-  }
-- Las líneas son conceptos salariales: salario base, complementos, deducciones, IRPF, SS
-- Busca el NSS cerca de "Nº Afiliación", "N.A.F.", "Nº S.S."`,
-
-  otro: 'Extrae toda la información que puedas del documento.',
-};
-
-// ── Smart truncate ──────────────────────────────────────────────────
-function smartTruncate(text, maxChars = 5500) {
+// ── Truncado inteligente ────────────────────────────────────────────
+function smartTruncate(text, maxChars = 6000) {
   if (text.length <= maxChars) return text;
-  const head = Math.floor(maxChars * 0.7);
+  const head = Math.floor(maxChars * 0.6);
   const tail = maxChars - head;
-  return text.slice(0, head) + '\n\n[...texto truncado...]\n\n' + text.slice(-tail);
+  return text.slice(0, head) + '\n\n[...documento truncado...]\n\n' + text.slice(-tail);
 }
+
+// ── Prompt universal (mismo que documentProcessor v3) ───────────────
+const UNIVERSAL_PROMPT = `Eres el motor de inteligencia de SynK-IA, una aplicación de gestión documental para empresas españolas.
+
+Tu trabajo: leer el texto de un documento y devolver un JSON con TODA la información que encuentres.
+NO tienes categorías fijas. NO tienes un formulario que rellenar. TÚ decides qué es el documento y qué datos contiene.
+
+INSTRUCCIONES:
+1. LEE el documento completo con atención
+2. DECIDE qué tipo de documento es (factura, nómina, finiquito, albarán, contrato, presupuesto, ticket, extracto bancario, certificado, carta, o lo que sea)
+3. IDENTIFICA a todas las personas y empresas que aparecen y su ROL:
+   - ¿Quién emite? ¿Quién recibe?
+   - ¿Es un proveedor vendiendo algo? → proveedor
+   - ¿Es una empresa pagando a un empleado? → trabajador
+   - ¿Es un cliente comprando? → cliente
+4. EXTRAE todos los datos relevantes: importes, fechas, conceptos, referencias, etc.
+5. Si hay datos laborales (NSS, categoría profesional, antigüedad, grupo cotización, tipo contrato), extráelos SIEMPRE
+
+DEVUELVE EXACTAMENTE ESTE JSON (rellena lo que encuentres, null lo que no):
+{
+  "tipo": "el tipo real del documento",
+  "subtipo": "más detalle si aplica",
+  "numero_documento": null,
+  "fecha": "YYYY-MM-DD",
+  "fecha_vencimiento": "YYYY-MM-DD o null",
+  "emisor": {
+    "nombre": null, "cif_nif": null, "direccion": null, "email": null, "telefono": null,
+    "rol": "proveedor | empleador | banco | administracion | otro"
+  },
+  "receptor": {
+    "nombre": null, "cif_nif": null, "direccion": null, "email": null, "telefono": null,
+    "rol": "cliente | empleado | empresa | particular | otro"
+  },
+  "trabajador": {
+    "nombre_completo": null, "dni": null,
+    "nss": "número Seguridad Social si aparece",
+    "categoria_profesional": null, "grupo_cotizacion": null,
+    "antiguedad": "fecha alta YYYY-MM-DD", "tipo_contrato": null, "puesto": null
+  },
+  "conceptos": [
+    { "descripcion": null, "cantidad": 1, "precio_unitario": 0.0, "iva_porcentaje": null, "total": 0.0 }
+  ],
+  "base_imponible": null, "iva_total": null, "total": null,
+  "moneda": "EUR", "forma_pago": null, "cuenta_bancaria": null,
+  "resumen": "una frase describiendo el documento",
+  "datos_extra": {},
+  "confianza": 0.9
+}
+
+REGLAS:
+- Si NO es nómina/finiquito/liquidación, pon "trabajador": null
+- Si es nómina: total = líquido a percibir (neto), base_imponible = salario bruto
+- Importes como número decimal (21.50, no "21,50")
+- Fechas en YYYY-MM-DD
+- null para lo que no encuentres, NUNCA string vacío
+- Responde SOLO con el JSON, sin explicaciones, sin markdown`;
 
 // ── Main ────────────────────────────────────────────────────────────
 async function main() {
   console.log('═══════════════════════════════════════════════════════');
-  console.log('  SynK-IA Pipeline Test — PDFs reales desde Gmail');
-  console.log(`  Ollama: ${NO_LLM ? 'DESACTIVADO (solo texto+heurística)' : OLLAMA_URL}`);
+  console.log('  SynK-IA Pipeline Test v3 — Motor Universal');
+  console.log(`  Modelo: ${NO_LLM ? 'DESACTIVADO' : MODEL}`);
+  console.log(`  Ollama: ${NO_LLM ? 'n/a' : OLLAMA_URL}`);
   console.log('═══════════════════════════════════════════════════════\n');
 
-  const files = (await readdir(TEST_DIR)).filter(f => f.toLowerCase().endsWith('.pdf'));
+  let files = (await readdir(TEST_DIR)).filter(f => f.toLowerCase().endsWith('.pdf'));
+  if (MAX_FILES > 0) files = files.slice(0, MAX_FILES);
   console.log(`📂 ${files.length} PDFs en ${TEST_DIR}\n`);
 
   const results = [];
+  let okCount = 0, failCount = 0;
+  const entidades = { proveedores: new Set(), trabajadores: new Set(), clientes: new Set() };
 
   for (const file of files) {
     const filePath = path.join(TEST_DIR, file);
     const t0 = Date.now();
-    console.log(`\n── ${file} ──────────────────────────────────`);
+    console.log(`\n── ${file} ${'─'.repeat(Math.max(0, 60 - file.length))}`);
 
     try {
-      // 1. Extract text
+      // 1. Extraer texto
       const buffer = await readFile(filePath);
       const pdf = await pdfParse(buffer);
       const text = pdf.text || '';
-      console.log(`  📝 Texto extraído: ${text.length} chars, ${pdf.numpages} páginas`);
+      console.log(`  📝 ${text.length} chars, ${pdf.numpages} pág`);
 
       if (text.length < 20) {
-        console.log('  ⚠ Texto insuficiente — necesitaría OCR (Tesseract)');
+        console.log('  ⚠ Texto insuficiente — necesitaría OCR');
         results.push({ file, status: 'needs_ocr', chars: text.length, pages: pdf.numpages });
+        failCount++;
         continue;
       }
 
-      // 2. Classify
-      const tipo = classifyHeuristic(text, file);
-      console.log(`  🏷  Tipo (heurística): ${tipo}`);
-
-      // 3. Preview text
-      const preview = text.slice(0, 500).replace(/\s+/g, ' ');
-      console.log(`  📋 Preview: ${preview.slice(0, 200)}...`);
-
-      // 4. LLM extraction (if available)
       let llmResult = null;
+
+      // 2. Llamada LLM universal (una sola llamada: clasifica + extrae)
       if (!NO_LLM) {
-        const instructions = TYPE_INSTRUCTIONS[tipo] || TYPE_INSTRUCTIONS.otro;
-        const truncated = smartTruncate(text, 5500);
-
-        const userPrompt = `TIPO DE DOCUMENTO: ${tipo}\n${instructions}\n\nTEXTO DEL DOCUMENTO:\n${truncated}\n\nDevuelve este JSON rellenado con los datos reales:\n${BASE_SCHEMA}`;
-
-        console.log('  🤖 Llamando a LLM...');
+        console.log('  🤖 Analizando...');
         try {
+          const truncated = smartTruncate(text, 6000);
           const raw = await llmCall([
-            { role: 'system', content: 'Eres un experto en extracción de datos de documentos financieros y laborales españoles. Responde SOLO con el JSON pedido, sin explicaciones.' },
-            { role: 'user', content: userPrompt },
+            { role: 'system', content: UNIVERSAL_PROMPT },
+            { role: 'user',   content: `DOCUMENTO:\n${truncated}` },
           ]);
-          console.log(`  📦 Raw LLM (first 500): ${raw.slice(0, 500)}`);
+
           llmResult = parseJSON(raw);
           if (llmResult) {
-            console.log(`  ✓ LLM respondió — emisor: ${llmResult.emisor?.nombre || 'n/a'}, total: ${llmResult.total || 'n/a'}`);
-            if (llmResult.trabajador) {
-              console.log(`  👤 Trabajador: NSS=${llmResult.trabajador.nss || 'n/a'}, categoría=${llmResult.trabajador.categoria_profesional || 'n/a'}`);
+            const tipo   = llmResult.tipo || '?';
+            const emisor = llmResult.emisor?.nombre || 'n/a';
+            const total  = llmResult.total != null ? `${llmResult.total}€` : 'n/a';
+            console.log(`  ✓ ${tipo} | ${emisor} → ${llmResult.receptor?.nombre || 'n/a'} | ${total}`);
+
+            // Tracking entidades
+            if (llmResult.emisor?.nombre && llmResult.emisor?.rol === 'proveedor') {
+              entidades.proveedores.add(llmResult.emisor.nombre);
             }
+            if (llmResult.receptor?.nombre && llmResult.receptor?.rol === 'cliente') {
+              entidades.clientes.add(llmResult.receptor.nombre);
+            }
+            if (llmResult.trabajador?.nombre_completo) {
+              entidades.trabajadores.add(llmResult.trabajador.nombre_completo);
+              console.log(`  👤 Trabajador: ${llmResult.trabajador.nombre_completo} | DNI: ${llmResult.trabajador.dni || 'n/a'} | NSS: ${llmResult.trabajador.nss || 'n/a'}`);
+            }
+            if (llmResult.datos_extra && Object.keys(llmResult.datos_extra).length > 0) {
+              console.log(`  📎 Extra: ${JSON.stringify(llmResult.datos_extra)}`);
+            }
+            okCount++;
           } else {
-            console.log('  ⚠ LLM respondió pero no pudo parsear JSON');
-            console.log(`  🔍 Full raw response (${raw.length} chars): ${raw.slice(0, 1000)}`);
+            console.log('  ⚠ No se pudo parsear el JSON');
+            console.log(`  🔍 Raw: ${raw.slice(0, 300)}`);
+            failCount++;
           }
         } catch (err) {
-          console.log(`  ✗ LLM error: ${err.message}`);
+          console.log(`  ✗ Error LLM: ${err.message}`);
+          failCount++;
         }
+      } else {
+        okCount++;
       }
 
       results.push({
@@ -200,24 +208,46 @@ async function main() {
         status: 'ok',
         chars: text.length,
         pages: pdf.numpages,
-        tipo_heuristico: tipo,
-        text_preview: text.slice(0, 800),
-        llm_result: llmResult,
         tiempo_ms: Date.now() - t0,
+        analisis: llmResult,
       });
 
     } catch (err) {
       console.log(`  ✗ Error: ${err.message}`);
-      results.push({ file, status: 'error', error: err.message });
+      results.push({ file, status: 'error', error: err.message, tiempo_ms: Date.now() - t0 });
+      failCount++;
     }
   }
 
-  // Save results
+  // Resumen final
   await writeFile(RESULTS, JSON.stringify(results, null, 2));
-  console.log(`\n═══════════════════════════════════════════════════════`);
-  console.log(`  Resultados guardados en ${RESULTS}`);
-  console.log(`  ${results.filter(r => r.status === 'ok').length}/${results.length} procesados OK`);
+
+  const tiempos = results.filter(r => r.tiempo_ms).map(r => r.tiempo_ms);
+  const avgTime = tiempos.length ? (tiempos.reduce((a,b) => a+b, 0) / tiempos.length / 1000).toFixed(1) : 0;
+  const totalTime = tiempos.length ? (tiempos.reduce((a,b) => a+b, 0) / 60000).toFixed(1) : 0;
+
+  // Contar tipos
+  const tipos = {};
+  results.forEach(r => {
+    const t = r.analisis?.tipo || 'sin_analisis';
+    tipos[t] = (tipos[t] || 0) + 1;
+  });
+
+  console.log('\n\n═══════════════════════════════════════════════════════');
+  console.log('  RESUMEN');
   console.log('═══════════════════════════════════════════════════════');
+  console.log(`  Total: ${files.length} | OK: ${okCount} | Fallos: ${failCount}`);
+  console.log(`  Tiempo: ${avgTime}s/doc, ${totalTime} min total`);
+  console.log(`\n  Tipos detectados:`);
+  for (const [t, c] of Object.entries(tipos).sort((a,b) => b[1] - a[1])) {
+    console.log(`    ${t}: ${c}`);
+  }
+  console.log(`\n  Entidades detectadas:`);
+  console.log(`    Proveedores: ${entidades.proveedores.size} — ${[...entidades.proveedores].join(', ') || 'ninguno'}`);
+  console.log(`    Trabajadores: ${entidades.trabajadores.size} — ${[...entidades.trabajadores].join(', ') || 'ninguno'}`);
+  console.log(`    Clientes: ${entidades.clientes.size} — ${[...entidades.clientes].join(', ') || 'ninguno'}`);
+  console.log(`\n  Resultados: ${RESULTS}`);
+  console.log('═══════════════════════════════════════════════════════\n');
 }
 
-main().catch(console.error);
+main().catch(err => { console.error('Fatal:', err); process.exit(1); });

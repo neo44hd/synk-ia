@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  SINKIA — Motor de procesamiento de documentos v2
-//  Arquitectura: Extracción → Limpieza → Clasificar → Extraer → Validar → Guardar
+//  SINKIA — Motor de procesamiento de documentos v3
+//  Filosofía: UNA sola llamada al LLM. Sin heurísticas. Sin categorías fijas.
+//  El modelo LEE el documento, ENTIENDE lo que es, y EXTRAE todo.
 // ═══════════════════════════════════════════════════════════════════════════
 import pdfParse       from 'pdf-parse';
 import { readFile, writeFile, mkdir } from 'fs/promises';
@@ -18,7 +19,6 @@ const DOCS_FILE  = path.join(DATA_DIR, 'documents.json');
 const ENT_FILE   = path.join(DATA_DIR, 'entities.json');
 
 // ── Detección automática de modelo con capacidad visual ───────────────────
-// Se activa si el nombre del modelo contiene 'vl', 'vision' o 'visual'
 const IS_VL_MODEL = /vl|vision|visual/i.test(MODEL);
 if (IS_VL_MODEL) console.log(`[DOCS] Modo visión activo — modelo VL detectado: ${MODEL}`);
 
@@ -53,7 +53,6 @@ export async function extractText(filePath, mimeType = '') {
 
   // ── Imágenes (JPG, PNG, WEBP, TIFF) ──────────────────────────────────
   if (mimeType.startsWith('image/') || ['.jpg','.jpeg','.png','.webp','.tiff','.bmp'].includes(ext)) {
-    // Con modelo VL: la imagen se procesa directamente sin OCR
     if (IS_VL_MODEL) return { text: '__VISION__', method: 'vision-vl', ok: true, filePath, mimeType };
     return ocrFile(filePath, 'image');
   }
@@ -98,105 +97,45 @@ export async function extractText(filePath, mimeType = '') {
 //
 //  Para Mac Mini M4 Pro:
 //    brew install tesseract tesseract-lang
-//    brew install poppler   (para pdftoppm — convierte PDF→PNG para OCR)
-//
-//  El pipeline para PDFs escaneados es:
-//    PDF → pdftoppm (a PNG) → tesseract (OCR) → texto
-//  Para imágenes directas:
-//    imagen → tesseract (OCR) → texto
+//    brew install poppler (para pdftoppm)
 // ══════════════════════════════════════════════════════════════════════════
 
-let _tesseractChecked = false;
-let _tesseractAvailable = false;
-let _pdftoppmAvailable = false;
-
-async function checkOcrDeps() {
-  if (_tesseractChecked) return;
-  const { execFile } = await import('child_process');
-  const { promisify } = await import('util');
-  const exec = promisify(execFile);
-
-  // Tesseract
+async function ocrFile(filePath, sourceType = 'image') {
   try {
-    const { stdout } = await exec('tesseract', ['--version'], { timeout: 5000 });
-    _tesseractAvailable = true;
-    const version = stdout.split('\n')[0];
-    console.log(`[OCR] ✓ Tesseract disponible: ${version}`);
+    const { execFile } = await import('child_process');
+    const { promisify } = await import('util');
+    const exec = promisify(execFile);
 
-    // Verificar idiomas instalados
-    try {
-      const { stdout: langs } = await exec('tesseract', ['--list-langs'], { timeout: 5000 });
-      const hasSpa = langs.includes('spa');
-      const hasEng = langs.includes('eng');
-      if (!hasSpa) console.warn('[OCR] ⚠ Idioma español (spa) no instalado. Ejecuta: brew install tesseract-lang');
-      if (!hasEng) console.warn('[OCR] ⚠ Idioma inglés (eng) no instalado');
-      console.log(`[OCR]   Idiomas: spa=${hasSpa ? '✓' : '✗'} eng=${hasEng ? '✓' : '✗'}`);
-    } catch {}
-  } catch (e) {
-    _tesseractAvailable = false;
-    console.error('[OCR] ✗ Tesseract NO disponible. PDFs escaneados no se podrán procesar.');
-    console.error('[OCR]   Instalar: brew install tesseract tesseract-lang');
-  }
-
-  // pdftoppm (de poppler — para convertir PDF escaneado → imagen → OCR)
-  try {
-    await exec('pdftoppm', ['-v'], { timeout: 5000 });
-    _pdftoppmAvailable = true;
-    console.log('[OCR] ✓ pdftoppm disponible (poppler)');
-  } catch {
-    _pdftoppmAvailable = false;
-    console.warn('[OCR] ⚠ pdftoppm no disponible. PDFs escaneados usarán modo directo.');
-    console.warn('[OCR]   Para mejor OCR en PDFs: brew install poppler');
-  }
-
-  _tesseractChecked = true;
-}
-
-async function ocrFile(filePath, type) {
-  await checkOcrDeps();
-
-  if (!_tesseractAvailable) {
-    return {
-      text: '', method: 'ocr-no-instalado', ok: false,
-      hint: 'Tesseract no instalado. Ejecuta:\n  brew install tesseract tesseract-lang\n  brew install poppler',
-    };
-  }
-
-  const { execFile } = await import('child_process');
-  const { promisify } = await import('util');
-  const exec = promisify(execFile);
-
-  try {
-    // Detectar idiomas disponibles
-    let lang = 'eng';
-    try {
-      const { stdout: langs } = await exec('tesseract', ['--list-langs'], { timeout: 3000 });
-      if (langs.includes('spa') && langs.includes('eng')) lang = 'spa+eng';
-      else if (langs.includes('spa')) lang = 'spa';
-    } catch {}
-
-    // ── PDF escaneado ─────────────────────────────────────────────────
-    if (type === 'pdf') {
-      // Método 1: pdftoppm → convertir cada página a PNG → OCR
-      if (_pdftoppmAvailable) {
-        return await ocrPdfViaImages(filePath, lang, exec);
-      }
-      // Método 2: tesseract directo sobre PDF (menos fiable)
-      try {
-        const { stdout } = await exec('tesseract', [filePath, 'stdout', '-l', lang, '--dpi', '300', '--psm', '1'], { timeout: 120_000 });
-        const text = cleanText(stdout);
-        if (text.length > 20) return { text, method: 'tesseract-pdf-directo', ok: true };
-      } catch (e) {
-        console.warn(`[OCR] tesseract directo en PDF falló: ${e.message}`);
-      }
-      return { text: '', method: 'ocr-pdf-fallido', ok: false, hint: 'Instala poppler para OCR de PDFs: brew install poppler' };
+    // Detectar Tesseract
+    let tesseractBin = 'tesseract';
+    const macPaths = ['/opt/homebrew/bin/tesseract', '/usr/local/bin/tesseract'];
+    for (const p of macPaths) {
+      if (existsSync(p)) { tesseractBin = p; break; }
     }
 
-    // ── Imagen directa ────────────────────────────────────────────────
-    const { stdout } = await exec('tesseract', [filePath, 'stdout', '-l', lang, '--dpi', '300', '--psm', '3'], { timeout: 90_000 });
+    try {
+      await exec(tesseractBin, ['--version'], { timeout: 5000 });
+    } catch {
+      return { text: '', method: 'ocr-no-tesseract', ok: false,
+        hint: 'Tesseract no instalado. brew install tesseract tesseract-lang' };
+    }
+
+    // Detectar idioma
+    const lang = existsSync('/opt/homebrew/share/tessdata/spa.traineddata') ||
+                 existsSync('/usr/local/share/tessdata/spa.traineddata') ? 'spa+eng' : 'eng';
+
+    if (sourceType === 'pdf') {
+      return ocrPdfViaImages(filePath, lang, exec);
+    }
+
+    // OCR directo sobre imagen
+    const { stdout } = await exec(tesseractBin, [filePath, 'stdout', '-l', lang, '--dpi', '300'], { timeout: 60_000 });
     const text = cleanText(stdout);
-    if (text.length > 20) return { text, method: 'tesseract-ocr', ok: true };
-    return { text: '', method: 'ocr-sin-texto', ok: false, hint: 'OCR no encontró texto legible en la imagen' };
+
+    if (text.length > 20) {
+      return { text, method: 'tesseract', ok: true };
+    }
+    return { text: '', method: 'ocr-sin-texto', ok: false, hint: 'OCR no encontró texto legible' };
 
   } catch (e) {
     return {
@@ -213,10 +152,8 @@ async function ocrPdfViaImages(pdfPath, lang, exec) {
     await mkdir(tmpDir, { recursive: true });
     const prefix = path.join(tmpDir, 'page');
 
-    // Convertir PDF a PNGs (máx 10 páginas, 300 DPI)
     await exec('pdftoppm', ['-png', '-r', '300', '-l', '10', pdfPath, prefix], { timeout: 60_000 });
 
-    // Buscar imágenes generadas
     const { readdir } = await import('fs/promises');
     const files = (await readdir(tmpDir)).filter(f => f.endsWith('.png')).sort();
 
@@ -224,7 +161,6 @@ async function ocrPdfViaImages(pdfPath, lang, exec) {
       return { text: '', method: 'ocr-pdf-sin-paginas', ok: false, hint: 'pdftoppm no generó imágenes del PDF' };
     }
 
-    // OCR cada página
     const pageTexts = [];
     for (const file of files) {
       try {
@@ -235,20 +171,18 @@ async function ocrPdfViaImages(pdfPath, lang, exec) {
       } catch {}
     }
 
-    // Limpiar temporales
     for (const file of files) {
       try { const { unlink } = await import('fs/promises'); await unlink(path.join(tmpDir, file)); } catch {}
     }
     try { const { rmdir } = await import('fs/promises'); await rmdir(tmpDir); } catch {}
 
-    const fullText = pageTexts.join('\n\n--- Página ---\n\n');
+    const fullText = pageTexts.join('\\n\\n--- Página ---\\n\\n');
     if (fullText.length > 20) {
       console.log(`[OCR] ✓ PDF escaneado: ${files.length} páginas, ${fullText.length} chars extraídos`);
       return { text: fullText, method: 'tesseract-pdf-via-images', ok: true, pages: files.length };
     }
     return { text: '', method: 'ocr-pdf-sin-texto', ok: false, hint: 'OCR no encontró texto legible en el PDF escaneado' };
   } catch (e) {
-    // Limpiar en caso de error
     try { const { rm } = await import('fs/promises'); await rm(tmpDir, { recursive: true }); } catch {}
     return { text: '', method: 'ocr-pdf-error', ok: false, hint: `Error OCR PDF: ${e.message}` };
   }
@@ -256,7 +190,7 @@ async function ocrPdfViaImages(pdfPath, lang, exec) {
 
 // Parser básico de EML
 function parseEml(raw) {
-  const lines = raw.split('\n');
+  const lines = raw.split('\\n');
   const headers = {};
   let bodyStart = false, body = [];
   for (const line of lines) {
@@ -268,7 +202,7 @@ function parseEml(raw) {
       body.push(line);
     }
   }
-  return `De: ${headers.from || ''}\nPara: ${headers.to || ''}\nAsunto: ${headers.subject || ''}\n\n${body.join('\n')}`;
+  return `De: ${headers.from || ''}\\nPara: ${headers.to || ''}\\nAsunto: ${headers.subject || ''}\\n\\n${body.join('\\n')}`;
 }
 
 // ── Limpieza de texto ──────────────────────────────────────────────────────
@@ -277,20 +211,17 @@ function cleanText(text) {
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
     .replace(/\t/g, ' ')
-    .replace(/[ ]{3,}/g, '  ')          // reducir espacios excesivos
-    .replace(/\n{4,}/g, '\n\n\n')       // máx 3 saltos de línea seguidos
-    .replace(/[^\S\n]{2,}/g, ' ')       // espacios múltiples en la misma línea
+    .replace(/[ ]{3,}/g, '  ')
+    .replace(/\n{4,}/g, '\n\n\n')
+    .replace(/[^\S\n]{2,}/g, ' ')
     .trim();
 }
 
 // ── Truncado inteligente ───────────────────────────────────────────────────
-// Para documentos largos: mantiene cabecera + pie (donde van los totales)
-// y un resumen del centro. Así caben en 4096 tokens.
 function smartTruncate(text, maxChars = 6000) {
   if (text.length <= maxChars) return text;
-
-  const head = text.slice(0, Math.floor(maxChars * 0.6));   // 60% inicio
-  const tail = text.slice(-Math.floor(maxChars * 0.35));    // 35% final
+  const head = text.slice(0, Math.floor(maxChars * 0.6));
+  const tail = text.slice(-Math.floor(maxChars * 0.35));
   return `${head}\n\n[...documento truncado...]\n\n${tail}`;
 }
 
@@ -298,7 +229,6 @@ function smartTruncate(text, maxChars = 6000) {
 //  VISIÓN — Helpers para modelos VL (imagen → base64 → LLM)
 // ══════════════════════════════════════════════════════════════════════════
 
-// Convierte cualquier imagen a base64 con MIME correcto
 async function loadImageAsBase64(filePath, mimeType) {
   const ext  = path.extname(filePath).toLowerCase();
   const mime = mimeType?.startsWith('image/') ? mimeType
@@ -312,10 +242,9 @@ async function loadImageAsBase64(filePath, mimeType) {
   return { base64, mime, url: `data:${mime};base64,${base64}` };
 }
 
-// Llamada LLM con contenido multimodal (texto + imagen)
-async function llmCallVision(messages, maxTokens = 1600, temp = 0.05) {
+async function llmCallVision(messages, maxTokens = 2000, temp = 0.05) {
   const controller = new AbortController();
-  const timer      = setTimeout(() => controller.abort(), 240_000); // 4 min (VL es más lento)
+  const timer      = setTimeout(() => controller.abort(), 240_000);
   try {
     const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
       method:  'POST',
@@ -331,212 +260,117 @@ async function llmCallVision(messages, maxTokens = 1600, temp = 0.05) {
   }
 }
 
-// Clasificar imagen directamente con el modelo VL
-async function classifyVision(imgData) {
-  const raw = await llmCallVision([
-    { role: 'system', content: CLASSIFY_SYSTEM },
-    { role: 'user', content: [
-      { type: 'text', text: 'Clasifica este documento:' },
-      { type: 'image_url', image_url: { url: imgData.url } },
-    ]},
-  ], 30, 0.0);
-  const tipos = ['factura_recibida','factura_emitida','albaran','presupuesto',
-    'contrato','nomina','extracto_bancario','pedido','ticket','email_comercial','otro'];
-  return tipos.find(t => raw.toLowerCase().includes(t)) || 'otro';
-}
-
-// Extraer datos estructurados de imagen con el modelo VL
-async function extractVision(imgData, tipo) {
-  const instructions = TYPE_INSTRUCTIONS[tipo] || TYPE_INSTRUCTIONS.otro;
-  const raw = await llmCallVision([
-    { role: 'system', content: EXTRACT_SYSTEM },
-    { role: 'user', content: [
-      { type: 'text', text:
-          `TIPO DE DOCUMENTO: ${tipo}\n${instructions}\n\n` +
-          `Analiza la imagen de este documento y devuelve EXACTAMENTE este JSON relleno:\n${BASE_SCHEMA}` },
-      { type: 'image_url', image_url: { url: imgData.url } },
-    ]},
-  ], 1600, 0.05);
-  return parseJSON(raw);
-}
-
 // ══════════════════════════════════════════════════════════════════════════
-//  PASO 2: CLASIFICACIÓN (pasada rápida, 30 tokens de respuesta)
+//  MOTOR V3 — UNA SOLA LLAMADA: Clasificar + Extraer + Entender
+//
+//  Sin heurísticas. Sin categorías fijas. El LLM LEE y ENTIENDE.
 // ══════════════════════════════════════════════════════════════════════════
 
-const CLASSIFY_SYSTEM = `Clasifica este documento empresarial español.
-Responde SOLO con una de estas palabras exactas, nada más:
-factura_recibida
-factura_emitida
-albaran
-presupuesto
-contrato
-nomina
-extracto_bancario
-pedido
-ticket
-email_comercial
-otro`;
+const UNIVERSAL_PROMPT = `Eres el motor de inteligencia de SynK-IA, una aplicación de gestión documental para empresas españolas.
 
-async function classify(text) {
-  const preview = text.slice(0, 800); // Solo el inicio para clasificar rápido
-  const res = await llmCall([
-    { role: 'system', content: CLASSIFY_SYSTEM },
-    { role: 'user',   content: preview },
-  ], 30, 0.0);
+Tu trabajo: leer el texto de un documento y devolver un JSON con TODA la información que encuentres.
+NO tienes categorías fijas. NO tienes un formulario que rellenar. TÚ decides qué es el documento y qué datos contiene.
 
-  const tipos = ['factura_recibida','factura_emitida','albaran','presupuesto',
-    'contrato','nomina','extracto_bancario','pedido','ticket','email_comercial','otro'];
-  const found = tipos.find(t => res.toLowerCase().includes(t));
-  return found || 'otro';
-}
+INSTRUCCIONES:
+1. LEE el documento completo con atención
+2. DECIDE qué tipo de documento es (factura, nómina, finiquito, albarán, contrato, presupuesto, ticket, extracto bancario, certificado, carta, o lo que sea)
+3. IDENTIFICA a todas las personas y empresas que aparecen y su ROL:
+   - ¿Quién emite? ¿Quién recibe?
+   - ¿Es un proveedor vendiendo algo? → proveedor
+   - ¿Es una empresa pagando a un empleado? → trabajador
+   - ¿Es un cliente comprando? → cliente
+4. EXTRAE todos los datos relevantes: importes, fechas, conceptos, referencias, etc.
+5. Si hay datos laborales (NSS, categoría profesional, antigüedad, grupo cotización, tipo contrato), extráelos SIEMPRE
 
-// ══════════════════════════════════════════════════════════════════════════
-//  PASO 3: EXTRACCIÓN (prompt específico por tipo)
-// ══════════════════════════════════════════════════════════════════════════
-
-// Esquema JSON base (común a todos los tipos)
-const BASE_SCHEMA = `{
+DEVUELVE EXACTAMENTE ESTE JSON (rellena lo que encuentres, null lo que no):
+{
+  "tipo": "el tipo real del documento (factura_recibida, factura_emitida, nomina, finiquito, albaran, presupuesto, contrato, ticket, extracto_bancario, certificado, otro)",
+  "subtipo": "más detalle si aplica (ej: liquidacion, carta_despido, factura_proforma, recibo_autonomo...)",
   "numero_documento": null,
-  "fecha": null,
-  "fecha_vencimiento": null,
-  "emisor": { "nombre": null, "cif_nif": null, "direccion": null, "email": null, "telefono": null },
-  "receptor": { "nombre": null, "cif_nif": null, "direccion": null, "email": null, "telefono": null },
-  "lineas": [{ "descripcion": null, "cantidad": 1.0, "precio_unitario": 0.0, "iva_porcentaje": 21.0, "total_linea": 0.0 }],
+  "fecha": "YYYY-MM-DD",
+  "fecha_vencimiento": "YYYY-MM-DD o null",
+  "emisor": {
+    "nombre": null, "cif_nif": null, "direccion": null, "email": null, "telefono": null,
+    "rol": "proveedor | empleador | banco | administracion | otro"
+  },
+  "receptor": {
+    "nombre": null, "cif_nif": null, "direccion": null, "email": null, "telefono": null,
+    "rol": "cliente | empleado | empresa | particular | otro"
+  },
+  "trabajador": {
+    "nombre_completo": null,
+    "dni": null,
+    "nss": "número Seguridad Social si aparece (Nº Afiliación, N.A.F., Nº S.S.)",
+    "categoria_profesional": null,
+    "grupo_cotizacion": null,
+    "antiguedad": "fecha alta YYYY-MM-DD",
+    "tipo_contrato": null,
+    "puesto": null
+  },
+  "conceptos": [
+    { "descripcion": null, "cantidad": 1, "precio_unitario": 0.0, "iva_porcentaje": null, "total": 0.0 }
+  ],
   "base_imponible": null,
   "iva_total": null,
   "total": null,
   "moneda": "EUR",
   "forma_pago": null,
-  "notas": null,
-  "confianza": 0.9,
-  "resumen": null,
-  "accion_recomendada": null
-}`;
+  "cuenta_bancaria": null,
+  "resumen": "una frase describiendo el documento",
+  "datos_extra": {},
+  "confianza": 0.9
+}
 
-// Instrucciones específicas por tipo de documento
-const TYPE_INSTRUCTIONS = {
-  factura_recibida: `Es una FACTURA RECIBIDA (proveedor → empresa).
-- emisor = el PROVEEDOR que emite la factura
-- receptor = TU EMPRESA que recibe la factura
-- accion_recomendada = "registrar_gasto"
-- Extrae TODAS las líneas de producto/servicio con precio e IVA
-- El número suele aparecer como "Nº Factura", "Factura nº", "Invoice"`,
-
-  factura_emitida: `Es una FACTURA EMITIDA (empresa → cliente).
-- emisor = TU EMPRESA que emite la factura
-- receptor = el CLIENTE que paga
-- accion_recomendada = "registrar_ingreso"
-- Extrae todas las líneas y los importes con precisión`,
-
-  albaran: `Es un ALBARÁN / NOTA DE ENTREGA.
-- emisor = quien entrega la mercancía
-- receptor = quien la recibe
-- accion_recomendada = "actualizar_stock"
-- Las líneas contienen artículos y cantidades (el precio puede ser 0)`,
-
-  presupuesto: `Es un PRESUPUESTO / OFERTA COMERCIAL.
-- emisor = empresa que hace el presupuesto
-- receptor = cliente potencial
-- accion_recomendada = "crear_cliente"
-- Extrae las líneas de la oferta con precios`,
-
-  nomina: `Es una NÓMINA / HOJA DE SALARIO.
-- emisor = empresa empleadora
-- receptor = el EMPLEADO (nombre y apellidos, DNI/NIF en cif_nif)
-- accion_recomendada = "registrar_gasto"
-- total = salario neto (líquido a percibir). base_imponible = salario bruto
-- Extrae SIEMPRE el campo "trabajador" con datos laborales:
-  "trabajador": {
-    "nss": "número Seguridad Social (formato XX/XXXXXXXX-XX)",
-    "categoria_profesional": "categoría o grupo profesional",
-    "antiguedad": "fecha antigüedad/alta en empresa (YYYY-MM-DD)",
-    "tipo_contrato": "indefinido/temporal/etc",
-    "grupo_cotizacion": "grupo de cotización"
-  }
-- Las líneas son conceptos salariales: salario base, complementos, horas extra, deducciones IRPF, SS trabajador, etc.
-- Busca el NSS cerca de etiquetas como "Nº Afiliación", "N.A.F.", "Nº S.S.", "Núm. afiliación"`,
-
-  extracto_bancario: `Es un EXTRACTO BANCARIO.
-- Solo extrae: fecha, banco (emisor.nombre), número de cuenta, saldo final (total)
-- Las líneas son los movimientos más relevantes
-- accion_recomendada = "archivar"`,
-
-  contrato: `Es un CONTRATO.
-- emisor = primera parte firmante
-- receptor = segunda parte firmante
-- fecha = fecha de firma o inicio
-- fecha_vencimiento = fecha de fin si existe
-- accion_recomendada = "archivar"`,
-
-  pedido: `Es un PEDIDO / ORDEN DE COMPRA.
-- emisor = quien compra / hace el pedido
-- receptor = proveedor que recibirá el pedido
-- accion_recomendada = "registrar_gasto"`,
-
-  ticket: `Es un TICKET DE CAJA o RECIBO.
-- emisor = tienda / establecimiento
-- receptor = puede ser null
-- total = importe total pagado
-- accion_recomendada = "registrar_gasto"`,
-
-  email_comercial: `Es un EMAIL COMERCIAL.
-- emisor = quien envía el email
-- receptor = destinatario
-- notas = resumen del contenido del email
-- accion_recomendada = "archivar"`,
-
-  otro: `Tipo de documento desconocido. Extrae lo que puedas.`,
-};
-
-const EXTRACT_SYSTEM = `Eres un experto contable español. Extraes datos de documentos con máxima precisión.
-Responde EXCLUSIVAMENTE con JSON válido. Sin markdown. Sin explicaciones.
 REGLAS:
-- null para campos no encontrados (nunca string vacío)
-- Números como float: 21.0 no "21"
-- Fechas: YYYY-MM-DD
-- Importes en euros con 2 decimales
-- Si el CIF/NIF tiene letras, inclúyelas (B56908486, 12345678A)`;
+- Si NO es una nómina/finiquito/liquidación, pon "trabajador": null
+- Si es una nómina: total = líquido a percibir (neto), base_imponible = salario bruto
+- "conceptos" son las líneas del documento: productos en facturas, devengos/deducciones en nóminas
+- Importes como número decimal (21.50, no "21,50")
+- Fechas en YYYY-MM-DD
+- null para lo que no encuentres, NUNCA string vacío
+- "datos_extra" para cualquier dato interesante que no encaje arriba (ej: periodo_liquidacion, dias_vacaciones, indemnizacion)
+- Responde SOLO con el JSON, sin explicaciones, sin markdown`;
 
-async function extract(text, tipo) {
-  const instructions = TYPE_INSTRUCTIONS[tipo] || TYPE_INSTRUCTIONS.otro;
-  const truncated    = smartTruncate(text, 5500);
-
-  const userPrompt = `TIPO DE DOCUMENTO: ${tipo}
-${instructions}
-
-TEXTO DEL DOCUMENTO:
-${truncated}
-
-Devuelve este JSON rellenado con los datos reales:
-${BASE_SCHEMA}`;
+async function analyzeDocument(text) {
+  const truncated = smartTruncate(text, 6000);
 
   const raw = await llmCall([
-    { role: 'system', content: EXTRACT_SYSTEM },
-    { role: 'user',   content: userPrompt },
-  ], 1600, 0.05);
+    { role: 'system', content: UNIVERSAL_PROMPT },
+    { role: 'user',   content: `DOCUMENTO:\n${truncated}` },
+  ], 2000, 0.05);
+
+  return parseJSON(raw);
+}
+
+// Versión visión (para imágenes con modelo VL)
+async function analyzeVision(imgData) {
+  const raw = await llmCallVision([
+    { role: 'system', content: UNIVERSAL_PROMPT },
+    { role: 'user', content: [
+      { type: 'text', text: 'Analiza este documento:' },
+      { type: 'image_url', image_url: { url: imgData.url } },
+    ]},
+  ], 2000, 0.05);
 
   return parseJSON(raw);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  PASO 4: VALIDACIÓN Y CORRECCIÓN
+//  VALIDACIÓN — Corrección ligera sin cambiar lo que decidió el LLM
 // ══════════════════════════════════════════════════════════════════════════
 
-function validate(data, tipo) {
+function validate(data) {
   const d = { ...data };
 
-  // Corregir tipo
-  d.tipo = tipo;
-
-  // Limpiar null strings
+  // Limpiar null strings en objetos anidados
   function cleanObj(obj) {
     if (!obj || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(cleanObj);
     const result = {};
     for (const [k, v] of Object.entries(obj)) {
-      if (v === '' || v === 'null' || v === 'undefined' || v === 'N/A' || v === '-') {
+      if (v === '' || v === 'null' || v === 'undefined' || v === 'N/A' || v === '-' || v === 'n/a') {
         result[k] = null;
-      } else if (typeof v === 'object' && !Array.isArray(v)) {
+      } else if (typeof v === 'object') {
         result[k] = cleanObj(v);
       } else {
         result[k] = v;
@@ -546,25 +380,23 @@ function validate(data, tipo) {
   }
   Object.assign(d, cleanObj(d));
 
-  // Validar/corregir fecha
+  // Normalizar fecha si no está en YYYY-MM-DD
   if (d.fecha && !/^\d{4}-\d{2}-\d{2}$/.test(d.fecha)) {
-    const parsed = tryParseDate(d.fecha);
-    d.fecha = parsed || null;
+    d.fecha = tryParseDate(d.fecha) || d.fecha;
+  }
+  if (d.fecha_vencimiento && !/^\d{4}-\d{2}-\d{2}$/.test(d.fecha_vencimiento)) {
+    d.fecha_vencimiento = tryParseDate(d.fecha_vencimiento) || d.fecha_vencimiento;
   }
 
-  // Validar importes: si tenemos líneas pero no totales, calcular
-  if (d.lineas?.length && !d.total) {
-    const sum = d.lineas.reduce((s, l) => s + (parseFloat(l.total_linea) || 0), 0);
-    if (sum > 0) {
-      d.total = Math.round(sum * 100) / 100;
-      d.base_imponible = d.base_imponible || Math.round(sum / 1.21 * 100) / 100;
-      d.iva_total      = d.iva_total      || Math.round((sum - d.base_imponible) * 100) / 100;
-    }
+  // Si hay conceptos pero no total, calcular
+  if (d.conceptos?.length && !d.total) {
+    const sum = d.conceptos.reduce((s, l) => s + (parseFloat(l.total) || 0), 0);
+    if (sum > 0) d.total = Math.round(sum * 100) / 100;
   }
 
   // Asegurar resumen
   if (!d.resumen) {
-    const partes = [tipo.replace(/_/g,' ')];
+    const partes = [d.tipo || 'documento'];
     if (d.emisor?.nombre)   partes.push(`de ${d.emisor.nombre}`);
     if (d.receptor?.nombre) partes.push(`para ${d.receptor.nombre}`);
     if (d.total)            partes.push(`por ${d.total}€`);
@@ -572,31 +404,35 @@ function validate(data, tipo) {
     d.resumen = partes.join(' ');
   }
 
+  // Limpiar trabajador si está todo vacío
+  if (d.trabajador) {
+    const tVals = Object.values(d.trabajador).filter(v => v !== null && v !== undefined);
+    if (tVals.length === 0) d.trabajador = null;
+  }
+
   return d;
 }
 
 function tryParseDate(str) {
   if (!str) return null;
-  // Formatos comunes en facturas españolas: DD/MM/YYYY, DD-MM-YYYY, YYYY/MM/DD
   const patterns = [
-    /(\d{2})[\/\-](\d{2})[\/\-](\d{4})/,  // DD/MM/YYYY
-    /(\d{4})[\/\-](\d{2})[\/\-](\d{2})/,  // YYYY/MM/DD
-    /(\d{2})\.(\d{2})\.(\d{4})/,            // DD.MM.YYYY
+    /(\d{2})[\/\-](\d{2})[\/\-](\d{4})/,
+    /(\d{4})[\/\-](\d{2})[\/\-](\d{2})/,
+    /(\d{2})\.(\d{2})\.(\d{4})/,
   ];
   for (const p of patterns) {
     const m = str.match(p);
     if (m) {
-      // Detectar si es DD/MM/YYYY o YYYY/MM/DD
       const [, a, b, c] = m;
-      if (parseInt(a) > 31) return `${a}-${b}-${c}`; // YYYY-MM-DD
-      return `${c}-${b}-${a}`;                        // asume DD/MM/YYYY
+      if (parseInt(a) > 31) return `${a}-${b}-${c}`;
+      return `${c}-${b}-${a}`;
     }
   }
   return null;
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  PASO 5: RESOLUCIÓN DE ENTIDADES
+//  RESOLUCIÓN DE ENTIDADES — Inteligente, basada en lo que el LLM detectó
 // ══════════════════════════════════════════════════════════════════════════
 
 function normName(s) {
@@ -607,36 +443,63 @@ function normName(s) {
 
 function sameEntity(a, b) {
   if (!a || !b) return false;
+  // Por CIF/NIF
   if (a.cif_nif && b.cif_nif && a.cif_nif.replace(/\s/g,'') === b.cif_nif.replace(/\s/g,'')) return true;
-  const na = normName(a.nombre), nb = normName(b.nombre);
+  // Por DNI (para trabajadores)
+  if (a.dni && b.dni && a.dni.replace(/\s/g,'') === b.dni.replace(/\s/g,'')) return true;
+  // Por nombre
+  const na = normName(a.nombre || a.nombre_completo), nb = normName(b.nombre || b.nombre_completo);
   if (na.length > 3 && nb.length > 3) {
-    // Exact match o uno contiene al otro
     if (na === nb) return true;
     if (na.length > 6 && nb.includes(na.slice(0, 6))) return true;
     if (nb.length > 6 && na.includes(nb.slice(0, 6))) return true;
   }
+  // Por NSS (para trabajadores)
+  if (a.nss && b.nss && a.nss.replace(/[\s\-\/]/g,'') === b.nss.replace(/[\s\-\/]/g,'')) return true;
   return false;
 }
 
 async function resolveEntities(analysis) {
   const ents  = await loadJSON(ENT_FILE, { clientes: [], proveedores: [], trabajadores: [] });
   if (!ents.trabajadores) ents.trabajadores = [];
+  if (!ents.proveedores)  ents.proveedores  = [];
+  if (!ents.clientes)     ents.clientes     = [];
   const result = { ...analysis, entidades_creadas: [] };
 
-  const PROVEEDOR_TIPOS = ['factura_recibida', 'albaran', 'pedido', 'ticket'];
-  const CLIENTE_TIPOS   = ['factura_emitida',  'presupuesto'];
+  // ── Detectar proveedor por el rol que asignó el LLM ──────────────────
+  const emisorRol   = (analysis.emisor?.rol || '').toLowerCase();
+  const receptorRol = (analysis.receptor?.rol || '').toLowerCase();
+  const tipo        = (analysis.tipo || '').toLowerCase();
 
-  // Emisor → proveedor
-  if (analysis.emisor?.nombre && PROVEEDOR_TIPOS.includes(analysis.tipo)) {
+  const esProveedor = emisorRol === 'proveedor' ||
+    ['factura_recibida', 'albaran', 'ticket'].includes(tipo);
+  const esCliente = receptorRol === 'cliente' ||
+    ['factura_emitida', 'presupuesto'].includes(tipo);
+  const esNomina = ['nomina', 'finiquito', 'liquidacion'].includes(tipo) ||
+    (analysis.subtipo || '').toLowerCase().includes('liquid') ||
+    emisorRol === 'empleador' || receptorRol === 'empleado' ||
+    analysis.trabajador !== null;
+
+  // ── Proveedor ─────────────────────────────────────────────────────────
+  if (analysis.emisor?.nombre && esProveedor) {
     let prov = ents.proveedores.find(p => sameEntity(p, analysis.emisor));
     if (prov) {
-      // Actualizar datos si son más completos
       if (analysis.emisor.email && !prov.email) prov.email = analysis.emisor.email;
       if (analysis.emisor.cif_nif && !prov.cif_nif) prov.cif_nif = analysis.emisor.cif_nif;
+      if (analysis.emisor.telefono && !prov.telefono) prov.telefono = analysis.emisor.telefono;
       result.proveedor_id    = prov.id;
       result.proveedor_nuevo = false;
     } else {
-      prov = { id: `prov_${Date.now()}`, ...analysis.emisor, creado: new Date().toISOString(), facturas: 0 };
+      prov = {
+        id: `prov_${Date.now()}`,
+        nombre:    analysis.emisor.nombre,
+        cif_nif:   analysis.emisor.cif_nif,
+        direccion: analysis.emisor.direccion,
+        email:     analysis.emisor.email,
+        telefono:  analysis.emisor.telefono,
+        creado:    new Date().toISOString(),
+        facturas:  0,
+      };
       ents.proveedores.push(prov);
       result.proveedor_id    = prov.id;
       result.proveedor_nuevo = true;
@@ -646,15 +509,23 @@ async function resolveEntities(analysis) {
     prov.ultima_factura = analysis.fecha || new Date().toISOString().slice(0, 10);
   }
 
-  // Receptor → cliente
-  if (analysis.receptor?.nombre && CLIENTE_TIPOS.includes(analysis.tipo)) {
+  // ── Cliente ───────────────────────────────────────────────────────────
+  if (analysis.receptor?.nombre && esCliente) {
     let cli = ents.clientes.find(c => sameEntity(c, analysis.receptor));
     if (cli) {
       if (analysis.receptor.email && !cli.email) cli.email = analysis.receptor.email;
       result.cliente_id    = cli.id;
       result.cliente_nuevo = false;
     } else {
-      cli = { id: `cli_${Date.now()}`, ...analysis.receptor, creado: new Date().toISOString(), facturas: 0 };
+      cli = {
+        id: `cli_${Date.now()}`,
+        nombre:    analysis.receptor.nombre,
+        cif_nif:   analysis.receptor.cif_nif,
+        direccion: analysis.receptor.direccion,
+        email:     analysis.receptor.email,
+        creado:    new Date().toISOString(),
+        facturas:  0,
+      };
       ents.clientes.push(cli);
       result.cliente_id    = cli.id;
       result.cliente_nuevo = true;
@@ -663,62 +534,69 @@ async function resolveEntities(analysis) {
     cli.facturas = (cli.facturas || 0) + 1;
   }
 
-  // Receptor + datos laborales → trabajador (solo nóminas)
-  if (analysis.tipo === 'nomina' && analysis.receptor?.nombre) {
+  // ── Trabajador — desde campo dedicado O desde receptor si es nómina ──
+  if (esNomina) {
     const tData = analysis.trabajador || {};
-    const dni   = analysis.receptor.cif_nif || null;
-    const nss   = tData.nss || null;
+    const nombre = tData.nombre_completo || analysis.receptor?.nombre;
+    const dni    = tData.dni || analysis.receptor?.cif_nif;
+    const nss    = tData.nss || null;
 
-    // Buscar por NSS, DNI o nombre
-    let trab = ents.trabajadores.find(t => {
-      if (nss && t.nss && t.nss === nss) return true;
-      if (dni && t.dni && t.dni.replace(/\s/g,'') === dni.replace(/\s/g,'')) return true;
-      return sameEntity(t, analysis.receptor);
-    });
+    if (nombre) {
+      const searchObj = { nombre, nombre_completo: nombre, cif_nif: dni, dni, nss };
+      let trab = ents.trabajadores.find(t => sameEntity(t, searchObj));
 
-    if (trab) {
-      // Actualizar datos si más completos
-      if (dni && !trab.dni) trab.dni = dni;
-      if (nss && !trab.nss) trab.nss = nss;
-      if (tData.categoria_profesional && !trab.categoria_profesional) trab.categoria_profesional = tData.categoria_profesional;
-      if (tData.antiguedad && !trab.fecha_alta) trab.fecha_alta = tData.antiguedad;
-      if (tData.tipo_contrato && !trab.tipo_contrato) trab.tipo_contrato = tData.tipo_contrato;
-      if (tData.grupo_cotizacion && !trab.grupo_cotizacion) trab.grupo_cotizacion = tData.grupo_cotizacion;
-      if (analysis.base_imponible) trab.ultimo_salario_bruto = analysis.base_imponible;
-      if (analysis.total) trab.ultimo_salario_neto = analysis.total;
-      trab.nominas = (trab.nominas || 0) + 1;
-      trab.ultima_nomina = analysis.fecha || new Date().toISOString().slice(0, 10);
-      result.trabajador_id    = trab.id;
-      result.trabajador_nuevo = false;
-    } else {
-      // Separar nombre y apellidos del receptor
-      const partes = (analysis.receptor.nombre || '').trim().split(/\s+/);
-      const nombre    = partes[0] || 'Sin nombre';
-      const apellidos = partes.slice(1).join(' ');
+      if (trab) {
+        // Actualizar con datos más completos
+        if (dni && !trab.dni) trab.dni = dni;
+        if (nss && !trab.nss) trab.nss = nss;
+        if (tData.categoria_profesional && !trab.categoria_profesional) trab.categoria_profesional = tData.categoria_profesional;
+        if (tData.antiguedad && !trab.fecha_alta) trab.fecha_alta = tData.antiguedad;
+        if (tData.tipo_contrato && !trab.tipo_contrato) trab.tipo_contrato = tData.tipo_contrato;
+        if (tData.grupo_cotizacion && !trab.grupo_cotizacion) trab.grupo_cotizacion = tData.grupo_cotizacion;
+        if (tData.puesto && !trab.puesto) trab.puesto = tData.puesto;
+        if (analysis.base_imponible) trab.ultimo_salario_bruto = analysis.base_imponible;
+        if (analysis.total) trab.ultimo_salario_neto = analysis.total;
+        trab.nominas = (trab.nominas || 0) + 1;
+        trab.ultima_nomina = analysis.fecha || new Date().toISOString().slice(0, 10);
+        result.trabajador_id    = trab.id;
+        result.trabajador_nuevo = false;
+      } else {
+        const partes    = nombre.trim().split(/\s+/);
+        const firstName = partes[0] || 'Sin nombre';
+        const lastName  = partes.slice(1).join(' ');
 
-      trab = {
-        id:                      `trab_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
-        nombre,
-        apellidos,
-        nombre_completo:         analysis.receptor.nombre,
-        dni:                     dni,
-        nss:                     nss,
-        categoria_profesional:   tData.categoria_profesional || null,
-        fecha_alta:              tData.antiguedad || null,
-        tipo_contrato:           tData.tipo_contrato || null,
-        grupo_cotizacion:        tData.grupo_cotizacion || null,
-        ultimo_salario_bruto:    analysis.base_imponible || null,
-        ultimo_salario_neto:     analysis.total || null,
-        activo:                  true,
-        nominas:                 1,
-        ultima_nomina:           analysis.fecha || new Date().toISOString().slice(0, 10),
-        creado:                  new Date().toISOString(),
-      };
-      ents.trabajadores.push(trab);
-      result.trabajador_id    = trab.id;
-      result.trabajador_nuevo = true;
-      result.entidades_creadas.push({ tipo: 'trabajador', nombre: trab.nombre_completo, id: trab.id });
-      console.log(`[DOCS] + Trabajador: ${trab.nombre_completo} (NSS: ${nss || 'n/a'}, DNI: ${dni || 'n/a'})`);
+        trab = {
+          id:                      `trab_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+          nombre:                  firstName,
+          apellidos:               lastName,
+          nombre_completo:         nombre,
+          dni,
+          nss,
+          categoria_profesional:   tData.categoria_profesional || null,
+          grupo_cotizacion:        tData.grupo_cotizacion || null,
+          fecha_alta:              tData.antiguedad || null,
+          tipo_contrato:           tData.tipo_contrato || null,
+          puesto:                  tData.puesto || null,
+          ultimo_salario_bruto:    analysis.base_imponible || null,
+          ultimo_salario_neto:     analysis.total || null,
+          activo:                  tipo !== 'finiquito',
+          nominas:                 1,
+          ultima_nomina:           analysis.fecha || new Date().toISOString().slice(0, 10),
+          creado:                  new Date().toISOString(),
+        };
+        ents.trabajadores.push(trab);
+        result.trabajador_id    = trab.id;
+        result.trabajador_nuevo = true;
+        result.entidades_creadas.push({ tipo: 'trabajador', nombre: trab.nombre_completo, id: trab.id });
+        console.log(`[DOCS] + Trabajador: ${trab.nombre_completo} (NSS: ${nss || 'n/a'}, DNI: ${dni || 'n/a'})`);
+      }
+
+      // Si es finiquito, marcar como inactivo
+      if (tipo === 'finiquito' && trab) {
+        trab.activo = false;
+        trab.fecha_baja = analysis.fecha || new Date().toISOString().slice(0, 10);
+        if (analysis.datos_extra?.indemnizacion) trab.indemnizacion = analysis.datos_extra.indemnizacion;
+      }
     }
   }
 
@@ -737,49 +615,40 @@ export async function processDocument(filePath, mimeType, originalName) {
   const isImageFile = mimeType?.startsWith('image/') ||
     ['.jpg','.jpeg','.png','.webp','.tiff','.bmp'].includes(ext);
 
-  console.log(`[DOCS] → Procesando: ${originalName} [${IS_VL_MODEL && isImageFile ? 'VISIÓN' : 'TEXTO'}]`);
+  console.log(`[DOCS] → Procesando: ${originalName}`);
 
-  let tipo, raw, extracted;
+  let extracted, analysis;
 
   // ── PIPELINE VISIÓN: imagen + modelo VL → análisis directo ─────────────
   if (isImageFile && IS_VL_MODEL) {
-    console.log(`[DOCS]   Cargando imagen para VL...`);
+    console.log(`[DOCS]   Modo visión directa`);
     const imgData = await loadImageAsBase64(filePath, mimeType);
+    analysis = await analyzeVision(imgData);
+    extracted = { text: '[procesado por visión directa]', method: 'vision-vl', ok: true, pages: 1 };
 
-    // Clasificar viendo la imagen
-    tipo = await classifyVision(imgData);
-    console.log(`[DOCS]   Tipo (visión): ${tipo}`);
-
-    // Extraer datos viendo la imagen
-    raw = await extractVision(imgData, tipo);
-    extracted = {
-      text: '[procesado por visión directa]',
-      method: 'vision-vl',
-      ok: true,
-      pages: 1,
-    };
-
-  // ── PIPELINE TEXTO: extraer texto → clasificar → extraer ───────────────
+  // ── PIPELINE TEXTO: extraer → analizar (UNA sola llamada LLM) ─────────
   } else {
     extracted = await extractText(filePath, mimeType);
     if (!extracted.ok) throw new Error(extracted.hint || 'No se pudo extraer texto');
     console.log(`[DOCS]   Extracción: ${extracted.method} — ${extracted.text.length} chars`);
 
-    tipo = await classify(extracted.text);
-    console.log(`[DOCS]   Tipo: ${tipo}`);
-
-    raw = await extract(extracted.text, tipo);
+    analysis = await analyzeDocument(extracted.text);
   }
 
-  if (!raw) throw new Error('El modelo no devolvió JSON válido. ¿Está LM Studio corriendo?');
+  if (!analysis) throw new Error('El modelo no devolvió JSON válido');
 
-  // 4. Validar y corregir
-  const validated = validate({ tipo, ...raw }, tipo);
+  // Validar
+  const validated = validate(analysis);
+  console.log(`[DOCS]   Tipo: ${validated.tipo} | Emisor: ${validated.emisor?.nombre || 'n/a'} | Total: ${validated.total || 'n/a'}`);
 
-  // 5. Resolver entidades
+  // Resolver entidades
   const enriched = await resolveEntities(validated);
 
-  // 6. Guardar
+  if (enriched.entidades_creadas?.length) {
+    console.log(`[DOCS]   Entidades: ${enriched.entidades_creadas.map(e => `+${e.tipo}: ${e.nombre}`).join(', ')}`);
+  }
+
+  // Guardar
   const record = {
     id,
     nombre_archivo:    originalName,
@@ -798,7 +667,7 @@ export async function processDocument(filePath, mimeType, originalName) {
   docs.unshift(record);
   await saveJSON(DOCS_FILE, docs.slice(0, 2000));
 
-  console.log(`[DOCS] ✓ ${originalName} → ${tipo} (${extracted.method}) en ${record.tiempo_ms}ms`);
+  console.log(`[DOCS] ✓ ${originalName} → ${validated.tipo} en ${record.tiempo_ms}ms`);
   return record;
 }
 
@@ -806,9 +675,9 @@ export async function processDocument(filePath, mimeType, originalName) {
 //  HELPERS
 // ══════════════════════════════════════════════════════════════════════════
 
-async function llmCall(messages, maxTokens = 1200, temp = 0.1) {
+async function llmCall(messages, maxTokens = 2000, temp = 0.1) {
   const controller = new AbortController();
-  const timer      = setTimeout(() => controller.abort(), 180_000); // 3 min
+  const timer      = setTimeout(() => controller.abort(), 180_000);
   try {
     const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
       method:  'POST',
@@ -817,7 +686,6 @@ async function llmCall(messages, maxTokens = 1200, temp = 0.1) {
       body:    JSON.stringify({ model: MODEL, messages, temperature: temp, max_tokens: maxTokens, stream: false }),
     });
     if (!res.ok) throw new Error(`Ollama ${res.status}: ${await res.text().catch(() => '')}`);
-    // Nota: VL_MODEL ya no aplica — qwen3.5 no es multimodal
     const d = await res.json();
     return stripThinking(d.choices?.[0]?.message?.content?.trim() || '');
   } finally {
@@ -825,26 +693,24 @@ async function llmCall(messages, maxTokens = 1200, temp = 0.1) {
   }
 }
 
-// ── Strip <think>...</think> de modelos Qwen3 thinking ─────────────────────
 function stripThinking(text) {
   return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
 
 function parseJSON(text) {
-  // 0. Limpiar bloques <think> de modelos thinking (Qwen3, etc.)
   text = stripThinking(text);
   // 1. Parse directo
   try { return JSON.parse(text); } catch {}
-  // 2. Extraer bloque JSON
+  // 2. Extraer bloque JSON (el más grande)
   const m = text.match(/\{[\s\S]*\}/);
   if (m) { try { return JSON.parse(m[0]); } catch {} }
   // 3. Reparar errores comunes
   const fixed = (m?.[0] || text)
-    .replace(/,\s*([}\]])/g, '$1')   // trailing commas
-    .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":')  // claves sin comillas
-    .replace(/:\s*'([^']*)'/g, ': "$1"');        // comillas simples → dobles
+    .replace(/,\s*([}\]])/g, '$1')
+    .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":')
+    .replace(/:\s*'([^']*)'/g, ': "$1"');
   try { return JSON.parse(fixed); } catch {}
-  console.warn('[DOCS] ⚠ No se pudo parsear JSON del LLM:', text.slice(0, 200));
+  console.warn('[DOCS] ⚠ No se pudo parsear JSON del LLM:', text.slice(0, 300));
   return null;
 }
 
