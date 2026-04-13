@@ -19,7 +19,7 @@ import { Router } from 'express';
 const router = Router();
 const LOCAL_BASE  = process.env.LOCAL_LLM_URL   || 'http://localhost:11434';
 const LOCAL_MODEL = process.env.LOCAL_LLM_MODEL || 'qwen2.5-coder:14b';
-const LOCAL_CTX   = parseInt(process.env.LOCAL_LLM_CTX || '16384', 10);
+const LOCAL_CTX   = parseInt(process.env.LOCAL_LLM_CTX || '32768', 10);
 
 // ── Conversión Anthropic messages → Ollama native messages ──────────────────
 // Ollama /api/chat espera: { role: string, content: string }
