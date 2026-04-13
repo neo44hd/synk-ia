@@ -5,15 +5,15 @@
  *   export ANTHROPIC_BASE_URL=http://localhost:3001/claude
  *   export ANTHROPIC_API_KEY=local-free
  *
- * Requiere LM Studio corriendo en http://localhost:1234
- * (o llama-server, o cualquier servidor OpenAI-compatible)
+ * Requiere Ollama corriendo en http://localhost:11434
+ * (usa la API compatible OpenAI de Ollama)
  */
 
 import { Router } from 'express';
 
 const router = Router();
-const LOCAL_BASE = process.env.LOCAL_LLM_URL || 'http://localhost:1234';
-const LOCAL_MODEL = process.env.LOCAL_LLM_MODEL || 'local-model';
+const LOCAL_BASE = process.env.LOCAL_LLM_URL || 'http://localhost:11434';
+const LOCAL_MODEL = process.env.LOCAL_LLM_MODEL || 'qwen2.5-coder:14b';
 
 // ── Conversión de mensajes Anthropic → OpenAI ────────────────────────────────
 function toOpenAIMessages(messages) {

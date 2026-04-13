@@ -43,14 +43,32 @@ Mac Mini M4 Pro (24GB RAM) — Red local + Cloudflare Tunnel
 │   ├── sinkia-searxng (8888)
 │   ├── sinkia-n8n (5678)
 │   └── sinkia-qdrant (6333)
-├── Ollama (11434)
-│   ├── qwen3:14b (9.3GB) — razonamiento general
-│   ├── qwen3.5 (6.6GB) — tareas rápidas
-│   └── qwen3-coder (18GB) — código complejo
+├── Ollama (11434) — almacenado en disco externo via symlink
+│   ├── qwen3.5 (6.6GB) — chat general, multilingüe
+│   ├── codegemma:7b (5.0GB) — clasificación docs/emails
+│   ├── functiongemma (291MB) — function calling
+│   ├── gemma4:26b (~15GB) — razonamiento avanzado, visión, MoE
+│   ├── qwen2.5-coder:14b (~10GB) — código especializado
+│   ├── deepseek-r1:14b (~9GB) — razonamiento chain-of-thought
+│   ├── phi4:14b (~10GB) — matemáticas y lógica
+│   ├── glm-ocr (~1GB) — OCR de documentos
+│   ├── llama3.2-vision:11b (~8GB) — análisis de imágenes
+│   ├── gemma4:e4b (~5GB) — tareas rápidas con visión
+│   └── phi4-mini (~3GB) — clasificaciones ligeras
 └── OpenClaw (18789) → claw.sinkialabs.com
 ```
 
 **IMPORTANTE Ollama**: KEEP_ALIVE=5m, MAX_LOADED_MODELS=2. NO cargues 3 modelos a la vez.
+**IMPORTANTE**: Los modelos están en disco externo via symlink (~/.ollama → /Volumes/Disco local/sinkia-hub/ollama/data).
+
+### Claude Code (original Anthropic)
+Instalado en `/opt/homebrew/bin/claude`. Redirigido a Ollama via proxy:
+```bash
+export ANTHROPIC_BASE_URL=http://localhost:3001/claude
+export ANTHROPIC_API_KEY=local-free
+cd ~/sinkia && claude
+```
+Usa `qwen2.5-coder:14b` a través del proxy — sin coste, sin API de Anthropic.
 
 ---
 
@@ -73,9 +91,15 @@ curl http://localhost:11434/api/generate -d '{"model":"qwen3:14b","prompt":"..."
 
 | Modelo | RAM | Uso recomendado |
 |--------|-----|-----------------|
-| `qwen3:14b` | 9.3GB | Default — razonamiento, análisis, clasificación |
-| `qwen3.5` | 6.6GB | Tareas rápidas, resúmenes, textos cortos |
-| `qwen3-coder` | 18GB | Código, refactoring, debugging (OCUPA MUCHA RAM) |
+| `gemma4:26b` | ~15GB | Orquestador OpenClaw — razonamiento avanzado, function calling |
+| `qwen2.5-coder:14b` | ~10GB | Código — Aider + agente coder de OpenClaw |
+| `qwen3.5` | 6.6GB | Chat general, docs, multilingüe |
+| `codegemma:7b` | 5.0GB | Clasificación de documentos y emails |
+| `deepseek-r1:14b` | ~9GB | Razonamiento profundo, debugging complejo |
+| `phi4:14b` | ~10GB | Matemáticas, lógica, cálculos |
+| `glm-ocr` | ~1GB | OCR de facturas y documentos escaneados |
+| `llama3.2-vision:11b` | ~8GB | Análisis de imágenes, fotos de albaranes |
+| `phi4-mini` | ~3GB | Tareas ligeras, monitor del sistema |
 
 ### 2. aider (editor de código con IA)
 
