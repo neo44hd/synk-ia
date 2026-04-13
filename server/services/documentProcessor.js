@@ -700,7 +700,7 @@ export async function processDocument(filePath, mimeType, originalName) {
 //  HELPERS
 // ══════════════════════════════════════════════════════════════════════════
 
-async function llmCall(messages, maxTokens = 3000, temp = 0.1) {
+async function llmCall(messages, maxTokens = 1500, temp = 0.1) {
   const controller = new AbortController();
   const timer      = setTimeout(() => controller.abort(), 180_000);
   try {
