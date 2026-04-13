@@ -12,25 +12,39 @@
 
 set -euo pipefail
 
+# ── Limpiar tokens previos (evita "Auth conflict" con login de pago) ───────
+unset ANTHROPIC_AUTH_TOKEN 2>/dev/null || true
+
 # ── Configuración del proxy ────────────────────────────────────────────────────
 export ANTHROPIC_BASE_URL="http://localhost:3001/claude"
 export ANTHROPIC_API_KEY="local-free"
 
-# Modelo que Claude Code solicitará (el proxy lo ignora y usa qwen2.5-coder:14b,
-# pero Claude Code necesita un valor válido en su config)
+# Forzar modelo — Claude Code usa ANTHROPIC_MODEL como modelo principal
+# El proxy traduce cualquier model name → qwen2.5-coder:14b en Ollama
 export ANTHROPIC_MODEL="claude-3-5-sonnet-20241022"
 
-# Desactivar telemetría y auto-updates de Claude Code
+# Mapear todos los alias (opus/sonnet/haiku) al mismo proxy
+export ANTHROPIC_DEFAULT_OPUS_MODEL="claude-3-5-sonnet-20241022"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="claude-3-5-sonnet-20241022"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="claude-3-5-sonnet-20241022"
+export CLAUDE_CODE_SUBAGENT_MODEL="claude-3-5-sonnet-20241022"
+
+# Desactivar telemetría, updates, y thinking (no soportado por Ollama)
 export CLAUDE_CODE_DISABLE_TELEMETRY=1
 export CLAUDE_CODE_SKIP_UPDATE_CHECK=1
+export CLAUDE_CODE_DISABLE_THINKING=1
+export DISABLE_UPGRADE_COMMAND=1
 
 # ── Verificaciones ─────────────────────────────────────────────────────────────
+echo "🔍 Verificando servicios..."
+
 # 1. Comprobar que Ollama responde
 if ! curl -sf http://localhost:11434/api/version >/dev/null 2>&1; then
   echo "❌ Ollama no está corriendo en localhost:11434"
   echo "   Arrancalo con: ollama serve"
   exit 1
 fi
+echo "   ✅ Ollama OK"
 
 # 2. Comprobar que SynK-IA (proxy) responde
 if ! curl -sf http://localhost:3001/claude/v1/models >/dev/null 2>&1; then
@@ -38,6 +52,7 @@ if ! curl -sf http://localhost:3001/claude/v1/models >/dev/null 2>&1; then
   echo "   Arrancalo con: cd ~/sinkia && pm2 start sinkia-api"
   exit 1
 fi
+echo "   ✅ Proxy Claude OK"
 
 # 3. Comprobar que qwen2.5-coder:14b está disponible
 if ! ollama list 2>/dev/null | grep -q "qwen2.5-coder:14b"; then
@@ -45,11 +60,13 @@ if ! ollama list 2>/dev/null | grep -q "qwen2.5-coder:14b"; then
   echo "   Descárgalo con: ollama pull qwen2.5-coder:14b"
   exit 1
 fi
+echo "   ✅ qwen2.5-coder:14b disponible"
 
 # ── Lanzar Claude Code ─────────────────────────────────────────────────────────
-echo "🚀 Claude Code → Ollama (qwen2.5-coder:14b) vía proxy localhost:3001/claude"
-echo "   ANTHROPIC_BASE_URL=$ANTHROPIC_BASE_URL"
-echo "   ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
+echo ""
+echo "🚀 Claude Code → qwen2.5-coder:14b vía proxy Ollama"
+echo "   Proxy:  $ANTHROPIC_BASE_URL"
+echo "   Modelo: qwen2.5-coder:14b (real) ← $ANTHROPIC_MODEL (aparente)"
 echo ""
 
 CLAUDE_BIN="/opt/homebrew/bin/claude"
@@ -59,8 +76,9 @@ if [ ! -x "$CLAUDE_BIN" ]; then
   exit 1
 fi
 
+# Pasar --model explícito para máxima prioridad
 if [ $# -gt 0 ]; then
-  exec "$CLAUDE_BIN" "$@"
+  exec "$CLAUDE_BIN" --model "$ANTHROPIC_MODEL" "$@"
 else
-  exec "$CLAUDE_BIN"
+  exec "$CLAUDE_BIN" --model "$ANTHROPIC_MODEL"
 fi
