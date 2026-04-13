@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
 
 const OLLAMA_URL = process.env.OLLAMA_URL   || 'http://localhost:11434';
-const MODEL      = process.env.OLLAMA_MODEL || 'llama3.2';
+const MODEL      = process.env.OLLAMA_MODEL || 'qwen3.5';
 
 export const aiRouter = Router();
 

@@ -99,7 +99,7 @@ healthRouter.get('/', async (_req, res) => {
       status.services.ai = {
         ready:  true,
         engine: 'ollama',
-        model:  process.env.OLLAMA_MODEL || 'llama3.2',
+        model:  process.env.OLLAMA_MODEL || 'qwen3.5',
         models,
       };
     } else {
@@ -161,7 +161,7 @@ healthRouter.get('/ai', async (_req, res) => {
       ready:   true,
       engine:  'ollama',
       url:     ollamaUrl,
-      active_model: process.env.OLLAMA_MODEL || 'llama3.2',
+      active_model: process.env.OLLAMA_MODEL || 'qwen3.5',
       models,
     });
   } catch (err) {
@@ -179,6 +179,6 @@ healthRouter.get('/config', (_req, res) => {
     REVO_TOKEN_LARGO:        process.env.REVO_TOKEN_LARGO        ? '***configured***' : 'NOT SET',
     ESEECLOUD_USERNAME:      process.env.ESEECLOUD_USERNAME       ? '***configured***' : 'NOT SET',
     OLLAMA_URL:              process.env.OLLAMA_URL              || 'http://localhost:11434',
-    OLLAMA_MODEL:            process.env.OLLAMA_MODEL            || 'llama3.2',
+    OLLAMA_MODEL:            process.env.OLLAMA_MODEL            || 'qwen3.5',
   });
 });
