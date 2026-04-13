@@ -22,7 +22,7 @@ const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const MODEL      = process.env.MODEL || 'phi4-mini';
 
 // ── LLM call ────────────────────────────────────────────────────────
-async function llmCall(messages, maxTokens = 2000) {
+async function llmCall(messages, maxTokens = 1500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 180_000);
   try {
