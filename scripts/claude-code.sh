@@ -54,9 +54,9 @@ if ! curl -sf http://localhost:3001/claude/v1/models >/dev/null 2>&1; then
 fi
 echo "   ✅ Proxy Claude OK"
 
-# 3. Comprobar que qwen2.5-coder:14b está disponible
-if ! ollama list 2>/dev/null | grep -q "qwen2.5-coder:14b"; then
-  echo "⚠️  qwen2.5-coder:14b no aparece en ollama list"
+# 3. Comprobar que qwen2.5-coder:14b está disponible (via API, más fiable que grep)
+if ! curl -sf http://localhost:11434/api/show -d '{"name":"qwen2.5-coder:14b"}' >/dev/null 2>&1; then
+  echo "⚠️  qwen2.5-coder:14b no encontrado en Ollama"
   echo "   Descárgalo con: ollama pull qwen2.5-coder:14b"
   exit 1
 fi
