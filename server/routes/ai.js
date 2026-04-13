@@ -1,22 +1,50 @@
 /**
- * ai.js — Drop-in replacement de ollama.js
- * API surface IDÉNTICA: mismos endpoints, mismos campos de respuesta.
+ * ai.js — AI endpoints via Ollama HTTP API
+ * API surface IDÉNTICA a la versión anterior (node-llama-cpp).
  * El frontend no necesita ningún cambio.
  *
- * Antes: fetch('http://127.0.0.1:11434/api/generate', ...)
- * Ahora: node-llama-cpp en proceso, sin servidor externo
+ * Backend: Ollama (localhost:11434) — configurable via .env
  */
 
 import { Router } from 'express';
-import { llamaService } from '../services/llamaService.js';
 import path from 'path';
-import { readdirSync, existsSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
-const MODELS_DIR = path.resolve(__dirname, '../../models');
+
+const OLLAMA_URL = process.env.OLLAMA_URL   || 'http://localhost:11434';
+const MODEL      = process.env.OLLAMA_MODEL || 'llama3.2';
 
 export const aiRouter = Router();
+
+// ─── Helper: llamar a Ollama ─────────────────────────────────────────────────
+async function ollamaGenerate({ prompt, system, format, temperature = 0.1, maxTokens = 1024 }) {
+  const body = {
+    model:   MODEL,
+    prompt,
+    stream:  false,
+    options: { temperature, num_predict: maxTokens },
+  };
+  if (system) body.system = system;
+  if (format === 'json') body.format = 'json';
+
+  const t0  = Date.now();
+  const res = await fetch(`${OLLAMA_URL}/api/generate`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body),
+    signal:  AbortSignal.timeout(120_000),
+  });
+  if (!res.ok) throw new Error(`Ollama ${res.status}: ${res.statusText}`);
+  const data = await res.json();
+  return {
+    response:       data.response,
+    durationMs:     Date.now() - t0,
+    eval_duration:  data.eval_duration  || 0,
+    total_duration: data.total_duration || 0,
+    model:          data.model || MODEL,
+  };
+}
 
 // ─── Schemas JSON para structured output ────────────────────────────────────
 
@@ -92,55 +120,29 @@ function safeParseJSON(raw) {
 // ─── GET /api/ai/test ────────────────────────────────────────────────────────
 // Compatible con /api/ollama/test — devuelve la misma estructura
 aiRouter.get('/test', async (req, res) => {
-  const info = llamaService.getInfo();
-  if (!info.exists) {
-    return res.json({
-      success: false,
-      error: `Modelo no encontrado: ${info.name}. Ejecuta: node scripts/download-model.js`,
-      info,
-    });
+  try {
+    const r = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error(`Ollama ${r.status}`);
+    const data = await r.json();
+    const models = (data.models || []).map(m => ({
+      name: m.name, size: m.size, modified: m.modified_at, family: m.details?.family,
+    }));
+    res.json({ success: true, models, count: models.length, engine: 'ollama', active_model: MODEL });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
   }
-
-  // Si no está cargado, cargarlo ahora
-  if (!llamaService.isReady()) {
-    try {
-      await llamaService.init();
-    } catch (err) {
-      return res.json({ success: false, error: err.message, info });
-    }
-  }
-
-  // Devuelve formato compatible con /api/ollama/test
-  res.json({
-    success: true,
-    models: [{
-      name:     info.name,
-      size:     info.sizeMB * 1024 * 1024,
-      modified: info.loadedAt,
-      family:   info.name.split('-')[0], // 'qwen2.5' | 'phi' | 'llama'
-    }],
-    count: 1,
-    engine: 'node-llama-cpp',
-    gpu: info.gpu,
-  });
 });
 
 // ─── GET /api/ai/models ──────────────────────────────────────────────────────
-aiRouter.get('/models', (req, res) => {
-  const models = [];
-
-  if (existsSync(MODELS_DIR)) {
-    try {
-      const files = readdirSync(MODELS_DIR).filter(f => f.endsWith('.gguf'));
-      files.forEach(f => {
-        const fp   = path.join(MODELS_DIR, f);
-        const size = statSync(fp).size;
-        models.push({ name: f, size, modified: statSync(fp).mtime, family: f.split('-')[0] });
-      });
-    } catch { /* noop */ }
+aiRouter.get('/models', async (req, res) => {
+  try {
+    const r = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error(`Ollama ${r.status}`);
+    const data = await r.json();
+    res.json({ success: true, models: data.models || [], count: (data.models || []).length, engine: 'ollama' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
-
-  res.json({ success: true, models, count: models.length, engine: 'node-llama-cpp' });
 });
 
 // ─── POST /api/ai/generate ───────────────────────────────────────────────────
@@ -153,16 +155,13 @@ aiRouter.post('/generate', async (req, res) => {
   }
 
   try {
-    const { response, durationMs } = await llamaService.generate({
-      prompt, system, format, temperature, maxTokens,
-    });
-
+    const result = await ollamaGenerate({ prompt, system, format, temperature, maxTokens });
     res.json({
       success: true,
-      response,
-      model:          llamaService.getInfo().name,
-      eval_duration:  durationMs * 1_000_000, // nanoseconds (compatible con Ollama)
-      total_duration: durationMs * 1_000_000,
+      response:       result.response,
+      model:          result.model,
+      eval_duration:  result.eval_duration,
+      total_duration: result.total_duration,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -181,22 +180,21 @@ aiRouter.post('/classify', async (req, res) => {
   try {
     const prompt = `Clasifica este documento (archivo: ${filename || 'desconocido'}):\n\n${(text || '').substring(0, 4000)}`;
 
-    const { response, durationMs } = await llamaService.generate({
+    const result = await ollamaGenerate({
       prompt,
       system:     SYSTEM_CLASSIFY,
       format:     'json',
-      jsonSchema: CLASSIFY_SCHEMA,
       temperature: 0.1,
       maxTokens:  512,
     });
 
-    const parsed = safeParseJSON(response);
+    const parsed = safeParseJSON(result.response);
 
     res.json({
       success:        true,
       classification: parsed,
-      model:          llamaService.getInfo().name,
-      duration:       durationMs * 1_000_000,
+      model:          result.model,
+      duration:       result.total_duration,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -211,22 +209,21 @@ aiRouter.post('/classify-email', async (req, res) => {
   try {
     const prompt = `De: ${from || '?'}\nAsunto: ${subject || '?'}\nContenido: ${(emailBody || '').substring(0, 2000)}`;
 
-    const { response, durationMs } = await llamaService.generate({
+    const result = await ollamaGenerate({
       prompt,
       system:     SYSTEM_CLASSIFY_EMAIL,
       format:     'json',
-      jsonSchema: CLASSIFY_EMAIL_SCHEMA,
       temperature: 0.1,
       maxTokens:  256,
     });
 
-    const parsed = safeParseJSON(response);
+    const parsed = safeParseJSON(result.response);
 
     res.json({
       success:        true,
       classification: parsed,
-      model:          llamaService.getInfo().name,
-      duration:       durationMs * 1_000_000,
+      model:          result.model,
+      duration:       result.total_duration,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -235,8 +232,23 @@ aiRouter.post('/classify-email', async (req, res) => {
 
 // ─── GET /api/ai/status ──────────────────────────────────────────────────────
 // Endpoint extra: estado detallado del motor
-aiRouter.get('/status', (req, res) => {
-  res.json({ success: true, engine: 'node-llama-cpp', ...llamaService.getInfo() });
+aiRouter.get('/status', async (req, res) => {
+  try {
+    const r = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error(`Ollama ${r.status}`);
+    const data = await r.json();
+    const models = (data.models || []).map(m => m.name);
+    res.json({
+      success: true,
+      engine:  'ollama',
+      url:     OLLAMA_URL,
+      active_model: MODEL,
+      available_models: models,
+      online:  true,
+    });
+  } catch (err) {
+    res.json({ success: false, engine: 'ollama', url: OLLAMA_URL, online: false, error: err.message });
+  }
 });
 
 
@@ -269,24 +281,23 @@ REGLAS IMPORTANTES:
 - Importes como números (sin símbolo €)`;
 
   try {
-    const { response, durationMs } = await llamaService.generate({
+    const result = await ollamaGenerate({
       prompt,
       system: `Eres un extractor preciso de datos de documentos empresariales españoles (facturas, nóminas, contratos).
 Devuelves ÚNICAMENTE JSON válido sin texto adicional ni bloques markdown.`,
       format:     'json',
-      jsonSchema: json_schema || { type: 'object' },
       temperature: 0.1,
       maxTokens:  2048,
     });
 
-    const parsed = safeParseJSON(response);
+    const parsed = safeParseJSON(result.response);
 
     if (parsed && typeof parsed === 'object' && !parsed.raw) {
       return res.json({
         status:   'success',
         output:   parsed,
-        model:    llamaService.getInfo().name,
-        duration: durationMs,
+        model:    result.model,
+        duration: result.durationMs,
       });
     }
 

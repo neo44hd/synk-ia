@@ -80,23 +80,13 @@ try {
   console.error('[SERVER] Data API fallo:', e.message);
 }
 
-// ── AI Engine (node-llama-cpp) ────────────────────────────────────────────────
+// ── AI Engine (Ollama) ────────────────────────────────────────────────────────
 // /api/ollama → backward compat (el frontend no necesita cambios)
 try {
   const { aiRouter } = await import('./routes/ai.js');
   app.use('/api/ollama', aiRouter);
   app.use('/api/ai',     aiRouter);
-  console.log('[SERVER] ✓ AI Engine (node-llama-cpp) registrado');
-
-  // Pre-warm: solo si AI_PREWARM=true (por defecto OFF para ahorrar RAM)
-  if (process.env.AI_PREWARM === 'true') {
-    const { llamaService } = await import('./services/llamaService.js');
-    llamaService.init()
-      .then(() => console.log('[SERVER] ✓ Modelo LLM listo en memoria'))
-      .catch(err => console.warn('[SERVER] ⚠ Modelo no disponible:', err.message));
-  } else {
-    console.log('[SERVER] ⏳ Modelo en modo lazy (carga al primer uso, libera RAM tras 10min sin uso)');
-  }
+  console.log(`[SERVER] ✓ AI Engine (Ollama) → ${process.env.OLLAMA_URL || 'http://localhost:11434'} / ${process.env.OLLAMA_MODEL || 'llama3.2'}`);
 } catch (e) {
   console.error('[SERVER] ✗ AI Engine falló al cargar:', e.message);
 }

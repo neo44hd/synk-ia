@@ -91,18 +91,22 @@ healthRouter.get('/', async (_req, res) => {
   };
 
   try {
-    const { llamaService } = await import('../services/llamaService.js');
-    const info = llamaService.getInfo();
-    status.services.ai = {
-      ready:   llamaService.isReady(),
-      model:   info.name,
-      exists:  info.exists,
-      size_mb: info.sizeMB,
-      gpu:     info.gpu,
-      error:   info.error,
-    };
-  } catch {
-    status.services.ai = { ready: false, error: 'AI service not loaded' };
+    const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+    const r = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(3000) });
+    if (r.ok) {
+      const data = await r.json();
+      const models = (data.models || []).map(m => m.name);
+      status.services.ai = {
+        ready:  true,
+        engine: 'ollama',
+        model:  process.env.OLLAMA_MODEL || 'llama3.2',
+        models,
+      };
+    } else {
+      status.services.ai = { ready: false, engine: 'ollama', error: `HTTP ${r.status}` };
+    }
+  } catch (err) {
+    status.services.ai = { ready: false, engine: 'ollama', error: err.message };
   }
 
   res.json(status);
@@ -146,12 +150,22 @@ healthRouter.get('/full', async (req, res) => {
 
 // ── GET /api/health/ai — estado del modelo LLM ──────────────────────────────
 healthRouter.get('/ai', async (_req, res) => {
+  const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
   try {
-    const { llamaService } = await import('../services/llamaService.js');
-    const info = llamaService.getInfo();
-    res.json({ success: true, ready: llamaService.isReady(), engine: 'node-llama-cpp', ...info });
+    const r = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error(`Ollama ${r.status}`);
+    const data = await r.json();
+    const models = (data.models || []).map(m => m.name);
+    res.json({
+      success: true,
+      ready:   true,
+      engine:  'ollama',
+      url:     ollamaUrl,
+      active_model: process.env.OLLAMA_MODEL || 'llama3.2',
+      models,
+    });
   } catch (err) {
-    res.json({ success: false, ready: false, error: err.message });
+    res.json({ success: false, ready: false, engine: 'ollama', error: err.message });
   }
 });
 
@@ -164,7 +178,7 @@ healthRouter.get('/config', (_req, res) => {
     REVO_TOKEN_CORTO:        process.env.REVO_TOKEN_CORTO        ? '***configured***' : 'NOT SET',
     REVO_TOKEN_LARGO:        process.env.REVO_TOKEN_LARGO        ? '***configured***' : 'NOT SET',
     ESEECLOUD_USERNAME:      process.env.ESEECLOUD_USERNAME       ? '***configured***' : 'NOT SET',
-    AI_MODEL_NAME:           process.env.AI_MODEL_NAME           || '(default)',
-    AI_GPU_MODE:             process.env.AI_GPU_MODE             || 'auto',
+    OLLAMA_URL:              process.env.OLLAMA_URL              || 'http://localhost:11434',
+    OLLAMA_MODEL:            process.env.OLLAMA_MODEL            || 'llama3.2',
   });
 });
