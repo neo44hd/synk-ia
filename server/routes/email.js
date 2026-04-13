@@ -231,12 +231,35 @@ emailRouter.get('/payslips', async (req, res) => {
   }
 });
 
-// ── GET /api/email/workers — Trabajadores detectados ─────────────────────
+// ── GET /api/email/workers — Trabajadores detectados (entities.json) ───────
 emailRouter.get('/workers', async (req, res) => {
   try {
     const entities = await getEntities();
-    // Los trabajadores se extraen de nóminas procesadas con IA
-    // El campo receptor en nóminas = empleado
+    const trabajadores = entities.trabajadores || [];
+
+    // Si hay trabajadores en entities.json, devolverlos directamente
+    if (trabajadores.length > 0) {
+      return res.json({
+        success: true,
+        count: trabajadores.length,
+        workers: trabajadores.map(t => ({
+          id:                    t.id,
+          nombre:                t.nombre_completo || t.nombre,
+          dni:                   t.dni,
+          nss:                   t.nss,
+          categoria_profesional: t.categoria_profesional,
+          fecha_alta:            t.fecha_alta,
+          ultimo_salario_bruto:  t.ultimo_salario_bruto,
+          ultimo_salario_neto:   t.ultimo_salario_neto,
+          nominas_count:         t.nominas || 0,
+          ultima_nomina:         t.ultima_nomina,
+          activo:                t.activo !== false,
+        })),
+        source: 'entities.json',
+      });
+    }
+
+    // Fallback: escanear nóminas en documents.json
     const docs = await getDocuments();
     const nominas = docs.filter(d => d.analisis?.tipo === 'nomina');
 
@@ -247,9 +270,9 @@ emailRouter.get('/workers', async (req, res) => {
       const key = receptor.cif_nif || receptor.nombre;
       if (!workers.has(key)) {
         workers.set(key, {
-          nombre:    receptor.nombre,
-          dni:       receptor.cif_nif,
-          nominas:   [],
+          nombre: receptor.nombre,
+          dni:    receptor.cif_nif,
+          nominas: [],
         });
       }
       workers.get(key).nominas.push({
@@ -267,7 +290,7 @@ emailRouter.get('/workers', async (req, res) => {
         ...w,
         nominas_count: w.nominas.length,
       })),
-      tip: 'Datos extraídos automáticamente de nóminas procesadas con IA',
+      source: 'documents.json-fallback',
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

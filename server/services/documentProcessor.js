@@ -441,11 +441,21 @@ const TYPE_INSTRUCTIONS = {
 - accion_recomendada = "crear_cliente"
 - Extrae las líneas de la oferta con precios`,
 
-  nomina: `Es una NÓMINA.
+  nomina: `Es una NÓMINA / HOJA DE SALARIO.
 - emisor = empresa empleadora
-- receptor = empleado
+- receptor = el EMPLEADO (nombre y apellidos, DNI/NIF en cif_nif)
 - accion_recomendada = "registrar_gasto"
-- total = salario neto. base_imponible = salario bruto`,
+- total = salario neto (líquido a percibir). base_imponible = salario bruto
+- Extrae SIEMPRE el campo "trabajador" con datos laborales:
+  "trabajador": {
+    "nss": "número Seguridad Social (formato XX/XXXXXXXX-XX)",
+    "categoria_profesional": "categoría o grupo profesional",
+    "antiguedad": "fecha antigüedad/alta en empresa (YYYY-MM-DD)",
+    "tipo_contrato": "indefinido/temporal/etc",
+    "grupo_cotizacion": "grupo de cotización"
+  }
+- Las líneas son conceptos salariales: salario base, complementos, horas extra, deducciones IRPF, SS trabajador, etc.
+- Busca el NSS cerca de etiquetas como "Nº Afiliación", "N.A.F.", "Nº S.S.", "Núm. afiliación"`,
 
   extracto_bancario: `Es un EXTRACTO BANCARIO.
 - Solo extrae: fecha, banco (emisor.nombre), número de cuenta, saldo final (total)
@@ -609,7 +619,8 @@ function sameEntity(a, b) {
 }
 
 async function resolveEntities(analysis) {
-  const ents  = await loadJSON(ENT_FILE, { clientes: [], proveedores: [] });
+  const ents  = await loadJSON(ENT_FILE, { clientes: [], proveedores: [], trabajadores: [] });
+  if (!ents.trabajadores) ents.trabajadores = [];
   const result = { ...analysis, entidades_creadas: [] };
 
   const PROVEEDOR_TIPOS = ['factura_recibida', 'albaran', 'pedido', 'ticket'];
@@ -650,6 +661,65 @@ async function resolveEntities(analysis) {
       result.entidades_creadas.push({ tipo: 'cliente', nombre: cli.nombre, id: cli.id });
     }
     cli.facturas = (cli.facturas || 0) + 1;
+  }
+
+  // Receptor + datos laborales → trabajador (solo nóminas)
+  if (analysis.tipo === 'nomina' && analysis.receptor?.nombre) {
+    const tData = analysis.trabajador || {};
+    const dni   = analysis.receptor.cif_nif || null;
+    const nss   = tData.nss || null;
+
+    // Buscar por NSS, DNI o nombre
+    let trab = ents.trabajadores.find(t => {
+      if (nss && t.nss && t.nss === nss) return true;
+      if (dni && t.dni && t.dni.replace(/\s/g,'') === dni.replace(/\s/g,'')) return true;
+      return sameEntity(t, analysis.receptor);
+    });
+
+    if (trab) {
+      // Actualizar datos si más completos
+      if (dni && !trab.dni) trab.dni = dni;
+      if (nss && !trab.nss) trab.nss = nss;
+      if (tData.categoria_profesional && !trab.categoria_profesional) trab.categoria_profesional = tData.categoria_profesional;
+      if (tData.antiguedad && !trab.fecha_alta) trab.fecha_alta = tData.antiguedad;
+      if (tData.tipo_contrato && !trab.tipo_contrato) trab.tipo_contrato = tData.tipo_contrato;
+      if (tData.grupo_cotizacion && !trab.grupo_cotizacion) trab.grupo_cotizacion = tData.grupo_cotizacion;
+      if (analysis.base_imponible) trab.ultimo_salario_bruto = analysis.base_imponible;
+      if (analysis.total) trab.ultimo_salario_neto = analysis.total;
+      trab.nominas = (trab.nominas || 0) + 1;
+      trab.ultima_nomina = analysis.fecha || new Date().toISOString().slice(0, 10);
+      result.trabajador_id    = trab.id;
+      result.trabajador_nuevo = false;
+    } else {
+      // Separar nombre y apellidos del receptor
+      const partes = (analysis.receptor.nombre || '').trim().split(/\s+/);
+      const nombre    = partes[0] || 'Sin nombre';
+      const apellidos = partes.slice(1).join(' ');
+
+      trab = {
+        id:                      `trab_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+        nombre,
+        apellidos,
+        nombre_completo:         analysis.receptor.nombre,
+        dni:                     dni,
+        nss:                     nss,
+        categoria_profesional:   tData.categoria_profesional || null,
+        fecha_alta:              tData.antiguedad || null,
+        tipo_contrato:           tData.tipo_contrato || null,
+        grupo_cotizacion:        tData.grupo_cotizacion || null,
+        ultimo_salario_bruto:    analysis.base_imponible || null,
+        ultimo_salario_neto:     analysis.total || null,
+        activo:                  true,
+        nominas:                 1,
+        ultima_nomina:           analysis.fecha || new Date().toISOString().slice(0, 10),
+        creado:                  new Date().toISOString(),
+      };
+      ents.trabajadores.push(trab);
+      result.trabajador_id    = trab.id;
+      result.trabajador_nuevo = true;
+      result.entidades_creadas.push({ tipo: 'trabajador', nombre: trab.nombre_completo, id: trab.id });
+      console.log(`[DOCS] + Trabajador: ${trab.nombre_completo} (NSS: ${nss || 'n/a'}, DNI: ${dni || 'n/a'})`);
+    }
   }
 
   await saveJSON(ENT_FILE, ents);
@@ -783,7 +853,7 @@ async function saveJSON(file, data) {
 
 // ── API pública ────────────────────────────────────────────────────────────
 export const getDocuments  = ()       => loadJSON(DOCS_FILE, []);
-export const getEntities   = ()       => loadJSON(ENT_FILE,  { clientes: [], proveedores: [] });
+export const getEntities   = ()       => loadJSON(ENT_FILE,  { clientes: [], proveedores: [], trabajadores: [] });
 export const getDocument   = async id => { const d = await loadJSON(DOCS_FILE,[]); return d.find(x=>x.id===id)||null; };
 export const deleteDocument= async id => {
   const d = await loadJSON(DOCS_FILE, []);
@@ -796,10 +866,11 @@ export async function getStats() {
   const [docs, ents] = await Promise.all([getDocuments(), getEntities()]);
   const byTipo = docs.reduce((a, d) => { const t = d.analisis?.tipo||'otro'; a[t]=(a[t]||0)+1; return a; }, {});
   return {
-    total_documentos:  docs.length,
-    total_clientes:    ents.clientes.length,
-    total_proveedores: ents.proveedores.length,
-    por_tipo:          byTipo,
-    ultimo_proceso:    docs[0]?.procesado || null,
+    total_documentos:   docs.length,
+    total_clientes:     ents.clientes.length,
+    total_proveedores:  ents.proveedores.length,
+    total_trabajadores: (ents.trabajadores || []).length,
+    por_tipo:           byTipo,
+    ultimo_proceso:     docs[0]?.procesado || null,
   };
 }
