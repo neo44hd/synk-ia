@@ -19,7 +19,24 @@ import { Router } from 'express';
 const router = Router();
 const LOCAL_BASE  = process.env.LOCAL_LLM_URL   || 'http://localhost:11434';
 const LOCAL_MODEL = process.env.LOCAL_LLM_MODEL || 'qwen2.5-coder:14b';
-const LOCAL_CTX   = parseInt(process.env.LOCAL_LLM_CTX || '32768', 10);
+const LOCAL_CTX   = parseInt(process.env.LOCAL_LLM_CTX || '16384', 10);
+
+// ── System prompt compacto (reemplaza el de Claude Code que pesa ~23K tokens) ──
+const COMPACT_SYSTEM = `You are an expert coding assistant running locally via Ollama (qwen2.5-coder:14b).
+You help the user edit code, fix bugs, refactor, and answer technical questions.
+
+Rules:
+- Be concise and direct. No filler.
+- When editing files, show only the changed lines with enough context to locate them.
+- Use the tools provided when needed (Bash, file read/write, etc.).
+- If a task is ambiguous, ask for clarification.
+- Respond in the same language the user writes in.
+- You are working in the project directory. Use relative paths.
+- For shell commands, prefer one-liners when possible.
+- Never fabricate file contents — read first, then edit.`;
+
+// Umbral: si el system prompt supera este tamaño (en chars), lo reemplazamos
+const SYSTEM_REPLACE_THRESHOLD = 5000;
 
 // ── Conversión Anthropic messages → Ollama native messages ──────────────────
 // Ollama /api/chat espera: { role: string, content: string }
@@ -101,7 +118,15 @@ router.post('/v1/messages', async (req, res) => {
         : Array.isArray(system)
           ? system.map(s => s.text || JSON.stringify(s)).join('\n')
           : JSON.stringify(system);
-      ollamaMessages.push({ role: 'system', content: systemText });
+
+      // Si el system prompt es gigante (Claude Code mete ~23K tokens),
+      // lo reemplazamos por uno compacto optimizado para el modelo local
+      if (systemText.length > SYSTEM_REPLACE_THRESHOLD) {
+        console.log(`[PROXY] System prompt original: ${systemText.length} chars → reemplazado por compacto (${COMPACT_SYSTEM.length} chars)`);
+        ollamaMessages.push({ role: 'system', content: COMPACT_SYSTEM });
+      } else {
+        ollamaMessages.push({ role: 'system', content: systemText });
+      }
     }
     ollamaMessages.push(...toOllamaMessages(messages || []));
 
