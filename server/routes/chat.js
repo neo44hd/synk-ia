@@ -16,8 +16,8 @@ import { Router } from 'express';
 import { askBrainStream, classifyIntent, searchWeb } from '../services/brain.js';
 
 const router     = Router();
-const OLLAMA_URL = process.env.OLLAMA_URL       || 'http://localhost:11434';
-const MODEL      = process.env.OLLAMA_MODEL     || 'qwen3:14b';
+const OLLAMA_URL = process.env.OLLAMA_URL            || 'http://localhost:11434';
+const MODEL      = process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3.5:latest';
 
 // ── ThinkingFilter: separa <think>...</think> del texto final ─────────────
 // Funciona en streaming, acumula buffer para manejar tags partidos entre chunks
