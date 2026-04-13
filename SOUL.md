@@ -51,8 +51,7 @@ Tienes 3 subagentes a tu disposición. Delega cuando tenga sentido:
 - **git**: Repo en ~/sinkia (github.com/neo44hd/synk-ia)
 - **npm/node**: v25+ — frontend y backend
 - **pm2**: Gestión de procesos (sinkia-api, cloudflared-tunnel, litellm-proxy)
-- **ollama**: Modelos IA locales (puerto 11434)
-- **LM Studio**: Modelos extra (puerto 12345)
+- **Ollama**: Modelos IA locales (puerto 11434)
 - **brew**: Instalar cualquier herramienta que necesites
 - **docker**: OrbStack — contenedores ligeros
 - **cloudflared**: Túnel a Cloudflare (ID: 4298eb1a)
@@ -108,7 +107,7 @@ server/                     → Backend Express (ESM)
     documents.js            → Gestión documental
     admin.js                → Panel admin
     chat.js                 → Chat con modelo local
-    claude-proxy.js         → Proxy para LM Studio/Ollama
+    claude-proxy.js         → Proxy Anthropic → Ollama
     terminal.js             → Terminal web (node-pty + WebSocket)
     trabajadores.js         → Portal del trabajador
     health.js               → Health check
@@ -187,7 +186,7 @@ bash ~/sinkia/scripts/startup.sh      # Arrancar todo desde cero
 
 1. **Revo 404**: El endpoint devuelve 404. Revisar token + endpoints en revoAgent.js
 2. **Servicios mock**: Varios services del frontend simulan datos con localStorage en vez de llamar al backend real. Migrar a API real
-3. **litellm-proxy inestable**: Se reinicia en bucle si el modelo en LM Studio no está cargado o n_ctx < 32768
+3. **litellm-proxy inestable**: Se reinicia en bucle si el modelo en Ollama no está cargado o n_ctx < 32768
 4. **Residuo Base44**: Hay paths de /opt/hostedapp/ en el historial de git — limpiar
 5. **DocBrain limitado**: Solo clasifica tipos básicos. Necesita más precisión y más tipos de documentos
 

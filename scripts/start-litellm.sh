@@ -1,6 +1,6 @@
 #!/bin/bash
 # start-litellm.sh — Proxy Anthropic para Claude Code con modelo local
-# Instala y arranca LiteLLM apuntando a LM Studio
+# Instala y arranca LiteLLM apuntando a Ollama
 
 set -e
 
@@ -10,17 +10,18 @@ if ! command -v litellm &>/dev/null; then
   pip3 install 'litellm[proxy]' --quiet
 fi
 
-MODEL=${LOCAL_LLM_MODEL:-qwen3-vl-32b-gemini-heretic-uncensored-thinking-i1}
+OLLAMA_URL=${OLLAMA_URL:-http://localhost:11434}
+MODEL=${LOCAL_LLM_MODEL:-qwen2.5-coder:14b}
 
 echo "[LiteLLM] Arrancando proxy en puerto 8082..."
-echo "[LiteLLM] → LM Studio: http://localhost:12345"
+echo "[LiteLLM] → Ollama: ${OLLAMA_URL}"
 echo "[LiteLLM] → Modelo: ${MODEL}"
 
-export OPENAI_API_KEY=local
+export OPENAI_API_KEY=ollama
 
 exec litellm \
   --model "openai/${MODEL}" \
-  --api_base http://localhost:12345/v1 \
+  --api_base "${OLLAMA_URL}/v1" \
   --port 8082 \
   --host 0.0.0.0 \
   --drop_params \
