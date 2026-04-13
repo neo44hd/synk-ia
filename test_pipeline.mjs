@@ -65,20 +65,36 @@ function smartTruncate(text, maxChars = 6000) {
   return text.slice(0, head) + '\n\n[...documento truncado...]\n\n' + text.slice(-tail);
 }
 
+// ── Config empresa (mismo que documentProcessor v3) ────────────────
+const MI_EMPRESA = {
+  nombre: process.env.EMPRESA_NOMBRE || 'CHICKEN PALACE IBIZA, S.L.',
+  cif:    process.env.EMPRESA_CIF    || 'B56908486',
+  email:  process.env.EMAIL_USER     || 'info@chickenpalace.es',
+};
+
 // ── Prompt universal (mismo que documentProcessor v3) ───────────────
-const UNIVERSAL_PROMPT = `Eres el motor de inteligencia de SynK-IA, una aplicación de gestión documental para empresas españolas.
+const UNIVERSAL_PROMPT = `Eres el motor de inteligencia de SynK-IA, una aplicación de gestión documental.
+
+IMPORTANTE — LA EMPRESA QUE USA ESTE SISTEMA ES:
+  Nombre: ${MI_EMPRESA.nombre}
+  CIF: ${MI_EMPRESA.cif}
+  Email: ${MI_EMPRESA.email}
+Cualquier documento donde aparezca esta empresa, ella es la PROTAGONISTA.
+- Si esta empresa RECIBE una factura → es factura_recibida, el emisor es el PROVEEDOR
+- Si esta empresa EMITE una factura → es factura_emitida, el receptor es el CLIENTE
+- Si esta empresa paga una nómina → ella es el EMPLEADOR, el receptor es el TRABAJADOR
 
 Tu trabajo: leer el texto de un documento y devolver un JSON con TODA la información que encuentres.
-NO tienes categorías fijas. NO tienes un formulario que rellenar. TÚ decides qué es el documento y qué datos contiene.
+NO tienes categorías fijas. TÚ decides qué es el documento y qué datos contiene.
 
 INSTRUCCIONES:
 1. LEE el documento completo con atención
-2. DECIDE qué tipo de documento es (factura, nómina, finiquito, albarán, contrato, presupuesto, ticket, extracto bancario, certificado, carta, o lo que sea)
+2. DECIDE qué tipo de documento es (factura_recibida, factura_emitida, nomina, finiquito, liquidacion, albaran, contrato, presupuesto, ticket, extracto_bancario, certificado, carta, o lo que sea)
 3. IDENTIFICA a todas las personas y empresas que aparecen y su ROL:
    - ¿Quién emite? ¿Quién recibe?
-   - ¿Es un proveedor vendiendo algo? → proveedor
-   - ¿Es una empresa pagando a un empleado? → trabajador
-   - ¿Es un cliente comprando? → cliente
+   - Si alguien vende algo a ${MI_EMPRESA.nombre} → ese es el PROVEEDOR
+   - Si ${MI_EMPRESA.nombre} vende a alguien → ese es el CLIENTE
+   - Si ${MI_EMPRESA.nombre} paga a una persona → esa persona es un TRABAJADOR
 4. EXTRAE todos los datos relevantes: importes, fechas, conceptos, referencias, etc.
 5. Si hay datos laborales (NSS, categoría profesional, antigüedad, grupo cotización, tipo contrato), extráelos SIEMPRE
 
