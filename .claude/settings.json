@@ -12,5 +12,9 @@
       "mcp__*"
     ],
     "deny": []
+  },
+  "preferences": {
+    "todoAutoSave": true,
+    "verbose": false
   }
 }
