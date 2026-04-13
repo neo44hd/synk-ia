@@ -287,12 +287,115 @@ body {
 .mic.recording svg { fill: var(--red); }
 @keyframes mic-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.3)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
 
+/* ── Claude Code sub-tabs ─────────────────────────────────────────────────── */
+.claude-subtabs {
+  display: flex; align-items: center; gap: 2px;
+  padding: 4px 12px; border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.claude-subtab {
+  padding: 4px 14px; font-size: 11.5px; font-weight: 500;
+  border: none; background: none; color: var(--muted);
+  border-radius: 6px; cursor: pointer; transition: all .15s;
+}
+.claude-subtab:hover { color: var(--text); }
+.claude-subtab.active { background: var(--blue); color: #fff; }
+
+.ctx-toggle {
+  padding: 4px 10px; font-size: 11.5px; border: 1px solid var(--border2);
+  background: none; color: var(--muted); border-radius: 6px;
+  cursor: pointer; transition: all .15s;
+}
+.ctx-toggle:hover { color: var(--text); border-color: var(--blue); }
+.ctx-toggle.has-files { color: var(--blue); border-color: var(--blue); }
+
+.claude-body { display: flex; flex: 1; overflow: hidden; }
+.claude-sub { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.claude-sub.active { display: flex; }
+
+/* ── Context panel (sidebar) ───────────────────────────────────────────── */
+.ctx-panel {
+  width: 280px; border-right: 1px solid var(--border);
+  background: var(--surface); display: flex; flex-direction: column;
+  flex-shrink: 0; overflow: hidden;
+}
+.ctx-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; font-size: 12px; font-weight: 600;
+  border-bottom: 1px solid var(--border); color: var(--text);
+}
+.ctx-close {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 14px; padding: 2px 6px; border-radius: 4px;
+}
+.ctx-close:hover { color: var(--text); background: var(--surface2); }
+.ctx-search {
+  padding: 6px 8px; border-bottom: 1px solid var(--border);
+}
+.ctx-search input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 5px 8px; color: var(--text); font-size: 12px;
+  outline: none; font-family: inherit;
+}
+.ctx-search input:focus { border-color: var(--blue); }
+.ctx-tree {
+  flex: 1; overflow-y: auto; padding: 4px 0; font-size: 12px;
+}
+.ctx-tree::-webkit-scrollbar { width: 4px; }
+.ctx-tree::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.ctx-dir { cursor: pointer; user-select: none; }
+.ctx-dir-label {
+  padding: 3px 8px 3px 0; color: var(--muted); display: flex;
+  align-items: center; gap: 4px;
+}
+.ctx-dir-label:hover { color: var(--text); }
+.ctx-dir-children { padding-left: 12px; }
+.ctx-dir.collapsed > .ctx-dir-children { display: none; }
+.ctx-dir-arrow { font-size: 10px; width: 14px; text-align: center; transition: transform .15s; }
+.ctx-dir.collapsed > .ctx-dir-label > .ctx-dir-arrow { transform: rotate(-90deg); }
+
+.ctx-file {
+  padding: 3px 8px 3px 22px; color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; gap: 5px; transition: all .1s;
+}
+.ctx-file:hover { color: var(--text); background: rgba(255,255,255,.03); }
+.ctx-file.selected { color: var(--blue); background: rgba(59,130,246,.08); }
+.ctx-file-icon { font-size: 11px; }
+.ctx-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx-file-size { font-size: 10px; color: var(--muted); }
+
+.ctx-selected {
+  border-top: 1px solid var(--border); padding: 6px 8px;
+  font-size: 11px; color: var(--muted); max-height: 80px; overflow-y: auto;
+}
+.ctx-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(59,130,246,.12); color: var(--blue); border-radius: 4px;
+  padding: 2px 6px; margin: 2px; font-size: 11px;
+}
+.ctx-chip-x {
+  cursor: pointer; font-size: 13px; color: var(--muted);
+  margin-left: 2px;
+}
+.ctx-chip-x:hover { color: var(--red); }
+
+/* ── Shell terminal ──────────────────────────────────────────────────── */
+#shell-terminal { font-family: 'SF Mono','Fira Code','Cascadia Code',monospace; }
+#shell-terminal .xterm { padding: 8px; }
+
 @media(max-width:640px) {
   .header { gap:6px; padding:0 10px; }
   .header-btn { display:none; }
   .tab { padding:5px 8px; font-size:11px; }
+  .ctx-panel { width: 220px; }
 }
 </style>
+<!-- xterm.js CDN -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.min.js"></script>
 </head>
 <body>
 
@@ -403,8 +506,8 @@ body {
     <div class="chat-wrap" id="aider-wrap">
       <div class="empty" id="aider-empty">
         <div class="empty-icon">⚡</div>
-        <div class="empty-title">Claude Code · qwen2.5-coder:14b</div>
-        <div class="empty-sub">Asistente de código — edita archivos, refactoriza, genera tests. Claude Code original + Aider sobre ~/sinkia.</div>
+        <div class="empty-title">Aider · qwen2.5-coder:14b</div>
+        <div class="empty-sub">Asistente de código — edita archivos, refactoriza, genera tests. Aider sobre ~/sinkia.</div>
         <div class="suggestions">
           <div class="suggestion" onclick="aiderSuggest(this)">Revisa server/index.js y sugiere mejoras</div>
           <div class="suggestion" onclick="aiderSuggest(this)">Añade manejo de errores al chat endpoint</div>
@@ -424,30 +527,88 @@ body {
 </div>
 
 <!-- ═════════════════════════════════════════════════════════════════════════════
-     PANEL 5 — CLAUDE CODE (qwen2.5-coder:14b via claude-proxy)
+     PANEL 5 — CLAUDE CODE (3 sub-vistas: Chat, Aiden, Terminal)
      ═════════════════════════════════════════════════════════════════════════════ -->
 <div class="panel" id="p-claude">
-  <div class="chat-area" id="claude-scroll">
-    <div class="chat-wrap" id="claude-wrap">
-      <div class="empty" id="claude-empty">
-        <div class="empty-icon">🤖</div>
-        <div class="empty-title">Claude Code · qwen2.5-coder:14b</div>
-        <div class="empty-sub">Chat directo con el proxy de Claude Code. Mismo modelo, interfaz web con streaming.</div>
-        <div class="suggestions">
-          <div class="suggestion" onclick="claudeSuggest(this)">Revisa la estructura del proyecto sinkia</div>
-          <div class="suggestion" onclick="claudeSuggest(this)">Explica cómo funciona el claude-proxy</div>
-          <div class="suggestion" onclick="claudeSuggest(this)">Sugiere mejoras para el sistema de emails</div>
+  <!-- Sub-tabs dentro del panel Claude Code -->
+  <div class="claude-subtabs">
+    <button class="claude-subtab active" data-sub="chat" onclick="switchClaudeSub('chat')">Chat</button>
+    <button class="claude-subtab" data-sub="aiden" onclick="switchClaudeSub('aiden')">Aiden</button>
+    <button class="claude-subtab" data-sub="term" onclick="switchClaudeSub('term')">Terminal</button>
+    <div class="spacer"></div>
+    <button class="ctx-toggle" id="ctx-toggle" onclick="toggleCtxPanel()" title="Contexto de archivos">📂 <span id="ctx-count">0</span></button>
+  </div>
+
+  <!-- Panel lateral de contexto (archivos) -->
+  <div class="claude-body">
+    <div class="ctx-panel" id="ctx-panel" style="display:none">
+      <div class="ctx-header">
+        <span>📂 Archivos de contexto</span>
+        <button class="ctx-close" onclick="toggleCtxPanel()">✕</button>
+      </div>
+      <div class="ctx-search">
+        <input type="text" id="ctx-search-input" placeholder="Buscar archivo..." oninput="filterCtxTree()">
+      </div>
+      <div class="ctx-tree" id="ctx-tree">Cargando...</div>
+      <div class="ctx-selected" id="ctx-selected"></div>
+    </div>
+
+    <!-- Sub-vista: Chat -->
+    <div class="claude-sub active" id="csub-chat">
+      <div class="chat-area" id="claude-scroll">
+        <div class="chat-wrap" id="claude-wrap">
+          <div class="empty" id="claude-empty">
+            <div class="empty-icon">🤖</div>
+            <div class="empty-title">Claude Code · qwen2.5-coder:14b</div>
+            <div class="empty-sub">Chat con contexto de archivos, control de agentes y terminal integrada.</div>
+            <div class="suggestions">
+              <div class="suggestion" onclick="claudeSuggest(this)">Revisa la estructura del proyecto</div>
+              <div class="suggestion" onclick="claudeSuggest(this)">Explica el sistema de emails</div>
+              <div class="suggestion" onclick="claudeSuggest(this)">Sugiere mejoras para el proxy</div>
+            </div>
+          </div>
         </div>
       </div>
+      <div class="input-bar">
+        <div class="input-row blue">
+          <textarea id="claude-in" rows="1" placeholder="Habla con Claude Code..." onkeydown="kd(event,'claude')" oninput="ar(this)"></textarea>
+          <button class="mic" id="claude-mic" onclick="toggleMic('claude')"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button>
+          <button class="send blue" id="claude-send" onclick="claudeSend()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+        <div class="input-footer"><span id="claude-status">Verificando proxy...</span><span>⏎ Enter · Shift+⏎ línea</span></div>
+      </div>
     </div>
-  </div>
-  <div class="input-bar">
-    <div class="input-row blue">
-      <textarea id="claude-in" rows="1" placeholder="Habla con Claude Code..." onkeydown="kd(event,'claude')" oninput="ar(this)"></textarea>
-      <button class="mic" id="claude-mic" onclick="toggleMic('claude')"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button>
-      <button class="send blue" id="claude-send" onclick="claudeSend()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+
+    <!-- Sub-vista: Aiden (control de agentes) -->
+    <div class="claude-sub" id="csub-aiden">
+      <div class="chat-area" id="aiden2-scroll">
+        <div class="chat-wrap" id="aiden2-wrap">
+          <div class="empty" id="aiden2-empty">
+            <div class="empty-icon">👾</div>
+            <div class="empty-title">Aiden · Control de Agentes</div>
+            <div class="empty-sub">Envía comandos a OpenClaw. Controla tus agentes de IA desde aquí.</div>
+            <div class="suggestions">
+              <div class="suggestion" onclick="aidenSuggest(this)">Lista todos los agentes activos</div>
+              <div class="suggestion" onclick="aidenSuggest(this)">Analiza los emails pendientes</div>
+              <div class="suggestion" onclick="aidenSuggest(this)">Clasifica los documentos nuevos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="input-bar">
+        <div class="input-row blue">
+          <textarea id="aiden2-in" rows="1" placeholder="Comando para Aiden..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aidenSend2()}" oninput="ar(this)"></textarea>
+          <button class="mic" id="aiden2-mic" onclick="toggleMic('aiden2')"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button>
+          <button class="send blue" id="aiden2-send" onclick="aidenSend2()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+        <div class="input-footer"><span id="aiden2-status">Verificando OpenClaw...</span><span>⏎ Enter · Shift+⏎ línea</span></div>
+      </div>
     </div>
-    <div class="input-footer"><span id="claude-status">Verificando proxy...</span><span>⏎ Enter · Shift+⏎ línea</span></div>
+
+    <!-- Sub-vista: Terminal (xterm.js) -->
+    <div class="claude-sub" id="csub-term">
+      <div id="shell-terminal" style="flex:1;background:#0a0a0a;overflow:hidden"></div>
+    </div>
   </div>
 </div>
 
@@ -486,7 +647,7 @@ function clearPanel(id, icon, title, sub) {
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 function ar(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px'; }
-function kd(e, panel) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ({chat:chatSend,brain:brainSend,claw:clawSend,aider:aiderSend,claude:claudeSend})[panel](); } }
+function kd(e, panel) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ({chat:chatSend,brain:brainSend,claw:clawSend,aider:aiderSend,claude:claudeSend,aiden2:aidenSend2})[panel](); } }
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function scrollB(id) { const el = document.getElementById(id + '-scroll'); el.scrollTop = el.scrollHeight; }
 
@@ -748,10 +909,27 @@ async function aiderSend(){
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  5. CLAUDE CODE — qwen2.5-coder:14b via /claude/chat (SSE)
+//  5. CLAUDE CODE — Chat + Contexto + Aiden + Terminal
 // ══════════════════════════════════════════════════════════════════════════════
 let claudeMsgs = [], claudeBusy = false;
+let ctxSelectedFiles = []; // rutas seleccionadas para inyectar como contexto
+let ctxTreeData = null;
+let shellTerm = null, shellWs = null, shellFit = null;
 
+// ── Sub-tabs dentro de Claude Code ───────────────────────────────────────
+let claudeActiveSub = 'chat';
+function switchClaudeSub(sub) {
+  claudeActiveSub = sub;
+  document.querySelectorAll('.claude-subtab').forEach(t => t.classList.toggle('active', t.dataset.sub === sub));
+  document.querySelectorAll('.claude-sub').forEach(s => s.classList.remove('active'));
+  document.getElementById('csub-' + sub).classList.add('active');
+  if (sub === 'term' && !shellTerm) initShellTerminal();
+  if (sub === 'term' && shellFit) setTimeout(() => shellFit.fit(), 50);
+  if (sub === 'chat') { const inp = document.getElementById('claude-in'); if (inp) inp.focus(); }
+  if (sub === 'aiden') { const inp = document.getElementById('aiden2-in'); if (inp) inp.focus(); }
+}
+
+// ── Init Claude status ────────────────────────────────────────────────
 async function initClaude() {
   try {
     const r = await fetch('/claude/chat/status');
@@ -762,13 +940,94 @@ async function initClaude() {
 }
 initClaude();
 
+// ── Context file picker ───────────────────────────────────────────────
+function toggleCtxPanel() {
+  const panel = document.getElementById('ctx-panel');
+  const show = panel.style.display === 'none';
+  panel.style.display = show ? 'flex' : 'none';
+  if (show && !ctxTreeData) loadCtxTree();
+}
+
+async function loadCtxTree() {
+  document.getElementById('ctx-tree').innerHTML = '<div style="padding:12px;color:var(--muted)">Cargando árbol...</div>';
+  try {
+    const r = await fetch('/claude/files');
+    const d = await r.json();
+    ctxTreeData = d.tree;
+    renderCtxTree(d.tree);
+  } catch (e) {
+    document.getElementById('ctx-tree').innerHTML = '<div style="padding:12px;color:var(--red)">⚠ ' + esc(e.message) + '</div>';
+  }
+}
+
+function renderCtxTree(tree, container) {
+  const el = container || document.getElementById('ctx-tree');
+  if (!container) el.innerHTML = '';
+  for (const item of tree) {
+    if (item.type === 'dir') {
+      const dir = document.createElement('div');
+      dir.className = 'ctx-dir collapsed';
+      dir.innerHTML = `<div class="ctx-dir-label" onclick="this.parentElement.classList.toggle('collapsed')"><span class="ctx-dir-arrow">▼</span><span>📁 ${esc(item.name)}</span></div><div class="ctx-dir-children"></div>`;
+      el.appendChild(dir);
+      if (item.children?.length) renderCtxTree(item.children, dir.querySelector('.ctx-dir-children'));
+    } else {
+      const f = document.createElement('div');
+      f.className = 'ctx-file' + (ctxSelectedFiles.includes(item.path) ? ' selected' : '');
+      f.dataset.path = item.path;
+      const sizeKb = item.size > 1024 ? (item.size / 1024).toFixed(1) + 'K' : item.size + 'B';
+      f.innerHTML = `<span class="ctx-file-icon">📝</span><span class="ctx-file-name">${esc(item.name)}</span><span class="ctx-file-size">${sizeKb}</span>`;
+      f.onclick = () => toggleCtxFile(item.path, f);
+      el.appendChild(f);
+    }
+  }
+}
+
+function toggleCtxFile(path, el) {
+  const idx = ctxSelectedFiles.indexOf(path);
+  if (idx >= 0) { ctxSelectedFiles.splice(idx, 1); el.classList.remove('selected'); }
+  else { ctxSelectedFiles.push(path); el.classList.add('selected'); }
+  updateCtxChips();
+}
+
+function removeCtxFile(path) {
+  ctxSelectedFiles = ctxSelectedFiles.filter(p => p !== path);
+  document.querySelectorAll('.ctx-file').forEach(f => {
+    if (f.dataset.path === path) f.classList.remove('selected');
+  });
+  updateCtxChips();
+}
+
+function updateCtxChips() {
+  const sel = document.getElementById('ctx-selected');
+  const count = document.getElementById('ctx-count');
+  const toggle = document.getElementById('ctx-toggle');
+  count.textContent = ctxSelectedFiles.length;
+  toggle.classList.toggle('has-files', ctxSelectedFiles.length > 0);
+  sel.innerHTML = ctxSelectedFiles.length === 0
+    ? '<span style="color:var(--muted)">Ningún archivo seleccionado</span>'
+    : ctxSelectedFiles.map(p => `<span class="ctx-chip">${p.split('/').pop()}<span class="ctx-chip-x" onclick="removeCtxFile('${p}')">✕</span></span>`).join('');
+}
+
+function filterCtxTree() {
+  const q = document.getElementById('ctx-search-input').value.toLowerCase();
+  document.querySelectorAll('.ctx-file').forEach(f => {
+    const match = f.dataset.path.toLowerCase().includes(q);
+    f.style.display = match ? '' : 'none';
+  });
+  // Expandir carpetas que contienen resultados
+  if (q) document.querySelectorAll('.ctx-dir').forEach(d => d.classList.remove('collapsed'));
+  else document.querySelectorAll('.ctx-dir').forEach(d => d.classList.add('collapsed'));
+}
+
+// ── Chat con contexto ─────────────────────────────────────────────────
 function claudeSuggest(el) { document.getElementById('claude-in').value = el.textContent; claudeSend(); }
 
 async function claudeSend() {
   const inp = document.getElementById('claude-in'), text = inp.value.trim();
   if (!text || claudeBusy) return;
   claudeMsgs.push({ role: 'user', content: text });
-  addMsg('claude', 'user', `<p>${esc(text)}</p>`, '👤');
+  const ctxLabel = ctxSelectedFiles.length > 0 ? ` <span style="font-size:11px;color:var(--blue)">[${ctxSelectedFiles.length} archivos]</span>` : '';
+  addMsg('claude', 'user', `<p>${esc(text)}${ctxLabel}</p>`, '👤');
   inp.value = ''; inp.style.height = 'auto';
 
   const bub = addMsg('claude', 'assistant', '', '🤖');
@@ -780,7 +1039,7 @@ async function claudeSend() {
     const res = await fetch('/claude/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: claudeMsgs, stream: true }),
+      body: JSON.stringify({ messages: claudeMsgs, contextFiles: ctxSelectedFiles, stream: true }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const reader = res.body.getReader(), dec = new TextDecoder(); let buf = '';
@@ -803,6 +1062,137 @@ async function claudeSend() {
     claudeMsgs.push({ role: 'assistant', content: full });
   } catch (e) { bub.classList.remove('typing-cursor'); bub.innerHTML = `<p>⚠ ${esc(e.message)}</p>`; }
   claudeBusy = false; document.getElementById('claude-send').disabled = false; scrollB('claude');
+}
+
+// ── Aiden (control de agentes OpenClaw) ───────────────────────────────
+let aidenBusy = false;
+async function initAiden() {
+  try {
+    const r = await fetch('/api/aiden/status');
+    const d = await r.json();
+    document.getElementById('aiden2-status').textContent = d.connected ? 'OpenClaw conectado' : '⚠ OpenClaw no conectado';
+  } catch { document.getElementById('aiden2-status').textContent = '⚠ Error al verificar Aiden'; }
+}
+initAiden();
+
+function aidenSuggest(el) { document.getElementById('aiden2-in').value = el.textContent; aidenSend2(); }
+
+async function aidenSend2() {
+  const inp = document.getElementById('aiden2-in'), text = inp.value.trim();
+  if (!text || aidenBusy) return;
+  addMsg('aiden2', 'user', `<p>${esc(text)}</p>`, '👤');
+  inp.value = ''; inp.style.height = 'auto';
+
+  const bub = addMsg('aiden2', 'assistant', '', '👾');
+  bub.classList.add('typing-cursor');
+  aidenBusy = true; document.getElementById('aiden2-send').disabled = true;
+
+  let full = '';
+  try {
+    const res = await fetch('/api/aiden/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: text }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const reader = res.body.getReader(), dec = new TextDecoder(); let buf = '';
+    while (true) {
+      const { done, value } = await reader.read(); if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n'); buf = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data:')) continue;
+        const raw = line.slice(5).trim(); if (raw === '[DONE]') continue;
+        try {
+          const d = JSON.parse(raw);
+          if (d.type === 'status') { addSysMsg('aiden2', d.text); continue; }
+          if (d.type === 'response') { full += (typeof d.response === 'string' ? d.response : JSON.stringify(d.response, null, 2)); }
+          if (d.type === 'processing') { addSysMsg('aiden2', '⏳ ' + (d.task || 'Procesando...')); continue; }
+          if (d.type === 'error') { bub.innerHTML = `<p style="color:#fca5a5">⚠ ${esc(d.error || d.text || 'Error')}</p>`; }
+          if (d.text && d.type !== 'status') { full += d.text; }
+          bub.innerHTML = md(full); addCopyBtns(bub); scrollB('aiden2');
+        } catch {}
+      }
+    }
+    bub.classList.remove('typing-cursor');
+    bub.innerHTML = md(full || '…'); addCopyBtns(bub);
+  } catch (e) { bub.classList.remove('typing-cursor'); bub.innerHTML = `<p>⚠ ${esc(e.message)}</p>`; }
+  aidenBusy = false; document.getElementById('aiden2-send').disabled = false; scrollB('aiden2');
+}
+
+// ── Shell Terminal (xterm.js + WebSocket) ────────────────────────────
+const ADMIN_TOKEN = 'sinkia2026';
+
+function initShellTerminal() {
+  if (shellTerm) return;
+  const container = document.getElementById('shell-terminal');
+  if (!container || typeof Terminal === 'undefined') {
+    console.warn('xterm.js no disponible');
+    return;
+  }
+
+  shellTerm = new Terminal({
+    theme: {
+      background:  '#0a0a0a',
+      foreground:  '#e8e8e8',
+      cursor:      '#3b82f6',
+      cursorAccent:'#0a0a0a',
+      selectionBackground: 'rgba(59,130,246,.3)',
+      black:   '#1e1e1e', red:     '#ef4444', green:   '#22c55e', yellow: '#f59e0b',
+      blue:    '#3b82f6', magenta: '#8b5cf6', cyan:    '#06b6d4', white:  '#e8e8e8',
+      brightBlack: '#555', brightRed: '#fca5a5', brightGreen: '#86efac', brightYellow: '#fde68a',
+      brightBlue: '#93c5fd', brightMagenta: '#c4b5fd', brightCyan: '#67e8f9', brightWhite: '#fff',
+    },
+    fontFamily: "'SF Mono','Fira Code','Cascadia Code',monospace",
+    fontSize: 13,
+    lineHeight: 1.3,
+    cursorBlink: true,
+    cursorStyle: 'bar',
+    scrollback: 5000,
+    allowProposedApi: true,
+  });
+
+  const fitAddon = new FitAddon.FitAddon();
+  shellFit = fitAddon;
+  shellTerm.loadAddon(fitAddon);
+
+  try {
+    const webLinksAddon = new WebLinksAddon.WebLinksAddon();
+    shellTerm.loadAddon(webLinksAddon);
+  } catch {}
+
+  shellTerm.open(container);
+  setTimeout(() => fitAddon.fit(), 100);
+
+  // Conectar WebSocket
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${proto}//${location.host}/ws/shell?token=${ADMIN_TOKEN}`;
+  shellWs = new WebSocket(wsUrl);
+
+  shellWs.onopen = () => {
+    shellTerm.write('\r\n\x1b[32m✓ Shell conectada\x1b[0m\r\n\r\n');
+    // Enviar tamaño inicial
+    shellWs.send(JSON.stringify({ type: 'resize', cols: shellTerm.cols, rows: shellTerm.rows }));
+  };
+
+  shellWs.onmessage = (e) => shellTerm.write(e.data);
+  shellWs.onerror = () => shellTerm.write('\r\n\x1b[31m✗ Error de conexión\x1b[0m\r\n');
+  shellWs.onclose = () => shellTerm.write('\r\n\x1b[33m✗ Shell desconectada\x1b[0m\r\n');
+
+  // Teclas → WebSocket
+  shellTerm.onData(data => {
+    if (shellWs && shellWs.readyState === 1) shellWs.send(data);
+  });
+
+  // Resize → WebSocket
+  shellTerm.onResize(({ cols, rows }) => {
+    if (shellWs && shellWs.readyState === 1) {
+      shellWs.send(JSON.stringify({ type: 'resize', cols, rows }));
+    }
+  });
+
+  // Fit on window resize
+  window.addEventListener('resize', () => { if (claudeActiveSub === 'term' && shellFit) shellFit.fit(); });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
