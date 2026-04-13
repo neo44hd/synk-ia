@@ -60,23 +60,16 @@ const CLAUDE_BIN = findClaude();
 export function setupTerminal(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
 
-  // ── Upgrade HTTP → WebSocket ──────────────────────────────────────────────
-  httpServer.on('upgrade', (req, socket, head) => {
-    let pathname;
-    try { pathname = new URL(req.url, 'http://localhost').pathname; }
-    catch { socket.destroy(); return; }
-
-    if (pathname !== '/terminal/ws') { socket.destroy(); return; }
-
+  // ── Upgrade handler (llamado desde el dispatcher central en index.js) ─────
+  wss.handleUpgradeRequest = (req, socket, head) => {
     const token = new URL(req.url, 'http://localhost').searchParams.get('token');
     if (token !== ADMIN_TOKEN) {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       socket.destroy();
       return;
     }
-
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
-  });
+  };
 
   // ── Nueva conexión WebSocket ───────────────────────────────────────────────
   wss.on('connection', (ws) => {
@@ -144,4 +137,5 @@ export function setupTerminal(httpServer) {
   });
 
   console.log('[SERVER] ✓ Terminal WebSocket: /terminal/ws');
+  return wss;
 }

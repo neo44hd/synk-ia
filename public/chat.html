@@ -592,7 +592,7 @@ let clawWs=null, clawConn=false;
 function connectClaw() {
   if(clawWs&&clawWs.readyState<=1)return;
   const proto=location.protocol==='https:'?'wss:':'ws:';
-  const url=`${proto}//${location.hostname}:18790`;
+  const url=`${proto}//${location.host}/ws/openclaw`;
   updClaw('wait','Conectando...');
   try{
     clawWs=new WebSocket(url);

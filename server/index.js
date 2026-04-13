@@ -14,6 +14,7 @@ import { adminRouter }       from './routes/admin.js';
 import { claudeProxyRouter } from './routes/claude-proxy.js';
 import { chatRouter }        from './routes/chat.js';
 import { setupTerminal }      from './routes/terminal.js';
+import { setupOpenClawProxy } from './routes/openclaw-proxy.js';
 import documentsRouter        from './routes/documents.js';
 import trabajadoresRouter     from './routes/trabajadores.js';
 import { authRouter }         from './routes/auth.js';
@@ -165,8 +166,27 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n[SERVER] ✓ Puerto ${PORT} | ${new Date().toISOString()}`);
   console.log(`[SERVER] CORS: ${ALLOWED_ORIGINS.join(', ')}\n`);
 
-  // Terminal WebSocket (node-pty + ws)
-  try { setupTerminal(server); } catch (e) { console.error('[TERMINAL] ✗', e.message); }
+  // ── WebSocket handlers ──────────────────────────────────────────────────────
+  let terminalWss = null;
+  let openclawWss = null;
+
+  try { terminalWss = setupTerminal(server); } catch (e) { console.error('[TERMINAL] ✗', e.message); }
+  try { openclawWss = setupOpenClawProxy(server); } catch (e) { console.error('[OPENCLAW-PROXY] ✗', e.message); }
+
+  // ── Dispatcher centralizado de WebSocket upgrades ──────────────────────────
+  server.on('upgrade', (req, socket, head) => {
+    let pathname;
+    try { pathname = new URL(req.url, 'http://localhost').pathname; }
+    catch { socket.destroy(); return; }
+
+    if (pathname === '/terminal/ws' && terminalWss) {
+      terminalWss.handleUpgradeRequest(req, socket, head);
+    } else if (pathname === '/ws/openclaw' && openclawWss) {
+      openclawWss.handleUpgradeRequest(req, socket, head);
+    } else {
+      socket.destroy();
+    }
+  });
 
   import('./syncWorker.js').then(({ startSyncWorker }) => {
     try {
