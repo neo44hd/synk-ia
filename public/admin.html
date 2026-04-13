@@ -847,8 +847,7 @@ function renderServices(h) {
     { icon:'🖥️', name:'API Backend',  sub:`Uptime ${fmtUp(up)}`,  st: h?.status==='ok'?'ok':'err' },
     { icon:'📧', name:'Email IMAP',   sub:'info@chickenpalace.es', st: svcs.email   ?'ok':'warn' },
     { icon:'🍗', name:'Revo XEF',     sub:'chickenpalaceibiza2',   st: svcs.revo    ?'ok':'err'  },
-    { icon:'🤖', name:'LM Studio',    sub: (svcs.ai?.model||'').split('-q4')[0]||'—', st: svcs.ai?.ready?'ok':'warn' },
-    { icon:'🔁', name:'LiteLLM',      sub:'puerto 8082',           st: svcs.ai?.ready?'ok':'warn' },
+    { icon:'🤖', name:'Ollama',       sub: (svcs.ai?.model||'').split('-q4')[0]||'—', st: svcs.ai?.ready?'ok':'warn' },
   ];
 
   document.getElementById('svc-grid').innerHTML = cards.map(c => `
@@ -920,7 +919,7 @@ async function checkAIStack() {
 function renderAI(ai) {
   if (!ai) return;
   document.getElementById('ai-model-name').textContent = ai.model || 'Sin modelo';
-  document.getElementById('ai-model-sub').textContent  = ai.path  || 'LM Studio · puerto 12345';
+  document.getElementById('ai-model-sub').textContent  = ai.path  || 'Ollama · puerto 11434';
   document.getElementById('ai-badge').textContent      = ai.ready ? '✓ Listo' : '✗ No disponible';
   document.getElementById('ai-badge').style.background = ai.ready ? '' : '#3d1515';
   document.getElementById('ai-badge').style.color      = ai.ready ? '' : 'var(--red)';
