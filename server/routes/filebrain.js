@@ -1,5 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-//  SYNK-IA — FileBrain: Archivo inteligente
+//  SYNK-IA — FileBrain v2: Archivo inteligente (fuente única)
+//
+//  ANTES: leía de invoice.json + provider.json (almacén paralelo)
+//  AHORA: lee de documents.json + entities.json (misma fuente que Brain)
+//
 //  Clasificación automática de documentos por proveedor, fecha, categoría y tipo
 //  Estructura de archivo virtual con navegación tipo árbol
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -10,6 +14,7 @@ import { DATA_DIR } from './data.js';
 
 export const filebrainRouter = Router();
 
+// ── Lectura de la fuente única ───────────────────────────────────────────────
 function readJSON(entity) {
   const file = path.join(DATA_DIR, `${entity}.json`);
   try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []; } catch { return []; }
@@ -19,55 +24,63 @@ function writeJSON(entity, data) {
   fs.writeFileSync(path.join(DATA_DIR, `${entity}.json`), JSON.stringify(data, null, 2));
 }
 
-// ── Mapeo de categorías de proveedor ────────────────────────────────────────
-const PROVIDER_CATEGORIES = {
-  // Alimentación y bebidas
-  'frutasjavier.com': { category: 'alimentacion', commercial_name: 'Frutas Javier', sector: 'Frutas y Verduras' },
-  'distribucionesmontiel.com': { category: 'alimentacion', commercial_name: 'Distribuciones Montiel', sector: 'Distribución alimentaria' },
-  'mercadona.com': { category: 'alimentacion', commercial_name: 'Mercadona', sector: 'Supermercado' },
-  'mail.mercadona.com': { category: 'alimentacion', commercial_name: 'Mercadona', sector: 'Supermercado' },
-  'eroski.es': { category: 'alimentacion', commercial_name: 'Eroski', sector: 'Supermercado' },
-  // Suministros y energía
-  'codicert.net': { category: 'suministros', commercial_name: 'AXPO Iberia', sector: 'Energía eléctrica' },
-  'email.movistar.es': { category: 'suministros', commercial_name: 'Movistar', sector: 'Telecomunicaciones' },
-  // Servicios profesionales
-  'assempsaibiza.com': { category: 'servicios', commercial_name: 'Assempsa Ibiza', sector: 'Servicios empresariales' },
-  'indexpert.es': { category: 'servicios', commercial_name: 'Indexpert', sector: 'Consultoría' },
-  'aniofegroup.com': { category: 'servicios', commercial_name: 'Aniofe Group', sector: 'Administración' },
-  // RRHH y laboral
-  'vtrgestion.com': { category: 'laboral', commercial_name: 'VTR Gestión', sector: 'Asesoría laboral' },
-  'asecrigestion@gmail.com': { category: 'laboral', commercial_name: 'T&V-ASECRI', sector: 'Asesoría laboral' },
-  // Tecnología y software
-  'stripe.com': { category: 'tecnologia', commercial_name: 'Warp (via Stripe)', sector: 'Software / SaaS' },
-  'google.com': { category: 'tecnologia', commercial_name: 'Google', sector: 'Cloud / Tecnología' },
-  'es.edenred.info': { category: 'beneficios', commercial_name: 'Edenred', sector: 'Beneficios empleados' },
-};
-
 // ── Subcategorías por tipo de documento ──────────────────────────────────────
 const DOC_SUBCATEGORIES = {
-  factura: 'facturas',
-  recibo: 'recibos',
-  nomina: 'nominas',
-  contrato: 'contratos',
-  albaran: 'albaranes',
-  presupuesto: 'presupuestos',
-  fiscal: 'fiscal',
-  documento: 'otros_documentos',
-  otro: 'sin_clasificar',
+  factura_recibida:  'facturas_recibidas',
+  factura_emitida:   'facturas_emitidas',
+  albaran:           'albaranes',
+  presupuesto:       'presupuestos',
+  contrato:          'contratos',
+  nomina:            'nominas',
+  extracto_bancario: 'extractos',
+  pedido:            'pedidos',
+  ticket:            'tickets',
+  email_comercial:   'emails',
+  otro:              'sin_clasificar',
+  // Compat con clasificación por heurística (scan sin IA)
+  factura:           'facturas',
+  recibo:            'recibos',
+  fiscal:            'fiscal',
+  documento:         'otros_documentos',
 };
 
-// ── Detectar categoría de proveedor por email ───────────────────────────────
-function detectProviderCategory(email) {
-  if (!email) return { category: 'sin_clasificar', commercial_name: null, sector: null };
-  const domain = email.split('@').pop()?.toLowerCase();
-  // Buscar coincidencia exacta o por dominio raíz
-  for (const [key, val] of Object.entries(PROVIDER_CATEGORIES)) {
-    if (domain?.includes(key) || email.toLowerCase().includes(key)) return val;
+// ── Categorías dinámicas de proveedor ────────────────────────────────────────
+// En vez de un diccionario hardcodeado, detectamos la categoría por:
+//   1. Tipo de documentos que envía (si >50% nóminas → laboral)
+//   2. Palabras clave en nombre/email
+//   3. Sector ya asignado en entities.json
+const CATEGORY_KEYWORDS = {
+  laboral:       ['laboral', 'gestoria', 'gestión laboral', 'rrhh', 'nomina', 'asecri', 'vtr'],
+  alimentacion:  ['frutas', 'carnes', 'pescado', 'verduras', 'alimenta', 'mercadona', 'eroski', 'distribu'],
+  suministros:   ['energía', 'energia', 'eléctric', 'electric', 'gas', 'agua', 'telecom', 'movistar', 'vodafone'],
+  servicios:     ['consult', 'asesor', 'legal', 'abogad', 'gestor', 'admin'],
+  tecnologia:    ['software', 'saas', 'cloud', 'tech', 'google', 'stripe', 'digital'],
+  beneficios:    ['edenred', 'ticket', 'sodexo', 'beneficio'],
+  seguros:       ['seguro', 'mutua', 'póliza', 'insurance'],
+  fiscalidad:    ['hacienda', 'agencia tributaria', 'modelo', 'impuesto'],
+};
+
+function detectCategoryDynamic(providerName, providerEmail, docTypes) {
+  const text = `${providerName} ${providerEmail}`.toLowerCase();
+
+  // 1. Por palabras clave en nombre/email
+  for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (keywords.some(kw => text.includes(kw))) return category;
   }
-  return { category: 'sin_clasificar', commercial_name: null, sector: null };
+
+  // 2. Por tipos de documentos predominantes
+  if (docTypes) {
+    const total = Object.values(docTypes).reduce((s, v) => s + v, 0);
+    if (total > 0) {
+      if ((docTypes.nomina || 0) / total > 0.5) return 'laboral';
+      if (((docTypes.factura_recibida || 0) + (docTypes.factura || 0)) / total > 0.5) return 'proveedor_general';
+    }
+  }
+
+  return 'sin_clasificar';
 }
 
-// ── Extraer año-mes de una fecha ────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function getYearMonth(dateStr) {
   if (!dateStr) return { year: 'sin_fecha', month: '00' };
   try {
@@ -75,7 +88,7 @@ function getYearMonth(dateStr) {
     if (isNaN(d.getTime())) return { year: 'sin_fecha', month: '00' };
     return {
       year: String(d.getFullYear()),
-      month: String(d.getMonth() + 1).padStart(2, '0')
+      month: String(d.getMonth() + 1).padStart(2, '0'),
     };
   } catch { return { year: 'sin_fecha', month: '00' }; }
 }
@@ -83,113 +96,130 @@ function getYearMonth(dateStr) {
 const MONTH_NAMES = {
   '01': 'Enero', '02': 'Febrero', '03': 'Marzo', '04': 'Abril',
   '05': 'Mayo', '06': 'Junio', '07': 'Julio', '08': 'Agosto',
-  '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre', '00': 'Sin fecha'
+  '09': 'Septiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre', '00': 'Sin fecha',
 };
+
+function sanitizeName(str) {
+  return (str || 'desconocido')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s\-_.]/g, '')
+    .replace(/\s+/g, '_')
+    .substring(0, 50);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  POST /api/filebrain/classify-all
-//  Clasifica TODAS las facturas existentes: enriquece con categoría de proveedor,
-//  ruta virtual de archivo, y subcategoría. Idempotente.
+//  Clasifica TODOS los documentos desde documents.json (fuente única)
+//  Enriquece proveedores con categoría dinámica
 // ═══════════════════════════════════════════════════════════════════════════════
 filebrainRouter.post('/classify-all', (req, res) => {
   try {
-    const invoices = readJSON('invoice');
-    const providers = readJSON('provider');
-    const providerMap = new Map(providers.map(p => [p.id, p]));
-    const providerByEmail = new Map(providers.map(p => [p.email, p]));
+    const docs     = readJSON('documents');
+    const entities = (() => {
+      const file = path.join(DATA_DIR, 'entities.json');
+      try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : { proveedores: [], clientes: [] }; }
+      catch { return { proveedores: [], clientes: [] }; }
+    })();
 
     let classified = 0;
     let enrichedProviders = 0;
 
-    // 1. Enriquecer proveedores con categoría y nombre comercial
-    for (const prov of providers) {
-      const detected = detectProviderCategory(prov.email);
-      let changed = false;
+    // 1. Indexar documentos por proveedor para detectar categoría dinámica
+    const docsByProvider = {};
+    for (const doc of docs) {
+      const emisor = doc.analisis?.emisor;
+      if (!emisor?.nombre) continue;
+      const key = emisor.cif_nif || emisor.nombre;
+      if (!docsByProvider[key]) docsByProvider[key] = { types: {}, docs: [] };
+      const tipo = doc.analisis?.tipo || 'otro';
+      docsByProvider[key].types[tipo] = (docsByProvider[key].types[tipo] || 0) + 1;
+      docsByProvider[key].docs.push(doc);
+    }
 
-      if (detected.category !== 'sin_clasificar') {
-        if (prov.category === 'auto-detected' || !prov.category || prov.category === 'sin_clasificar') {
-          prov.category = detected.category;
-          changed = true;
-        }
-        if (detected.commercial_name && (!prov.commercial_name || prov.name === prov.email?.split('@')[0])) {
-          prov.commercial_name = detected.commercial_name;
-          changed = true;
-        }
-        if (detected.sector && !prov.sector) {
-          prov.sector = detected.sector;
-          changed = true;
-        }
-      }
+    // 2. Enriquecer proveedores en entities.json con categoría dinámica
+    for (const prov of entities.proveedores) {
+      const key = prov.cif_nif || prov.nombre;
+      const provDocs = docsByProvider[key];
+      const detected = detectCategoryDynamic(
+        prov.nombre || '',
+        prov.email  || '',
+        provDocs?.types
+      );
 
-      // Limpiar nombre genérico ("info", "administracion", etc.)
-      const genericNames = ['info', 'administracion', 'administracion3', 'laboral', 'facturas-noreply@mercadona.com', 'Factura-correo'];
-      if (genericNames.includes(prov.name) && detected.commercial_name) {
-        prov.name = detected.commercial_name;
-        changed = true;
-      }
-
-      if (changed) {
-        prov.updated_date = new Date().toISOString();
+      if (detected !== 'sin_clasificar' && (!prov.category || prov.category === 'sin_clasificar' || prov.category === 'auto-detected')) {
+        prov.category = detected;
+        prov.updated = new Date().toISOString();
         enrichedProviders++;
       }
     }
-    writeJSON('provider', providers);
 
-    // 2. Clasificar cada factura con ruta virtual
-    for (const inv of invoices) {
-      const provider = providerByEmail.get(inv.provider_email) || providerMap.get(inv.provider_id);
+    // Guardar entities actualizadas
+    const entFile = path.join(DATA_DIR, 'entities.json');
+    fs.writeFileSync(entFile, JSON.stringify(entities, null, 2));
+
+    // 3. Clasificar cada documento con ruta virtual
+    const provByKey = new Map();
+    for (const p of entities.proveedores) {
+      provByKey.set(p.cif_nif || p.nombre, p);
+      if (p.nombre) provByKey.set(p.nombre, p);
+    }
+
+    for (const doc of docs) {
+      const a = doc.analisis || {};
+      const emisor = a.emisor || {};
+      const provKey  = emisor.cif_nif || emisor.nombre;
+      const provider = provByKey.get(provKey);
       const provCategory = provider?.category || 'sin_clasificar';
-      const provName = provider?.commercial_name || provider?.name || inv.provider_name || 'Desconocido';
-      const docSubcat = DOC_SUBCATEGORIES[inv.type] || 'sin_clasificar';
-      const { year, month } = getYearMonth(inv.date);
+      const provName     = emisor.nombre || 'Desconocido';
+      const docSubcat    = DOC_SUBCATEGORIES[a.tipo] || 'sin_clasificar';
+      const { year, month } = getYearMonth(a.fecha || doc.procesado);
 
-      // Ruta virtual: /categoría/proveedor/año/mes/tipo/archivo
-      const virtualPath = `/${provCategory}/${sanitizeName(provName)}/${year}/${month}-${MONTH_NAMES[month]}/${docSubcat}/${inv.filename || 'sin_nombre'}`;
+      const virtualPath = `/${provCategory}/${sanitizeName(provName)}/${year}/${month}-${MONTH_NAMES[month]}/${docSubcat}/${doc.nombre_archivo || 'sin_nombre'}`;
 
-      // Tags automáticos
-      const tags = [inv.type, provCategory];
+      const tags = [a.tipo, provCategory].filter(Boolean);
       if (provider?.sector) tags.push(provider.sector.toLowerCase());
-      if (inv.file_size > 500000) tags.push('archivo_grande');
 
-      inv.filebrain = {
-        virtual_path: virtualPath,
-        provider_category: provCategory,
+      doc.filebrain = {
+        virtual_path:        virtualPath,
+        provider_category:   provCategory,
         provider_commercial: provName,
-        doc_subcategory: docSubcat,
+        doc_subcategory:     docSubcat,
         year,
         month,
-        month_name: MONTH_NAMES[month],
+        month_name:          MONTH_NAMES[month],
         tags,
-        classified_at: new Date().toISOString()
+        classified_at:       new Date().toISOString(),
       };
-      inv.updated_date = new Date().toISOString();
+
       classified++;
     }
-    writeJSON('invoice', invoices);
 
-    // 3. Estadísticas
+    // Guardar documents con filebrain enriquecido
+    writeJSON('documents', docs);
+
+    // 4. Estadísticas
     const stats = {
       total_classified: classified,
       providers_enriched: enrichedProviders,
       by_category: {},
       by_type: {},
       by_month: {},
-      by_provider: {}
+      by_provider: {},
     };
 
-    for (const inv of invoices) {
-      const fb = inv.filebrain || {};
+    for (const doc of docs) {
+      const fb = doc.filebrain || {};
+      const tipo = doc.analisis?.tipo || 'otro';
       stats.by_category[fb.provider_category || 'sin_clasificar'] = (stats.by_category[fb.provider_category] || 0) + 1;
-      stats.by_type[inv.type] = (stats.by_type[inv.type] || 0) + 1;
+      stats.by_type[tipo] = (stats.by_type[tipo] || 0) + 1;
       const monthKey = `${fb.year}-${fb.month}`;
       stats.by_month[monthKey] = (stats.by_month[monthKey] || 0) + 1;
-      const provKey = fb.provider_commercial || inv.provider_name;
+      const provKey = fb.provider_commercial || 'Desconocido';
       stats.by_provider[provKey] = (stats.by_provider[provKey] || 0) + 1;
     }
 
     console.log(`[FILEBRAIN] Clasificados: ${classified} docs, ${enrichedProviders} proveedores enriquecidos`);
     res.json({ success: true, stats });
-
   } catch (err) {
     console.error('[FILEBRAIN] Error:', err.message);
     res.status(500).json({ success: false, error: err.message });
@@ -198,63 +228,53 @@ filebrainRouter.post('/classify-all', (req, res) => {
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  GET /api/filebrain/tree
-//  Devuelve estructura de archivo virtual tipo árbol
-//  Modos: ?by=category (default) | ?by=provider | ?by=date | ?by=type
+//  Estructura de archivo virtual tipo árbol — ahora desde documents.json
 // ═══════════════════════════════════════════════════════════════════════════════
 filebrainRouter.get('/tree', (req, res) => {
   try {
-    const invoices = readJSON('invoice');
+    const docs = readJSON('documents');
     const mode = req.query.by || 'category';
     const tree = {};
 
-    for (const inv of invoices) {
-      const fb = inv.filebrain || {};
-      const provName = fb.provider_commercial || inv.provider_name || 'Desconocido';
-      const category = fb.provider_category || 'sin_clasificar';
-      const docType = DOC_SUBCATEGORIES[inv.type] || 'sin_clasificar';
-      const { year, month } = fb.year ? fb : getYearMonth(inv.date);
+    for (const doc of docs) {
+      const fb   = doc.filebrain || {};
+      const a    = doc.analisis  || {};
+      const provName = fb.provider_commercial || a.emisor?.nombre || 'Desconocido';
+      const category = fb.provider_category   || 'sin_clasificar';
+      const docType  = DOC_SUBCATEGORIES[a.tipo] || 'sin_clasificar';
+      const { year, month } = fb.year ? fb : getYearMonth(a.fecha || doc.procesado);
       const monthLabel = `${month}-${MONTH_NAMES[month] || month}`;
 
-      const doc = {
-        id: inv.id,
-        filename: inv.filename,
-        type: inv.type,
-        date: inv.date,
-        provider: provName,
-        provider_email: inv.provider_email,
-        size: inv.file_size,
-        status: inv.status,
-        subject: inv.subject,
-        tags: fb.tags || [inv.type],
-        virtual_path: fb.virtual_path
+      const entry = {
+        id:           doc.id,
+        filename:     doc.nombre_archivo,
+        type:         a.tipo,
+        date:         a.fecha || doc.procesado,
+        provider:     provName,
+        total:        a.total,
+        resumen:      a.resumen,
+        tags:         fb.tags || [a.tipo],
+        virtual_path: fb.virtual_path,
       };
 
-      let path;
+      let pathSegments;
       switch (mode) {
-        case 'provider':
-          path = [provName, year, monthLabel, docType];
-          break;
-        case 'date':
-          path = [year, monthLabel, category, provName];
-          break;
-        case 'type':
-          path = [docType, year, monthLabel, provName];
-          break;
+        case 'provider': pathSegments = [provName, year, monthLabel, docType]; break;
+        case 'date':     pathSegments = [year, monthLabel, category, provName]; break;
+        case 'type':     pathSegments = [docType, year, monthLabel, provName]; break;
         case 'category':
-        default:
-          path = [category, provName, year, monthLabel];
+        default:         pathSegments = [category, provName, year, monthLabel]; break;
       }
 
       let node = tree;
-      for (const segment of path) {
+      for (const segment of pathSegments) {
         if (!node[segment]) node[segment] = {};
         node = node[segment];
       }
       if (!node._files) node._files = [];
-      node._files.push(doc);
+      node._files.push(entry);
     }
 
-    // Calcular conteos recursivos
     function countFiles(node) {
       let count = 0;
       if (node._files) count += node._files.length;
@@ -278,88 +298,79 @@ filebrainRouter.get('/tree', (req, res) => {
       return result;
     }
 
-    const enriched = enrichTree(tree);
-
     res.json({
       success: true,
       mode,
-      total_documents: invoices.length,
-      tree: enriched
+      total_documents: docs.length,
+      tree: enrichTree(tree),
     });
-
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  GET /api/filebrain/stats
-//  Dashboard de estadísticas del archivo
+//  GET /api/filebrain/stats — Dashboard
 // ═══════════════════════════════════════════════════════════════════════════════
 filebrainRouter.get('/stats', (req, res) => {
   try {
-    const invoices = readJSON('invoice');
-    const providers = readJSON('provider');
-    const classified = invoices.filter(i => i.filebrain?.classified_at);
+    const docs = readJSON('documents');
+    const entities = (() => {
+      const file = path.join(DATA_DIR, 'entities.json');
+      try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : { proveedores: [], clientes: [] }; }
+      catch { return { proveedores: [], clientes: [] }; }
+    })();
+
+    const classified = docs.filter(d => d.filebrain?.classified_at);
 
     const stats = {
-      total_documents: invoices.length,
-      total_classified: classified.length,
-      pending_classification: invoices.length - classified.length,
-      total_providers: providers.length,
-      by_category: {},
-      by_type: {},
-      by_month: {},
-      by_status: {},
+      total_documents:         docs.length,
+      total_classified:        classified.length,
+      pending_classification:  docs.length - classified.length,
+      total_providers:         entities.proveedores?.length || 0,
+      total_clients:           entities.clientes?.length    || 0,
+      by_category:  {},
+      by_type:      {},
+      by_month:     {},
+      by_status:    {},
       top_providers: [],
-      provider_categories: {},
-      date_range: { from: null, to: null },
-      last_sync: null,
-      last_classification: null
+      date_range:   { from: null, to: null },
+      last_classification: null,
     };
 
-    // Por categoría, tipo, mes, estado
-    for (const inv of invoices) {
-      const fb = inv.filebrain || {};
-      const cat = fb.provider_category || 'sin_clasificar';
-      stats.by_category[cat] = (stats.by_category[cat] || 0) + 1;
-      stats.by_type[inv.type] = (stats.by_type[inv.type] || 0) + 1;
-      stats.by_status[inv.status || 'unknown'] = (stats.by_status[inv.status] || 0) + 1;
+    for (const doc of docs) {
+      const fb   = doc.filebrain || {};
+      const a    = doc.analisis  || {};
+      const tipo = a.tipo || 'otro';
+      const cat  = fb.provider_category || 'sin_clasificar';
 
-      if (inv.date) {
-        const ym = inv.date.substring(0, 7);
+      stats.by_category[cat]   = (stats.by_category[cat]   || 0) + 1;
+      stats.by_type[tipo]      = (stats.by_type[tipo]      || 0) + 1;
+      stats.by_status[doc.estado || 'unknown'] = (stats.by_status[doc.estado] || 0) + 1;
+
+      const fecha = a.fecha || doc.procesado;
+      if (fecha) {
+        const ym = fecha.substring(0, 7);
         stats.by_month[ym] = (stats.by_month[ym] || 0) + 1;
-        if (!stats.date_range.from || inv.date < stats.date_range.from) stats.date_range.from = inv.date;
-        if (!stats.date_range.to || inv.date > stats.date_range.to) stats.date_range.to = inv.date;
+        if (!stats.date_range.from || fecha < stats.date_range.from) stats.date_range.from = fecha;
+        if (!stats.date_range.to   || fecha > stats.date_range.to)   stats.date_range.to   = fecha;
       }
 
-      if (fb.classified_at) {
-        if (!stats.last_classification || fb.classified_at > stats.last_classification) {
-          stats.last_classification = fb.classified_at;
-        }
+      if (fb.classified_at && (!stats.last_classification || fb.classified_at > stats.last_classification)) {
+        stats.last_classification = fb.classified_at;
       }
     }
 
     // Top proveedores
     const provCount = {};
-    invoices.forEach(i => {
-      const name = i.filebrain?.provider_commercial || i.provider_name;
+    docs.forEach(d => {
+      const name = d.filebrain?.provider_commercial || d.analisis?.emisor?.nombre || 'Desconocido';
       provCount[name] = (provCount[name] || 0) + 1;
     });
     stats.top_providers = Object.entries(provCount)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10)
       .map(([name, count]) => ({ name, count }));
-
-    // Categorías de proveedores
-    providers.forEach(p => {
-      const cat = p.category || 'sin_clasificar';
-      stats.provider_categories[cat] = (stats.provider_categories[cat] || 0) + 1;
-    });
-
-    // Último sync
-    const syncState = readJSON('emailintegration');
-    if (syncState[0]) stats.last_sync = syncState[0].last_sync;
 
     res.json({ success: true, stats });
   } catch (err) {
@@ -368,82 +379,101 @@ filebrainRouter.get('/stats', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  GET /api/filebrain/search
-//  Búsqueda de documentos por texto, proveedor, tipo, fecha
+//  GET /api/filebrain/search — Búsqueda
 // ═══════════════════════════════════════════════════════════════════════════════
 filebrainRouter.get('/search', (req, res) => {
   try {
-    const { q, provider, type, category, from, to, status, limit = '50' } = req.query;
-    let invoices = readJSON('invoice');
+    const { q, provider, type, category, from, to, limit = '50' } = req.query;
+    let docs = readJSON('documents');
 
     if (q) {
       const query = q.toLowerCase();
-      invoices = invoices.filter(i =>
-        (i.filename || '').toLowerCase().includes(query) ||
-        (i.subject || '').toLowerCase().includes(query) ||
-        (i.provider_name || '').toLowerCase().includes(query) ||
-        (i.filebrain?.provider_commercial || '').toLowerCase().includes(query) ||
-        (i.filebrain?.virtual_path || '').toLowerCase().includes(query)
+      docs = docs.filter(d =>
+        (d.nombre_archivo || '').toLowerCase().includes(query) ||
+        (d.analisis?.resumen || '').toLowerCase().includes(query) ||
+        (d.analisis?.emisor?.nombre || '').toLowerCase().includes(query) ||
+        (d.filebrain?.virtual_path || '').toLowerCase().includes(query)
       );
     }
     if (provider) {
       const prov = provider.toLowerCase();
-      invoices = invoices.filter(i =>
-        (i.provider_email || '').toLowerCase().includes(prov) ||
-        (i.provider_name || '').toLowerCase().includes(prov) ||
-        (i.filebrain?.provider_commercial || '').toLowerCase().includes(prov)
+      docs = docs.filter(d =>
+        (d.analisis?.emisor?.nombre || '').toLowerCase().includes(prov) ||
+        (d.analisis?.emisor?.email  || '').toLowerCase().includes(prov) ||
+        (d.analisis?.emisor?.cif_nif || '').toLowerCase().includes(prov)
       );
     }
-    if (type) invoices = invoices.filter(i => i.type === type);
-    if (category) invoices = invoices.filter(i => i.filebrain?.provider_category === category);
-    if (status) invoices = invoices.filter(i => i.status === status);
-    if (from) invoices = invoices.filter(i => i.date && i.date >= from);
-    if (to) invoices = invoices.filter(i => i.date && i.date <= to);
+    if (type)     docs = docs.filter(d => d.analisis?.tipo === type);
+    if (category) docs = docs.filter(d => d.filebrain?.provider_category === category);
+    if (from)     docs = docs.filter(d => (d.analisis?.fecha || d.procesado || '') >= from);
+    if (to)       docs = docs.filter(d => (d.analisis?.fecha || d.procesado || '') <= to);
 
-    invoices.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    const total = invoices.length;
-    invoices = invoices.slice(0, parseInt(limit));
+    const total = docs.length;
+    docs = docs.slice(0, parseInt(limit));
 
-    res.json({ success: true, total, count: invoices.length, documents: invoices });
+    res.json({
+      success: true,
+      total,
+      count: docs.length,
+      documents: docs.map(d => ({
+        id:           d.id,
+        archivo:      d.nombre_archivo,
+        tipo:         d.analisis?.tipo,
+        fecha:        d.analisis?.fecha,
+        emisor:       d.analisis?.emisor?.nombre,
+        total:        d.analisis?.total,
+        resumen:      d.analisis?.resumen,
+        virtual_path: d.filebrain?.virtual_path,
+        tags:         d.filebrain?.tags,
+      })),
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  GET /api/filebrain/providers
-//  Lista de proveedores enriquecidos con estadísticas
+//  GET /api/filebrain/providers — Proveedores con estadísticas
 // ═══════════════════════════════════════════════════════════════════════════════
 filebrainRouter.get('/providers', (req, res) => {
   try {
-    const providers = readJSON('provider');
-    const invoices = readJSON('invoice');
+    const docs = readJSON('documents');
+    const entities = (() => {
+      const file = path.join(DATA_DIR, 'entities.json');
+      try { return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : { proveedores: [], clientes: [] }; }
+      catch { return { proveedores: [], clientes: [] }; }
+    })();
 
-    // Enriquecer con estadísticas de documentos
-    const docsByProvider = {};
-    invoices.forEach(inv => {
-      const key = inv.provider_id || inv.provider_email;
-      if (!docsByProvider[key]) docsByProvider[key] = { total: 0, by_type: {}, last_doc: null, months: new Set() };
-      docsByProvider[key].total++;
-      docsByProvider[key].by_type[inv.type] = (docsByProvider[key].by_type[inv.type] || 0) + 1;
-      if (inv.date) {
-        docsByProvider[key].months.add(inv.date.substring(0, 7));
-        if (!docsByProvider[key].last_doc || inv.date > docsByProvider[key].last_doc) {
-          docsByProvider[key].last_doc = inv.date;
+    // Estadísticas por proveedor desde documents
+    const docsByProv = {};
+    for (const d of docs) {
+      const emisor = d.analisis?.emisor;
+      if (!emisor?.nombre) continue;
+      const key = emisor.cif_nif || emisor.nombre;
+      if (!docsByProv[key]) docsByProv[key] = { total: 0, by_type: {}, last_doc: null, months: new Set() };
+      docsByProv[key].total++;
+      const tipo = d.analisis?.tipo || 'otro';
+      docsByProv[key].by_type[tipo] = (docsByProv[key].by_type[tipo] || 0) + 1;
+      const fecha = d.analisis?.fecha || d.procesado;
+      if (fecha) {
+        docsByProv[key].months.add(fecha.substring(0, 7));
+        if (!docsByProv[key].last_doc || fecha > docsByProv[key].last_doc) {
+          docsByProv[key].last_doc = fecha;
         }
       }
-    });
+    }
 
-    const enriched = providers.map(p => {
-      const stats = docsByProvider[p.id] || docsByProvider[p.email] || { total: 0, by_type: {}, last_doc: null, months: new Set() };
+    const enriched = (entities.proveedores || []).map(p => {
+      const key = p.cif_nif || p.nombre;
+      const stats = docsByProv[key] || { total: 0, by_type: {}, last_doc: null, months: new Set() };
       return {
         ...p,
         stats: {
-          total_docs: stats.total,
-          by_type: stats.by_type,
-          last_document: stats.last_doc,
-          active_months: stats.months.size || 0
-        }
+          total_docs:     stats.total,
+          by_type:        stats.by_type,
+          last_document:  stats.last_doc,
+          active_months:  stats.months?.size || 0,
+        },
       };
     }).sort((a, b) => b.stats.total_docs - a.stats.total_docs);
 
@@ -454,85 +484,79 @@ filebrainRouter.get('/providers', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  POST /api/filebrain/link-payslips
-//  Vincula nóminas (type='nomina') a trabajadores automáticamente
-//  Matching: DNI, nombre_completo, apellidos — case-insensitive, sin acentos
+//  POST /api/filebrain/link-payslips — Vincular nóminas a trabajadores
+//  Ahora busca en documents.json donde analisis.tipo === 'nomina'
 // ═══════════════════════════════════════════════════════════════════════════════
-
-// Normalizar texto: minúsculas, sin acentos
 function normalizarTexto(str) {
   return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
 filebrainRouter.post('/link-payslips', (req, res) => {
   try {
-    const invoices = readJSON('invoice');
+    const docs         = readJSON('documents');
     const trabajadores = readJSON('trabajadores');
-    const nominas = invoices.filter(i => i.type === 'nomina');
+    const nominas      = docs.filter(d => d.analisis?.tipo === 'nomina');
     let vinculadas = 0;
     const nombresVinculados = [];
 
     for (const nomina of nominas) {
-      if (nomina.trabajador_id) continue; // ya vinculada
+      if (nomina.trabajador_id) continue;
 
+      // Usar datos extraídos por IA: receptor = empleado
+      const receptor = nomina.analisis?.receptor;
       const textoRef = normalizarTexto([
-        nomina.filename || '',
-        nomina.subject || '',
-        nomina.provider_name || '',
+        nomina.nombre_archivo || '',
+        receptor?.nombre || '',
+        receptor?.cif_nif || '',
+        nomina.analisis?.resumen || '',
       ].join(' '));
 
-      let encontrado = false;
-
       for (const trab of trabajadores) {
-        // 1. Matching por DNI (si está disponible en los metadatos de la nómina)
-        if (trab.dni) {
-          const dniNorm = trab.dni.toUpperCase();
-          const textoOriginal = [
-            nomina.filename || '',
-            nomina.subject || '',
-            nomina.provider_name || '',
-            nomina.metadata?.dni || '',
-            nomina.dni || '',
-          ].join(' ').toUpperCase();
-          if (textoOriginal.includes(dniNorm)) {
+        // 1. Por DNI/NIF
+        if (trab.dni && receptor?.cif_nif) {
+          if (trab.dni.replace(/\s/g, '').toUpperCase() === receptor.cif_nif.replace(/\s/g, '').toUpperCase()) {
             nomina.trabajador_id = trab.id;
             nomina.trabajador_nombre = trab.nombre_completo;
-            nomina.updated_date = new Date().toISOString();
             vinculadas++;
             nombresVinculados.push(trab.nombre_completo);
-            encontrado = true;
             break;
           }
         }
 
-        // 2. Matching por nombre completo (sin acentos, case-insensitive)
+        // 2. Por NSS
+        if (trab.nss && textoRef.includes(normalizarTexto(trab.nss))) {
+          nomina.trabajador_id = trab.id;
+          nomina.trabajador_nombre = trab.nombre_completo;
+          vinculadas++;
+          nombresVinculados.push(trab.nombre_completo);
+          break;
+        }
+
+        // 3. Por nombre completo
         const nombreNorm = normalizarTexto(trab.nombre_completo);
         if (nombreNorm && nombreNorm.length > 3 && textoRef.includes(nombreNorm)) {
           nomina.trabajador_id = trab.id;
           nomina.trabajador_nombre = trab.nombre_completo;
-          nomina.updated_date = new Date().toISOString();
           vinculadas++;
           nombresVinculados.push(trab.nombre_completo);
-          encontrado = true;
           break;
         }
 
-        // 3. Matching por apellidos (sin acentos, case-insensitive)
+        // 4. Por apellidos
         const apellidoNorm = normalizarTexto(trab.apellidos);
         if (apellidoNorm && apellidoNorm.length > 3 && textoRef.includes(apellidoNorm)) {
           nomina.trabajador_id = trab.id;
           nomina.trabajador_nombre = trab.nombre_completo;
-          nomina.updated_date = new Date().toISOString();
           vinculadas++;
           nombresVinculados.push(trab.nombre_completo);
-          encontrado = true;
           break;
         }
       }
     }
 
-    writeJSON('invoice', invoices);
+    writeJSON('documents', docs);
     console.log(`[FILEBRAIN] Nóminas vinculadas: ${vinculadas} de ${nominas.length}`);
+
     res.json({
       success: true,
       total_nominas: nominas.length,
@@ -545,11 +569,3 @@ filebrainRouter.post('/link-payslips', (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
-function sanitizeName(str) {
-  return (str || 'desconocido')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9\s\-_.]/g, '')
-    .replace(/\s+/g, '_')
-    .substring(0, 50);
-}
