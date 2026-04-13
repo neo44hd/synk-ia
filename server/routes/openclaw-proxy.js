@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { WebSocketServer, WebSocket } from 'ws';
 
-const OPENCLAW_URL = process.env.OPENCLAW_WS_URL || 'ws://localhost:18790';
+const OPENCLAW_URL = process.env.OPENCLAW_WS_URL || 'ws://localhost:18789';
 
 export function setupOpenClawProxy(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
