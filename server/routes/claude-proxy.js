@@ -17,50 +17,66 @@
 import { Router } from 'express';
 
 const router = Router();
-const LOCAL_BASE = process.env.LOCAL_LLM_URL || 'http://localhost:11434';
+const LOCAL_BASE  = process.env.LOCAL_LLM_URL   || 'http://localhost:11434';
 const LOCAL_MODEL = process.env.LOCAL_LLM_MODEL || 'qwen2.5-coder:14b';
 const LOCAL_CTX   = parseInt(process.env.LOCAL_LLM_CTX || '16384', 10);
 
-// ── Conversión de mensajes Anthropic → OpenAI ────────────────────────────────
-function toOpenAIMessages(messages) {
+// ── Conversión Anthropic messages → Ollama native messages ──────────────────
+// Ollama /api/chat espera: { role: string, content: string }
+// Anthropic envía content como string O array de bloques (text, tool_use, tool_result)
+function toOllamaMessages(anthropicMessages) {
   const result = [];
-  for (const msg of messages) {
+
+  for (const msg of anthropicMessages) {
+    // Caso simple: content ya es string
     if (typeof msg.content === 'string') {
       result.push({ role: msg.role, content: msg.content });
       continue;
     }
-    if (!Array.isArray(msg.content)) continue;
 
-    // Separar tool_result en mensajes independientes de role:tool
-    const toolResults = msg.content.filter(b => b.type === 'tool_result');
-    const textBlocks  = msg.content.filter(b => b.type === 'text');
-    const toolUse     = msg.content.filter(b => b.type === 'tool_use');
-
-    if (toolResults.length > 0) {
-      for (const tr of toolResults) {
-        const content = Array.isArray(tr.content)
-          ? tr.content.map(c => c.text || JSON.stringify(c)).join('\n')
-          : (tr.content || '');
-        result.push({ role: 'tool', tool_call_id: tr.tool_use_id, content });
-      }
-    } else {
-      const text = textBlocks.map(b => b.text).join('\n');
-      const tool_calls = toolUse.map(tu => ({
-        id:       tu.id,
-        type:     'function',
-        function: { name: tu.name, arguments: JSON.stringify(tu.input || {}) },
-      }));
-      const oaiMsg = { role: msg.role };
-      if (text)              oaiMsg.content = text;
-      if (tool_calls.length) oaiMsg.tool_calls = tool_calls;
-      result.push(oaiMsg);
+    // content es undefined/null → string vacío
+    if (!msg.content) {
+      result.push({ role: msg.role, content: '' });
+      continue;
     }
+
+    // content es array de bloques
+    if (Array.isArray(msg.content)) {
+      const parts = [];
+
+      for (const block of msg.content) {
+        if (block.type === 'text' && block.text) {
+          parts.push(block.text);
+        } else if (block.type === 'tool_use') {
+          // Assistant pidió usar una tool → serializar como texto
+          parts.push(`[Tool call: ${block.name}(${JSON.stringify(block.input || {})})]`);
+        } else if (block.type === 'tool_result') {
+          // Resultado de tool → serializar como texto
+          const resultText = Array.isArray(block.content)
+            ? block.content.map(c => c.text || JSON.stringify(c)).join('\n')
+            : (typeof block.content === 'string' ? block.content : JSON.stringify(block.content || ''));
+          parts.push(`[Tool result for ${block.tool_use_id || 'unknown'}]: ${resultText}`);
+        } else if (block.type === 'image') {
+          parts.push('[Image content omitted]');
+        } else {
+          // Cualquier otro tipo → serializar
+          parts.push(JSON.stringify(block));
+        }
+      }
+
+      result.push({ role: msg.role, content: parts.join('\n') || '' });
+      continue;
+    }
+
+    // Fallback: convertir a string lo que sea
+    result.push({ role: msg.role, content: String(msg.content) });
   }
+
   return result;
 }
 
-// ── Conversión de tools Anthropic → OpenAI ───────────────────────────────────
-function toOpenAITools(tools) {
+// ── Conversión de tools Anthropic → Ollama native ───────────────────────────
+function toOllamaTools(tools) {
   if (!tools?.length) return undefined;
   return tools.map(t => ({
     type: 'function',
@@ -75,36 +91,36 @@ function toOpenAITools(tools) {
 // ── POST /claude/v1/messages ──────────────────────────────────────────────────
 router.post('/v1/messages', async (req, res) => {
   try {
-    const { model, messages, system, tools, max_tokens = 4096, temperature = 0.1, stream } = req.body;
+    const { model, messages, system, tools, max_tokens = 4096, temperature = 0.1 } = req.body;
 
-    // Construir mensajes OpenAI
-    const oaiMessages = [];
-    if (system) oaiMessages.push({ role: 'system', content: system });
-    oaiMessages.push(...toOpenAIMessages(messages || []));
+    // Construir mensajes para Ollama
+    const ollamaMessages = [];
+    if (system) {
+      const systemText = typeof system === 'string'
+        ? system
+        : Array.isArray(system)
+          ? system.map(s => s.text || JSON.stringify(s)).join('\n')
+          : JSON.stringify(system);
+      ollamaMessages.push({ role: 'system', content: systemText });
+    }
+    ollamaMessages.push(...toOllamaMessages(messages || []));
 
-    const oaiTools = toOpenAITools(tools);
-
-    // Usar API nativa Ollama /api/chat (soporta options.num_ctx)
-    const ollamaMessages = oaiMessages.map(m => {
-      // Convertir role:tool → role:assistant (Ollama nativo no soporta role:tool)
-      if (m.role === 'tool') return { role: 'assistant', content: m.content || '' };
-      return { role: m.role, content: m.content || '' };
-    });
+    const ollamaTools = toOllamaTools(tools);
 
     const body = {
-      model:   LOCAL_MODEL,
+      model:    LOCAL_MODEL,
       messages: ollamaMessages,
-      stream:  false,
+      stream:   false,
       options: {
         num_ctx:     LOCAL_CTX,
+        num_predict: max_tokens,
         temperature,
       },
-      ...(oaiTools ? { tools: oaiTools } : {}),
+      ...(ollamaTools ? { tools: ollamaTools } : {}),
     };
 
-    console.log(`[PROXY] → Ollama /api/chat | model=${LOCAL_MODEL} ctx=${LOCAL_CTX} msgs=${ollamaMessages.length}`);
+    console.log(`[PROXY] → Ollama /api/chat | model=${LOCAL_MODEL} ctx=${LOCAL_CTX} msgs=${ollamaMessages.length} tools=${ollamaTools?.length || 0}`);
 
-    // Llamada a la API nativa de Ollama
     const resp = await fetch(`${LOCAL_BASE}/api/chat`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -113,7 +129,7 @@ router.post('/v1/messages', async (req, res) => {
 
     if (!resp.ok) {
       const err = await resp.text();
-      console.error('[PROXY] Error del servidor local:', err);
+      console.error('[PROXY] Ollama error:', resp.status, err);
       return res.status(resp.status).json({ error: err });
     }
 
@@ -137,6 +153,11 @@ router.post('/v1/messages', async (req, res) => {
       }
     }
 
+    // Si no hay contenido alguno, devolver texto vacío para evitar error en Claude Code
+    if (content.length === 0) {
+      content.push({ type: 'text', text: '(sin respuesta del modelo)' });
+    }
+
     const stop_reason = ollResp.message?.tool_calls?.length ? 'tool_use' : 'end_turn';
 
     res.json({
@@ -148,13 +169,13 @@ router.post('/v1/messages', async (req, res) => {
       stop_reason,
       stop_sequence: null,
       usage: {
-        input_tokens:  ollResp.prompt_eval_count   || 0,
-        output_tokens: ollResp.eval_count           || 0,
+        input_tokens:  ollResp.prompt_eval_count || 0,
+        output_tokens: ollResp.eval_count        || 0,
       },
     });
 
   } catch (e) {
-    console.error('[PROXY]', e.message);
+    console.error('[PROXY] Exception:', e.message);
     res.status(500).json({ error: { type: 'api_error', message: e.message } });
   }
 });
