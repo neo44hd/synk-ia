@@ -22,7 +22,7 @@ const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const MODEL      = process.env.MODEL || 'phi4-mini';
 
 // ── LLM call ────────────────────────────────────────────────────────
-async function llmCall(messages, maxTokens = 3000) {
+async function llmCall(messages, maxTokens = 2000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 180_000);
   try {
@@ -227,6 +227,17 @@ async function main() {
           ]);
 
           llmResult = parseJSON(raw);
+          if (!llmResult && raw) {
+            // Guardar raw para depuración
+            results.push({
+              file, status: 'parse_fail', chars: text.length, pages: pdf.numpages,
+              tiempo_ms: Date.now() - t0, raw_preview: raw.slice(0, 500),
+            });
+            console.log('  ⚠ No se pudo parsear el JSON');
+            console.log(`  🔍 Raw (${raw.length} chars): ${raw.slice(0, 200)}`);
+            failCount++;
+            continue;
+          }
           if (llmResult) {
             const tipo   = llmResult.tipo || '?';
             const emisor = llmResult.emisor?.nombre || 'n/a';
@@ -248,10 +259,6 @@ async function main() {
               console.log(`  📎 Extra: ${JSON.stringify(llmResult.datos_extra)}`);
             }
             okCount++;
-          } else {
-            console.log('  ⚠ No se pudo parsear el JSON');
-            console.log(`  🔍 Raw: ${raw.slice(0, 300)}`);
-            failCount++;
           }
         } catch (err) {
           console.log(`  ✗ Error LLM: ${err.message}`);
