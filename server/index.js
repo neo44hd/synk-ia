@@ -19,7 +19,9 @@ import trabajadoresRouter     from './routes/trabajadores.js';
 import { authRouter }         from './routes/auth.js';
 import { filebrainRouter }    from './routes/filebrain.js';
 
-dotenv.config();
+// Cargar .env desde server/ (donde realmente está el archivo)
+const __dirnameRoot = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirnameRoot, '.env') });
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -86,7 +88,7 @@ try {
   const { aiRouter } = await import('./routes/ai.js');
   app.use('/api/ollama', aiRouter);
   app.use('/api/ai',     aiRouter);
-  console.log(`[SERVER] ✓ AI Engine (Ollama) → ${process.env.OLLAMA_URL || 'http://localhost:11434'} / ${process.env.OLLAMA_MODEL || 'llama3.2'}`);
+  console.log(`[SERVER] ✓ AI Engine (Ollama) → ${process.env.OLLAMA_URL || 'http://localhost:11434'} / ${process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3.5'}`);
 } catch (e) {
   console.error('[SERVER] ✗ AI Engine falló al cargar:', e.message);
 }
@@ -96,31 +98,31 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath  = path.join(__dirname, '..', 'dist');
 
 // Servir admin.html en /admin (fuera del SPA de React)
-const adminHtml = path.join(__dirname, '..', 'public', 'admin.html');
+const adminHtml = path.join(__dirnameRoot, '..', 'public', 'admin.html');
 if (existsSync(adminHtml)) {
   app.get('/admin', (_req, res) => res.sendFile(adminHtml));
   console.log('[SERVER] ✓ Admin panel: /admin');
 }
 
-const chatHtml = path.join(__dirname, '..', 'public', 'chat.html');
+const chatHtml = path.join(__dirnameRoot, '..', 'public', 'chat.html');
 if (existsSync(chatHtml)) {
   app.get('/chat', (_req, res) => res.sendFile(chatHtml));
   console.log('[SERVER] ✓ Chat IA: /chat');
 }
 
-const terminalHtml = path.join(__dirname, '..', 'public', 'terminal.html');
+const terminalHtml = path.join(__dirnameRoot, '..', 'public', 'terminal.html');
 if (existsSync(terminalHtml)) {
   app.get('/terminal', (_req, res) => res.sendFile(terminalHtml));
   console.log('[SERVER] ✓ Terminal: /terminal');
 }
 
-const documentsHtml = path.join(__dirname, '..', 'public', 'documents.html');
+const documentsHtml = path.join(__dirnameRoot, '..', 'public', 'documents.html');
 if (existsSync(documentsHtml)) {
   app.get('/documents', (_req, res) => res.sendFile(documentsHtml));
   console.log('[SERVER] ✓ Documentos: /documents');
 }
 
-const trabajadoresHtml = path.join(__dirname, '..', 'public', 'trabajadores.html');
+const trabajadoresHtml = path.join(__dirnameRoot, '..', 'public', 'trabajadores.html');
 if (existsSync(trabajadoresHtml)) {
   app.get('/trabajadores', (_req, res) => res.sendFile(trabajadoresHtml));
   console.log('[SERVER] ✓ Portal Trabajadores: /trabajadores');
