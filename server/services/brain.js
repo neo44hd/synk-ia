@@ -7,7 +7,7 @@ import { getDocuments, getEntities, getStats } from './documentProcessor.js';
 import { getRevoResumen, getRevoProductos, getRevoVentas } from '../agents/revoAgent.js';
 
 const OLLAMA_URL = process.env.OLLAMA_URL            || 'http://localhost:11434';
-const MODEL      = process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3.5:latest';
+const MODEL      = process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3:14b';
 const SEARXNG    = process.env.SEARXNG_URL    || 'http://localhost:8888';
 
 // ── Strip <think>...</think> del modelo Qwen3 thinking ─────────────────────
