@@ -25,7 +25,7 @@ const TEST_DIR  = customDir
 const RESULTS   = path.resolve('test_results.json');
 const NO_LLM    = process.env.NO_LLM === '1';
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const MODEL      = process.env.MODEL || 'qwen3.5';
+const MODEL      = process.env.MODEL || 'phi4-mini';
 
 // ── Heuristic classifier (same logic as documentProcessor) ──────────
 function classifyHeuristic(text, filename) {
