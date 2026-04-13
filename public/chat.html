@@ -384,11 +384,96 @@ body {
 #shell-terminal { font-family: 'SF Mono','Fira Code','Cascadia Code',monospace; }
 #shell-terminal .xterm { padding: 8px; }
 
+/* ── Global Context Bar (shared by all panels) ────────────────────────── */
+.gcb {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 16px; border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0; font-size: 12px;
+  min-height: 34px;
+}
+.gcb-btn {
+  padding: 3px 10px; border: 1px solid var(--border2); background: none;
+  color: var(--muted); border-radius: 6px; cursor: pointer;
+  font-size: 11.5px; transition: all .15s; display: flex;
+  align-items: center; gap: 4px; white-space: nowrap;
+}
+.gcb-btn:hover { color: var(--text); border-color: var(--muted); }
+.gcb-btn.has-files { color: var(--green); border-color: var(--green); }
+.gcb-auto {
+  padding: 3px 10px; border: 1px solid var(--border2); background: none;
+  color: var(--muted); border-radius: 6px; cursor: pointer;
+  font-size: 11.5px; transition: all .15s; display: flex;
+  align-items: center; gap: 4px; white-space: nowrap;
+}
+.gcb-auto:hover { color: var(--text); border-color: var(--muted); }
+.gcb-auto.active { color: var(--cyan); border-color: var(--cyan); background: rgba(6,182,212,.08); }
+.gcb-chips {
+  display: flex; gap: 4px; flex-wrap: wrap; flex: 1;
+  overflow: hidden; max-height: 26px;
+}
+.gcb-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: rgba(34,197,94,.1); color: var(--green); border-radius: 4px;
+  padding: 1px 7px; font-size: 11px; white-space: nowrap;
+  animation: fadeIn .15s ease;
+}
+.gcb-chip-x {
+  cursor: pointer; font-size: 12px; color: var(--muted); margin-left: 1px;
+}
+.gcb-chip-x:hover { color: var(--red); }
+.gcb-hint {
+  color: var(--muted); font-size: 11px; white-space: nowrap;
+}
+
+/* Global overlay file picker */
+.gctx-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.6); z-index: 100;
+  justify-content: center; align-items: center;
+}
+.gctx-overlay.open { display: flex; }
+.gctx-modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 14px; width: 420px; max-height: 70vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.5); animation: fadeIn .15s ease;
+}
+.gctx-modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; font-size: 13px; font-weight: 600;
+  border-bottom: 1px solid var(--border); color: var(--text);
+}
+.gctx-modal-close {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 16px; padding: 2px 6px; border-radius: 4px;
+}
+.gctx-modal-close:hover { color: var(--text); background: var(--surface2); }
+.gctx-modal-search {
+  padding: 8px 10px; border-bottom: 1px solid var(--border);
+}
+.gctx-modal-search input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 6px 10px; color: var(--text); font-size: 12px;
+  outline: none; font-family: inherit;
+}
+.gctx-modal-search input:focus { border-color: var(--green); }
+.gctx-modal-tree {
+  flex: 1; overflow-y: auto; padding: 4px 0; font-size: 12px;
+}
+.gctx-modal-tree::-webkit-scrollbar { width: 4px; }
+.gctx-modal-tree::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.gctx-modal-footer {
+  padding: 8px 10px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); text-align: center;
+}
+
 @media(max-width:640px) {
   .header { gap:6px; padding:0 10px; }
   .header-btn { display:none; }
   .tab { padding:5px 8px; font-size:11px; }
   .ctx-panel { width: 220px; }
+  .gctx-modal { width: 95vw; max-height: 80vh; }
+  .gcb { padding: 5px 10px; gap: 5px; }
 }
 </style>
 <!-- xterm.js CDN -->
@@ -412,6 +497,34 @@ body {
   <button class="header-btn" onclick="clearActive()">✕ Nueva</button>
   <button class="header-btn" onclick="location='/admin'">⚙</button>
 </header>
+
+<!-- ── Global Context Bar ── visible on all panels ──────────────────────── -->
+<div class="gcb" id="gcb">
+  <button class="gcb-btn" id="gcb-btn" onclick="toggleGctxModal()">
+    📂 <span id="gcb-count">0</span> archivos
+  </button>
+  <button class="gcb-auto" id="gcb-auto" onclick="toggleAutoCtx()">
+    🔍 Auto-contexto
+  </button>
+  <div class="gcb-chips" id="gcb-chips">
+    <span class="gcb-hint" id="gcb-hint">Sin archivos — pulsa 📂 o activa auto-contexto</span>
+  </div>
+</div>
+
+<!-- File picker modal (overlay) -->
+<div class="gctx-overlay" id="gctx-overlay" onclick="if(event.target===this)closeGctxModal()">
+  <div class="gctx-modal">
+    <div class="gctx-modal-header">
+      <span>📂 Seleccionar archivos de contexto</span>
+      <button class="gctx-modal-close" onclick="closeGctxModal()">✕</button>
+    </div>
+    <div class="gctx-modal-search">
+      <input type="text" id="gctx-search" placeholder="Buscar archivo..." oninput="filterGctxTree()">
+    </div>
+    <div class="gctx-modal-tree" id="gctx-tree">Cargando...</div>
+    <div class="gctx-modal-footer" id="gctx-footer">0 archivos seleccionados</div>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      PANEL 1 — CHAT IA (qwen3.5)
@@ -700,6 +813,136 @@ function addSysMsg(wrap, text) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
+//  GLOBAL CONTEXT BAR — file picker + auto-context (shared by all panels)
+// ══════════════════════════════════════════════════════════════════════════════
+let gctxFiles = [];       // globally selected file paths
+let gctxAutoEnabled = false;
+let gctxTreeData = null;  // cached file tree
+
+// ── Toggle modal ─────────────────────────────────────────────────────────
+function toggleGctxModal() {
+  const ov = document.getElementById('gctx-overlay');
+  const isOpen = ov.classList.contains('open');
+  if (isOpen) { closeGctxModal(); return; }
+  ov.classList.add('open');
+  if (!gctxTreeData) loadGctxTree();
+  document.getElementById('gctx-search').value = '';
+  document.getElementById('gctx-search').focus();
+}
+function closeGctxModal() {
+  document.getElementById('gctx-overlay').classList.remove('open');
+}
+
+// ── Load file tree (reuses /api/files/tree) ──────────────────────────────
+async function loadGctxTree() {
+  const tree = document.getElementById('gctx-tree');
+  tree.innerHTML = '<div style="padding:12px;color:var(--muted)">Cargando árbol...</div>';
+  try {
+    const r = await fetch('/api/files/tree');
+    const d = await r.json();
+    gctxTreeData = d.tree;
+    renderGctxTree(d.tree);
+  } catch (e) {
+    tree.innerHTML = '<div style="padding:12px;color:var(--red)">⚠ ' + esc(e.message) + '</div>';
+  }
+}
+
+function renderGctxTree(items, container) {
+  const el = container || document.getElementById('gctx-tree');
+  if (!container) el.innerHTML = '';
+  for (const item of items) {
+    if (item.type === 'dir') {
+      const dir = document.createElement('div');
+      dir.className = 'ctx-dir collapsed';
+      dir.innerHTML = `<div class="ctx-dir-label" onclick="this.parentElement.classList.toggle('collapsed')"><span class="ctx-dir-arrow">▼</span><span>📁 ${esc(item.name)}</span></div><div class="ctx-dir-children"></div>`;
+      el.appendChild(dir);
+      if (item.children?.length) renderGctxTree(item.children, dir.querySelector('.ctx-dir-children'));
+    } else {
+      const f = document.createElement('div');
+      f.className = 'ctx-file' + (gctxFiles.includes(item.path) ? ' selected' : '');
+      f.dataset.path = item.path;
+      const sizeKb = item.size > 1024 ? (item.size / 1024).toFixed(1) + 'K' : item.size + 'B';
+      f.innerHTML = `<span class="ctx-file-icon">📝</span><span class="ctx-file-name">${esc(item.name)}</span><span class="ctx-file-size">${sizeKb}</span>`;
+      f.onclick = () => toggleGctxFile(item.path, f);
+      el.appendChild(f);
+    }
+  }
+}
+
+function toggleGctxFile(path, el) {
+  const idx = gctxFiles.indexOf(path);
+  if (idx >= 0) { gctxFiles.splice(idx, 1); el.classList.remove('selected'); }
+  else { gctxFiles.push(path); el.classList.add('selected'); }
+  updateGcb();
+}
+
+function removeGctxFile(path) {
+  gctxFiles = gctxFiles.filter(p => p !== path);
+  // update modal tree selection state if open
+  document.querySelectorAll('#gctx-tree .ctx-file').forEach(f => {
+    if (f.dataset.path === path) f.classList.remove('selected');
+  });
+  updateGcb();
+}
+
+function filterGctxTree() {
+  const q = document.getElementById('gctx-search').value.toLowerCase();
+  document.querySelectorAll('#gctx-tree .ctx-file').forEach(f => {
+    f.style.display = f.dataset.path.toLowerCase().includes(q) ? '' : 'none';
+  });
+  if (q) document.querySelectorAll('#gctx-tree .ctx-dir').forEach(d => d.classList.remove('collapsed'));
+  else document.querySelectorAll('#gctx-tree .ctx-dir').forEach(d => d.classList.add('collapsed'));
+}
+
+// ── Auto-context toggle ──────────────────────────────────────────────────
+function toggleAutoCtx() {
+  gctxAutoEnabled = !gctxAutoEnabled;
+  document.getElementById('gcb-auto').classList.toggle('active', gctxAutoEnabled);
+  updateGcb();
+}
+
+// ── Update the global context bar chips & count ──────────────────────────
+function updateGcb() {
+  const countEl = document.getElementById('gcb-count');
+  const btnEl = document.getElementById('gcb-btn');
+  const chipsEl = document.getElementById('gcb-chips');
+  const footerEl = document.getElementById('gctx-footer');
+  const n = gctxFiles.length;
+  countEl.textContent = n;
+  btnEl.classList.toggle('has-files', n > 0);
+  if (footerEl) footerEl.textContent = n + ' archivo' + (n !== 1 ? 's' : '') + ' seleccionado' + (n !== 1 ? 's' : '');
+
+  if (n === 0 && !gctxAutoEnabled) {
+    chipsEl.innerHTML = '<span class="gcb-hint" id="gcb-hint">Sin archivos — pulsa 📂 o activa auto-contexto</span>';
+  } else {
+    let html = '';
+    for (const p of gctxFiles) {
+      const name = p.split('/').pop();
+      html += `<span class="gcb-chip">${esc(name)}<span class="gcb-chip-x" onclick="removeGctxFile('${p.replace(/'/g,"\\'")}')">\u2715</span></span>`;
+    }
+    if (gctxAutoEnabled && n === 0) {
+      html += '<span class="gcb-hint">🔍 Auto-contexto activo — buscará archivos relevantes automáticamente</span>';
+    }
+    chipsEl.innerHTML = html;
+  }
+
+  // Also sync Claude Code panel's ctxSelectedFiles (keep both in sync)
+  ctxSelectedFiles = [...gctxFiles];
+  updateCtxChips();
+}
+
+// ── RAG auto-search before sending ───────────────────────────────────────
+async function autoSearchFiles(query) {
+  if (!gctxAutoEnabled) return [];
+  try {
+    const r = await fetch('/api/files/search?q=' + encodeURIComponent(query));
+    const d = await r.json();
+    // results is array of {path, score}
+    return (d.results || []).map(f => f.path).filter(p => !p.endsWith('/'));
+  } catch { return []; }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  1. CHAT IA — qwen3.5 via /api/chat
 // ══════════════════════════════════════════════════════════════════════════════
 let chatMsgs = [], chatBusy = false;
@@ -720,16 +963,22 @@ async function chatSend() {
   const inp = document.getElementById('chat-in'), text = inp.value.trim();
   if (!text || chatBusy) return;
   chatMsgs.push({role:'user',content:text});
-  addMsg('chat','user',`<p>${esc(text)}</p>`,'👤');
+  const ctxLabel = gctxFiles.length > 0 ? ` <span style="font-size:11px;color:var(--green)">[${gctxFiles.length} archivos]</span>` : (gctxAutoEnabled ? ' <span style="font-size:11px;color:var(--cyan)">[auto-ctx]</span>' : '');
+  addMsg('chat','user',`<p>${esc(text)}${ctxLabel}</p>`,'👤');
   inp.value=''; inp.style.height='auto';
 
   const bub = addMsg('chat','assistant','','✦');
   bub.classList.add('typing-cursor');
   chatBusy = true; document.getElementById('chat-send').disabled = true;
 
+  // Build context: manual files + auto-search
+  let contextFiles = [...gctxFiles];
+  const autoFiles = await autoSearchFiles(text);
+  for (const af of autoFiles) { if (!contextFiles.includes(af)) contextFiles.push(af); }
+
   let full='', thinkFull='', thinkEl=null;
   try {
-    const res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:chatMsgs,stream:true})});
+    const res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:chatMsgs,stream:true,contextFiles:contextFiles.length?contextFiles:undefined,autoContext:gctxAutoEnabled||undefined})});
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const reader=res.body.getReader(), dec=new TextDecoder(); let buf='';
     while(true){
@@ -769,16 +1018,22 @@ function brainSuggest(el) { document.getElementById('brain-in').value = el.textC
 async function brainSend() {
   const inp = document.getElementById('brain-in'), text = inp.value.trim();
   if (!text || brainBusy) return;
-  addMsg('brain','user',`<p>${esc(text)}</p>`,'👤');
+  const ctxLabel = gctxFiles.length > 0 ? ` <span style="font-size:11px;color:var(--green)">[${gctxFiles.length} archivos]</span>` : (gctxAutoEnabled ? ' <span style="font-size:11px;color:var(--cyan)">[auto-ctx]</span>' : '');
+  addMsg('brain','user',`<p>${esc(text)}${ctxLabel}</p>`,'👤');
   inp.value=''; inp.style.height='auto';
 
   const bub = addMsg('brain','assistant','','🧠');
   bub.classList.add('typing-cursor');
   brainBusy=true; document.getElementById('brain-send').disabled=true;
 
+  // Build context: manual files + auto-search
+  let contextFiles = [...gctxFiles];
+  const autoFiles = await autoSearchFiles(text);
+  for (const af of autoFiles) { if (!contextFiles.includes(af)) contextFiles.push(af); }
+
   let full='';
   try{
-    const res=await fetch('/api/chat/brain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    const res=await fetch('/api/chat/brain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,contextFiles:contextFiles.length?contextFiles:undefined,autoContext:gctxAutoEnabled||undefined})});
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const reader=res.body.getReader(),dec=new TextDecoder();let buf='';
     while(true){
@@ -833,7 +1088,7 @@ function handleClaw(m){
   if(m.text||m.content||m.response)addClawResp(m.text||m.content||m.response);
 }
 
-function clawSend(){
+async function clawSend(){
   const inp=document.getElementById('claw-in'),text=inp.value.trim();
   if(!text)return;
   if(!clawConn){addSysMsg('claw','⚠ No conectado');connectClaw();return;}
@@ -842,7 +1097,16 @@ function clawSend(){
   d.className='msg user';d.style.cssText='margin-bottom:10px;padding:9px 13px;background:rgba(139,92,246,.1);border-left:3px solid var(--purple);border-radius:0 10px 10px 0;margin-left:40px;font-size:13.5px;animation:fadeIn .2s ease';
   d.textContent=text;w.appendChild(d);
   inp.value='';inp.style.height='auto';
-  clawWs.send(JSON.stringify({type:'ask',task:text}));scrollB('claw');
+
+  // Build context for OpenClaw
+  let contextFiles = [...gctxFiles];
+  const autoFiles = await autoSearchFiles(text);
+  for (const af of autoFiles) { if (!contextFiles.includes(af)) contextFiles.push(af); }
+
+  const msg = {type:'ask',task:text};
+  if (contextFiles.length) msg.contextFiles = contextFiles;
+  if (gctxAutoEnabled) msg.autoContext = true;
+  clawWs.send(JSON.stringify(msg));scrollB('claw');
 }
 
 function addClawResp(t){const w=document.getElementById('claw-wrap'),d=document.createElement('div');d.style.cssText='margin-bottom:10px;padding:9px 13px;background:rgba(34,197,94,.06);border-left:3px solid var(--green);border-radius:0 10px 10px 0;margin-right:40px;font-size:13.5px;white-space:pre-wrap;word-break:break-word;animation:fadeIn .2s ease';d.textContent=t;w.appendChild(d);scrollB('claw');}
@@ -1026,7 +1290,14 @@ async function claudeSend() {
   const inp = document.getElementById('claude-in'), text = inp.value.trim();
   if (!text || claudeBusy) return;
   claudeMsgs.push({ role: 'user', content: text });
-  const ctxLabel = ctxSelectedFiles.length > 0 ? ` <span style="font-size:11px;color:var(--blue)">[${ctxSelectedFiles.length} archivos]</span>` : '';
+
+  // Merge global + panel-specific context
+  let contextFiles = [...gctxFiles];
+  for (const f of ctxSelectedFiles) { if (!contextFiles.includes(f)) contextFiles.push(f); }
+  const autoFiles = await autoSearchFiles(text);
+  for (const af of autoFiles) { if (!contextFiles.includes(af)) contextFiles.push(af); }
+
+  const ctxLabel = contextFiles.length > 0 ? ` <span style="font-size:11px;color:var(--blue)">[${contextFiles.length} archivos]</span>` : (gctxAutoEnabled ? ' <span style="font-size:11px;color:var(--cyan)">[auto-ctx]</span>' : '');
   addMsg('claude', 'user', `<p>${esc(text)}${ctxLabel}</p>`, '👤');
   inp.value = ''; inp.style.height = 'auto';
 
@@ -1039,7 +1310,7 @@ async function claudeSend() {
     const res = await fetch('/claude/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: claudeMsgs, contextFiles: ctxSelectedFiles, stream: true }),
+      body: JSON.stringify({ messages: claudeMsgs, contextFiles: contextFiles.length ? contextFiles : undefined, autoContext: gctxAutoEnabled || undefined, stream: true }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const reader = res.body.getReader(), dec = new TextDecoder(); let buf = '';
