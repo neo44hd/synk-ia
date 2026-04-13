@@ -297,26 +297,170 @@ emailRouter.get('/workers', async (req, res) => {
   }
 });
 
-// ── GET /api/email/providers — Proveedores detectados ────────────────────
+// ── GET /api/email/providers — Proveedores con facturas, balances y desglose IVA ──
+//    Vista contable completa: cada proveedor con todas sus facturas agrupadas,
+//    total facturado, desglose por tipo IVA, y balance acumulado.
+//    Ordenado por total facturado (mayor primero).
 emailRouter.get('/providers', async (req, res) => {
   try {
-    const entities = await getEntities();
-    res.json({
-      success: true,
-      count: entities.proveedores?.length || 0,
-      providers: (entities.proveedores || []).map(p => ({
+    const [entities, docs] = await Promise.all([getEntities(), getDocuments()]);
+
+    // Indexar facturas por proveedor (cruzando entities + documents)
+    const provMap = new Map();
+
+    // Inicializar con proveedores conocidos de entities.json
+    for (const p of (entities.proveedores || [])) {
+      provMap.set(p.id, {
         id:             p.id,
         nombre:         p.nombre,
         cif_nif:        p.cif_nif,
         email:          p.email,
-        facturas:       p.facturas || 0,
-        ultima_factura: p.ultima_factura,
-      })),
-    });
+        telefono:       p.telefono || null,
+        direccion:      p.direccion || null,
+        creado:         p.creado,
+        facturas:       [],
+        total_facturado:    0,
+        total_base:         0,
+        total_iva:          0,
+        desglose_iva:       {},   // { "21": { base: X, cuota: Y, count: N }, ... }
+        primera_factura:    null,
+        ultima_factura:     null,
+      });
+    }
+
+    // Recorrer documentos y asignar facturas a proveedores
+    for (const doc of docs) {
+      const a = doc.analisis;
+      if (!a) continue;
+
+      // Solo facturas recibidas, albaranes facturados, tickets
+      const tipo = (a.tipo || '').toLowerCase();
+      if (!['factura_recibida', 'albaran', 'ticket'].includes(tipo) &&
+          !tipo.includes('factura')) continue;
+
+      // Buscar proveedor por ID o por nombre del emisor
+      let provEntry = null;
+      if (a.proveedor_id) {
+        provEntry = provMap.get(a.proveedor_id);
+      }
+      if (!provEntry && a.emisor?.nombre) {
+        // Buscar por nombre
+        const emisorNorm = (a.emisor.nombre || '').toLowerCase().trim();
+        for (const [, p] of provMap) {
+          if ((p.nombre || '').toLowerCase().trim() === emisorNorm) {
+            provEntry = p;
+            break;
+          }
+        }
+        // Si no existe, crear uno nuevo
+        if (!provEntry) {
+          const newId = `prov_doc_${Date.now()}_${Math.random().toString(36).slice(2,5)}`;
+          provEntry = {
+            id: newId,
+            nombre:          a.emisor.nombre,
+            cif_nif:         a.emisor.cif_nif || null,
+            email:           a.emisor.email || null,
+            telefono:        a.emisor.telefono || null,
+            direccion:       a.emisor.direccion || null,
+            creado:          doc.procesado,
+            facturas:        [],
+            total_facturado: 0,
+            total_base:      0,
+            total_iva:       0,
+            desglose_iva:    {},
+            primera_factura: null,
+            ultima_factura:  null,
+          };
+          provMap.set(newId, provEntry);
+        }
+      }
+
+      if (!provEntry) continue;
+
+      // Calcular desglose IVA de esta factura
+      const conceptos = a.conceptos || a.lineas || [];
+      const facIva = {};
+      for (const c of conceptos) {
+        const pct = c.iva_porcentaje != null ? String(c.iva_porcentaje) : '21';
+        if (!facIva[pct]) facIva[pct] = { base: 0, cuota: 0 };
+        const lineTotal = parseFloat(c.total || c.total_linea) || 0;
+        const lineBase  = parseFloat(c.precio_unitario) * (parseFloat(c.cantidad) || 1) || lineTotal / (1 + parseFloat(pct) / 100);
+        facIva[pct].base  += lineBase;
+        facIva[pct].cuota += lineTotal - lineBase;
+      }
+
+      const total = parseFloat(a.total) || 0;
+      const base  = parseFloat(a.base_imponible) || 0;
+      const iva   = parseFloat(a.iva_total) || (total - base);
+
+      // Acumular en proveedor
+      provEntry.total_facturado += total;
+      provEntry.total_base      += base || (total / 1.21);
+      provEntry.total_iva       += iva  || (total - total / 1.21);
+
+      // Desglose IVA acumulado
+      for (const [pct, vals] of Object.entries(facIva)) {
+        if (!provEntry.desglose_iva[pct]) provEntry.desglose_iva[pct] = { base: 0, cuota: 0, count: 0 };
+        provEntry.desglose_iva[pct].base  += vals.base;
+        provEntry.desglose_iva[pct].cuota += vals.cuota;
+        provEntry.desglose_iva[pct].count += 1;
+      }
+
+      const fecha = a.fecha || doc.procesado?.slice(0, 10);
+      if (!provEntry.primera_factura || fecha < provEntry.primera_factura) provEntry.primera_factura = fecha;
+      if (!provEntry.ultima_factura  || fecha > provEntry.ultima_factura)  provEntry.ultima_factura  = fecha;
+
+      provEntry.facturas.push({
+        id:        doc.id,
+        archivo:   doc.nombre_archivo,
+        tipo:      a.tipo,
+        numero:    a.numero_documento,
+        fecha,
+        base:      round2(base || total / 1.21),
+        iva:       round2(iva  || total - total / 1.21),
+        total:     round2(total),
+        conceptos: conceptos.map(c => ({
+          descripcion: c.descripcion,
+          cantidad:    c.cantidad,
+          precio:      c.precio_unitario,
+          iva_pct:     c.iva_porcentaje,
+          total:       c.total || c.total_linea,
+        })),
+        resumen:   a.resumen,
+      });
+    }
+
+    // Formatear y ordenar
+    const providers = [...provMap.values()]
+      .filter(p => p.facturas.length > 0)
+      .map(p => ({
+        ...p,
+        total_facturado: round2(p.total_facturado),
+        total_base:      round2(p.total_base),
+        total_iva:       round2(p.total_iva),
+        desglose_iva:    Object.fromEntries(
+          Object.entries(p.desglose_iva).map(([k, v]) => [k, { base: round2(v.base), cuota: round2(v.cuota), facturas: v.count }])
+        ),
+        num_facturas:    p.facturas.length,
+        facturas:        p.facturas.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')),
+      }))
+      .sort((a, b) => b.total_facturado - a.total_facturado);
+
+    const totales = {
+      total_facturado: round2(providers.reduce((s, p) => s + p.total_facturado, 0)),
+      total_base:      round2(providers.reduce((s, p) => s + p.total_base, 0)),
+      total_iva:       round2(providers.reduce((s, p) => s + p.total_iva, 0)),
+      num_proveedores: providers.length,
+      num_facturas:    providers.reduce((s, p) => s + p.num_facturas, 0),
+    };
+
+    res.json({ success: true, totales, providers });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+function round2(n) { return Math.round((n || 0) * 100) / 100; }
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  BACKWARD COMPAT — Endpoints que lee el frontend viejo
