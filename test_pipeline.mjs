@@ -72,41 +72,45 @@ const MI_EMPRESA = {
   email:  process.env.EMAIL_USER     || 'info@chickenpalace.es',
 };
 
-// ── Prompt universal (mismo que documentProcessor v3) ───────────────
+// ── Prompt universal (idéntico a documentProcessor v3) ──────────────
 const UNIVERSAL_PROMPT = `Eres el motor de inteligencia de SynK-IA, una aplicación de gestión documental.
 
-IMPORTANTE — CONTEXTO DE NEGOCIO:
-La empresa que usa este sistema es ${MI_EMPRESA.nombre} (CIF: ${MI_EMPRESA.cif}).
-Todos los documentos que procesas llegan al correo de esta empresa.
-Por lo tanto, EN LA MAYORÍA DE CASOS:
-- ${MI_EMPRESA.nombre} es quien RECIBE y PAGA. Es el RECEPTOR/CLIENTE/EMPLEADOR.
-- La otra empresa o persona que aparece en el documento es el PROVEEDOR o TRABAJADOR.
+CONTEXTO:
+Esta es la bandeja de entrada de ${MI_EMPRESA.nombre} (CIF: ${MI_EMPRESA.cif}), un restaurante en Ibiza.
+TODOS los documentos que procesas son GASTOS de esta empresa: facturas de proveedores, nóminas de empleados, recibos, etc.
+${MI_EMPRESA.nombre} SIEMPRE es quien PAGA. NUNCA es el proveedor en estos documentos.
 
-REGLAS DE CLASIFICACIÓN:
-- Factura/albarán donde alguien vende algo a ${MI_EMPRESA.nombre} → tipo="factura_recibida", emisor=PROVEEDOR, receptor=${MI_EMPRESA.nombre}
-- Nómina/hoja de salario → tipo="nomina", emisor=${MI_EMPRESA.nombre} (empleador), receptor=TRABAJADOR (el empleado)
-- Finiquito/liquidación → tipo="finiquito", emisor=${MI_EMPRESA.nombre}, receptor=TRABAJADOR
-- Factura donde ${MI_EMPRESA.nombre} cobra a un cliente → tipo="factura_emitida" (esto es RARO en este correo)
-- Si ves "CHICKEN PALACE" en una factura, NO es el proveedor. Es MI EMPRESA. El proveedor es LA OTRA empresa.
+REGLAS FIJAS PARA FACTURAS:
+- tipo = "factura_recibida" (SIEMPRE, salvo que sea claramente otra cosa como nómina o finiquito)
+- emisor = el PROVEEDOR (la empresa/persona que vende el producto o servicio)
+- receptor = ${MI_EMPRESA.nombre} (quien paga)
+- emisor.rol = "proveedor"
+- receptor.rol = "empresa"
+- CUIDADO: muchos PDFs tienen el nombre "${MI_EMPRESA.nombre}" o "CHICKEN PALACE" en la cabecera.
+  Eso NO significa que Chicken Palace sea el emisor. El PROVEEDOR es la OTRA empresa/persona del documento.
+  Busca la entidad que NO es ${MI_EMPRESA.nombre}. Esa es el proveedor.
+  Ejemplo: si el PDF dice "CHICKEN PALACE" arriba e "INOT & INAD" abajo, el proveedor es INOT & INAD.
 
-Tu trabajo: leer el texto de un documento y devolver un JSON con TODA la información que encuentres.
-NO tienes categorías fijas. TÚ decides qué es el documento y qué datos contiene.
+REGLAS PARA NÓMINAS:
+- tipo = "nomina"
+- emisor = ${MI_EMPRESA.nombre} con rol "empleador"
+- receptor = el TRABAJADOR con rol "empleado"
+
+REGLAS PARA FINIQUITOS:
+- tipo = "finiquito", igual que nómina
+
+OTROS DOCUMENTOS: clasifica libremente (ticket, contrato, certificado, extracto_bancario, etc.)
 
 INSTRUCCIONES:
-1. LEE el documento completo con atención
-2. DECIDE qué tipo de documento es (factura_recibida, factura_emitida, nomina, finiquito, liquidacion, albaran, contrato, presupuesto, ticket, extracto_bancario, certificado, carta, o lo que sea)
-3. IDENTIFICA a todas las personas y empresas que aparecen y su ROL:
-   - ¿Quién emite? ¿Quién recibe?
-   - Si alguien vende algo a ${MI_EMPRESA.nombre} → ese es el PROVEEDOR
-   - Si ${MI_EMPRESA.nombre} vende a alguien → ese es el CLIENTE
-   - Si ${MI_EMPRESA.nombre} paga a una persona → esa persona es un TRABAJADOR
-4. EXTRAE todos los datos relevantes: importes, fechas, conceptos, referencias, etc.
-5. Si hay datos laborales (NSS, categoría profesional, antigüedad, grupo cotización, tipo contrato), extráelos SIEMPRE
+1. LEE el documento completo
+2. Identifica al PROVEEDOR (la entidad que NO es Chicken Palace)
+3. EXTRAE todos los datos: importes, fechas, conceptos, referencias
+4. Si hay datos laborales (NSS, categoría profesional, antigüedad), extráelos
 
 DEVUELVE EXACTAMENTE ESTE JSON (rellena lo que encuentres, null lo que no):
 {
-  "tipo": "el tipo real del documento",
-  "subtipo": "más detalle si aplica",
+  "tipo": "el tipo real del documento (factura_recibida, factura_emitida, nomina, finiquito, albaran, presupuesto, contrato, ticket, extracto_bancario, certificado, otro)",
+  "subtipo": "más detalle si aplica (ej: liquidacion, carta_despido, factura_proforma, recibo_autonomo...)",
   "numero_documento": null,
   "fecha": "YYYY-MM-DD",
   "fecha_vencimiento": "YYYY-MM-DD o null",
@@ -119,27 +123,37 @@ DEVUELVE EXACTAMENTE ESTE JSON (rellena lo que encuentres, null lo que no):
     "rol": "cliente | empleado | empresa | particular | otro"
   },
   "trabajador": {
-    "nombre_completo": null, "dni": null,
-    "nss": "número Seguridad Social si aparece",
-    "categoria_profesional": null, "grupo_cotizacion": null,
-    "antiguedad": "fecha alta YYYY-MM-DD", "tipo_contrato": null, "puesto": null
+    "nombre_completo": null,
+    "dni": null,
+    "nss": "número Seguridad Social si aparece (Nº Afiliación, N.A.F., Nº S.S.)",
+    "categoria_profesional": null,
+    "grupo_cotizacion": null,
+    "antiguedad": "fecha alta YYYY-MM-DD",
+    "tipo_contrato": null,
+    "puesto": null
   },
   "conceptos": [
     { "descripcion": null, "cantidad": 1, "precio_unitario": 0.0, "iva_porcentaje": null, "total": 0.0 }
   ],
-  "base_imponible": null, "iva_total": null, "total": null,
-  "moneda": "EUR", "forma_pago": null, "cuenta_bancaria": null,
+  "base_imponible": null,
+  "iva_total": null,
+  "total": null,
+  "moneda": "EUR",
+  "forma_pago": null,
+  "cuenta_bancaria": null,
   "resumen": "una frase describiendo el documento",
   "datos_extra": {},
   "confianza": 0.9
 }
 
 REGLAS:
-- Si NO es nómina/finiquito/liquidación, pon "trabajador": null
-- Si es nómina: total = líquido a percibir (neto), base_imponible = salario bruto
+- Si NO es una nómina/finiquito/liquidación, pon "trabajador": null
+- Si es una nómina: total = líquido a percibir (neto), base_imponible = salario bruto
+- "conceptos" son las líneas del documento: productos en facturas, devengos/deducciones en nóminas
 - Importes como número decimal (21.50, no "21,50")
 - Fechas en YYYY-MM-DD
 - null para lo que no encuentres, NUNCA string vacío
+- "datos_extra" para cualquier dato interesante que no encaje arriba (ej: periodo_liquidacion, dias_vacaciones, indemnizacion)
 - Responde SOLO con el JSON, sin explicaciones, sin markdown`;
 
 // ── Main ────────────────────────────────────────────────────────────
