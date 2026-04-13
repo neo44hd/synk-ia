@@ -288,116 +288,139 @@ function timeToMinutes(hora) {
   return h * 60 + m + (s || 0) / 60;
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  FROM-PAYSLIPS — Extraer trabajadores de nóminas PDF automáticamente
-// ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
+//  FROM-PAYSLIPS — Sincronizar trabajadores desde nóminas ya procesadas
+//  Lee documents.json (datos extraídos por IA) + entities.json (trabajadores)
+//  y los vuelca/actualiza en trabajadores.json con PIN para fichajes
+// ══════════════════════════════════════════════════════════════════════════════
 
-// POST /api/trabajadores/from-payslips — procesar nóminas y crear/actualizar trabajadores
 router.post('/from-payslips', adminOnly, async (req, res) => {
   try {
-    const pdfParse = (await import('pdf-parse')).default;
+    // 1. Leer documentos procesados y entidades (fuente de verdad del LLM)
+    const docsPath = path.join(DATA_DIR, 'documents.json');
+    const entsPath = path.join(DATA_DIR, 'entities.json');
 
-    // 1. Obtener nóminas del endpoint de email
-    console.log('[FROM-PAYSLIPS] Descargando nóminas desde email/payslips...');
-    const payslipsRes = await fetch('http://localhost:3001/api/email/payslips?since=2024-01-01&limit=300', {
-      headers: { 'x-admin-token': ADMIN_TOKEN }
-    });
-    if (!payslipsRes.ok) {
-      return res.status(502).json({ error: `Error al obtener nóminas: ${payslipsRes.status}` });
+    const docs = existsSync(docsPath)
+      ? JSON.parse(await readFile(docsPath, 'utf8')) : [];
+    const ents = existsSync(entsPath)
+      ? JSON.parse(await readFile(entsPath, 'utf8')) : { trabajadores: [] };
+
+    const nominas = docs.filter(d => d.analisis?.tipo === 'nomina');
+    console.log(`[FROM-PAYSLIPS] ${nominas.length} nóminas en documents.json, ${(ents.trabajadores || []).length} trabajadores en entities.json`);
+
+    // 2. Construir mapa de trabajadores desde entities.json + datos de nóminas
+    const trabMap = new Map(); // clave: NSS || DNI || nombre_normalizado
+
+    // Primero: trabajadores que el LLM ya detectó (entities.json)
+    for (const t of (ents.trabajadores || [])) {
+      const key = t.nss || t.dni || (t.nombre_completo || t.nombre || '').toLowerCase().trim();
+      if (key) trabMap.set(key, { ...t });
     }
 
-    const payslipsData = await payslipsRes.json();
-    const meses = payslipsData.data || payslipsData.months || payslipsData || [];
-    // Aplanar: los payslips pueden venir agrupados por mes o como array directo
-    const payslips = Array.isArray(meses)
-      ? meses.flatMap(m => m.payslips || m.documents || [m])
-      : [];
+    // Segundo: enriquecer con datos directos de las nóminas procesadas
+    for (const doc of nominas) {
+      const a    = doc.analisis || {};
+      const rec  = a.receptor || {};
+      const tDat = a.trabajador || {};
 
-    console.log(`[FROM-PAYSLIPS] ${payslips.length} nóminas encontradas`);
+      const nss  = tDat.nss || null;
+      const dni  = rec.cif_nif || null;
+      const name = rec.nombre || null;
+      if (!name && !nss && !dni) continue;
 
-    // 2. Procesar cada PDF
-    const trabajadoresMap = new Map(); // clave: NSS
-    let pdfsOk = 0, pdfsError = 0;
+      // Buscar existente
+      const key = nss || dni || (name || '').toLowerCase().trim();
+      let existing = trabMap.get(key);
+      // También buscar por match cruzado
+      if (!existing && nss) {
+        for (const [, v] of trabMap) { if (v.nss === nss) { existing = v; break; } }
+      }
+      if (!existing && dni) {
+        for (const [, v] of trabMap) { if (v.dni === dni) { existing = v; break; } }
+      }
 
-    for (const slip of payslips) {
-      const content = slip.content || slip.content_base64 || slip.base64;
-      if (!content) continue;
-
-      try {
-        const buffer = Buffer.from(content, 'base64');
-        const pdf = await pdfParse(buffer);
-        const texto = pdf.text || '';
-
-        // Parsear cada página del PDF
-        const paginas = texto.split(/\f/).filter(p => p.trim());
-        for (const pagina of paginas) {
-          const datos = parsearPaginaNomina(pagina);
-          if (datos && datos.nss) {
-            // Deduplicar por NSS — acumular datos más recientes
-            const existente = trabajadoresMap.get(datos.nss);
-            if (existente) {
-              trabajadoresMap.set(datos.nss, { ...existente, ...datos });
-            } else {
-              trabajadoresMap.set(datos.nss, datos);
-            }
-          }
-        }
-        pdfsOk++;
-      } catch (err) {
-        console.warn(`[FROM-PAYSLIPS] Error procesando PDF: ${err.message}`);
-        pdfsError++;
+      if (existing) {
+        if (nss && !existing.nss) existing.nss = nss;
+        if (dni && !existing.dni) existing.dni = dni;
+        if (name && !existing.nombre_completo) existing.nombre_completo = name;
+        if (tDat.categoria_profesional) existing.categoria_profesional = tDat.categoria_profesional;
+        if (tDat.antiguedad)           existing.fecha_alta = tDat.antiguedad;
+        if (tDat.tipo_contrato)        existing.tipo_contrato = tDat.tipo_contrato;
+        if (tDat.grupo_cotizacion)     existing.grupo_cotizacion = tDat.grupo_cotizacion;
+        if (a.base_imponible)          existing.ultimo_salario_bruto = a.base_imponible;
+        if (a.total)                   existing.ultimo_salario_neto = a.total;
+        existing.nominas = (existing.nominas || 0) + 1;
+        existing.ultima_nomina = a.fecha || existing.ultima_nomina;
+        trabMap.set(key, existing);
+      } else {
+        const partes = (name || '').trim().split(/\s+/);
+        trabMap.set(key, {
+          nombre:                partes[0] || 'Sin nombre',
+          apellidos:             partes.slice(1).join(' '),
+          nombre_completo:       name,
+          dni, nss,
+          categoria_profesional: tDat.categoria_profesional || null,
+          fecha_alta:            tDat.antiguedad || null,
+          tipo_contrato:         tDat.tipo_contrato || null,
+          grupo_cotizacion:      tDat.grupo_cotizacion || null,
+          ultimo_salario_bruto:  a.base_imponible || null,
+          ultimo_salario_neto:   a.total || null,
+          nominas:               1,
+          ultima_nomina:         a.fecha || null,
+        });
       }
     }
 
-    // 3. Crear/actualizar trabajadores en trabajadores.json
+    // 3. Sincronizar con trabajadores.json (añadir PIN para fichajes)
     const trabajadores = await load(TRAB_FILE, []);
     let creados = 0, actualizados = 0;
 
-    // Calcular siguiente PIN disponible
     const pinesUsados = trabajadores.map(t => parseInt(t.pin) || 0);
     let siguientePin = Math.max(0, ...pinesUsados) + 1;
 
-    for (const [nss, datos] of trabajadoresMap) {
-      // Buscar existente por NSS o DNI
+    for (const [, datos] of trabMap) {
       const idx = trabajadores.findIndex(t =>
-        t.nss === nss || (datos.dni && t.dni === datos.dni)
+        (datos.nss && t.nss === datos.nss) ||
+        (datos.dni && t.dni && t.dni.replace(/\s/g,'') === datos.dni.replace(/\s/g,'')) ||
+        (datos.nombre_completo && t.nombre_completo &&
+         t.nombre_completo.toLowerCase() === datos.nombre_completo.toLowerCase())
       );
 
       if (idx >= 0) {
-        // Actualizar datos existentes (no sobreescribir pin, id, es_admin)
         const preservar = ['id', 'pin', 'es_admin', 'creado'];
         for (const [key, val] of Object.entries(datos)) {
-          if (val && !preservar.includes(key)) {
+          if (val != null && !preservar.includes(key)) {
             trabajadores[idx][key] = val;
           }
         }
-        trabajadores[idx].nombre_completo = `${trabajadores[idx].nombre || datos.nombre || ''} ${trabajadores[idx].apellidos || datos.apellidos || ''}`.trim();
+        trabajadores[idx].nombre_completo = datos.nombre_completo ||
+          `${trabajadores[idx].nombre || ''} ${trabajadores[idx].apellidos || ''}`.trim();
         trabajadores[idx].actualizado = new Date().toISOString();
         actualizados++;
       } else {
-        // Crear nuevo trabajador
         const pin = String(siguientePin).padStart(4, '0');
         siguientePin++;
-        const nuevo = {
-          id: `trab_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-          nombre: datos.nombre || 'Sin nombre',
-          apellidos: datos.apellidos || '',
-          nombre_completo: `${datos.nombre || ''} ${datos.apellidos || ''}`.trim(),
-          dni: datos.dni || null,
-          nss: datos.nss,
+        trabajadores.push({
+          id:                    datos.id || `trab_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+          nombre:                datos.nombre || 'Sin nombre',
+          apellidos:             datos.apellidos || '',
+          nombre_completo:       datos.nombre_completo || `${datos.nombre || ''} ${datos.apellidos || ''}`.trim(),
+          dni:                   datos.dni || null,
+          nss:                   datos.nss || null,
           pin,
-          puesto: datos.puesto || 'Empleado',
-          departamento: datos.departamento || 'Cocina',
-          tipo_contrato: 'indefinido',
-          fecha_alta: datos.fecha_alta || null,
-          salario_base_mensual: datos.salario_base_mensual || null,
-          activo: datos.activo !== false,
-          es_admin: false,
-          creado: new Date().toISOString(),
-        };
-        if (datos.motivo_baja) nuevo.motivo_baja = datos.motivo_baja;
-        if (datos.fecha_baja) nuevo.fecha_baja = datos.fecha_baja;
-        trabajadores.push(nuevo);
+          puesto:                datos.categoria_profesional || datos.puesto || 'Empleado',
+          departamento:          datos.departamento || null,
+          tipo_contrato:         datos.tipo_contrato || null,
+          grupo_cotizacion:      datos.grupo_cotizacion || null,
+          fecha_alta:            datos.fecha_alta || null,
+          ultimo_salario_bruto:  datos.ultimo_salario_bruto || null,
+          ultimo_salario_neto:   datos.ultimo_salario_neto || null,
+          nominas:               datos.nominas || 0,
+          ultima_nomina:         datos.ultima_nomina || null,
+          activo:                true,
+          es_admin:              false,
+          creado:                new Date().toISOString(),
+        });
         creados++;
       }
     }
@@ -406,9 +429,8 @@ router.post('/from-payslips', adminOnly, async (req, res) => {
 
     const resultado = {
       ok: true,
-      pdfs_procesados: pdfsOk,
-      pdfs_error: pdfsError,
-      trabajadores_encontrados: trabajadoresMap.size,
+      nominas_procesadas: nominas.length,
+      trabajadores_detectados: trabMap.size,
       creados,
       actualizados,
       total_trabajadores: trabajadores.length,
@@ -417,86 +439,10 @@ router.post('/from-payslips', adminOnly, async (req, res) => {
     res.json(resultado);
 
   } catch (err) {
-    console.error('[FROM-PAYSLIPS] Error general:', err.message);
+    console.error('[FROM-PAYSLIPS] Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
-
-// ── Parsear una página de nómina ────────────────────────────────────────────
-function parsearPaginaNomina(texto) {
-  const datos = {};
-
-  // Extraer DNI (formatos: D.N.I. XX123456X, DNI: XX123456X, NIF: XX123456X)
-  const dniMatch = texto.match(/(?:D\.?N\.?I\.?|NIF|N\.I\.F\.?)\s*:?\s*([A-Z0-9]\d{7}[A-Z]|[XYZ]\d{7}[A-Z])/i);
-  if (dniMatch) datos.dni = dniMatch[1].toUpperCase();
-
-  // Extraer NSS (formato XX/XXXXXXXX-XX)
-  const nssMatch = texto.match(/(\d{2}\/\d{8}-\d{2})/);
-  if (nssMatch) datos.nss = nssMatch[1];
-
-  // Sin NSS no podemos identificar al trabajador de forma única
-  if (!datos.nss) return null;
-
-  // Extraer nombre y apellidos
-  // Formato hoja de salario: "APELLIDOS, NOMBRE" en primeras líneas
-  const nombreMatch = texto.match(/^([A-ZÁÉÍÓÚÑ\s]+),\s*([A-ZÁÉÍÓÚÑ\s]+)/m);
-  if (nombreMatch) {
-    datos.apellidos = nombreMatch[1].trim().split(' ').map(w =>
-      w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
-    ).join(' ');
-    datos.nombre = nombreMatch[2].trim().split(' ').map(w =>
-      w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
-    ).join(' ');
-  }
-
-  // Formato certificado/finiquito: "Nombre y apellidos NOMBRE APELLIDOS"
-  if (!datos.nombre) {
-    const certMatch = texto.match(/Nombre\s+y\s+apellidos\s+([A-ZÁÉÍÓÚÑ\s]+)/i);
-    if (certMatch) {
-      const partes = certMatch[1].trim().split(/\s+/);
-      if (partes.length >= 2) {
-        datos.nombre = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
-        datos.apellidos = partes.slice(1).map(w =>
-          w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
-        ).join(' ');
-      }
-    }
-  }
-
-  // Formato registro horario: "Trabajador: APELLIDOS, NOMBRE"
-  if (!datos.nombre) {
-    const regMatch = texto.match(/Trabajador\s*:\s*([A-ZÁÉÍÓÚÑ\s]+),\s*([A-ZÁÉÍÓÚÑ\s]+)/i);
-    if (regMatch) {
-      datos.apellidos = regMatch[1].trim().split(' ').map(w =>
-        w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
-      ).join(' ');
-      datos.nombre = regMatch[2].trim().split(' ').map(w =>
-        w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
-      ).join(' ');
-    }
-  }
-
-  // Extraer salario base mensual
-  const salarioMatch = texto.match(/(?:salario\s+base|s\.?\s*base)\s*[:\s]*(\d[\d.,]+)/i);
-  if (salarioMatch) {
-    datos.salario_base_mensual = parseFloat(salarioMatch[1].replace('.', '').replace(',', '.'));
-  }
-
-  // Extraer antigüedad / fecha alta
-  const altaMatch = texto.match(/(?:antig[üu]edad|fecha\s+alta|alta\s+empresa)\s*:?\s*(\d{2}[\/-]\d{2}[\/-]\d{4})/i);
-  if (altaMatch) {
-    const partes = altaMatch[1].split(/[\/-]/);
-    datos.fecha_alta = `${partes[2]}-${partes[1]}-${partes[0]}`;
-  }
-
-  // Extraer puesto
-  const puestoMatch = texto.match(/(?:categor[ií]a|puesto|cargo)\s*:?\s*([^\n\r]+)/i);
-  if (puestoMatch) {
-    datos.puesto = puestoMatch[1].trim().substring(0, 50);
-  }
-
-  return datos;
-}
 
 // ══════════════════════════════════════════════════════════════════════════
 //  SEED — Crear trabajadores reales de Chicken Palace Ibiza
