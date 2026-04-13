@@ -1,13 +1,13 @@
 // ═══════════════════════════════════════════════════════════════════════════
 //  SINKIA BRAIN — Agente de negocio con contexto real
 //  Flujo: Pregunta → Clasificar intención → Buscar datos → Responder
-//  LLM: Ollama (localhost:11434) — qwen3:14b
+//  LLM: Ollama (localhost:11434) — qwen3.5
 // ═══════════════════════════════════════════════════════════════════════════
 import { getDocuments, getEntities, getStats } from './documentProcessor.js';
 import { getRevoResumen, getRevoProductos, getRevoVentas } from '../agents/revoAgent.js';
 
 const OLLAMA_URL = process.env.OLLAMA_URL            || 'http://localhost:11434';
-const MODEL      = process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3:14b';
+const MODEL      = process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3.5';
 const SEARXNG    = process.env.SEARXNG_URL    || 'http://localhost:8888';
 
 // ── Strip <think>...</think> del modelo Qwen3 thinking ─────────────────────
