@@ -423,16 +423,16 @@ async function init() {
     const dot  = document.getElementById('status-dot');
     const name = document.getElementById('model-name');
 
-    if (data.lm_studio || data.litellm) {
+    if (data.ollama || data.lm_studio || data.litellm) {
       dot.className    = 'status-dot';
-      name.textContent = data.active_model?.split('-').slice(0,3).join(' ') || 'Modelo local';
+      name.textContent = data.active_model || 'Modelo local';
       document.getElementById('status-text').textContent =
         `Conectado · ${data.active_model || 'modelo local'}`;
     } else {
       dot.className    = 'status-dot offline';
       name.textContent = 'Sin conexión';
       document.getElementById('status-text').textContent =
-        '⚠ LM Studio no disponible — asegúrate de que está corriendo';
+        '⚠ Ollama no disponible — asegúrate de que está corriendo';
     }
   } catch {
     document.getElementById('status-dot').className = 'status-dot offline';
