@@ -212,6 +212,105 @@ router.post('/v1/messages', async (req, res) => {
   }
 });
 
+// ── GET /claude/chat/status — estado del proxy para la pestaña web ────────────
+router.get('/chat/status', async (_req, res) => {
+  try {
+    const r = await fetch(`${LOCAL_BASE}/api/tags`);
+    const d = await r.json();
+    const found = d.models?.some(m => m.name === LOCAL_MODEL || m.name === LOCAL_MODEL.split(':')[0]);
+    res.json({ ok: true, ollama: r.ok, model: LOCAL_MODEL, available: !!found });
+  } catch (e) {
+    res.json({ ok: false, ollama: false, model: LOCAL_MODEL, available: false, error: e.message });
+  }
+});
+
+// ── POST /claude/chat — chat SSE para la pestaña web ─────────────────────────
+router.post('/chat', async (req, res) => {
+  const { messages = [], stream = true } = req.body;
+
+  // Headers SSE
+  res.writeHead(200, {
+    'Content-Type':  'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection':    'keep-alive',
+  });
+
+  const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+
+  try {
+    // Construir mensajes para Ollama
+    const ollamaMsgs = [
+      { role: 'system', content: COMPACT_SYSTEM },
+      ...messages.map(m => ({ role: m.role, content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content) })),
+    ];
+
+    const body = {
+      model:    LOCAL_MODEL,
+      messages: ollamaMsgs,
+      stream:   true,
+      options: {
+        num_ctx:     LOCAL_CTX,
+        num_predict: 4096,
+        temperature: 0.1,
+      },
+    };
+
+    const totalChars = ollamaMsgs.reduce((s, m) => s + (m.content?.length || 0), 0);
+    console.log(`[PROXY-WEB] → Ollama /api/chat | model=${LOCAL_MODEL} msgs=${ollamaMsgs.length} chars=${totalChars}`);
+    const t0 = Date.now();
+
+    const resp = await fetch(`${LOCAL_BASE}/api/chat`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      send({ type: 'error', text: `Ollama error: ${resp.status} — ${err}` });
+      res.write('data: [DONE]\n\n');
+      return res.end();
+    }
+
+    // Leer streaming NDJSON de Ollama
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const chunk = JSON.parse(line);
+          if (chunk.message?.content) {
+            fullText += chunk.message.content;
+            send({ type: 'text', text: chunk.message.content });
+          }
+          if (chunk.done) {
+            const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+            console.log(`[PROXY-WEB] ← Ollama (${elapsed}s) | eval=${chunk.eval_count || 0} tokens | total=${fullText.length} chars`);
+          }
+        } catch {}
+      }
+    }
+
+    res.write('data: [DONE]\n\n');
+    res.end();
+
+  } catch (e) {
+    console.error('[PROXY-WEB] Exception:', e.message);
+    send({ type: 'error', text: e.message });
+    res.write('data: [DONE]\n\n');
+    res.end();
+  }
+});
+
 // ── GET /claude/v1/models (requerido por Claude Code) ─────────────────────────
 router.get('/v1/models', (_req, res) => {
   res.json({
