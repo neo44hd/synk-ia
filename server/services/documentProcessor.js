@@ -325,7 +325,7 @@ async function llmCallVision(messages, maxTokens = 1600, temp = 0.05) {
     });
     if (!res.ok) throw new Error(`Ollama-VL ${res.status}: ${await res.text().catch(() => '')}`);
     const d = await res.json();
-    return d.choices?.[0]?.message?.content?.trim() || '';
+    return stripThinking(d.choices?.[0]?.message?.content?.trim() || '');
   } finally {
     clearTimeout(timer);
   }
@@ -817,15 +817,22 @@ async function llmCall(messages, maxTokens = 1200, temp = 0.1) {
       body:    JSON.stringify({ model: MODEL, messages, temperature: temp, max_tokens: maxTokens, stream: false }),
     });
     if (!res.ok) throw new Error(`Ollama ${res.status}: ${await res.text().catch(() => '')}`);
-    // Nota: VL_MODEL ya no aplica — qwen3:14b no es multimodal
+    // Nota: VL_MODEL ya no aplica — qwen3.5 no es multimodal
     const d = await res.json();
-    return d.choices?.[0]?.message?.content?.trim() || '';
+    return stripThinking(d.choices?.[0]?.message?.content?.trim() || '');
   } finally {
     clearTimeout(timer);
   }
 }
 
+// ── Strip <think>...</think> de modelos Qwen3 thinking ─────────────────────
+function stripThinking(text) {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+}
+
 function parseJSON(text) {
+  // 0. Limpiar bloques <think> de modelos thinking (Qwen3, etc.)
+  text = stripThinking(text);
   // 1. Parse directo
   try { return JSON.parse(text); } catch {}
   // 2. Extraer bloque JSON

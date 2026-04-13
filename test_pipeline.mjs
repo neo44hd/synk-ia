@@ -58,10 +58,16 @@ async function llmCall(messages, maxTokens = 1600) {
     });
     if (!res.ok) throw new Error(`Ollama ${res.status}`);
     const d = await res.json();
-    return d.choices?.[0]?.message?.content?.trim() || '';
+    const raw = d.choices?.[0]?.message?.content?.trim() || '';
+    return stripThinking(raw);
   } finally {
     clearTimeout(timer);
   }
+}
+
+// ── Strip <think>...</think> de modelos Qwen3 thinking ─────────────────────
+function stripThinking(text) {
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
 
 function parseJSON(text) {
