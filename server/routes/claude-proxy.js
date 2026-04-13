@@ -130,7 +130,10 @@ router.post('/v1/messages', async (req, res) => {
     }
     ollamaMessages.push(...toOllamaMessages(messages || []));
 
-    const ollamaTools = toOllamaTools(tools);
+    // NO pasar tools a Ollama — Claude Code envía decenas de tools con schemas
+    // enormes que saturan el contexto y confunden a qwen2.5-coder.
+    // El modelo responde mejor en texto plano sin tool calling formal.
+    const toolCount = tools?.length || 0;
 
     const body = {
       model:    LOCAL_MODEL,
@@ -141,24 +144,28 @@ router.post('/v1/messages', async (req, res) => {
         num_predict: max_tokens,
         temperature,
       },
-      ...(ollamaTools ? { tools: ollamaTools } : {}),
     };
 
-    console.log(`[PROXY] → Ollama /api/chat | model=${LOCAL_MODEL} ctx=${LOCAL_CTX} msgs=${ollamaMessages.length} tools=${ollamaTools?.length || 0}`);
+    // Calcular tamaño total de mensajes para logging
+    const totalChars = ollamaMessages.reduce((sum, m) => sum + (m.content?.length || 0), 0);
+    console.log(`[PROXY] → Ollama /api/chat | model=${LOCAL_MODEL} ctx=${LOCAL_CTX} msgs=${ollamaMessages.length} chars=${totalChars} tools_dropped=${toolCount}`);
 
+    const t0 = Date.now();
     const resp = await fetch(`${LOCAL_BASE}/api/chat`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(body),
     });
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
     if (!resp.ok) {
       const err = await resp.text();
-      console.error('[PROXY] Ollama error:', resp.status, err);
+      console.error(`[PROXY] Ollama error (${elapsed}s):`, resp.status, err);
       return res.status(resp.status).json({ error: err });
     }
 
     const ollResp = await resp.json();
+    console.log(`[PROXY] ← Ollama (${elapsed}s) | eval=${ollResp.eval_count || 0} tokens | content=${(ollResp.message?.content || '').length} chars`);
 
     // Convertir respuesta Ollama nativa → formato Anthropic
     const content = [];
