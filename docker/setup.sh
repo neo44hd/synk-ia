@@ -42,16 +42,17 @@ fi
 
 echo -e "${GREEN}✓ Docker encontrado: $(docker --version)${NC}"
 
-# ── 2. Verificar LM Studio ────────────────────────────────────────────────
+# ── 2. Verificar Ollama ──────────────────────────────────────────────────
 echo ""
-echo -e "${YELLOW}[2/5] Verificando LM Studio...${NC}"
+echo -e "${YELLOW}[2/5] Verificando Ollama...${NC}"
 
-if curl -s --max-time 3 http://localhost:12345/v1/models > /dev/null 2>&1; then
-  MODEL=$(curl -s http://localhost:12345/v1/models | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data'][0]['id'] if d.get('data') else 'desconocido')" 2>/dev/null || echo "activo")
-  echo -e "${GREEN}✓ LM Studio activo — modelo: ${MODEL}${NC}"
+OLLAMA_URL=${OLLAMA_URL:-http://localhost:11434}
+if curl -s --max-time 3 "${OLLAMA_URL}/v1/models" > /dev/null 2>&1; then
+  MODEL=$(curl -s "${OLLAMA_URL}/v1/models" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data'][0]['id'] if d.get('data') else 'desconocido')" 2>/dev/null || echo "activo")
+  echo -e "${GREEN}✓ Ollama activo — modelo: ${MODEL}${NC}"
 else
-  echo -e "${YELLOW}⚠ LM Studio no detectado en puerto 12345.${NC}"
-  echo "  → Ábrelo y carga un modelo antes de usar Open WebUI."
+  echo -e "${YELLOW}⚠ Ollama no detectado en ${OLLAMA_URL}.${NC}"
+  echo "  → Arranca Ollama: brew services start ollama"
   echo "  → El stack arrancará igualmente."
 fi
 
@@ -124,8 +125,7 @@ echo -e "${BLUE}║${NC}  ${GREEN}n8n         ${NC}→  http://localhost:5678   
 echo -e "${BLUE}║${NC}  ${YELLOW}SearXNG     ${NC}→  http://localhost:8888  (interno)  ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  ${YELLOW}Qdrant      ${NC}→  http://localhost:6333  (interno)  ${BLUE}║${NC}"
 echo -e "${BLUE}╠══════════════════════════════════════════════════════╣${NC}"
-echo -e "${BLUE}║${NC}  LM Studio  →  http://localhost:12345  (ya existía) ${BLUE}║${NC}"
-echo -e "${BLUE}║${NC}  LiteLLM    →  http://localhost:8082   (ya existía) ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}  Ollama     →  http://localhost:11434  (ya existía) ${BLUE}║${NC}"
 echo -e "${BLUE}║${NC}  Sinkia API →  http://localhost:3001   (ya existía) ${BLUE}║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════════════════╝${NC}"
 echo ""

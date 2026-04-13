@@ -8,7 +8,7 @@
 #    • Open WebUI  → interfaz principal del asistente   (puerto 3030)
 #    • n8n         → automatizaciones y subagentes       (puerto 5678)
 #
-#  Requisito: LM Studio corriendo en el Mac (puerto 12345)
+#  Requisito: Ollama corriendo en el Mac (puerto 11434)
 #
 #  Arrancar:  docker compose up -d
 #  Parar:     docker compose down
@@ -64,13 +64,9 @@ services:
     volumes:
       - openwebui_data:/app/backend/data
     environment:
-      # ── LM Studio (modelo local)
-      - OPENAI_API_BASE_URL=http://host.docker.internal:12345/v1
-      - OPENAI_API_KEY=local
-
-      # ── LiteLLM proxy de Sinkia (alternativa / fallback)
-      - OPENAI_API_BASE_URL_2=http://host.docker.internal:8082/v1
-      - OPENAI_API_KEY_2=local
+      # ── Ollama (modelo local)
+      - OPENAI_API_BASE_URL=http://host.docker.internal:11434/v1
+      - OPENAI_API_KEY=ollama
 
       # ── Búsqueda web vía SearXNG
       - ENABLE_RAG_WEB_SEARCH=true

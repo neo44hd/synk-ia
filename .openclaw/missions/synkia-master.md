@@ -12,7 +12,7 @@ Eres el agente autónomo de SYNK-IA, la plataforma de gestión inteligente de Ch
 ## ESTADO ACTUAL DEL PROYECTO (Abril 2026)
 
 ### Sprints completados
-- **Sprint 0**: Dev environment — Ollama, aider, migración LM Studio → Ollama
+- **Sprint 0**: Dev environment — Ollama, aider, modelos locales configurados
 - **Sprint 1**: Backend real — Auth JWT (SHA-256+HMAC, sin deps), persistencia en JSON, email pipeline IMAP→facturas→proveedores
 - **Sprint 2**: FileBrain — Clasificación automática de 144 documentos por proveedor/fecha/categoría, árbol virtual
 - **Sprint 3**: Portal del Trabajador — Vacaciones, nóminas, documentos, PWA, vinculación automática

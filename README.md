@@ -16,7 +16,7 @@ Mac Mini M4 Pro (24GB RAM) — macOS
 ├── Disco externo "Disco local" (1 TB)
 │   └── /Volumes/Disco local/sinkia-hub/
 │       ├── ollama/data/             ← modelos IA (symlink → ~/.ollama)
-│       ├── models/                  ← modelos antiguos LM Studio
+│       ├── models/                  ← modelos GGUF (legacy)
 │       ├── models-gguf/             ← archivos GGUF sueltos
 │       ├── backups/                 ← backups manuales
 │       └── desktop-old/             ← archivos movidos del Desktop

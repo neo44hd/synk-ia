@@ -85,7 +85,7 @@ David. Fundador y único desarrollador de SYNK-IA. Tech entrepreneur full-stack 
 - Docker, PM2, Nginx
 - Git, GitHub Actions
 - SSH, Tailscale, Cloudflare
-- Ollama, LM Studio, modelos locales
+- Ollama, modelos locales (qwen3.5, codegemma:7b, qwen2.5-coder:14b, functiongemma)
 
 ### Aprendiendo
 - Fine-tuning de modelos LLM
