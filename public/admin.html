@@ -887,32 +887,35 @@ async function triggerSync(type) {
   setTimeout(() => toast(`✓ Sync ${type} programado (próximo ciclo <5min)`, 'ok'), 800);
 }
 
-// ── AI Stack ping ─────────────────────────────────────────────────────────
+// ── AI Stack ping (via backend /api/health/full) ─────────────────────────
 async function checkAIStack() {
-  const services = [
-    { id: 'webui',   url: 'http://localhost:3030',        ndot: 'ndot-webui'  },
-    { id: 'n8n',     url: 'http://localhost:5678',        ndot: 'ndot-n8n'    },
-    { id: 'searxng', url: 'http://localhost:8888',        ndot: null          },
-    { id: 'qdrant',  url: 'http://localhost:6333',        ndot: null          },
+  // Mapa de servicio backend → id del DOM
+  const svcMap = [
+    { key: 'open_webui', id: 'webui',   ndot: 'ndot-webui'  },
+    { key: 'n8n',        id: 'n8n',     ndot: 'ndot-n8n'    },
+    { key: 'searxng',    id: 'searxng', ndot: null          },
+    { key: 'qdrant',     id: 'qdrant',  ndot: null          },
   ];
 
-  await Promise.all(services.map(async (svc) => {
-    const up = await ping(svc.url);
-    const dot   = document.getElementById(`st-${svc.id}`);
-    if (dot) {
-      dot.className = `mod-card-status ${up ? 'ok' : 'err'}`;
+  try {
+    const res = await fetch(`${BASE}/api/health/full`, { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    const svcs = data.services || {};
+
+    for (const svc of svcMap) {
+      const up = svcs[svc.key]?.status === 'online';
+      const dot = document.getElementById(`st-${svc.id}`);
+      if (dot) dot.className = `mod-card-status ${up ? 'ok' : 'err'}`;
+      if (svc.ndot) {
+        const nd = document.getElementById(svc.ndot);
+        if (nd) nd.className = `nav-dot ${up ? 'ok' : 'err'}`;
+      }
+      const card = document.getElementById(`card-${svc.id}`);
+      if (card) card.style.opacity = up ? '1' : '0.6';
     }
-    // Nav dots
-    if (svc.ndot) {
-      const nd = document.getElementById(svc.ndot);
-      if (nd) nd.className = `nav-dot ${up ? 'ok' : 'err'}`;
-    }
-    // Card dimming
-    const card = document.getElementById(`card-${svc.id}`);
-    if (card) {
-      card.style.opacity = up ? '1' : '0.6';
-    }
-  }));
+  } catch (e) {
+    console.error('[checkAIStack] Error:', e.message);
+  }
 }
 
 // ── AI Model ──────────────────────────────────────────────────────────────
