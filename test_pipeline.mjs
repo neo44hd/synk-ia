@@ -46,14 +46,33 @@ function stripThinking(text) {
 }
 
 function parseJSON(text) {
+  // 0. Limpiar markdown fences y thinking blocks
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/,  '').trim();
+  // 1. Parse directo
   try { return JSON.parse(text); } catch {}
+  // 2. Extraer bloque JSON (el más grande)
   const m = text.match(/\{[\s\S]*\}/);
   if (m) { try { return JSON.parse(m[0]); } catch {} }
-  const fixed = (m?.[0] || text)
+  // 3. Reparar errores comunes
+  let fixed = (m?.[0] || text)
     .replace(/,\s*([}\]])/g, '$1')
     .replace(/([{,]\s*)(\w+)\s*:/g, '$1"$2":')
-    .replace(/:\s*'([^']*)'/g, ': "$1"');
+    .replace(/:\s*'([^']*)'/g, ': "$1"')
+    .replace(/""\s*([,}\]])/g, 'null$1');  // "" → null
   try { return JSON.parse(fixed); } catch {}
+  // 4. JSON truncado — intentar cerrar llaves
+  if (m) {
+    let truncated = m[0];
+    const opens = (truncated.match(/\{/g) || []).length;
+    const closes = (truncated.match(/\}/g) || []).length;
+    if (opens > closes) {
+      // Cortar en la última coma/llave válida y cerrar
+      truncated = truncated.replace(/,\s*"[^"]*"?\s*:?\s*[^,}]*$/, '');
+      truncated += '}'.repeat(opens - closes);
+      try { return JSON.parse(truncated); } catch {}
+    }
+  }
   return null;
 }
 
