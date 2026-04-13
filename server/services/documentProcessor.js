@@ -12,7 +12,7 @@ const __dirname     = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Config ─────────────────────────────────────────────────────────────────
 const OLLAMA_URL = process.env.OLLAMA_URL      || 'http://localhost:11434';
-const MODEL      = process.env.OLLAMA_MODEL    || 'qwen3:14b';
+const MODEL      = process.env.OLLAMA_MODEL    || 'qwen3.5';
 const DATA_DIR   = process.env.DATA_DIR        || '/Users/davidnows/sinkia/data';
 const DOCS_FILE  = path.join(DATA_DIR, 'documents.json');
 const ENT_FILE   = path.join(DATA_DIR, 'entities.json');
