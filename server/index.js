@@ -73,6 +73,15 @@ app.use('/api/trabajadores', trabajadoresRouter);
 app.use('/claude',     claudeProxyRouter);  // Proxy local para Claude Code
 app.use('/api/chat',   chatRouter);          // Chat IA local
 
+// ── Aider (Claude Code coding assistant) ─────────────────────────────────────
+try {
+  const { aiderRouter } = await import('./routes/aider.js');
+  app.use('/api/aider', aiderRouter);
+  console.log(`[SERVER] ✓ Aider: /api/aider (modelo: ${process.env.AIDER_MODEL || 'ollama/qwen3.5'})`);
+} catch (e) {
+  console.error('[SERVER] ✗ Aider falló al cargar:', e.message);
+}
+
 // ── Data API (generic CRUD) ──────────────────────────────────────────────────
 try {
   const { dataRouter } = await import('./routes/data.js');
