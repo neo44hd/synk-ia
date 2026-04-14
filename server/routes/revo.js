@@ -20,13 +20,17 @@ const saveEvent = (event) => {
   writeFileSync(WEBHOOK_LOG, JSON.stringify(events, null, 2));
 };
 
+const REVO_BASE = 'https://revoxef.works/api/external/v2';
+const REVO_TENANT = process.env.REVO_TENANT || 'chickenpalaceibiza2';
+
 const revoFetch = async (endpoint, method = 'GET') => {
   const headers = {
     'Authorization': `Bearer ${process.env.REVO_TOKEN_LARGO}`,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'tenant': REVO_TENANT,
   };
-  if (process.env.REVO_TOKEN_CORTO) headers['X-API-Key'] = process.env.REVO_TOKEN_CORTO;
-  const res = await fetch(`https://integrations.revoxef.works/api/v1${endpoint}`, { method, headers });
+  if (process.env.REVO_TOKEN_CORTO) headers['client-token'] = process.env.REVO_TOKEN_CORTO;
+  const res = await fetch(`${REVO_BASE}${endpoint}`, { method, headers });
   if (!res.ok) throw new Error(`Revo ${res.status}: ${res.statusText}`);
   return res.json();
 };
@@ -36,7 +40,7 @@ revoRouter.get('/test', async (req, res) => {
     if (!process.env.REVO_TOKEN_LARGO) {
       return res.json({ success: false, error: 'REVO_TOKEN_LARGO not configured' });
     }
-    const data = await revoFetch('/catalog/products?per_page=1');
+    const data = await revoFetch('/catalog/items?pagination=1');
     res.json({ success: true, message: 'Revo connected', data });
   } catch (err) {
     res.json({ success: false, error: err.message });
@@ -45,7 +49,7 @@ revoRouter.get('/test', async (req, res) => {
 
 revoRouter.get('/products', async (req, res) => {
   try {
-    const data = await revoFetch('/catalog/products');
+    const data = await revoFetch('/catalog/items');
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -78,14 +82,19 @@ revoRouter.get('/categories', async (req, res) => {
 // FIX: syncRevoWorkers() en functionsService llamaba a este endpoint que faltaba
 revoRouter.get('/workers', async (req, res) => {
   try {
-    // Revo XEF expone empleados/cajeros en /staff o /users según el plan
+    // Revo XEF API v2: empleados en /employees
     let data = [];
     try {
-      const result = await revoFetch('/staff');
+      const result = await revoFetch('/employees');
       data = result?.data || result || [];
-    } catch {
-      // Si /staff no existe en el plan, devuelve vacío (no bloquea el sync)
-      console.warn('[Revo] /staff no disponible en este plan');
+    } catch (e1) {
+      // Fallback a /staff
+      try {
+        const result2 = await revoFetch('/staff');
+        data = result2?.data || result2 || [];
+      } catch {
+        console.warn('[Revo] /employees y /staff no disponibles');
+      }
     }
     res.json({ success: true, workers: data, count: data.length });
   } catch (err) {
@@ -129,9 +138,9 @@ revoRouter.post('/sync', async (req, res) => {
       return res.json({ success: false, error: 'REVO_TOKEN_LARGO not configured' });
     }
     const [products, categories, orders] = await Promise.allSettled([
-      revoFetch('/catalog/products'),
+      revoFetch('/catalog/items'),
       revoFetch('/catalog/categories'),
-      revoFetch('/orders?per_page=10')
+      revoFetch('/orders')
     ]);
     res.json({
       success: true,
