@@ -8,17 +8,20 @@ import path from 'path';
 
 const DATA_DIR = process.env.DATA_DIR || '/Users/davidnows/sinkia/data';
 const REVO_DIR = path.join(DATA_DIR, 'revo');
-const REVO_BASE = 'https://integrations.revoxef.works/api/v1';
+const REVO_BASE = 'https://revoxef.works/api/external/v2';
+const REVO_TENANT = process.env.REVO_TENANT || 'chickenpalaceibiza2';
 const CACHE_FILE = path.join(REVO_DIR, 'endpoints-cache.json');
 
-// Endpoints conocidos de Revo XEF (orden de preferencia — fallback completo)
+// Endpoints según documentación oficial Revo XEF API v2
+// https://api.revo.works/sections/xef.html
 const ENDPOINTS = {
-  productos:  ['/catalog/products', '/catalog/items', '/items', '/products'],
-  categorias: ['/catalog/categories', '/categories'],
-  ventas:     ['/orders', '/order/list'],
-  cajas:      ['/cash', '/cash/list', '/sessions'],
-  mesas:      ['/tables', '/table/list'],
-  empleados:  ['/staff', '/employees', '/users'],
+  productos:  ['/catalog/items', '/catalog/products'],
+  categorias: ['/catalog/categories', '/catalog/groups'],
+  ventas:     ['/orders'],
+  cajas:      ['/payments', '/paymentMethods'],
+  mesas:      ['/rooms', '/tables'],
+  empleados:  ['/employees', '/staff'],
+  clientes:   ['/customers'],
 };
 
 // ── Cache de endpoints válidos (se carga al arrancar) ────────────────────────
@@ -65,8 +68,13 @@ async function saveJSON(file, data) {
 }
 
 function revoHeaders() {
-  const h = { 'Authorization': `Bearer ${process.env.REVO_TOKEN_LARGO}`, 'Content-Type': 'application/json' };
-  if (process.env.REVO_TOKEN_CORTO) h['X-API-Key'] = process.env.REVO_TOKEN_CORTO;
+  const h = {
+    'Authorization': `Bearer ${process.env.REVO_TOKEN_LARGO}`,
+    'Content-Type': 'application/json',
+    'tenant': REVO_TENANT,
+  };
+  // client-token para integradores (opcional)
+  if (process.env.REVO_TOKEN_CORTO) h['client-token'] = process.env.REVO_TOKEN_CORTO;
   return h;
 }
 
