@@ -68,22 +68,76 @@ router.post('/processes/:name/stop', (req, res) => {
 router.get('/system', (_req, res) => {
   try {
     const totalB = os.totalmem();
-    const freeB  = os.freemem();
-    const usedB  = totalB - freeB;
 
-    // Disco home
-    let disk = { total: 0, used: 0, avail: 0, pct: 0 };
+    // macOS: os.freemem() solo reporta RAM "free" (no incluye RAM
+    // reutilizable usada como caché). vm_stat da el dato real.
+    let availableGB, usedGB;
     try {
-      const df = execSync(`df -k ${os.homedir()} | tail -1`)
-        .toString().trim().split(/\s+/);
-      const t = parseInt(df[1]), u = parseInt(df[2]), a = parseInt(df[3]);
-      disk = {
-        total: Math.round(t / 1024 / 1024),
-        used:  Math.round(u / 1024 / 1024),
-        avail: Math.round(a / 1024 / 1024),
-        pct:   Math.round((u / t) * 100),
+      const vmstat = execSync('vm_stat 2>/dev/null').toString();
+      const pageSize = 16384; // Apple Silicon usa páginas de 16 KB
+      const extract = (key) => {
+        const m = vmstat.match(new RegExp(`${key}:\\s+(\\d+)`));
+        return m ? parseInt(m[1]) * pageSize : 0;
       };
+      const free       = extract('Pages free');
+      const inactive   = extract('Pages inactive');
+      const purgeable  = extract('Pages purgeable');
+      // RAM disponible = free + inactive + purgeable (lo que macOS puede reclamar al instante)
+      const availB = free + inactive + purgeable;
+      availableGB  = Math.round(availB / 1024 / 1024 / 1024 * 10) / 10;
+      usedGB       = Math.round((totalB - availB) / 1024 / 1024 / 1024 * 10) / 10;
+      if (availableGB < 0) availableGB = Math.round(os.freemem() / 1024 / 1024 / 1024 * 10) / 10;
+      if (usedGB < 0 || usedGB > totalB) usedGB = Math.round((totalB - os.freemem()) / 1024 / 1024 / 1024 * 10) / 10;
+    } catch {
+      // Fallback para Linux u otros
+      availableGB = Math.round(os.freemem() / 1024 / 1024 / 1024 * 10) / 10;
+      usedGB      = Math.round((totalB - os.freemem()) / 1024 / 1024 / 1024 * 10) / 10;
+    }
+    const totalGB = Math.round(totalB / 1024 / 1024 / 1024 * 10) / 10;
+    const memPct  = Math.round((usedGB / totalGB) * 100);
+
+    // Discos: SSD interno + disco externo (si existe)
+    let disks = [];
+    try {
+      // SSD interno (home)
+      const dfHome = execSync(`df -k ${os.homedir()} | tail -1`)
+        .toString().trim().split(/\s+/);
+      const hT = parseInt(dfHome[1]), hU = parseInt(dfHome[2]), hA = parseInt(dfHome[3]);
+      disks.push({
+        name:  'SSD interno',
+        mount: '/',
+        total: Math.round(hT / 1024 / 1024),
+        used:  Math.round(hU / 1024 / 1024),
+        avail: Math.round(hA / 1024 / 1024),
+        pct:   Math.round((hU / hT) * 100),
+      });
+
+      // Disco externo "Disco local"
+      const extPath = '/Volumes/Disco local';
+      try {
+        const dfExt = execSync(`df -k "${extPath}" 2>/dev/null | tail -1`)
+          .toString().trim().split(/\s+/);
+        // df output en macOS con espacios en nombre: reconstruct
+        // Buscar los últimos 4 campos numéricos
+        const nums = dfExt.filter(f => /^\d+$/.test(f));
+        if (nums.length >= 3) {
+          const eT = parseInt(nums[0]), eU = parseInt(nums[1]), eA = parseInt(nums[2]);
+          disks.push({
+            name:  'Disco local',
+            mount: extPath,
+            total: Math.round(eT / 1024 / 1024),
+            used:  Math.round(eU / 1024 / 1024),
+            avail: Math.round(eA / 1024 / 1024),
+            pct:   Math.round((eU / eT) * 100),
+          });
+        }
+      } catch {} // Disco externo no montado — ignorar
     } catch {}
+
+    // Compatibilidad: mantener campo "disk" con el total combinado
+    const diskTotalGB = disks.reduce((s, d) => s + d.total, 0);
+    const diskUsedGB  = disks.reduce((s, d) => s + d.used, 0);
+    const diskAvailGB = disks.reduce((s, d) => s + d.avail, 0);
 
     // Carga CPU (load average 1 min)
     const [load1] = os.loadavg();
@@ -97,12 +151,18 @@ router.get('/system', (_req, res) => {
       uptime:   Math.round(os.uptime()),
       load1:    Math.round(load1 * 100) / 100,
       memory: {
-        total: Math.round(totalB / 1024 / 1024 / 1024 * 10) / 10,
-        used:  Math.round(usedB  / 1024 / 1024 / 1024 * 10) / 10,
-        free:  Math.round(freeB  / 1024 / 1024 / 1024 * 10) / 10,
-        pct:   Math.round((usedB / totalB) * 100),
+        total: totalGB,
+        used:  usedGB,
+        free:  availableGB,
+        pct:   memPct,
       },
-      disk,
+      disk: {
+        total: diskTotalGB,
+        used:  diskUsedGB,
+        avail: diskAvailGB,
+        pct:   diskTotalGB > 0 ? Math.round((diskUsedGB / diskTotalGB) * 100) : 0,
+      },
+      disks,  // Array detallado por disco
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

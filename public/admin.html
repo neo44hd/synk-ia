@@ -949,7 +949,6 @@ function renderAI(ai) {
 // ── Metrics ───────────────────────────────────────────────────────────────
 function renderMetrics(s) {
   const memPct  = s.memory?.pct  || 0;
-  const diskPct = s.disk?.pct    || 0;
   document.getElementById('metrics-row').innerHTML = `
     <div class="metric-card">
       <div class="metric-header">
@@ -959,14 +958,17 @@ function renderMetrics(s) {
       <div class="gauge-track"><div class="gauge-fill ${memPct>85?'error':memPct>70?'warn':''}" style="width:${memPct}%"></div></div>
       <div class="metric-sub">${memPct}% · ${s.memory?.free||0} GB libres</div>
     </div>
-    <div class="metric-card">
+    ${(s.disks && s.disks.length ? s.disks : [{ name: 'Disco', ...s.disk }]).map(d => {
+      const dp = d.pct || 0;
+      return `<div class="metric-card">
       <div class="metric-header">
-        <span class="metric-name">Disco</span>
-        <span class="metric-value">${s.disk?.used||0} <small style="font-size:13px;color:var(--muted2)">/ ${s.disk?.total||0} GB</small></span>
+        <span class="metric-name">${d.name || 'Disco'}</span>
+        <span class="metric-value">${d.used||0} <small style="font-size:13px;color:var(--muted2)">/ ${d.total||0} GB</small></span>
       </div>
-      <div class="gauge-track"><div class="gauge-fill ${diskPct>90?'error':diskPct>75?'warn':''}" style="width:${diskPct}%"></div></div>
-      <div class="metric-sub">${diskPct}% · ${s.disk?.avail||0} GB libres</div>
-    </div>
+      <div class="gauge-track"><div class="gauge-fill ${dp>90?'error':dp>75?'warn':''}" style="width:${dp}%"></div></div>
+      <div class="metric-sub">${dp}% · ${d.avail||0} GB libres</div>
+    </div>`;
+    }).join('')}
     <div class="metric-card">
       <div class="metric-header">
         <span class="metric-name">Sistema</span>
