@@ -845,9 +845,9 @@ function renderServices(h) {
 
   const cards = [
     { icon:'🖥️', name:'API Backend',  sub:`Uptime ${fmtUp(up)}`,  st: h?.status==='ok'?'ok':'err' },
-    { icon:'📧', name:'Email IMAP',   sub:'info@chickenpalace.es', st: svcs.email   ?'ok':'warn' },
-    { icon:'🍗', name:'Revo XEF',     sub:'chickenpalaceibiza2',   st: svcs.revo    ?'ok':'err'  },
-    { icon:'🤖', name:'Ollama',       sub: (svcs.ai?.model||'').split('-q4')[0]||'—', st: svcs.ai?.ready?'ok':'warn' },
+    { icon:'📧', name:'Email IMAP',   sub: svcs.email ? 'Conectado' : 'No configurado', st: svcs.email   ?'ok':'warn' },
+    { icon:'🍗', name:'Revo XEF',     sub: svcs.revo  ? 'Conectado' : 'No configurado', st: svcs.revo    ?'ok':'err'  },
+    { icon:'🤖', name:'Ollama',       sub: svcs.ai?.model||'—', st: svcs.ai?.ready?'ok':'warn' },
   ];
 
   document.getElementById('svc-grid').innerHTML = cards.map(c => `
@@ -883,14 +883,23 @@ function fmtRelTime(iso) {
 
 async function triggerSync(type) {
   toast(`↻ Sincronizando ${type}...`, 'ok');
-  // El syncWorker corre automáticamente; esta acción notifica visualmente
-  setTimeout(() => toast(`✓ Sync ${type} programado (próximo ciclo <5min)`, 'ok'), 800);
+  try {
+    if (type === 'email') {
+      await apiCall('/api/email/sync', { method: 'POST' });
+    } else if (type === 'revo') {
+      await apiCall('/api/revo/sync', { method: 'POST' });
+    }
+    toast(`✓ Sync ${type} completado`, 'ok');
+  } catch (e) {
+    toast(`✗ Sync ${type} falló: ${e.message}`, 'err');
+  }
 }
 
 // ── AI Stack ping (via backend /api/health/full) ─────────────────────────
 async function checkAIStack() {
   // Mapa de servicio backend → id del DOM
   const svcMap = [
+    { key: 'ollama',     id: null,      ndot: null          },
     { key: 'open_webui', id: 'webui',   ndot: 'ndot-webui'  },
     { key: 'n8n',        id: 'n8n',     ndot: 'ndot-n8n'    },
     { key: 'searxng',    id: 'searxng', ndot: null          },
@@ -932,16 +941,16 @@ function renderAI(ai) {
       <div class="ai-stat-lbl">Tamaño</div>
     </div>
     <div class="ai-stat">
-      <div class="ai-stat-val">${(ai.gpu||'auto').toUpperCase()}</div>
-      <div class="ai-stat-lbl">GPU</div>
+      <div class="ai-stat-val">${ai.models?.length || '—'}</div>
+      <div class="ai-stat-lbl">Modelos</div>
     </div>
     <div class="ai-stat">
       <div class="ai-stat-val">${ai.ready ? '✓ Cargado' : '✗ Offline'}</div>
       <div class="ai-stat-lbl">Estado</div>
     </div>
     <div class="ai-stat">
-      <div class="ai-stat-val" style="cursor:pointer;color:var(--cyan)" onclick="window.open('/api/chat/status','_blank')">Ver API</div>
-      <div class="ai-stat-lbl">LiteLLM</div>
+      <div class="ai-stat-val" style="cursor:pointer;color:var(--cyan)" onclick="window.open('/api/health/ai','_blank')">Ver API</div>
+      <div class="ai-stat-lbl">Ollama</div>
     </div>
   `;
 }
@@ -1029,8 +1038,10 @@ async function restartProcess(name, btn) {
 async function restartAll() {
   toast('Reiniciando todos los procesos...', 'ok');
   try {
-    await api('/processes/sinkia-api/restart',      { method:'POST' });
-    await api('/processes/cloudflared-tunnel/restart',{ method:'POST' });
+    const procs = await api('/processes');
+    for (const p of procs) {
+      try { await api(`/processes/${p.name}/restart`, { method:'POST' }); } catch {}
+    }
     toast('✓ Todos reiniciados', 'ok'); setTimeout(refresh, 3000);
   } catch(e) { toast(`✗ ${e.message}`, 'err'); }
 }

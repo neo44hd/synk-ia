@@ -114,11 +114,10 @@ healthRouter.get('/', async (_req, res) => {
 
 // ── GET /api/health/full — estado de TODOS los servicios del Mac Mini ────────
 healthRouter.get('/full', async (req, res) => {
-  const [ollama, open_webui, openclaw, searxng, n8n, qdrant, cloudflare_tunnel] =
+  const [ollama, open_webui, searxng, n8n, qdrant, cloudflare_tunnel] =
     await Promise.all([
       checkOllama(),
       checkService(3030),
-      checkService(18789),
       checkService(8888),
       checkService(5678),
       checkQdrant(),
@@ -127,21 +126,38 @@ healthRouter.get('/full', async (req, res) => {
 
   const sinkia_api = { status: 'online', port: 3001 };
 
-  const services = { ollama, open_webui, openclaw, searxng, n8n, qdrant, sinkia_api, cloudflare_tunnel };
+  const services = { ollama, open_webui, searxng, n8n, qdrant, sinkia_api, cloudflare_tunnel };
   const list = Object.values(services);
   const online = list.filter(s => s.status === 'online').length;
 
+  // RAM: en macOS, os.freemem() solo reporta RAM "free" sin caché reutilizable.
+  // Usamos vm_stat para un dato real (igual que admin.js).
   const totalMem = os.totalmem();
-  const freeMem  = os.freemem();
+  let freeGB;
+  try {
+    const { execSync } = await import('child_process');
+    const vmstat = execSync('vm_stat 2>/dev/null').toString();
+    const pageSize = 16384;
+    const extract = (key) => {
+      const m = vmstat.match(new RegExp(`${key}:\\s+(\\d+)`));
+      return m ? parseInt(m[1]) * pageSize : 0;
+    };
+    const availB = extract('Pages free') + extract('Pages inactive') + extract('Pages purgeable');
+    freeGB = parseFloat((availB / 1024 ** 3).toFixed(1));
+    if (freeGB < 0) freeGB = parseFloat((os.freemem() / 1024 ** 3).toFixed(1));
+  } catch {
+    freeGB = parseFloat((os.freemem() / 1024 ** 3).toFixed(1));
+  }
+  const totalGB = parseFloat((totalMem / 1024 ** 3).toFixed(1));
 
   res.json({
     timestamp:    new Date().toISOString(),
     hostname:     os.hostname(),
     uptime_hours: Math.round(os.uptime() / 3600),
     memory: {
-      total_gb:     parseFloat((totalMem / 1024 ** 3).toFixed(1)),
-      free_gb:      parseFloat((freeMem  / 1024 ** 3).toFixed(1)),
-      used_percent: Math.round(((totalMem - freeMem) / totalMem) * 100),
+      total_gb:     totalGB,
+      free_gb:      freeGB,
+      used_percent: Math.round(((totalGB - freeGB) / totalGB) * 100),
     },
     services,
     summary: { total: list.length, online, offline: list.length - online },
@@ -172,13 +188,13 @@ healthRouter.get('/ai', async (_req, res) => {
 // ── GET /api/health/config — estado de variables de entorno ──────────────────
 healthRouter.get('/config', (_req, res) => {
   res.json({
-    EMAIL_USER:              process.env.EMAIL_USER || 'info@chickenpalace.es',
-    EMAIL_APP_PASSWORD:      process.env.EMAIL_APP_PASSWORD      ? '***configured***' : 'NOT SET',
-    ASSEMPSA_BILOOP_API_KEY: process.env.ASSEMPSA_BILOOP_API_KEY ? '***configured***' : 'NOT SET',
-    REVO_TOKEN_CORTO:        process.env.REVO_TOKEN_CORTO        ? '***configured***' : 'NOT SET',
-    REVO_TOKEN_LARGO:        process.env.REVO_TOKEN_LARGO        ? '***configured***' : 'NOT SET',
-    ESEECLOUD_USERNAME:      process.env.ESEECLOUD_USERNAME       ? '***configured***' : 'NOT SET',
-    OLLAMA_URL:              process.env.OLLAMA_URL              || 'http://localhost:11434',
-    OLLAMA_MODEL:            process.env.OLLAMA_MODEL            || 'qwen3.5',
+    EMAIL_USER:              process.env.EMAIL_USER               ? '***configured***' : 'NOT SET',
+    EMAIL_APP_PASSWORD:      process.env.EMAIL_APP_PASSWORD       ? '***configured***' : 'NOT SET',
+    ASSEMPSA_BILOOP_API_KEY: process.env.ASSEMPSA_BILOOP_API_KEY  ? '***configured***' : 'NOT SET',
+    REVO_TOKEN_CORTO:        process.env.REVO_TOKEN_CORTO         ? '***configured***' : 'NOT SET',
+    REVO_TOKEN_LARGO:        process.env.REVO_TOKEN_LARGO         ? '***configured***' : 'NOT SET',
+    ESEECLOUD_USERNAME:      process.env.ESEECLOUD_USERNAME        ? '***configured***' : 'NOT SET',
+    OLLAMA_URL:              process.env.OLLAMA_URL               || 'http://localhost:11434',
+    OLLAMA_MODEL:            process.env.OLLAMA_MODEL             || 'qwen3.5',
   });
 });
