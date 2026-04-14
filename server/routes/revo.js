@@ -20,17 +20,17 @@ const saveEvent = (event) => {
   writeFileSync(WEBHOOK_LOG, JSON.stringify(events, null, 2));
 };
 
-const REVO_BASE = 'https://revoxef.works/api/external/v2';
-const REVO_TENANT = process.env.REVO_TENANT || 'chickenpalaceibiza2';
+const REVO_CATALOG = 'https://api.revoxef.works/catalog/v1';
+const REVO_REPORTS = 'https://revoxef.works/api/external/v3';
 
-const revoFetch = async (endpoint, method = 'GET') => {
+const revoFetch = async (endpoint, { base = 'catalog', method = 'GET' } = {}) => {
+  const baseUrl = base === 'catalog' ? REVO_CATALOG : REVO_REPORTS;
   const headers = {
     'Authorization': `Bearer ${process.env.REVO_TOKEN_LARGO}`,
+    'Accept': 'application/json',
     'Content-Type': 'application/json',
-    'tenant': REVO_TENANT,
   };
-  if (process.env.REVO_TOKEN_CORTO) headers['client-token'] = process.env.REVO_TOKEN_CORTO;
-  const res = await fetch(`${REVO_BASE}${endpoint}`, { method, headers });
+  const res = await fetch(`${baseUrl}${endpoint}`, { method, headers });
   if (!res.ok) throw new Error(`Revo ${res.status}: ${res.statusText}`);
   return res.json();
 };
@@ -40,7 +40,7 @@ revoRouter.get('/test', async (req, res) => {
     if (!process.env.REVO_TOKEN_LARGO) {
       return res.json({ success: false, error: 'REVO_TOKEN_LARGO not configured' });
     }
-    const data = await revoFetch('/catalog/items?pagination=1');
+    const data = await revoFetch('/items?pagination=1');
     res.json({ success: true, message: 'Revo connected', data });
   } catch (err) {
     res.json({ success: false, error: err.message });
@@ -49,7 +49,7 @@ revoRouter.get('/test', async (req, res) => {
 
 revoRouter.get('/products', async (req, res) => {
   try {
-    const data = await revoFetch('/catalog/items');
+    const data = await revoFetch('/items');
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -71,7 +71,7 @@ revoRouter.get('/sales', async (req, res) => {
 
 revoRouter.get('/categories', async (req, res) => {
   try {
-    const data = await revoFetch('/catalog/categories');
+    const data = await revoFetch('/categories');
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -82,19 +82,13 @@ revoRouter.get('/categories', async (req, res) => {
 // FIX: syncRevoWorkers() en functionsService llamaba a este endpoint que faltaba
 revoRouter.get('/workers', async (req, res) => {
   try {
-    // Revo XEF API v2: empleados en /employees
+    // Revo XEF Reports API v3: empleados
     let data = [];
     try {
-      const result = await revoFetch('/employees');
+      const result = await revoFetch('/employees', { base: 'reports' });
       data = result?.data || result || [];
     } catch (e1) {
-      // Fallback a /staff
-      try {
-        const result2 = await revoFetch('/staff');
-        data = result2?.data || result2 || [];
-      } catch {
-        console.warn('[Revo] /employees y /staff no disponibles');
-      }
+      console.warn(`[Revo] /employees: ${e1.message}`);
     }
     res.json({ success: true, workers: data, count: data.length });
   } catch (err) {
@@ -138,9 +132,9 @@ revoRouter.post('/sync', async (req, res) => {
       return res.json({ success: false, error: 'REVO_TOKEN_LARGO not configured' });
     }
     const [products, categories, orders] = await Promise.allSettled([
-      revoFetch('/catalog/items'),
-      revoFetch('/catalog/categories'),
-      revoFetch('/orders')
+      revoFetch('/items'),
+      revoFetch('/categories'),
+      revoFetch('/orders', { base: 'reports' })
     ]);
     res.json({
       success: true,

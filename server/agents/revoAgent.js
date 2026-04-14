@@ -8,20 +8,21 @@ import path from 'path';
 
 const DATA_DIR = process.env.DATA_DIR || '/Users/davidnows/sinkia/data';
 const REVO_DIR = path.join(DATA_DIR, 'revo');
-const REVO_BASE = 'https://revoxef.works/api/external/v2';
-const REVO_TENANT = process.env.REVO_TENANT || 'chickenpalaceibiza2';
+const REVO_CATALOG_BASE = 'https://api.revoxef.works/catalog/v1';
+const REVO_REPORTS_BASE = 'https://revoxef.works/api/external/v3';
 const CACHE_FILE = path.join(REVO_DIR, 'endpoints-cache.json');
 
-// Endpoints según documentación oficial Revo XEF API v2
-// https://api.revo.works/sections/xef.html
+// Endpoints según API real de Revo XEF
+// Catalog API: https://api.revoxef.works/catalog/v1/
+// Reports API: https://revoxef.works/api/external/v3/
 const ENDPOINTS = {
-  productos:  ['/catalog/items', '/catalog/products'],
-  categorias: ['/catalog/categories', '/catalog/groups'],
-  ventas:     ['/orders'],
-  cajas:      ['/payments', '/paymentMethods'],
-  mesas:      ['/rooms', '/tables'],
-  empleados:  ['/employees', '/staff'],
-  clientes:   ['/customers'],
+  productos:  { base: 'catalog', paths: ['/items', '/products'] },
+  categorias: { base: 'catalog', paths: ['/categories', '/general-groups'] },
+  ventas:     { base: 'reports', paths: ['/orders'] },
+  cajas:      { base: 'reports', paths: ['/payments', '/paymentMethods'] },
+  mesas:      { base: 'reports', paths: ['/rooms'] },
+  empleados:  { base: 'reports', paths: ['/employees'] },
+  clientes:   { base: 'reports', paths: ['/customers'] },
 };
 
 // ── Cache de endpoints válidos (se carga al arrancar) ────────────────────────
@@ -68,28 +69,31 @@ async function saveJSON(file, data) {
 }
 
 function revoHeaders() {
-  const h = {
+  return {
     'Authorization': `Bearer ${process.env.REVO_TOKEN_LARGO}`,
+    'Accept': 'application/json',
     'Content-Type': 'application/json',
-    'tenant': REVO_TENANT,
   };
-  // client-token para integradores (opcional)
-  if (process.env.REVO_TOKEN_CORTO) h['client-token'] = process.env.REVO_TOKEN_CORTO;
-  return h;
 }
 
 // Prueba endpoints: primero el cacheado, luego el resto como fallback
 // Si el cacheado falla, recorre todos y actualiza el cache con el que funcione
-async function fetchAny(recurso, endpoints, params = '') {
+function getBaseUrl(type) {
+  return type === 'catalog' ? REVO_CATALOG_BASE : REVO_REPORTS_BASE;
+}
+
+async function fetchAny(recurso, endpointConfig, params = '') {
   await loadEndpointCache();
   const headers = revoHeaders();
+  const { base, paths } = endpointConfig;
+  const baseUrl = getBaseUrl(base);
 
   // 1. Intentar primero el endpoint cacheado (0 latencia de descubrimiento)
   const cached = endpointCache[recurso];
   if (cached) {
     try {
-      const url = `${REVO_BASE}${cached}${params}`;
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+      const url = `${baseUrl}${cached}${params}`;
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
       if (res.ok) {
         const data = await res.json();
         console.log(`[REVO] ✓ ${cached} (cache)`);
@@ -104,11 +108,11 @@ async function fetchAny(recurso, endpoints, params = '') {
   }
 
   // 2. Fallback: probar todos los endpoints (excepto el cacheado que ya falló)
-  for (const ep of endpoints) {
-    if (ep === cached) continue; // ya lo probamos
+  for (const ep of paths) {
+    if (ep === cached) continue;
     try {
-      const url = `${REVO_BASE}${ep}${params}`;
-      const res = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+      const url = `${baseUrl}${ep}${params}`;
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
       if (res.ok) {
         const data = await res.json();
         console.log(`[REVO] ✓ ${ep} (descubierto)`);
