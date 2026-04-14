@@ -87,8 +87,11 @@ async function fetchAny(recurso, endpoints, params = '') {
         console.log(`[REVO] ✓ ${cached} (cache)`);
         return { data: data?.data || data, endpoint: cached };
       }
-    } catch {}
-    // Cache falló — log y continuar con fallback
+      console.log(`[REVO] ✗ ${cached} (cache) → ${res.status} ${res.statusText}`);
+      try { const body = await res.text(); console.log(`[REVO]   Body: ${body.slice(0, 300)}`); } catch {}
+    } catch (err) {
+      console.log(`[REVO] ✗ ${cached} (cache) → ${err.message}`);
+    }
     console.log(`[REVO] ⚠ Cache ${cached} falló para ${recurso}, probando alternativas...`);
   }
 
@@ -101,12 +104,16 @@ async function fetchAny(recurso, endpoints, params = '') {
       if (res.ok) {
         const data = await res.json();
         console.log(`[REVO] ✓ ${ep} (descubierto)`);
-        // Actualizar cache con el endpoint que funciona
         await updateCacheEntry(recurso, ep);
         return { data: data?.data || data, endpoint: ep };
       }
-    } catch {}
+      console.log(`[REVO] ✗ ${ep} → ${res.status} ${res.statusText}`);
+      try { const body = await res.text(); console.log(`[REVO]   Body: ${body.slice(0, 300)}`); } catch {}
+    } catch (err) {
+      console.log(`[REVO] ✗ ${ep} → ${err.message}`);
+    }
   }
+  console.log(`[REVO] ✗ ${recurso}: todos los endpoints fallaron`);
   return null;
 }
 
@@ -214,12 +221,12 @@ export async function syncRevo() {
   }
 
   const results = {};
-  try { results.productos  = await syncProductos(); } catch (e) { results.productos_err  = e.message; }
-  try { results.categorias = await syncCategorias(); } catch (e) { results.categorias_err = e.message; }
-  try { results.ventas     = await syncVentas(7); } catch (e) { results.ventas_err     = e.message; }
-  try { results.cajas      = await syncCajas(); } catch (e) { results.cajas_err      = e.message; }
+  try { results.productos  = await syncProductos(); } catch (e) { results.productos  = null; results.productos_err  = e.message; }
+  try { results.categorias = await syncCategorias(); } catch (e) { results.categorias = null; results.categorias_err = e.message; }
+  try { results.ventas     = await syncVentas(7); }    catch (e) { results.ventas     = null; results.ventas_err     = e.message; }
+  try { results.cajas      = await syncCajas(); }      catch (e) { results.cajas      = null; results.cajas_err      = e.message; }
 
-  const ok = Object.values(results).some(v => v !== null && !String(v).includes('err'));
+  const ok = [results.productos, results.categorias, results.ventas, results.cajas].some(v => v !== null && v !== undefined);
   console.log(`[REVO] ${ok ? '✓' : '✗'} Sync:`, JSON.stringify(results));
   return { success: ok, ...results };
 }
