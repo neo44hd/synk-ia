@@ -1,0 +1,8 @@
+{
+  "generado": "2026-04-14T21:31:55.296Z",
+  "nota": "Auto-actualizado por revoAgent.js en producción.",
+  "endpoints": {
+    "productos": "/items",
+    "categorias": "/categories"
+  }
+}

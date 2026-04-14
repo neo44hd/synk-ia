@@ -1,0 +1,6039 @@
+[
+  {
+    "file": "email_1776076742201_Factura_de_Venta_I26-5.PDF",
+    "status": "ok",
+    "chars": 683,
+    "pages": 1,
+    "tiempo_ms": 8621,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-01",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 41.9,
+          "iva_porcentaje": 21,
+          "total": 42.85
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 41.9,
+      "iva_total": 1.68,
+      "total": 43.63,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida del proveedor INOT & INAD, S.L., con total incluido IVA.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076742397_Factura_de_Venta_I26-11.PDF",
+    "status": "ok",
+    "chars": 685,
+    "pages": 1,
+    "tiempo_ms": 6947,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-01-05",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.07
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076742596_Factura_de_Venta_I26-18.PDF",
+    "status": "ok",
+    "chars": 702,
+    "pages": 1,
+    "tiempo_ms": 6956,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-08-01",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.22
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 27.94,
+      "iva_total": 1.12,
+      "total": 30.06,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076742793_Factura_de_Venta_I26-23.PDF",
+    "status": "ok",
+    "chars": 702,
+    "pages": 1,
+    "tiempo_ms": 6996,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-01-10",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 55.87,
+          "iva_porcentaje": 2.23,
+          "total": 59.25
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 1
+        }
+      ],
+      "base_imponible": 56.82,
+      "iva_total": 2.23,
+      "total": 59.25,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076743029_Factura_de_Venta_I26-38.PDF",
+    "status": "ok",
+    "chars": 685,
+    "pages": 1,
+    "tiempo_ms": 6950,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-01-14",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.08
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076743221_Factura_de_Venta_I26-46.PDF",
+    "status": "ok",
+    "chars": 685,
+    "pages": 1,
+    "tiempo_ms": 6983,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-01-16",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 55.87,
+          "iva_porcentaje": 2.23,
+          "total": 58.1
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 56.82,
+      "iva_total": 2.23,
+      "total": 59.05,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076743432_Factura_de_Venta_I26-64.PDF",
+    "status": "ok",
+    "chars": 685,
+    "pages": 1,
+    "tiempo_ms": 6953,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-01-22",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.07
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076743699_Factura_de_Venta_I26-73.PDF",
+    "status": "ok",
+    "chars": 685,
+    "pages": 1,
+    "tiempo_ms": 7003,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2027-01-24",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 55.87,
+          "iva_porcentaje": 2.23,
+          "total": 58.1
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 56.82,
+      "iva_total": 2.23,
+      "total": 59.05,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. de INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076743847_Factura_de_Venta_I26-93.PDF",
+    "status": "ok",
+    "chars": 685,
+    "pages": 1,
+    "tiempo_ms": 7106,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-01-31",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 41.9,
+          "iva_porcentaje": 21,
+          "total": 42.85
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 41.9,
+      "iva_total": 1.68,
+      "total": 44.73,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076744079_Factura_de_Venta_I26-199.PDF",
+    "status": "ok",
+    "chars": 686,
+    "pages": 1,
+    "tiempo_ms": 7160,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-02-19",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.21
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076744253_Factura_de_Venta_I26-220.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 7289,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-02-06",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 55.87,
+          "iva_porcentaje": 2.23,
+          "total": 58.1
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 56.82,
+      "iva_total": 2.23,
+      "total": 59.05,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076744470_Factura_de_Venta_I26-233.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 7046,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-02-10",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.07
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076744671_Factura_de_Venta_I26-248.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 7105,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-02-12",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.08
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076744935_Factura_de_Venta_I26-258.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 7162,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-02-14",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 41.9,
+          "iva_porcentaje": 21,
+          "total": 42.85
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 41.9,
+      "iva_total": 1.68,
+      "total": 44.73,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076745137_Factura_de_Venta_I26-268.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 7001,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-02-16",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.07
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076745347_Factura_de_Venta_I26-278.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 7012,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-02-19",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.08
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076745636_Factura_de_Venta_I26-289.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 6982,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-02-21",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 41.9,
+          "iva_porcentaje": 21,
+          "total": 42.85
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 41.9,
+      "iva_total": 1.68,
+      "total": 44.73,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076745757_Factura_de_Venta_I26-312.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 6948,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-02-26",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.08
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076745989_Factura_de_Venta_I26-448.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 6930,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-04-03",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.93,
+          "iva_porcentaje": 12,
+          "total": 31.71
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.88,
+      "iva_total": 1.12,
+      "total": 30,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. de INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076746185_Factura_de_Venta_I26-461.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 6976,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-06",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 55.87,
+          "iva_porcentaje": 2.23,
+          "total": 58.1
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 56.82,
+      "iva_total": 2.23,
+      "total": 59.05,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076746373_Factura_de_Venta_I26-483.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 6948,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-12",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.08
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 28.89,
+      "iva_total": 1.12,
+      "total": 30.01,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076746685_Factura_de_Venta_I26-490.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 6946,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-13",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 41.9,
+          "iva_porcentaje": 21,
+          "total": 42.85
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 41.9,
+      "iva_total": 1.68,
+      "total": 44.73,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076746819_Factura_de_Venta_I26-534.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 6955,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-21",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 41.9,
+          "iva_porcentaje": 21,
+          "total": 42.85
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 41.9,
+      "iva_total": 1.68,
+      "total": 44.73,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076747043_Factura_de_Venta_I26-540.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 6959,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-24",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 27.94,
+          "iva_porcentaje": 12,
+          "total": 32.08
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 27.94,
+      "iva_total": 1.12,
+      "total": 30.06,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076747240_Factura_de_Venta_I26-559.PDF",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 6948,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-27",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "INOT & INAD, S.L.",
+        "cif_nif": null,
+        "direccion": "FRAY VICENTE NICOLAS, 13 07800 IBIZA BALEARES",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSE RIQUER 7 BJ 3, 07800EIVISSA, ILLES BALEARS",
+        "email": null,
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BARRA MEIGA MEDIT 275 GR 23UDS40,00",
+          "cantidad": 1,
+          "precio_unitario": 41.9,
+          "iva_porcentaje": 21,
+          "total": 42.85
+        },
+        {
+          "descripcion": "GESTION DE ALBARANES",
+          "cantidad": 0.95,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        }
+      ],
+      "base_imponible": 41.9,
+      "iva_total": 1.68,
+      "total": 44.73,
+      "moneda": "EUR",
+      "forma_pago": "PORTES:Debidos;PENDIENTE",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida por Chicken Palace IBIZA SL. del proveedor INOT & INAD, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076747491_Factura_A203.pdf",
+    "status": "ok",
+    "chars": 599,
+    "pages": 1,
+    "tiempo_ms": 10207,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-26",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "7 BJ, 80300 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "B56908486 CHICKEN PALACE IBIZA SL",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE BERENJENA CAT. EXT43,0210,423,4500730130326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 70,
+          "iva_porcentaje": null,
+          "total": 70
+        },
+        {
+          "descripcion": "PIMIENTO ROJO CAT.I.42,228,103,6500680190326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 90,
+          "iva_porcentaje": null,
+          "total": 90
+        },
+        {
+          "descripcion": "PIMIENTO ITALIANO42,067,683,7260670170326-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 73.79,
+          "iva_porcentaje": null,
+          "total": 73.79
+        },
+        {
+          "descripcion": "PEREJIL MANOJO101,000,900,9000210230326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 901,
+          "iva_porcentaje": null,
+          "total": 901
+        },
+        {
+          "descripcion": "PATATA PELADA CORT. PANADERA412,0029,402,4500884260326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 400.96,
+          "iva_porcentaje": null,
+          "total": 401.86
+        },
+        {
+          "descripcion": "PATATA BLANCA415,0014,400,9600861160326-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 960,
+          "iva_porcentaje": null,
+          "total": 960
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza SL por José Riquer, Eivissa.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076747748_Factura_A207.pdf",
+    "status": "ok",
+    "chars": 572,
+    "pages": 1,
+    "tiempo_ms": 8167,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-27",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER B.J.",
+        "cif_nif": null,
+        "direccion": "7 BJ, 80300 EIVISSA (IESA)",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "B56908486",
+        "cif_nif": null,
+        "direccion": "",
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "CEBOLLA",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 990.08
+        },
+        {
+          "descripcion": "PATATA BLANCA",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 960.06
+        },
+        {
+          "descripcion": "PUERROS CAT. EXTRA",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 950.09
+        },
+        {
+          "descripcion": "APIO BLANCO",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 750.01
+        },
+        {
+          "descripcion": "CILANTRO MANOJO",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 150.01
+        },
+        {
+          "descripcion": "CEBOLLINO MANOJO",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 250.02
+        }
+      ],
+      "base_imponible": 35183,
+      "iva_total": 44,
+      "total": 40920,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida por Chicken Palace Ibiza SL de José Riquer B.J. en Eivissa, con varios productos.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076747902_Factura_A210.pdf",
+    "status": "ok",
+    "chars": 809,
+    "pages": 1,
+    "tiempo_ms": 10803,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-04-28",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "7 BJ, 80300 EIVISSA (BIJUELO)",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "B56908486",
+        "cif_nif": null,
+        "direccion": "",
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "CEBOLLA",
+          "cantidad": 1.5,
+          "precio_unitario": 20.08,
+          "iva_porcentaje": null,
+          "total": 30.12
+        },
+        {
+          "descripcion": "PATATA BLANCA",
+          "cantidad": 4.3,
+          "precio_unitario": 9.6,
+          "iva_porcentaje": null,
+          "total": 41.48
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXTR.",
+          "cantidad": 959,
+          "precio_unitario": 45,
+          "iva_porcentaje": null,
+          "total": 43111
+        },
+        {
+          "descripcion": "PIMIENTO ITALIANO",
+          "cantidad": 1011,
+          "precio_unitario": 85,
+          "iva_porcentaje": null,
+          "total": 85935
+        },
+        {
+          "descripcion": "SHITAKE CAT.",
+          "cantidad": 1029,
+          "precio_unitario": 45.9,
+          "iva_porcentaje": null,
+          "total": 47481.1
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN",
+          "cantidad": 159,
+          "precio_unitario": 55,
+          "iva_porcentaje": null,
+          "total": 8695
+        },
+        {
+          "descripcion": "PEREJIL MANOJO",
+          "cantidad": 900,
+          "precio_unitario": 90,
+          "iva_porcentaje": null,
+          "total": 8100
+        },
+        {
+          "descripcion": "AJO PELADO",
+          "cantidad": 755,
+          "precio_unitario": 75.5,
+          "iva_porcentaje": null,
+          "total": 5692.25
+        },
+        {
+          "descripcion": "PATATA PELADA CORT.",
+          "cantidad": 402,
+          "precio_unitario": 20,
+          "iva_porcentaje": null,
+          "total": 8040
+        },
+        {
+          "descripcion": "PIMIENTO ROJO CAT.I",
+          "cantidad": 9214,
+          "precio_unitario": 75,
+          "iva_porcentaje": null,
+          "total": 690210
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura emitida por José Riquer a Chicken Palace Ibiza SL con varios productos.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076748100_Factura_A219.pdf",
+    "status": "ok",
+    "chars": 340,
+    "pages": 1,
+    "tiempo_ms": 5276,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "FACTURA/026A219",
+      "fecha": "2023-03-31",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER 7 BJ 3 S.A.",
+        "cif_nif": "07800 EIVISSA",
+        "direccion": "",
+        "email": "",
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL B56908486",
+        "cif_nif": null,
+        "direccion": "",
+        "email": "",
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE PATATA PELADA CORT. PANADERA",
+          "cantidad": 1,
+          "precio_unitario": 0.45,
+          "iva_porcentaje": 22,
+          "total": 0.53
+        }
+      ],
+      "base_imponible": 0.45,
+      "iva_total": 0.03,
+      "total": 0.53,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida por Chicken Palace Ibiza SL de Jose Riquer 7 BJ 3 S.A.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076749568_F2600109_CHICKEN_PALACE.pdf",
+    "status": "ok",
+    "chars": 740,
+    "pages": 1,
+    "tiempo_ms": 11455,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "NúmeroF26 00109",
+      "fecha": "2026-02-28",
+      "fecha_vencimiento": "10-03-2026",
+      "emisor": {
+        "nombre": "DAVID ROLDÁN HUESO",
+        "cif_nif": null,
+        "direccion": null,
+        "email": "santagula.ibz@gmail.com",
+        "telefono": "+34668563756",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "02-021134.60134.60",
+          "cantidad": 1,
+          "precio_unitario": 21.5,
+          "iva_porcentaje": 10,
+          "total": 23.65
+        },
+        {
+          "descripcion": "05-02168.4068.40",
+          "cantidad": 1,
+          "precio_unitario": 20.8,
+          "iva_porcentaje": 10,
+          "total": 22.88
+        },
+        {
+          "descripcion": "06-02164.0064.00",
+          "cantidad": 1,
+          "precio_unitario": 6.4,
+          "iva_porcentaje": 10,
+          "total": 7.04
+        },
+        {
+          "descripcion": "09-021116.00116.00",
+          "cantidad": 1,
+          "precio_unitario": 11.6,
+          "iva_porcentaje": 10,
+          "total": 12.76
+        },
+        {
+          "descripcion": "12-021136.00136.00",
+          "cantidad": 1,
+          "precio_unitario": 13.6,
+          "iva_porcentaje": 10,
+          "total": 14.96
+        },
+        {
+          "descripcion": "16-021108.00108.00",
+          "cantidad": 1,
+          "precio_unitario": 8.8,
+          "iva_porcentaje": 10,
+          "total": 9.68
+        },
+        {
+          "descripcion": "19-02167.6067.60",
+          "cantidad": 1,
+          "precio_unitario": 26.67,
+          "iva_porcentaje": 10,
+          "total": 29.34
+        },
+        {
+          "descripcion": "26-021186.00186.00",
+          "cantidad": 1,
+          "precio_unitario": 18.86,
+          "iva_porcentaje": 10,
+          "total": 20.74
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 88.06,
+      "total": 968.66,
+      "moneda": "EUR",
+      "forma_pago": [
+        "CAIXABANK ES46 2100 3334 2622 0006 6964",
+        "Efectivo"
+      ],
+      "cuenta_bancaria": null,
+      "resumen": "Factura emitida por DAVID ROLDÁN HUESO para Chicken Palace Ibiza, S.L. con varios conceptos.",
+      "datos_extra": {
+        "RGSEAA 20.049455/IB": true,
+        "RGSEAA 26.026029/IB": true
+      },
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076749577_F2600117_CHICKEN_PALACE.pdf",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 9186,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "NúmeroF26 00117",
+      "fecha": "2026-03-30",
+      "fecha_vencimiento": "10-04-2026",
+      "emisor": {
+        "nombre": "DAVID ROLDÁN HUESO",
+        "cif_nif": null,
+        "direccion": "JOSÉ RIQUER LLOBET 7, B3",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Carretera Cala Llonga 94 2D, 07840 Santa Eulalia del Río, Illes Balears, España",
+        "email": "santagula.ibz@gmail.com",
+        "telefono": "+34668563756",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "04-031144.40144.40",
+          "cantidad": 1,
+          "precio_unitario": 0.4044,
+          "iva_porcentaje": 10,
+          "total": 0.44484
+        },
+        {
+          "descripcion": "06-03189.4089.40",
+          "cantidad": 1,
+          "precio_unitario": 0.489,
+          "iva_porcentaje": 10,
+          "total": 0.538
+        },
+        {
+          "descripcion": "13-031151.40151.40",
+          "cantidad": 1,
+          "precio_unitario": 0.41515,
+          "iva_porcentaje": 10,
+          "total": 0.45665
+        },
+        {
+          "descripcion": "20-031156.00156.00",
+          "cantidad": 1,
+          "precio_unitario": 0.0156,
+          "iva_porcentaje": 10,
+          "total": 0.01716
+        },
+        {
+          "descripcion": "25-031104.00104.00",
+          "cantidad": 1,
+          "precio_unitario": 0.0104,
+          "iva_porcentaje": 10,
+          "total": 0.01144
+        }
+      ],
+      "base_imponible": 645.2,
+      "iva_total": 64.52,
+      "total": 709.72,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura emitida por DAVID ROLDÁN HUESO para Chicken Palace Ibiza, S.L.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076749585_F2600104_CHICKEN_PALACE.pdf",
+    "status": "ok",
+    "chars": 704,
+    "pages": 1,
+    "tiempo_ms": 10217,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "NúmeroF26 00104",
+      "fecha": "2026-01-31",
+      "fecha_vencimiento": "2026-02-28",
+      "emisor": {
+        "nombre": "DAVID ROLDÁN HUESO",
+        "cif_nif": null,
+        "direccion": "JOSÉ RIQUER LLOBET 7, B3",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Carretera Cala Llonga 94 2D, 07840 Santa Eulalia del Río, Illes Balears, España",
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "03-01195.6095",
+          "cantidad": 1,
+          "precio_unitario": 60,
+          "iva_porcentaje": null,
+          "total": 60
+        },
+        {
+          "descripcion": "08-011103.60103",
+          "cantidad": 1,
+          "precio_unitario": 60.1,
+          "iva_porcentaje": null,
+          "total": 60.1
+        },
+        {
+          "descripcion": "12-011103.60103",
+          "cantidad": 1,
+          "precio_unitario": 60.1,
+          "iva_porcentaje": null,
+          "total": 60.1
+        },
+        {
+          "descripcion": "16-011150.40150",
+          "cantidad": 1,
+          "precio_unitario": 40.4,
+          "iva_porcentaje": null,
+          "total": 40.4
+        },
+        {
+          "descripcion": "19-011143.60143",
+          "cantidad": 1,
+          "precio_unitario": 60.6,
+          "iva_porcentaje": null,
+          "total": 60.6
+        },
+        {
+          "descripcion": "26-01166.6066",
+          "cantidad": 1,
+          "precio_unitario": 60.6,
+          "iva_porcentaje": null,
+          "total": 60.6
+        }
+      ],
+      "base_imponible": 663.4,
+      "iva_total": 66.34,
+      "total": 729.74,
+      "moneda": "EUR",
+      "forma_pago": "CAIXABANK ES46 2100 3334 2622 0006 6964 Efectivo",
+      "cuenta_bancaria": null,
+      "resumen": "Factura generada desde facturadirecta.com para Chicken Palace Ibiza, S.L. con DAVID ROLDÁN HUESO como proveedor.",
+      "datos_extra": {
+        "RGSEAA": [
+          "20.049455/IB",
+          "26.026029/IB"
+        ]
+      },
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076749827_A-V2026-00001578633.pdf",
+    "status": "parse_fail",
+    "chars": 7854,
+    "pages": 3,
+    "tiempo_ms": 10704,
+    "raw_preview": "{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": \"A-V2026-00001578633\",\n  \"fecha\": \"2026-03-31\",\n  \"fecha_vencimiento\": \"2027-03-31\",\n  \"emisor\": {\n    \"nombre\": \"MERCADONA S.A.\",\n    \"cif_nif\": \"B56908486\",\n    \"direccion\": \"C/ Alfonso Roig, s/n. Albalat dels Sorells, 46135 Valencia\",\n    \"email\": \"\",\n    \"telefono\": \"\"\n  },\n  \"receptor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA, SL.\",\n    \"cif_nif\": \"\",\n    \"direccion\": \"CALLE JOSEP RIQUER LLOBET, 7 LOCAL 3, EIVISSA (07800-I"
+  },
+  {
+    "file": "email_1776076750916_FAFP-2334403.pdf",
+    "status": "parse_fail",
+    "chars": 2575,
+    "pages": 2,
+    "tiempo_ms": 9870,
+    "raw_preview": "```json\n{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": \"FP-2334403\",\n  \"fecha\": \"2026-04-01\",\n  \"fecha_vencimiento\": \"2026-05-01\",\n  \"emisor\": {\n    \"nombre\": \"EDENRED\",\n    \"cif_nif\": null,\n    \"direccion\": null,\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"proveedor\"\n  },\n  \"receptor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA S.L.\",\n    \"cif_nif\": \"B56908486\",\n    \"direccion\": \"JOSPE RIQUER LLOBET 7, 07800 IBIZA\",\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\":"
+  },
+  {
+    "file": "email_1776076751034_5525394119.pdf",
+    "status": "ok",
+    "chars": 1357,
+    "pages": 2,
+    "tiempo_ms": 5283,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "5525394119",
+      "fecha": "2026-03-31",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "Google Cloud EMEA Limited",
+        "cif_nif": null,
+        "direccion": "Clanwilliam Place, Dublin 2",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "Chicken Palace Ibiza SL",
+        "cif_nif": null,
+        "direccion": "José Riquer, 7 bajo 3, 07800 Eivissa",
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Google Workspace Business StarterUtilización",
+          "cantidad": 1,
+          "precio_unitario": 18.1,
+          "iva_porcentaje": null,
+          "total": 18.1
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Google Workspace Business StarterUtilización para Chicken Palace Ibiza SL.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076751042_1502_CHIKEN_PALACE.pdf",
+    "status": "ok",
+    "chars": 1040,
+    "pages": 1,
+    "tiempo_ms": 6718,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-31",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "ANIOFE SLU",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "conceptos": [
+        {
+          "descripcion": "Neto",
+          "cantidad": 285.74
+        },
+        {
+          "descripcion": "IVA % Recíproco Equivalente (I.V.A.%REC.EQUIV.)",
+          "cantidad": 7.13,
+          "precio_unitario": null,
+          "iva_porcentaje": 10
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 222.16,
+      "total": 2.55075,
+      "moneda": "EUR",
+      "forma_pago": "PORTES: Debidos PENDIENTE CONTADO",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de venta recibida en POLÍGONO CAN BONET, Km 2,4, Formentera Baleares, Anoife SL.",
+      "datos_extra": {
+        "periodo_liquidacion": "2026-03",
+        "dias_vacaciones": null,
+        "indemnizacion": null
+      },
+      "trabajador": null,
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776076751062_FACTURADEVENTA_CM6_405B.pdf",
+    "status": "ok",
+    "chars": 2384,
+    "pages": 1,
+    "tiempo_ms": 7012,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-04-01",
+      "fecha_vencimiento": "2023-05-01",
+      "emisor": {
+        "nombre": "INOT & INAD",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE, S.L.",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "cliente"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Servicio de Catering",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida por CHICKEN PALACE, S.L. de INOT & INAD para servicios de catering.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076751946_261F0000601-95251F.PDF",
+    "status": "ok",
+    "chars": 1652,
+    "pages": 1,
+    "tiempo_ms": 6365,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-04-06",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "ASSEMPSA IBIZA, S.L.",
+        "cif_nif": "B57492035",
+        "direccion": "C/ Josep Riquer Llobet, n.º 8, bajo",
+        "email": "facturacion@assempsaibiza.com",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "CL JOSE RIQUER 7, 07800 - IBIZA, BALEARES",
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "HONORARIOS GASTOS",
+          "cantidad": 630
+        },
+        {
+          "descripcion": "PAGOS DELEG.",
+          "cantidad": 21.5
+        },
+        {
+          "descripcion": "PROV.FONDOS",
+          "cantidad": 132.3
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida de Assemsa Ibiza, S.L. por Chicken Palace Ibiza, S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076752699_070426_not._denuncia_ayto._ibiza_chicken_palace.pdf",
+    "status": "ok",
+    "chars": 1262,
+    "pages": 2,
+    "tiempo_ms": 7618,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "221926.03.2026",
+      "fecha": "2026-11-02",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "TESLA-MODEL Y RGC0912 5G XP7YGCES5SRD",
+        "cif_nif": "E040EROSKIGRAVE-B56908486",
+        "direccion": "-3833-MYS, ESTACIONAR UN VEHÍCULO EN ZONA RESERVADA A CARGA Y DESCARGA DURANTE LAS HORAS DE UTILIZACIÓN.",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL",
+        "cif_nif": "B56908486",
+        "direccion": "07800SANTA EULARIA DES RIUEIVISSA,0702692026051409691 06426 6 149100,00",
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "ESTACIONAR UN VEHÍCULO EN ZONA RESERVADA A CARGA Y DESCARGA DURANTE LAS HORAS DE UTILIZACIÓN.",
+          "cantidad": 1,
+          "precio_unitario": 200,
+          "iva_porcentaje": null,
+          "total": 200
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": 200,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Pago por estacionamiento de un Tesla en una zona reservada para carga y descarga durante las horas de utilización.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076753372_CHICKEN_PALACE_IBIZA__S.L..pdf",
+    "status": "ok",
+    "chars": 1698,
+    "pages": 1,
+    "tiempo_ms": 8056,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "A-135",
+      "fecha": "2026-03-31",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "TORRES VICEDO GESTION, S.L.",
+        "cif_nif": "B16606279",
+        "direccion": "Av. España, 59, 1º. 10ª.",
+        "email": "",
+        "telefono": "971.394292430",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "C/ JOSE RIQUER LLOBET, 7. BJ.",
+        "email": "",
+        "telefono": ""
+      },
+      "conceptos": [
+        {
+          "descripcion": "HONORARIOS SEG.SOCIAL",
+          "cantidad": 6.02,
+          "precio_unitario": 1,
+          "iva_porcentaje": null,
+          "total": 6.02
+        },
+        {
+          "descripcion": "NOMINA RETA",
+          "cantidad": 2,
+          "precio_unitario": 0.5,
+          "iva_porcentaje": null,
+          "total": 1
+        },
+        {
+          "descripcion": "BAJA Y EXPEDIENTE DESEMPLEO",
+          "cantidad": 128,
+          "precio_unitario": 64,
+          "iva_porcentaje": null,
+          "total": 81.92
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 34.02,
+      "total": 196.02,
+      "moneda": "EUR",
+      "forma_pago": "",
+      "cuenta_bancaria": "Banco Sabadell ES43.0081.1397.5100.0136.8340",
+      "resumen": "Factura de Torres Vicedo Gestión, S.L., fechada el 31/03/2026 para Chicken Palace Ibiza, S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076753640_Factura_A241.pdf",
+    "status": "ok",
+    "chars": 1244,
+    "pages": 1,
+    "tiempo_ms": 16920,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-04-07",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "7 BJ 3, EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL",
+        "cif_nif": "B56908486",
+        "direccion": "",
+        "email": "",
+        "telefono": ""
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "CEBOLLA",
+          "cantidad": 1,
+          "precio_unitario": 20,
+          "iva_porcentaje": null,
+          "total": 21
+        },
+        {
+          "descripcion": "CEBOLLA MORADA",
+          "cantidad": 1,
+          "precio_unitario": 90,
+          "iva_porcentaje": null,
+          "total": 99
+        },
+        {
+          "descripcion": "PATATA BLANCA",
+          "cantidad": 5.7,
+          "precio_unitario": 60,
+          "iva_porcentaje": null,
+          "total": 68.2
+        },
+        {
+          "descripcion": "CEBOLLINO MANOJO",
+          "cantidad": 1,
+          "precio_unitario": 25.2,
+          "iva_porcentaje": null,
+          "total": 26.56
+        },
+        {
+          "descripcion": "PIMIENTO ITALIANO",
+          "cantidad": 4.2016,
+          "precio_unitario": 59,
+          "iva_porcentaje": null,
+          "total": 61.84
+        },
+        {
+          "descripcion": "CEBOLLA TIERNA",
+          "cantidad": 1,
+          "precio_unitario": 50.2,
+          "iva_porcentaje": null,
+          "total": 51
+        },
+        {
+          "descripcion": "CILANTRO MANOJO",
+          "cantidad": 0.001,
+          "precio_unitario": 35.1,
+          "iva_porcentaje": null,
+          "total": 0.04
+        },
+        {
+          "descripcion": "PEREJIL MANOJO",
+          "cantidad": 2,
+          "precio_unitario": 97,
+          "iva_porcentaje": null,
+          "total": 98.4
+        },
+        {
+          "descripcion": "CHAMPIÑON S/ PIE",
+          "cantidad": 9.01,
+          "precio_unitario": 45,
+          "iva_porcentaje": null,
+          "total": 49.05
+        },
+        {
+          "descripcion": "ZANAHORIA CAT I",
+          "cantidad": 2.6,
+          "precio_unitario": 48.1,
+          "iva_porcentaje": null,
+          "total": 47.66
+        },
+        {
+          "descripcion": "ROMANA PACK",
+          "cantidad": 0.005,
+          "precio_unitario": 38.2,
+          "iva_porcentaje": null,
+          "total": 3.86
+        },
+        {
+          "descripcion": "COL CHINA",
+          "cantidad": 9.02,
+          "precio_unitario": 20,
+          "iva_porcentaje": null,
+          "total": 22
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN CAT.EXTRA",
+          "cantidad": 8.24,
+          "precio_unitario": 10,
+          "iva_porcentaje": null,
+          "total": 11.04
+        },
+        {
+          "descripcion": "CALABACIN CAT EXT",
+          "cantidad": 1,
+          "precio_unitario": 2,
+          "iva_porcentaje": null,
+          "total": 3
+        },
+        {
+          "descripcion": "TOMATE CHERRY RAMA",
+          "cantidad": 6.87,
+          "precio_unitario": 95,
+          "iva_porcentaje": null,
+          "total": 98.65
+        },
+        {
+          "descripcion": "PUERROS CAT. EXTRA",
+          "cantidad": 1,
+          "precio_unitario": 53.1,
+          "iva_porcentaje": null,
+          "total": 55.85
+        },
+        {
+          "descripcion": "ALBAHACA X KILO",
+          "cantidad": 10.2,
+          "precio_unitario": 95,
+          "iva_porcentaje": null,
+          "total": 94.5
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXT",
+          "cantidad": 9.01,
+          "precio_unitario": 99.2,
+          "iva_porcentaje": null,
+          "total": 108.19
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de suministros recibidos por Chicken Palace Ibiza SL.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076753871_Factura_A244.pdf",
+    "status": "ok",
+    "chars": 849,
+    "pages": 1,
+    "tiempo_ms": 15105,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-04-08",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL B56908486",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE BERENJENAS CAT. EXT45,5016",
+          "cantidad": 1,
+          "precio_unitario": 95007.03,
+          "iva_porcentaje": null,
+          "total": 95007.03
+        },
+        {
+          "descripcion": "PIMIENTO ROJO CAT.I.44,5016",
+          "cantidad": 2,
+          "precio_unitario": 20360,
+          "iva_porcentaje": null,
+          "total": 40720
+        },
+        {
+          "descripcion": "AJO PELADO41,005",
+          "cantidad": 1,
+          "precio_unitario": 45545,
+          "iva_porcentaje": null,
+          "total": 45545
+        },
+        {
+          "descripcion": "LIMA CAJA40,253",
+          "cantidad": 4,
+          "precio_unitario": 44130,
+          "iva_porcentaje": null,
+          "total": 176520
+        },
+        {
+          "descripcion": "LIMON41,262",
+          "cantidad": 6,
+          "precio_unitario": 46146,
+          "iva_porcentaje": null,
+          "total": 276876
+        },
+        {
+          "descripcion": "BROCOLI X KILOS42,1714",
+          "cantidad": 1,
+          "precio_unitario": 65645,
+          "iva_porcentaje": null,
+          "total": 65645
+        },
+        {
+          "descripcion": "COLIFLOR44,009",
+          "cantidad": 2,
+          "precio_unitario": 70280,
+          "iva_porcentaje": null,
+          "total": 140560
+        },
+        {
+          "descripcion": "PIMIENTO ITALIANO42,188",
+          "cantidad": 3,
+          "precio_unitario": 95006.73,
+          "iva_porcentaje": null,
+          "total": 28520.19
+        },
+        {
+          "descripcion": "CALABACIN CAT EXT44,3510",
+          "cantidad": 1,
+          "precio_unitario": 88200,
+          "iva_porcentaje": null,
+          "total": 88200
+        },
+        {
+          "descripcion": "CEBOLLA410,0010",
+          "cantidad": 2,
+          "precio_unitario": 20120,
+          "iva_porcentaje": null,
+          "total": 40240
+        },
+        {
+          "descripcion": "PATATA BLANCA430,0028",
+          "cantidad": 1,
+          "precio_unitario": 80080,
+          "iva_porcentaje": null,
+          "total": 80080
+        },
+        {
+          "descripcion": "FRESON41,004",
+          "cantidad": 9,
+          "precio_unitario": 94504.9,
+          "iva_porcentaje": null,
+          "total": 85094.5
+        },
+        {
+          "descripcion": "BANANA41,001",
+          "cantidad": 1,
+          "precio_unitario": 89189,
+          "iva_porcentaje": null,
+          "total": 89189
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 33133.34,
+      "total": 138141.34,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida por Chicken Palace Ibiza SL con varios productos de proveedores.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076754085_Factura_A245.pdf",
+    "status": "ok",
+    "chars": 872,
+    "pages": 1,
+    "tiempo_ms": 4871,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-04-09",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "7 BJ 3, EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL",
+        "cif_nif": "B56908486",
+        "direccion": "",
+        "email": "",
+        "telefono": ""
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura emitida por José Riquer a Chicken Palace Ibiza SL.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076754292_Factura_A247.pdf",
+    "status": "ok",
+    "chars": 729,
+    "pages": 1,
+    "tiempo_ms": 10604,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-04-10",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER S.L.",
+        "cif_nif": null,
+        "direccion": "7 BJ, 80300 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL B56908486",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE CEBOLLA MORADA",
+          "cantidad": 4.01,
+          "precio_unitario": 401,
+          "iva_porcentaje": null,
+          "total": 1604
+        },
+        {
+          "descripcion": "LOTE CHAMPIÑON S/ PIE",
+          "cantidad": 1,
+          "precio_unitario": 905,
+          "iva_porcentaje": null,
+          "total": 905
+        },
+        {
+          "descripcion": "LOTE TOMATE ENSALADA",
+          "cantidad": 42.28,
+          "precio_unitario": 773,
+          "iva_porcentaje": null,
+          "total": 33000.44
+        },
+        {
+          "descripcion": "MENTA/HIERBAB. MANOJO",
+          "cantidad": 0.1,
+          "precio_unitario": 351,
+          "iva_porcentaje": null,
+          "total": 35.1
+        },
+        {
+          "descripcion": "ZANAHORIA CAT I",
+          "cantidad": 7.07,
+          "precio_unitario": 741,
+          "iva_porcentaje": null,
+          "total": 51.3
+        },
+        {
+          "descripcion": "PATATA BLANCA",
+          "cantidad": 4.02,
+          "precio_unitario": 800,
+          "iva_porcentaje": null,
+          "total": 3206.4
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN CAT.EXTRA",
+          "cantidad": 0.42,
+          "precio_unitario": 611,
+          "iva_porcentaje": null,
+          "total": 256.62
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXT",
+          "cantidad": 1,
+          "precio_unitario": 502,
+          "iva_porcentaje": null,
+          "total": 502
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 90,
+      "total": 10301.05,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza SL a Jose Riquer S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776076754555_Factura_A248.pdf",
+    "status": "ok",
+    "chars": 657,
+    "pages": 1,
+    "tiempo_ms": 9425,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-04-12",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER BJ 3 S.L.",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL B56908486",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 960.09
+        },
+        {
+          "descripcion": "PATATA BLANCA430,0028",
+          "cantidad": 1,
+          "precio_unitario": 800.86,
+          "iva_porcentaje": null,
+          "total": 803.99
+        },
+        {
+          "descripcion": "PEREJIL MANOJO101,000,990",
+          "cantidad": 1,
+          "precio_unitario": 990,
+          "iva_porcentaje": null,
+          "total": 1089.9
+        },
+        {
+          "descripcion": "PIMIENTO ROYO CAT.I.44,3015,483",
+          "cantidad": 1,
+          "precio_unitario": 600.06,
+          "iva_porcentaje": null,
+          "total": 603
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXT45,0011,252",
+          "cantidad": 1,
+          "precio_unitario": 250.07,
+          "iva_porcentaje": null,
+          "total": 251.25
+        },
+        {
+          "descripcion": "CALABACIN CAT EXTRA43,258,132",
+          "cantidad": 1,
+          "precio_unitario": 500,
+          "iva_porcentaje": null,
+          "total": 515.8
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN CAT.EXTRA43,815,681",
+          "cantidad": 1,
+          "precio_unitario": 680.01,
+          "iva_porcentaje": null,
+          "total": 925.41
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 948.74,
+      "total": 1957.73,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida por Chicken Palace Ibiza SL de José Riquer BJ 3 S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093012096_Factura_A119.pdf",
+    "status": "ok",
+    "chars": 687,
+    "pages": 1,
+    "tiempo_ms": 15040,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-02-24",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER B.J.",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "B56908486 CHICKEN PALACE IBIZA SL",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 101.811
+        },
+        {
+          "descripcion": "PATATA PELADA CORT. PANADERA412,0029,402,4500884240226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 40.501,
+          "iva_porcentaje": null,
+          "total": 84.02
+        },
+        {
+          "descripcion": "LIMON43,036,001,9800430170226-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 36.0036,
+          "iva_porcentaje": null,
+          "total": 36.004
+        },
+        {
+          "descripcion": "LIMA CAJA40,5010,4820,9500432160226-03-BR",
+          "cantidad": 1,
+          "precio_unitario": 50.0104,
+          "iva_porcentaje": null,
+          "total": 100.104
+        },
+        {
+          "descripcion": "BROCOLI X KILOS41,626,083,7500751180226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 62.6083,
+          "iva_porcentaje": null,
+          "total": 62.609
+        },
+        {
+          "descripcion": "COLIFLOR41,002,452,4500854170226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.0045,
+          "iva_porcentaje": null,
+          "total": 0.005
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN CAT.EXTRA42,563,801,4850770170226-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 56.3801,
+          "iva_porcentaje": null,
+          "total": 56.381
+        },
+        {
+          "descripcion": "PATATA BLANCA430,0028,800,9600861190226-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 80.0092,
+          "iva_porcentaje": null,
+          "total": 80.01
+        },
+        {
+          "descripcion": "CEBOLLA410,009,900,9900780180226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 99.0089,
+          "iva_porcentaje": null,
+          "total": 99.009
+        },
+        {
+          "descripcion": "COLIFLOR42,004,902,4500854240226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.0902,
+          "iva_porcentaje": null,
+          "total": 0.091
+        },
+        {
+          "descripcion": "REGISTRO SANITARIO ESPAÑA 21.030136/IB C.E.E.",
+          "cantidad": 1,
+          "precio_unitario": 101.81101,
+          "iva_porcentaje": null,
+          "total": 102.822
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 7.07,
+      "total": 208.082,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida por Chicken Palace Ibiza SL de José Riquer B.J., Eivissa, con varios productos.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093012186_Factura_FMPVABJ004XXXX.pdf",
+    "status": "parse_fail",
+    "chars": 3598,
+    "pages": 3,
+    "tiempo_ms": 23425,
+    "raw_preview": "```json\n{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": \"FMPVABJ004*****260225-004-E0-032-005127\",\n  \"fecha\": \"2026-02-10\",\n  \"fecha_vencimiento\": null,\n  \"emisor\": {\n    \"nombre\": \"movistar.es/citaprevia638 10 10041004 gratuito\",\n    \"cif_nif\": null,\n    \"direccion\": null,\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"proveedor\"\n  },\n  \"receptor\": {\n    \"nombre\": \"chicken pa************* B5***8486\",\n    \"cif_nif\": null,\n    \"direccion\": \"Calle Caldet***************"
+  },
+  {
+    "file": "email_1776093012288_Factura_MMPVABJ001XXXX.pdf",
+    "status": "ok",
+    "chars": 3297,
+    "pages": 3,
+    "tiempo_ms": 8156,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "MMPVABJ001*****260225-004-E0-012-004116-000002",
+      "fecha": "2026-02-10",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "Movistar España, S.A.",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "chicken pa*************",
+        "cif_nif": null,
+        "direccion": "Calle Josep ***********************************,07800 Eivissa",
+        "email": null,
+        "telefono": null,
+        "rol": "cliente"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Cuotas mensuales18,10 €",
+          "cantidad": 19.1019
+        },
+        {
+          "descripcion": "Impuestos3,80 €",
+          "cantidad": 0.3800000038
+        },
+        {
+          "descripcion": "Base imponible18,10€",
+          "cantidad": 19.1000181
+        },
+        {
+          "descripcion": "IVA (21.00 %) sobre 18,10 €3,80€",
+          "cantidad": 0.3800000038,
+          "iva_porcentaje": 21
+        },
+        {
+          "descripcion": "Total factura21,90€",
+          "total": 19.3919
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Móvil para chicken pa************* con cuotas mensuales, impuestos y total factura.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093012675_00430_CHICKEN_PALACE_IBIZA__S.L..PDF",
+    "status": "parse_fail",
+    "chars": 43743,
+    "pages": 8,
+    "tiempo_ms": 10286,
+    "raw_preview": "```json\n{\n  \"tipo\": \"nomina\",\n  \"subtipo\": \"\",\n  \"numero_documento\": null,\n  \"fecha\": \"2026-02-26\",\n  \"fecha_vencimiento\": null,\n  \"emisor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA, S.L.\",\n    \"cif_nif\": \"B56908486\",\n    \"direccion\": \"CL JOSEP RIQUER, 7 3ª             07/1313961-46\",\n    \"email\": null,\n    \"telefono\": \"\",\n    \"rol\": \"empleador\"\n  },\n  \"receptor\": {\n    \"nombre\": \"PINO MACIAS, HUMBERTO\",\n    \"cif_nif\": \"B56908486\",\n    \"direccion\": \"430 EMPRESADOMICILIONº  INS. S.S.\",\n    \"email\": "
+  },
+  {
+    "file": "email_1776093013174_Invoice-YAGBSF1N-0001.pdf",
+    "status": "ok",
+    "chars": 498,
+    "pages": 1,
+    "tiempo_ms": 5724,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "YAGBSF1N0001",
+      "fecha": "2026-02-27",
+      "fecha_vencimiento": "2026-02-27",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, New York 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Build Plan",
+          "cantidad": 1,
+          "precio_unitario": 20,
+          "iva_porcentaje": null,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": 20,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza SL por servicios prestados a Warp, con fecha y vencimiento el 27 de febrero de 2026.",
+      "datos_extra": {},
+      "confianza": 0.9
+    }
+  },
+  {
+    "file": "email_1776093013335_Factura_A124.pdf",
+    "status": "ok",
+    "chars": 999,
+    "pages": 1,
+    "tiempo_ms": 13607,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "REGISTRO SANITARIO ESPAÑA 21.030136/IB C.E.E.",
+      "fecha": "2023-02-26",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": "07800 EIVISSA",
+        "direccion": "",
+        "email": "",
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL",
+        "cif_nif": "B56908486",
+        "direccion": "",
+        "email": "",
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 0.188
+        },
+        {
+          "descripcion": "MENTA/HIERBAB. MANOJO101,001",
+          "cantidad": 1,
+          "precio_unitario": 351
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN CAT.EXTRA42",
+          "cantidad": 1,
+          "precio_unitario": 994
+        },
+        {
+          "descripcion": "ROMANA PACK 242,005,702,8500301140226-07-ES",
+          "cantidad": 1,
+          "precio_unitario": 505.702
+        },
+        {
+          "descripcion": "CILANTRO MANOJO101,001",
+          "cantidad": 1,
+          "precio_unitario": 391
+        },
+        {
+          "descripcion": "PLATANO MACHO42",
+          "cantidad": 1,
+          "precio_unitario": 554.842
+        },
+        {
+          "descripcion": "BANANA42,454,631,8900541200226-03-CR",
+          "cantidad": 1,
+          "precio_unitario": 455.6319
+        },
+        {
+          "descripcion": "CEBOLINO MANOJO101,003",
+          "cantidad": 1,
+          "precio_unitario": 183
+        },
+        {
+          "descripcion": "CEBOLA TIERNA42,004,322,1600782240226-32-MA",
+          "cantidad": 1,
+          "precio_unitario": 422.162
+        },
+        {
+          "descripcion": "PATATA BLANCA415,0014,400,9600861190226-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 401.96
+        },
+        {
+          "descripcion": "AJO PELADO41",
+          "cantidad": 1,
+          "precio_unitario": 457
+        },
+        {
+          "descripcion": "APIO BLANCO41,001,751,7500700220126-02-MA",
+          "cantidad": 1,
+          "precio_unitario": 751.75
+        },
+        {
+          "descripcion": "PATATA PELADA CORT. PANADERA412,0029,402,4500884260226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 402.45
+        },
+        {
+          "descripcion": "CEBOLLA4-3,00-2,970,9900780230126-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 2970.99
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 80,
+      "total": 105.38,
+      "moneda": "EUR",
+      "forma_pago": "",
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida para Chicken Palace Ibiza SL por Jose Riquer, con varios conceptos de productos.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093013535_Factura_A121.pdf",
+    "status": "parse_fail",
+    "chars": 752,
+    "pages": 1,
+    "tiempo_ms": 15746,
+    "raw_preview": "```json\n{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": null,\n  \"fecha\": \"2026-02-25\",\n  \"fecha_vencimiento\": null,\n  \"emisor\": {\n    \"nombre\": \"JOSE RIQUER\",\n    \"cif_nif\": null,\n    \"direccion\": \"7 BJ 3, 07800 EIVISSA\",\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"proveedor\"\n  },\n  \"receptor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA SL B56908486\",\n    \"cif_nif\": null,\n    \"direccion\": null,\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"empresa\"\n  },\n  \"traba"
+  },
+  {
+    "file": "email_1776093013742_Factura_A131.pdf",
+    "status": "ok",
+    "chars": 1066,
+    "pages": 1,
+    "tiempo_ms": 5242,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "",
+      "fecha": "2023-02-28",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": "07800 EIVISSA",
+        "direccion": "7 BJ 3, 14120 Eivissa (Almería)",
+        "email": "",
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 126
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 89.8,
+      "total": 194.07,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de productos recibidos del proveedor José Riquer.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093014690_Invoice-YAGBSF1N-0002.pdf",
+    "status": "ok",
+    "chars": 486,
+    "pages": 1,
+    "tiempo_ms": 5787,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "YAGBSF1N0002",
+      "fecha": "2026-02-28",
+      "fecha_vencimiento": "2026-02-28",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, New York 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL",
+        "cif_nif": "ES VATESB56908486",
+        "direccion": "",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 0,
+          "total": 20000
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 0,
+      "total": 20000,
+      "moneda": "USD",
+      "forma_pago": "",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza SL por Add-on Credits1 (1000 unidades) a Warp, con fecha y vencimiento el 28 de febrero de 2026.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093015077_F2600203_CHICKEN_PALACE_.pdf",
+    "status": "ok",
+    "chars": 740,
+    "pages": 1,
+    "tiempo_ms": 11165,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "NúmeroF26 00203",
+      "fecha": "2026-02-28",
+      "fecha_vencimiento": "10-03-2026",
+      "emisor": {
+        "nombre": "DAVID ROLDÁN HUESO",
+        "cif_nif": null,
+        "direccion": null,
+        "email": "santagula.ibz@gmail.com",
+        "telefono": "+34668563756",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "02-021134.60134.60",
+          "cantidad": 1,
+          "precio_unitario": 21.5,
+          "iva_porcentaje": 10,
+          "total": 23.65
+        },
+        {
+          "descripcion": "05-02168.4068.40",
+          "cantidad": 1,
+          "precio_unitario": 20.8,
+          "iva_porcentaje": 10,
+          "total": 22.88
+        },
+        {
+          "descripcion": "06-02164.0064.00",
+          "cantidad": 1,
+          "precio_unitario": 6.4,
+          "iva_porcentaje": 10,
+          "total": 7.04
+        },
+        {
+          "descripcion": "09-021116.00116.00",
+          "cantidad": 1,
+          "precio_unitario": 11.6,
+          "iva_porcentaje": 10,
+          "total": 12.76
+        },
+        {
+          "descripcion": "12-021136.00136.00",
+          "cantidad": 1,
+          "precio_unitario": 13.6,
+          "iva_porcentaje": 10,
+          "total": 14.96
+        },
+        {
+          "descripcion": "16-021108.00108.00",
+          "cantidad": 1,
+          "precio_unitario": 8.8,
+          "iva_porcentaje": 10,
+          "total": 9.68
+        },
+        {
+          "descripcion": "19-02167.6067.60",
+          "cantidad": 1,
+          "precio_unitario": 26.66,
+          "iva_porcentaje": 10,
+          "total": 29.32
+        },
+        {
+          "descripcion": "26-021186.00186.00",
+          "cantidad": 1,
+          "precio_unitario": 18.6,
+          "iva_porcentaje": 10,
+          "total": 20.46
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 88.06,
+      "total": 968.66,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": "CAIXABANK ES46 2100 3334 2622 0006 6964",
+      "resumen": "Factura generada desde facturadirecta.com.",
+      "datos_extra": {
+        "RGSEAA 20.049455/IB": null,
+        "RGSEAA 26.026029/IB": null
+      }
+    }
+  },
+  {
+    "file": "email_1776093015281_A-V2026-00001000249.pdf",
+    "status": "parse_fail",
+    "chars": 14839,
+    "pages": 6,
+    "tiempo_ms": 14598,
+    "raw_preview": "{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": \"A-V2026-00001000249\",\n  \"fecha\": \"2026-02-28\",\n  \"fecha_vencimiento\": \"2026-05-29\",\n  \"emisor\": {\n    \"nombre\": \"MERCADONA S.A.\",\n    \"cif_nif\": \"B56908486\",\n    \"direccion\": \"C/ Alfonso Roig, s/n. Albalat dels Sorells, 46135 Valencia\",\n    \"email\": \"\",\n    \"telefono\": \"\"\n  },\n  \"receptor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA, SL.\",\n    \"cif_nif\": \"\",\n    \"direccion\": \"CALLE JOSEP RIQUER LLOBET, 7 LOCAL 3, EIVISSA (07800-I"
+  },
+  {
+    "file": "email_1776093015445_5502558821.pdf",
+    "status": "ok",
+    "chars": 1357,
+    "pages": 2,
+    "tiempo_ms": 7264,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "5502558821",
+      "fecha": "2026-02-28",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "Google Cloud EMEA Limited",
+        "cif_nif": null,
+        "direccion": "Clanwilliam Place, Dublin 2",
+        "email": "",
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "Chicken Palace Ibiza SL",
+        "cif_nif": null,
+        "direccion": "José Riquer, 7 bajo 3, 07800 Eivissa",
+        "email": "",
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Google Workspace Business StarterUtilización",
+          "cantidad": 1,
+          "precio_unitario": 8.1,
+          "iva_porcentaje": 0,
+          "total": 8.1
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": 8.1,
+      "moneda": "EUR",
+      "forma_pago": "",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Google Workspace Business StarterUtilización para Chicken Palace Ibiza SL, fechada el 28 feb 2026.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093015751_FAFP-2314189.pdf",
+    "status": "parse_fail",
+    "chars": 3216,
+    "pages": 2,
+    "tiempo_ms": 7743,
+    "raw_preview": "```json\n{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": \"FP-2314189\",\n  \"fecha\": \"2026-03-01\",\n  \"fecha_vencimiento\": \"2026-04-02\",\n  \"emisor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA S.L.\",\n    \"cif_nif\": null,\n    \"direccion\": \"07800 EIVISSA, Afiliado\",\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"proveedor\"\n  },\n  \"receptor\": {\n    \"nombre\": \"EDENRED\",\n    \"cif_nif\": null,\n    \"direccion\": null,\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"cliente\"\n  },\n  "
+  },
+  {
+    "file": "email_1776093016151_Factura_A143.pdf",
+    "status": "ok",
+    "chars": 559,
+    "pages": 1,
+    "tiempo_ms": 11302,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-07",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 50.875
+        },
+        {
+          "descripcion": "CALABACIN CAT. EXT44,428,351,8900760240226-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 42.85
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXT45,1011,482,2500730260226-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 10.11
+        },
+        {
+          "descripcion": "LIMA CAJA40,253,7414,9500432160226-03-BR",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 25.37
+        },
+        {
+          "descripcion": "LIMON40,901,781,9800430200226-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 9.01
+        },
+        {
+          "descripcion": "PATATA BLANCA415,0014,400,9600861190226-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 40
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN CAT.EXTRA48,0011,121,3900770240226-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.11,
+          "iva_porcentaje": null,
+          "total": 0.12
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 87.9,
+      "total": 138.85,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de productos recibidos por Chicken Palace Ibiza SL a José Riquer en Eivissa, fecha 03/07/2023.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093016344_Factura_A146.pdf",
+    "status": "ok",
+    "chars": 734,
+    "pages": 1,
+    "tiempo_ms": 14444,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-04-03",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BERENJENAS CAT. EXT43,958,892,2500730260226-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "CALABACIN CAT EXT43,356,631,9800760240226-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "PEREJIL MANOJO101,000,950,9500210270226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "CILANTRO MANOJO101,001,251,2500110040326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "SHITAKE41,3012,949,95001141230226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "PIMIENTO ROJO CAT.I.43,1010,083,2500680260226-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "PIMIENTO ITALIANO41,986,833,4500670240226-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "PATATA BLANCA415,0014,400,9600861190226-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "PATATA PELADA CORT. PANADERA412,0029,402,4500884040326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "REGISTRO SANITARIO ESPAÑA 21.030136/IB C.E.E.",
+          "cantidad": 1,
+          "precio_unitario": 89.1789,
+          "iva_porcentaje": null,
+          "total": 0
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de proveedores recibida por Chicken Palace Ibiza, S.L. el 03/04/2023.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093016382_FACTURADEVENTA_CM6_217B.pdf",
+    "status": "parse_fail",
+    "chars": 1902,
+    "pages": 1,
+    "tiempo_ms": 23920,
+    "raw_preview": "```json\n{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": null,\n  \"fecha\": \"2023-02-28\",\n  \"fecha_vencimiento\": null,\n  \"emisor\": {\n    \"nombre\": \"DISTRIBUTIONES PINEDA MONTIEL, S.L.\",\n    \"cif_nif\": \"CÓD. TRANSPORTE: 7\",\n    \"direccion\": \"C/ Pou de Na Maciana, 14-16 · Pol. Ind. Montecristo, 07816 Sant Rafel de Sa Creu · Ibiza · España\",\n    \"email\": \"info@distribucionesmontiel.com\",\n    \"telefono\": \"(+34) 971 39 65 10\",\n    \"rol\": \"proveedor\"\n  },\n  \"receptor\": {\n    \"nombr"
+  },
+  {
+    "file": "email_1776093016787_Invoice-YAGBSF1N-0003.pdf",
+    "status": "ok",
+    "chars": 474,
+    "pages": 1,
+    "tiempo_ms": 5886,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0003",
+      "fecha": "2026-03-04",
+      "fecha_vencimiento": "2026-03-04",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%. Total: $24.00 USD.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093016962_Factura_A147.pdf",
+    "status": "ok",
+    "chars": 340,
+    "pages": 1,
+    "tiempo_ms": 6563,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "07800 EIVISSA",
+      "fecha": "2023-03-05",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "REGISTRO SANITARIO ESPAÑA S.L.",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE PELADA CORT. PANADERA49,0022,052",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 45.08
+        },
+        {
+          "descripcion": "PATATA REGISTRO SANITARIO ESPAÑA C.E.E.",
+          "cantidad": 2,
+          "precio_unitario": 1.03,
+          "iva_porcentaje": null,
+          "total": 0.21
+        }
+      ],
+      "base_imponible": 45.08,
+      "iva_total": 22.93,
+      "total": 68.01,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de REGISTRO SANITARIO ESPAÑA S.L. para Chicken Palace Ibiza SL con LOTE PELADA CORT. PANADERA y PATATA REGISTRO SANITARIO.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093017387_Factura_A152.pdf",
+    "status": "ok",
+    "chars": 605,
+    "pages": 1,
+    "tiempo_ms": 9726,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-06",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER B & C S.L.",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 0.8,
+          "iva_porcentaje": null,
+          "total": 0.96
+        },
+        {
+          "descripcion": "PATATA BLANCA",
+          "cantidad": 430,
+          "precio_unitario": 2.5,
+          "iva_porcentaje": null,
+          "total": 1.075
+        },
+        {
+          "descripcion": "CEBOLLA MORADA",
+          "cantidad": 410,
+          "precio_unitario": 0.9,
+          "iva_porcentaje": null,
+          "total": 0.369
+        },
+        {
+          "descripcion": "PIMIENTO ROJO CAT.I.44",
+          "cantidad": 11,
+          "precio_unitario": 3.33,
+          "iva_porcentaje": null,
+          "total": 0.36667
+        },
+        {
+          "descripcion": "AJO PELADO41",
+          "cantidad": 7,
+          "precio_unitario": 4.57,
+          "iva_porcentaje": null,
+          "total": 0.32003
+        },
+        {
+          "descripcion": "CEBOLLA TIERNA42",
+          "cantidad": 402,
+          "precio_unitario": 1.3,
+          "iva_porcentaje": null,
+          "total": 0.01302
+        },
+        {
+          "descripcion": "ZANAHORIA CAT I45",
+          "cantidad": 5,
+          "precio_unitario": 2.71,
+          "iva_porcentaje": null,
+          "total": 0.01355
+        },
+        {
+          "descripcion": "CHAMPIÑON S/ PIE42",
+          "cantidad": 5213,
+          "precio_unitario": 7.35,
+          "iva_porcentaje": null,
+          "total": 38.00005
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 0.4844,
+      "total": 87.86,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de productos recibidos por Chicken Palace IBIZA, S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093017828_FINIQUITO_HUMBERTO.pdf",
+    "status": "ok",
+    "chars": 17396,
+    "pages": 5,
+    "tiempo_ms": 7462,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-06",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSEP RIQUER                  7 Localidad: IBIZA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "PINO MACIAS, HUMBERTO N.I.F.: Y9492798E",
+        "cif_nif": null,
+        "direccion": "SAN AGUSTIN EL RUEDO          14 Localidad: SANT JOSEP DE SA TAL",
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": {
+        "nombre_completo": null
+      },
+      "conceptos": [
+        {
+          "descripcion": "Contingencias comunes",
+          "cantidad": 1,
+          "precio_unitario": 0.75,
+          "iva_porcentaje": null,
+          "total": 2.78
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": 347.23,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Liquidación y finiquito para el despido del trabajador HUMBERTO PINO MACIAS, con contingencias comunes.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093018157_Factura_A154.pdf",
+    "status": "parse_fail",
+    "chars": 632,
+    "pages": 1,
+    "tiempo_ms": 9368,
+    "raw_preview": "```json\n{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": null,\n  \"fecha\": \"2023-03-26\",\n  \"fecha_vencimiento\": null,\n  \"emisor\": {\n    \"nombre\": \"JOSE RIQUER\",\n    \"cif_nif\": null,\n    \"direccion\": \"07800 EIVISSA\",\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"proveedor\"\n  },\n  \"receptor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA, S.L.\",\n    \"cif_nif\": \"B56908486\",\n    \"direccion\": null,\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"empresa\"\n  },\n  \"trabajador\": "
+  },
+  {
+    "file": "email_1776093018362_Factura_A155.pdf",
+    "status": "ok",
+    "chars": 341,
+    "pages": 1,
+    "tiempo_ms": 5222,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "REGISTRO SANITARIO ESPAÑA 21.030136/IB C.E.E.",
+      "fecha": "2023-03-07",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER 7 BJ 3",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL",
+        "cif_nif": "B56908486",
+        "direccion": "",
+        "email": "",
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE PELADA CORT. PANADERA",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": 4.04,
+          "total": 30.58
+        }
+      ],
+      "base_imponible": 29.5,
+      "iva_total": 2.08,
+      "total": 31.68,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Lote Pelada Corto Panadería para Chicken Palace Ibiza SL.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093018717_Invoice-YAGBSF1N-0004.pdf",
+    "status": "ok",
+    "chars": 474,
+    "pages": 1,
+    "tiempo_ms": 5758,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0004",
+      "fecha": "2026-03-09",
+      "fecha_vencimiento": "2026-03-09",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%. Total: $24.00 USD.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093019302_CHICKEN_PALACE_IBIZA__S.L..pdf",
+    "status": "ok",
+    "chars": 1633,
+    "pages": 1,
+    "tiempo_ms": 6881,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-02-27",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "TORRES VICEDO GESTION, S.L.",
+        "cif_nif": "B16606279",
+        "direccion": "Av. España, 59, 1º. 10ª.",
+        "email": "",
+        "telefono": "971.394292430",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "C/ JOSE RIQUER LLOBET, 7. BJ.",
+        "email": "",
+        "telefono": ""
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "HONORARIOS SEG.SOCIAL",
+          "cantidad": 1,
+          "precio_unitario": 601,
+          "iva_porcentaje": null,
+          "total": 601
+        },
+        {
+          "descripcion": "NOMINA RETA",
+          "cantidad": 2,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 2
+        }
+      ],
+      "base_imponible": 603,
+      "iva_total": 28.14,
+      "total": 631.14,
+      "moneda": "EUR",
+      "forma_pago": "",
+      "cuenta_bancaria": "Banco Sabadell ES43.0081.1397.5100.0136.8340",
+      "resumen": "Factura de TORRES VICEDO GESTIÓN, S.L. a CHICKEN PALACE IBIZA, S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093019669_Factura_A159.pdf",
+    "status": "parse_fail",
+    "chars": 648,
+    "pages": 1,
+    "tiempo_ms": 11080,
+    "raw_preview": "```json\n{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": null,\n  \"fecha\": \"2023-03-09\",\n  \"fecha_vencimiento\": null,\n  \"emisor\": {\n    \"nombre\": \"JOSE RIQUER\",\n    \"cif_nif\": null,\n    \"direccion\": \"07800 EIVISSA\",\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"proveedor\"\n  },\n  \"receptor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA, S.L.\",\n    \"cif_nif\": \"B56908486\",\n    \"direccion\": null,\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"empresa\"\n  },\n  \"trabajador\": "
+  },
+  {
+    "file": "email_1776093019802_Factura_A162.pdf",
+    "status": "ok",
+    "chars": 589,
+    "pages": 1,
+    "tiempo_ms": 7989,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-10",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "BERENJENAS CAT. EXT44,0811,902,9160730090326-03-ES",
+          "cantidad": 126
+        },
+        {
+          "descripcion": "CEBOLLA410,009,900,9900780040326-15-ES",
+          "cantidad": 9
+        },
+        {
+          "descripcion": "PATATA BLANCA415,0014,400,9600861040326-15-ES",
+          "cantidad": 14.5
+        },
+        {
+          "descripcion": "ALBAHACA X KILO100,132,7321,0000102060326-02-ES",
+          "cantidad": 0.13
+        },
+        {
+          "descripcion": "CEBOLLINO MANOJO101,002,252,2500130060326-02-ES",
+          "cantidad": 2.25
+        },
+        {
+          "descripcion": "PATATA PELADA CORT. PANADERA412,0029,402,4500884100326-03-ES",
+          "cantidad": 4.04
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 62,
+      "total": 73.7,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida por Chicken Palace IBIZA, S.L. de José Riquer en Eivissa el 10/03/2023.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093020002_Factura_A165.pdf",
+    "status": "ok",
+    "chars": 990,
+    "pages": 1,
+    "tiempo_ms": 19492,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-26",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE MANOJO102,001,900,9500210160226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": null,
+          "total": 0.95
+        },
+        {
+          "descripcion": "PATATA BLANCA430,0028,800,9600861040326-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.8,
+          "iva_porcentaje": null,
+          "total": 0.8
+        },
+        {
+          "descripcion": "CEBOLLA410,009,900,9900780260226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.99,
+          "iva_porcentaje": null,
+          "total": 0.99
+        },
+        {
+          "descripcion": "BROCOLI X KILOS41,395,073,6500751100326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.73,
+          "iva_porcentaje": null,
+          "total": 0.73
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN CAT.EXTRA45,307,691,4500770060326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 3.07,
+          "iva_porcentaje": null,
+          "total": 3.07
+        },
+        {
+          "descripcion": "COLIFLOR42,004,102,0500854260226-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.1,
+          "iva_porcentaje": null,
+          "total": 0.1
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXT45,4315,482,8500730030326-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 4.83,
+          "iva_porcentaje": null,
+          "total": 4.83
+        },
+        {
+          "descripcion": "PIMIENTO ROJO CAT.I.44,0514,183,5000680030326-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.51,
+          "iva_porcentaje": null,
+          "total": 0.51
+        },
+        {
+          "descripcion": "CEBOLLA TIERNA42,004,102,0500782070226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.1,
+          "iva_porcentaje": null,
+          "total": 0.1
+        },
+        {
+          "descripcion": "PUERROS CAT. EXTRA42,555,742,2500290060326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 5.55,
+          "iva_porcentaje": null,
+          "total": 5.55
+        },
+        {
+          "descripcion": "ROMANA PACK 242,005,002,5000301060326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "COL CHINA42,656,632,5000853260226-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 6.56,
+          "iva_porcentaje": null,
+          "total": 6.56
+        },
+        {
+          "descripcion": "LIMA CAJA40,507,4814,9500432260226-02-BR",
+          "cantidad": 1,
+          "precio_unitario": 0.5,
+          "iva_porcentaje": null,
+          "total": 0.5
+        },
+        {
+          "descripcion": "PATATA PELADA CORT. PANADERA412,0029,402,4500884120326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 4.02,
+          "iva_porcentaje": null,
+          "total": 4.02
+        },
+        {
+          "descripcion": "REGISTRO SANITARIO ESPAÑA 21.030136/IB C.E.E.",
+          "cantidad": 1,
+          "precio_unitario": 0.03,
+          "iva_porcentaje": null,
+          "total": 0.03
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": 149.72,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de compra en Chicken Palace Ibiza, S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093020452_FINIQUITO_HUMBERTO_RECTIFICADO.pdf",
+    "status": "ok",
+    "chars": 17501,
+    "pages": 5,
+    "tiempo_ms": 6675,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-06",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "JOSEP RIQUER                  7 Localidad: IBIZA",
+        "email": "",
+        "telefono": ""
+      },
+      "receptor": {
+        "nombre": null,
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 347.23
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": 347.23,
+      "moneda": "EUR",
+      "forma_pago": "",
+      "cuenta_bancaria": null,
+      "resumen": "Certificado de empresa que detalla la liquidación y pago a percibir por el despido del trabajador PINO MACIAS, HUMBERTO.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093020707_Invoice-YAGBSF1N-0005.pdf",
+    "status": "ok",
+    "chars": 477,
+    "pages": 1,
+    "tiempo_ms": 5765,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0005",
+      "fecha": "2026-03-13",
+      "fecha_vencimiento": "2026-03-13",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%. Total: $24.00 USD.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093021095_Invoice-YAGBSF1N-0006.pdf",
+    "status": "ok",
+    "chars": 477,
+    "pages": 1,
+    "tiempo_ms": 5775,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0006",
+      "fecha": "2026-03-15",
+      "fecha_vencimiento": "2026-03-15",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%. Total: $24.00 USD.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093021496_chicken_palace__sl.pdf",
+    "status": "ok",
+    "chars": 1680,
+    "pages": 1,
+    "tiempo_ms": 7296,
+    "analisis": {
+      "tipo": "certificado",
+      "subtipo": null,
+      "numero_documento": "Certificado de Retenciones e ingresos a Cuenta del Impuesto sobre la Renta de las Personas Físicas y del Impuesto sobre Sociedades (artículo 108.3 del Reglamento del I.R.P.F. y 68.3 del reglamento sobre Sociedades)",
+      "fecha": "2026-03-16",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "TORRES PLANELLS MARIA NIEVES",
+        "cif_nif": "41441810L",
+        "direccion": "Calle/Plaza/A vda. Nombre de la vía pública Número Esc.Piso Prta. Teléfono",
+        "email": null,
+        "telefono": "617531204-CL-JOSE RIQUER 7",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Importe íntegro",
+          "cantidad": 3357.96
+        },
+        {
+          "descripcion": "Retenciones",
+          "cantidad": 17673.6
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Certificado de Retenciones e ingresos a cuenta del Impuesto sobre la Renta de las Personas Físicas y del Impuesto sobre Sociedades (artículo 108.3 del Reglamento del I.R.P.F. y 68.3 del reglamento sobre Sociedades) presentado el 2026-03-16",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093021620_Invoice-YAGBSF1N-0007.pdf",
+    "status": "ok",
+    "chars": 477,
+    "pages": 1,
+    "tiempo_ms": 5778,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0007",
+      "fecha": "2026-03-17",
+      "fecha_vencimiento": "2026-03-17",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%. Total: $24.00 USD.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093022039_FINIQUITO_HUMBERTO_RECTIFICADO_260317_144244.pdf",
+    "status": "parse_fail",
+    "chars": 17469,
+    "pages": 5,
+    "tiempo_ms": 9068,
+    "raw_preview": "```json\n{\n  \"tipo\": \"factura_recibida\",\n  \"subtipo\": \"\",\n  \"numero_documento\": null,\n  \"fecha\": \"2026-03-06\",\n  \"fecha_vencimiento\": null,\n  \"emisor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA, S.L.\",\n    \"cif_nif\": \"B56908486\",\n    \"direccion\": \"JOSEP RIQUER                  7 Localidad: IBIZA\",\n    \"email\": null,\n    \"telefono\": null,\n    \"rol\": \"proveedor\"\n  },\n  \"receptor\": {\n    \"nombre\": \"PINO MACIAS, HUMBERTO N.I.F.: Y9492798E\",\n    \"cif_nif\": null,\n    \"direccion\": \"SAN AGUSTIN EL RUEDO     "
+  },
+  {
+    "file": "email_1776093022246_Factura_A170.pdf",
+    "status": "ok",
+    "chars": 903,
+    "pages": 1,
+    "tiempo_ms": 18198,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-26",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER, S.L.",
+        "cif_nif": "07800 EIVISSA",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE AJO PELADO41,006,956,9500713140326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.00001,
+          "iva_porcentaje": null,
+          "total": 0.000001
+        },
+        {
+          "descripcion": "PEREJIL MANOJO101,000,900,9000210040326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "CEBOLLA MORADA410,0011,901,1900781100326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "CEBOLLA420,0019,800,9900780050326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "PATATA BLANCA445,0043,200,9600861040326-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "ZANAHORIA CAT I45,007,501,5000660120226-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "CHAMPIÑON S/ PIE41,508,035,3500810100326-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "CALABACIN CAT. EXT44,9513,632,7540730060326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXT44,9513,632,7540730060326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "COLIFLOR42,004,102,0500854140326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "BROCOLI X KILOS41,716,243,6500751100326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "TOMATE CANARIO44,289,192,1465910090326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        },
+        {
+          "descripcion": "PATATA PELADA CORT. PANADERA412,0029,402,4500884140326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0.01,
+          "iva_porcentaje": null,
+          "total": 0.01
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de proveedores recibida por Chicken Palace Ibiza SL para la fecha 26/03/2023.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093022442_Factura_A177.pdf",
+    "status": "ok",
+    "chars": 906,
+    "pages": 1,
+    "tiempo_ms": 17491,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-16",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 0.5,
+          "iva_porcentaje": 4,
+          "total": 1.54
+        },
+        {
+          "descripcion": "PIMIENTO ROJO CAT.I.45,0017,503",
+          "cantidad": 500.0680130326,
+          "precio_unitario": 2,
+          "iva_porcentaje": null,
+          "total": 1000.136026
+        },
+        {
+          "descripcion": "PATATA BLANCA430,0028,800",
+          "cantidad": 1,
+          "precio_unitario": 3,
+          "iva_porcentaje": null,
+          "total": 4.8
+        },
+        {
+          "descripcion": "CEBOLLA410,009,900",
+          "cantidad": 1,
+          "precio_unitario": 9.9,
+          "iva_porcentaje": null,
+          "total": 19.89
+        },
+        {
+          "descripcion": "PIMIENTO ITALIANO44,0514,383",
+          "cantidad": 550.0670100326,
+          "precio_unitario": 1,
+          "iva_porcentaje": null,
+          "total": 551.67
+        },
+        {
+          "descripcion": "CALABACIN CAT. EXT44,3212,312",
+          "cantidad": 850.0760060326,
+          "precio_unitario": 0.5,
+          "iva_porcentaje": null,
+          "total": 425.38
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXT45,5216,282",
+          "cantidad": 950.0730060326,
+          "precio_unitario": 1,
+          "iva_porcentaje": null,
+          "total": 951.73
+        },
+        {
+          "descripcion": "ZANAHORIA CAT I45,005,451",
+          "cantidad": 900.0660130326,
+          "precio_unitario": 0.5,
+          "iva_porcentaje": null,
+          "total": 450.33
+        },
+        {
+          "descripcion": "CILANTRO MANOJO101,001,151",
+          "cantidad": 1501.0040326,
+          "precio_unitario": 4,
+          "iva_porcentaje": null,
+          "total": 600.04
+        },
+        {
+          "descripcion": "MENTA/HIERBAB. MANOJO101,001,401",
+          "cantidad": 400.0120130326,
+          "precio_unitario": 1,
+          "iva_porcentaje": null,
+          "total": 400.01
+        },
+        {
+          "descripcion": "ALBAHACA X KILO100,132,7220",
+          "cantidad": 950.0102130326,
+          "precio_unitario": 2,
+          "iva_porcentaje": null,
+          "total": 1900.02
+        },
+        {
+          "descripcion": "BROCOLI X KILOS40,862,803",
+          "cantidad": 250.0751110326,
+          "precio_unitario": 1.5,
+          "iva_porcentaje": null,
+          "total": 375.13
+        },
+        {
+          "descripcion": "COLIFLOR42,006,483",
+          "cantidad": 240.0854130326,
+          "precio_unitario": 0.75,
+          "iva_porcentaje": null,
+          "total": 180.32
+        },
+        {
+          "descripcion": "APIO BLANCO41,001,771",
+          "cantidad": 7685700090326,
+          "precio_unitario": 1,
+          "iva_porcentaje": null,
+          "total": 7685.7
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 63,
+      "total": 1267.1,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de compra en Chicken Palace Ibiza para el día 16/03/2023.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093022641_Factura_A180.pdf",
+    "status": "ok",
+    "chars": 341,
+    "pages": 1,
+    "tiempo_ms": 5431,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "REGISTRO SANITARIO ESPAÑA 21.030136/IB C.E.E.",
+      "fecha": "2023-03-17",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER 7 BJ 3",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA SL",
+        "cif_nif": "B56908486",
+        "direccion": "",
+        "email": "",
+        "telefono": "",
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE PELADA CORT. PANADERA",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": 4.04,
+          "total": 30.58
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 2.18,
+      "total": 32.76,
+      "moneda": "EUR",
+      "forma_pago": "",
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Jose Riquer 7 BJ 3 para Chicken Palace Ibiza SL por Lote Pelada Corto Panadera.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093022851_Factura_A181.pdf",
+    "status": "ok",
+    "chars": 983,
+    "pages": 1,
+    "tiempo_ms": 16162,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-18",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1.28
+        },
+        {
+          "descripcion": "CEBOLLA MORADA410,0011,901,1900781130326-03-ES",
+          "cantidad": 0.9,
+          "precio_unitario": 9,
+          "iva_porcentaje": null,
+          "total": 8.1
+        },
+        {
+          "descripcion": "CEBOLLA TIERNA42,004,102,0500782120326-03-ES",
+          "cantidad": 0.2,
+          "precio_unitario": 1,
+          "iva_porcentaje": null,
+          "total": 0.2
+        },
+        {
+          "descripcion": "CILANTRO MANOJO101,001,151,1500110160326-03-ES",
+          "cantidad": 0.15,
+          "precio_unitario": 1.5,
+          "iva_porcentaje": null,
+          "total": 0.18
+        },
+        {
+          "descripcion": "PEREJIL MANOJO101,001,541,5400210140326-03-CR",
+          "cantidad": 0.54,
+          "precio_unitario": 5.4,
+          "iva_porcentaje": null,
+          "total": 2.91
+        },
+        {
+          "descripcion": "CALABACIN CAT. EXTRA42,7213,452,8500760130326-02-ES",
+          "cantidad": 0.72,
+          "precio_unitario": 4.52,
+          "iva_porcentaje": null,
+          "total": 1.99
+        },
+        {
+          "descripcion": "LIMA CAJA40,253,7414,9500432130326-02-BR",
+          "cantidad": 0.25,
+          "precio_unitario": 7.41,
+          "iva_porcentaje": null,
+          "total": 1.85
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXTRA45,1015,052,9500730100326-32-ES",
+          "cantidad": 0.1,
+          "precio_unitario": 9.5,
+          "iva_porcentaje": null,
+          "total": 1
+        },
+        {
+          "descripcion": "ROMANA PACK 242,005,002,5000301130326-02-ES",
+          "cantidad": 0.2,
+          "precio_unitario": 5,
+          "iva_porcentaje": null,
+          "total": 1.1
+        },
+        {
+          "descripcion": "BROCOLI X KILOS41,785,793,2500751160326-03-ES",
+          "cantidad": 0.78,
+          "precio_unitario": 7.85,
+          "iva_porcentaje": null,
+          "total": 1
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN CAT.EXTRA42,804,061,4500770100326-32-ES",
+          "cantidad": 0.8,
+          "precio_unitario": 8.06,
+          "iva_porcentaje": null,
+          "total": 1.05
+        },
+        {
+          "descripcion": "REGISTRO SANITARIO ESPAÑA 21.030136/IB C.E.E.",
+          "cantidad": 0.03,
+          "precio_unitario": 30.01,
+          "iva_porcentaje": null,
+          "total": 1
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 14.85,
+      "total": 136.69,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de proveedores para Chicken Palace Ibiza, S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093023131_Invoice-YAGBSF1N-0008.pdf",
+    "status": "ok",
+    "chars": 477,
+    "pages": 1,
+    "tiempo_ms": 5719,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0008",
+      "fecha": "2026-03-18",
+      "fecha_vencimiento": "2026-03-18",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093024121_Invoice-YAGBSF1N-0009.pdf",
+    "status": "ok",
+    "chars": 477,
+    "pages": 1,
+    "tiempo_ms": 5776,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0009",
+      "fecha": "2026-03-23",
+      "fecha_vencimiento": "2026-03-23",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%. Total: $24.00 USD.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093024362_Factura_A183.pdf",
+    "status": "ok",
+    "chars": 341,
+    "pages": 1,
+    "tiempo_ms": 5059,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "REGISTRO SANITARIO ESPAÑA 21.030136/IB C.E.E.",
+      "fecha": "2023-03-26",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER 7 BJ 3",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": "",
+        "telefono": "",
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": "",
+        "telefono": ""
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 29,
+          "iva_porcentaje": 4,
+          "total": 30.58
+        }
+      ],
+      "base_imponible": 29,
+      "iva_total": 2.58,
+      "total": 32.16,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Lote Patata Pelada Cortada para Chicken Palace Ibiza, S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093024639_Factura_A185.pdf",
+    "status": "ok",
+    "chars": 720,
+    "pages": 1,
+    "tiempo_ms": 11899,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-20",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 93,
+          "iva_porcentaje": 0.4,
+          "total": 94.3
+        },
+        {
+          "descripcion": "PIMENTON ROJO CAT.I.43,1210,763,4500680130326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 10,
+          "iva_porcentaje": null,
+          "total": 10
+        },
+        {
+          "descripcion": "CALABACIN CAT.EXTRA43,324,951,4900770170326-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 95.01,
+          "iva_porcentaje": null,
+          "total": 100.51
+        },
+        {
+          "descripcion": "PIMIENTO ROJO CAT.I.43,1210,763,4500680130326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 12.1,
+          "iva_porcentaje": null,
+          "total": 12.1
+        },
+        {
+          "descripcion": "BROCOLI X KILOS41,665,403,2500751110326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 66.55,
+          "iva_porcentaje": null,
+          "total": 66.55
+        },
+        {
+          "descripcion": "COLIFLOR43,008,072,6900854170326-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 0
+        },
+        {
+          "descripcion": "CEBOLLA410,009,900,9900780140326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 9.9,
+          "iva_porcentaje": null,
+          "total": 9.9
+        },
+        {
+          "descripcion": "PATATA BLANCA430,0028,800,9600861160326-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 2.8,
+          "iva_porcentaje": null,
+          "total": 2.8
+        }
+      ],
+      "base_imponible": 93,
+      "iva_total": 0.4,
+      "total": 94.3,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de proveedores para Chicken Palace Ibiza, S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093024757_Factura_A188.pdf",
+    "status": "ok",
+    "chars": 1108,
+    "pages": 1,
+    "tiempo_ms": 22239,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-26",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 126
+        },
+        {
+          "descripcion": "CALABAZA VIOLIN CAT.EXTRA47,3911,011,4900770190326-02-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 11.9,
+          "iva_porcentaje": null,
+          "total": 7
+        },
+        {
+          "descripcion": "CALABACIN CAT EXT42,005,502,7500760170326-32-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 50.2,
+          "iva_porcentaje": null,
+          "total": 25
+        },
+        {
+          "descripcion": "SHITAKE43,0021,94259,75001141130326-02-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 9.4259,
+          "iva_porcentaje": null,
+          "total": 4
+        },
+        {
+          "descripcion": "TOMATE CANARIO43,038,032,6500910170326-32-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 38.03,
+          "iva_porcentaje": null,
+          "total": 19
+        },
+        {
+          "descripcion": "TOMATE CHERRY RAMA41,047,757,4500942170326-32-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 47.75,
+          "iva_porcentaje": null,
+          "total": 23
+        },
+        {
+          "descripcion": "PEREJIL MANOJO102,001,800,9000210190326-03-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 8,
+          "iva_porcentaje": null,
+          "total": 4
+        },
+        {
+          "descripcion": "ALBAHACA X KILO100,102,1020,9500102170326-32-ES",
+          "cantidad": 1.5,
+          "precio_unitario": 10.2,
+          "iva_porcentaje": null,
+          "total": 15
+        },
+        {
+          "descripcion": "CEBOLLA TIERNA42,004,302,1500782120326-03-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 30.3,
+          "iva_porcentaje": null,
+          "total": 15
+        },
+        {
+          "descripcion": "APIO BLANCO41,001,751,7500700130326-02-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 7.51,
+          "iva_porcentaje": null,
+          "total": 3
+        },
+        {
+          "descripcion": "CEBOLLA410,009,900,9900780160326-15-ES",
+          "cantidad": 1,
+          "precio_unitario": 9.9,
+          "iva_porcentaje": null,
+          "total": 10
+        },
+        {
+          "descripcion": "PATATA BLANCA445,0043,200,9600861160326-15-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 20.4,
+          "iva_porcentaje": null,
+          "total": 10
+        },
+        {
+          "descripcion": "ROMANA PACK 242,005,182,5900301210326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 18.2,
+          "iva_porcentaje": null,
+          "total": 19
+        },
+        {
+          "descripcion": "ZANAHORIA CAT I45,005,251,0500660190326-03-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 25.1,
+          "iva_porcentaje": null,
+          "total": 12
+        },
+        {
+          "descripcion": "PIMIENTO ITALIANO43,0511,133,6500670190326-02-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 13.3,
+          "iva_porcentaje": null,
+          "total": 7
+        },
+        {
+          "descripcion": "PIMIENTO ROJO CAT.I.42,468,493,4500680190326-02-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 46.8,
+          "iva_porcentaje": null,
+          "total": 23
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXT43,0410,493,4500730170326-32-ES",
+          "cantidad": 1,
+          "precio_unitario": 49.3,
+          "iva_porcentaje": null,
+          "total": 50
+        },
+        {
+          "descripcion": "PATATA PELADA CORT. PANADERA412,0029,402,4500884210326-03-ES",
+          "cantidad": 0.5,
+          "precio_unitario": 40.2,
+          "iva_porcentaje": null,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": null,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de productos recibidos en la fecha 2023-03-26.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093024963_Factura_FMPVACJ007XXXX.pdf",
+    "status": "ok",
+    "chars": 3177,
+    "pages": 3,
+    "tiempo_ms": 10006,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "FMPVACJ007*****260325-004-E0-025-000455",
+      "fecha": "2026-03-10",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "movistar.es/citaprevia638 10 10041004 gratuito",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "chicken pa*************",
+        "cif_nif": "B56908486",
+        "direccion": "Calle Josep ***********************************,07800 Eivissa,chicken pa************* Calle Josep ***********************************,07800 Eivissa",
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "miMovistar24,75 €",
+          "cantidad": 12.3456,
+          "precio_unitario": 2.475,
+          "iva_porcentaje": 21,
+          "total": 25.4555
+        },
+        {
+          "descripcion": "miConectividad24,75 €",
+          "cantidad": 10,
+          "precio_unitario": 2.475,
+          "iva_porcentaje": 21,
+          "total": 25.4555
+        },
+        {
+          "descripcion": "Otras cuotas7,36 €",
+          "cantidad": 1,
+          "precio_unitario": 7.36,
+          "iva_porcentaje": null,
+          "total": 7.36
+        }
+      ],
+      "base_imponible": 26.53,
+      "iva_total": 5.57,
+      "total": 32.11,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": {
+        "nombre": "CAIXABANK, S.A.",
+        "cif_nif": null,
+        "direccion": "Gran Vía 28,28013 Madrid- R. M. de Madrid, HªM-213180"
+      },
+      "resumen": "Factura emitida por movistar.es/citaprevia638 para chicken pa************* en marzo de 2026.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093025064_Factura_MMPVACJ001XXXX.pdf",
+    "status": "ok",
+    "chars": 3480,
+    "pages": 3,
+    "tiempo_ms": 8569,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2026-03-10",
+      "fecha_vencimiento": "2026-04-09",
+      "emisor": {
+        "nombre": "Movistar S.A.",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "chicken pa*************",
+        "cif_nif": null,
+        "direccion": "Calle Josep, 07800 Eivissa",
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Cuotas mensuales Ilimitada Plus (10 Feb - 09 Mar)",
+          "cantidad": 53.38,
+          "precio_unitario": 0,
+          "iva_porcentaje": 21,
+          "total": 64.59
+        },
+        {
+          "descripcion": "Línea Adicional Ilimitada Plus (10 Feb - 09 Mar)",
+          "cantidad": 18.18,
+          "precio_unitario": 0,
+          "iva_porcentaje": 21,
+          "total": 22.01
+        },
+        {
+          "descripcion": "Samsung Galaxy Tab A8 32GB WiFi",
+          "cantidad": 1,
+          "precio_unitario": 3.32,
+          "iva_porcentaje": null,
+          "total": 3.33
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 11.21,
+      "total": 64.59,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de servicios Movistar para chicken pa************* en marzo de 2026.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093025356_Factura_A196.pdf",
+    "status": "ok",
+    "chars": 629,
+    "pages": 1,
+    "tiempo_ms": 9706,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-24",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1.5,
+          "precio_unitario": 0.95,
+          "iva_porcentaje": 19,
+          "total": 2.85
+        },
+        {
+          "descripcion": "CEBOLLA BLANCA",
+          "cantidad": 4,
+          "precio_unitario": 0.5,
+          "iva_porcentaje": null,
+          "total": 1.5
+        },
+        {
+          "descripcion": "CEBOLLA MORADA",
+          "cantidad": 2,
+          "precio_unitario": 0.1,
+          "iva_porcentaje": null,
+          "total": 0.2
+        },
+        {
+          "descripcion": "CHAMPIÑON S/ PIE",
+          "cantidad": 1,
+          "precio_unitario": 4.61,
+          "iva_porcentaje": null,
+          "total": 2.85
+        },
+        {
+          "descripcion": "ZANAHORIA CAT I",
+          "cantidad": 5,
+          "precio_unitario": 0.2,
+          "iva_porcentaje": null,
+          "total": 1
+        },
+        {
+          "descripcion": "PEREJIL MANOJO",
+          "cantidad": 2,
+          "precio_unitario": 9,
+          "iva_porcentaje": null,
+          "total": 18
+        },
+        {
+          "descripcion": "PATATA PELADA CORT. PANADERA",
+          "cantidad": 1,
+          "precio_unitario": 0.42,
+          "iva_porcentaje": null,
+          "total": 2.85
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 3.9,
+      "total": 81,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza para José Riquer, con varios productos como Lote, Cebolla Blanca, etc.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093025558_Factura_A197.pdf",
+    "status": "ok",
+    "chars": 712,
+    "pages": 1,
+    "tiempo_ms": 15144,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": null,
+      "fecha": "2023-03-25",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "JOSE RIQUER, S.L.",
+        "cif_nif": null,
+        "direccion": "07800 EIVISSA",
+        "email": null,
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "LOTE",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 90.679
+        },
+        {
+          "descripcion": "CALABACIN CAT EXT43,007,052,3500760130326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 126
+        },
+        {
+          "descripcion": "AJO PELADO41,006,256,2500713210326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 256.25
+        },
+        {
+          "descripcion": "CEBOLLINO MANOJO101,002,252,2500130130326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 252.5
+        },
+        {
+          "descripcion": "ALBAHACA X KILO100,122,5120,9500102240326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 511.2
+        },
+        {
+          "descripcion": "ROMANA PACK 242,005,702,8500301240326-03-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 502.7
+        },
+        {
+          "descripcion": "COL CHINA41,563,902,5000853130326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 556.3
+        },
+        {
+          "descripcion": "BERENJENAS CAT. EXT44,9917,223,4500730130326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 199.17
+        },
+        {
+          "descripcion": "TOMATE CHERRY RAMA43,0021,757,2500942190326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 752.5
+        },
+        {
+          "descripcion": "PATATA BLANCA430,0028,800,9600861190326-02-ES",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 880
+        },
+        {
+          "descripcion": "REGISTRO SANITARIO ESPAÑA 21.030136/IB C.E.E.",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "iva_porcentaje": null,
+          "total": 90.673
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 764.761,
+      "total": 999.54,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de productos recibidos por Chicken Palace Ibiza SL a Jose Riquer, S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093025749_Invoice-YAGBSF1N-0010.pdf",
+    "status": "ok",
+    "chars": 477,
+    "pages": 1,
+    "tiempo_ms": 5901,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0010",
+      "fecha": "2026-03-25",
+      "fecha_vencimiento": "2026-03-25",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%. Total: $24.00 USD.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093032228_Invoice-YAGBSF1N-0011.pdf",
+    "status": "ok",
+    "chars": 477,
+    "pages": 1,
+    "tiempo_ms": 5900,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0011",
+      "fecha": "2026-03-26",
+      "fecha_vencimiento": "2026-03-26",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%. Total: $24.00 USD.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093032562_Invoice-YAGBSF1N-0012.pdf",
+    "status": "ok",
+    "chars": 477,
+    "pages": 1,
+    "tiempo_ms": 6176,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0012",
+      "fecha": "2026-03-27",
+      "fecha_vencimiento": "2026-03-27",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, NY 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Add-on Credits1",
+          "cantidad": 1000,
+          "precio_unitario": 20,
+          "iva_porcentaje": 20,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 4,
+      "total": 24,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Chicken Palace Ibiza S.L. por 1000 Add-on Credits1 a un precio unitario de $20.00 con IVA del 20%. Total: $24.00 USD.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093032820_00430_CHICKEN_PALACE_IBIZA__S.L..PDF",
+    "status": "parse_fail",
+    "chars": 38273,
+    "pages": 7,
+    "tiempo_ms": 8492,
+    "raw_preview": "```json\n{\n  \"tipo\": \"nomina\",\n  \"subtipo\": \"\",\n  \"numero_documento\": null,\n  \"fecha\": \"2023-03-27\",\n  \"fecha_vencimiento\": null,\n  \"emisor\": {\n    \"nombre\": \"GALLEGOS ORDOÑEZ, TOLIA\",\n    \"cif_nif\": \"B56908486\",\n    \"direccion\": \"430 EMPRESADOMICILIONº  INS. S.S.\",\n    \"email\": \"\",\n    \"telefono\": \"\"\n  },\n  \"receptor\": {\n    \"nombre\": \"CHICKEN PALACE IBIZA, S.L.\",\n    \"cif_nif\": null,\n    \"direccion\": \"CL JOSEP RIQUER, 7 3ª\",\n    \"email\": \"\",\n    \"telefono\": \"\"\n  },\n  \"trabajador\": {\n    \"nombre"
+  },
+  {
+    "file": "email_1776093033042_Invoice-YAGBSF1N-0013.pdf",
+    "status": "ok",
+    "chars": 489,
+    "pages": 1,
+    "tiempo_ms": 5426,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0013",
+      "fecha": "2026-03-27",
+      "fecha_vencimiento": "2026-03-27",
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, New York 10012, United States",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": "Spain",
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Build Plan Mar 27 - Apr 27, 2026",
+          "cantidad": 1,
+          "precio_unitario": 20,
+          "iva_porcentaje": null,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": 20,
+      "moneda": "USD",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de Warp a Chicken Palace Ibiza S.L.",
+      "datos_extra": {}
+    }
+  },
+  {
+    "file": "email_1776093033829_A-V2026-1472504.pdf",
+    "status": "ok",
+    "chars": 5529,
+    "pages": 2,
+    "tiempo_ms": 9679,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": "",
+      "numero_documento": "A-V2026-00001472504",
+      "fecha": "2026-03-29",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "MERCADONA S.A.",
+        "cif_nif": "B56908486",
+        "direccion": "C/ Alfonso Roig, s/n. Albalat dels Sorells, 46135 Valencia",
+        "email": null,
+        "telefono": "+34 800 500 220"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, SL",
+        "cif_nif": "",
+        "direccion": "CALLE JOSEP RIQUER LLOBET, s/n. Albalat dels Sorells, 46135 Valencia",
+        "email": null,
+        "telefono": ""
+      },
+      "conceptos": [
+        {
+          "descripcion": "MELOCOTÓN-UVA P611",
+          "cantidad": 1,
+          "precio_unitario": 13641,
+          "iva_porcentaje": 0.4
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": 54268,
+      "total": 1499918,
+      "moneda": "EUR",
+      "forma_pago": "Tarjeta Bancaria168,22 €",
+      "cuenta_bancaria": "",
+      "resumen": "Factura simplificada de Mercadona S.A. para Chicken Palace Ibiza SL en fecha 29/03/2026.",
+      "datos_extra": null
+    }
+  },
+  {
+    "file": "email_1776093213048_Receipt-2064-5010.pdf",
+    "status": "ok",
+    "chars": 613,
+    "pages": 1,
+    "tiempo_ms": 5423,
+    "analisis": {
+      "tipo": "factura_recibida",
+      "subtipo": null,
+      "numero_documento": "YAGBSF1N0013-20645010",
+      "fecha": "2026-03-27",
+      "fecha_vencimiento": null,
+      "emisor": {
+        "nombre": "Warp",
+        "cif_nif": null,
+        "direccion": "11 Prince Street, Apt 3B, New York, New York 10012",
+        "email": "billing@warp.dev",
+        "telefono": null,
+        "rol": "proveedor"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa"
+      },
+      "trabajador": null,
+      "conceptos": [
+        {
+          "descripcion": "Build Plan",
+          "cantidad": 1,
+          "precio_unitario": 20,
+          "iva_porcentaje": null,
+          "total": 20
+        }
+      ],
+      "base_imponible": null,
+      "iva_total": null,
+      "total": 20,
+      "moneda": "EUR",
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura recibida de Warp para Chicken Palace Ibiza S.L.",
+      "datos_extra": {}
+    }
+  }
+]

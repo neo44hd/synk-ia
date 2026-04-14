@@ -1,0 +1,14 @@
+[
+  {
+    "id": "admin-001",
+    "email": "david@sinkialabs.com",
+    "full_name": "David Roldan",
+    "role": "admin",
+    "permission_level": "admin",
+    "department": "Dirección",
+    "avatar_url": null,
+    "passwordHash": "375418963b7837edd23c33f74d6c1147ec4354542f414f60642dbcea20669b4a",
+    "passwordSalt": "afac1b81637a9cdad5a329f4e6d7574c",
+    "created_at": "2026-04-13T10:51:59.374Z"
+  }
+]
