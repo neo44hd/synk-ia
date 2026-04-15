@@ -6,12 +6,27 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
 
-const OPENCLAW_URL  = process.env.OPENCLAW_WS_URL  || 'ws://localhost:18789';
-const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN   || 'sinkia-openclaw-2026';
+const OPENCLAW_URL   = process.env.OPENCLAW_WS_URL  || 'ws://localhost:18789';
+const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN    || 'sinkia-openclaw-2026';
+
+// Valores válidos sacados de openclaw/dist/message-channel-DXsjCySM.js
+// GATEWAY_CLIENT_IDS: webchat-ui, openclaw-control-ui, openclaw-tui, webchat,
+//   cli, gateway-client, openclaw-macos, node-host, test, probe...
+// GATEWAY_CLIENT_MODES: webchat, cli, ui, backend, node, probe, test
+const CLIENT_ID   = 'webchat-ui';
+const CLIENT_MODE = 'webchat';
 
 /**
  * Construye el frame de request "connect" que OpenClaw espera
  * después de enviar connect.challenge.
+ *
+ * Protocolo descubierto en client-CJI3Hi9b.js líneas 490-540:
+ *  - type: "req" (no "request")
+ *  - method: "connect"
+ *  - params.client.id debe ser una de las constantes GATEWAY_CLIENT_IDS
+ *  - params.client.mode debe ser una de las constantes GATEWAY_CLIENT_MODES
+ *  - params.caps debe ser array (no objeto)
+ *  - params.device es OPCIONAL (solo si hay deviceIdentity con keypair)
  */
 function buildConnectFrame(nonce) {
   return {
@@ -22,22 +37,19 @@ function buildConnectFrame(nonce) {
       minProtocol: 3,
       maxProtocol: 3,
       client: {
-        id:       'sinkia-web-proxy',
+        id:       CLIENT_ID,
         version:  '1.0.0',
-        platform: 'node',
-        mode:     'proxy',
+        platform: process.platform,       // "darwin" en Mac Mini
+        mode:     CLIENT_MODE,
       },
-      caps: {},
+      caps: [],                            // debe ser array vacío
       auth: {
         token: OPENCLAW_TOKEN,
       },
       role:   'user',
       scopes: ['*'],
-      device: {
-        id:   'sinkia-proxy-' + randomUUID().slice(0, 8),
-        name: 'SynK-IA Web Proxy',
-        type: 'server',
-      },
+      // device: OMITIDO — requiere keypair (publicKey, signature, signedAt, nonce)
+      //         y es opcional según el source code de OpenClaw
     },
   };
 }
@@ -72,6 +84,7 @@ export function setupOpenClawProxy(httpServer) {
 
     let upstreamReady   = false;   // true después del handshake completo
     let handshakeDone   = false;   // ya respondimos al challenge
+    let connectReqId    = null;    // id del frame connect para matchear la respuesta
     const pendingMessages = [];
 
     upstreamWs.on('open', () => {
@@ -97,14 +110,15 @@ export function setupOpenClawProxy(httpServer) {
         console.log('[OPENCLAW-PROXY] ← connect.challenge recibido (nonce:', nonce, ')');
 
         const connectFrame = buildConnectFrame(nonce);
-        console.log('[OPENCLAW-PROXY] → Enviando connect request frame...');
+        connectReqId = connectFrame.id;
+        console.log('[OPENCLAW-PROXY] → Enviando connect request (client.id=%s, mode=%s)', CLIENT_ID, CLIENT_MODE);
         upstreamWs.send(JSON.stringify(connectFrame));
         handshakeDone = true;
         return; // No reenviar el challenge al browser
       }
 
-      // ── 2. Interceptar respuesta al connect (res) ──
-      if (parsed.type === 'res' && !upstreamReady) {
+      // ── 2. Interceptar respuesta al connect (res con mismo id) ──
+      if (parsed.type === 'res' && !upstreamReady && parsed.id === connectReqId) {
         // Respuesta al request "connect" — puede ser ok o error
         if (parsed.error) {
           console.error('[OPENCLAW-PROXY] ✗ Connect rechazado:', JSON.stringify(parsed.error));
