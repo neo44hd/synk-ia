@@ -13,10 +13,11 @@ const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN    || '';
 // GATEWAY_CLIENT_IDS: webchat-ui, openclaw-control-ui, openclaw-tui, webchat,
 //   cli, gateway-client, openclaw-macos, node-host, test, probe...
 // GATEWAY_CLIENT_MODES: webchat, cli, ui, backend, node, probe, test
-// webchat-ui + webchat triggerea validación de origins (CONTROL_UI_ORIGIN_NOT_ALLOWED)
-// gateway-client + backend es el default del SDK y no requiere origin config
-const CLIENT_ID   = 'gateway-client';
-const CLIENT_MODE = 'backend';
+// gateway-client + backend → requiere device identity (keypair crypto)
+// webchat-ui + webchat → triggerea validación de origins (CONTROL_UI_ORIGIN_NOT_ALLOWED)
+// webchat + webchat → modo webchat sin origin check ni device identity
+const CLIENT_ID   = 'webchat';
+const CLIENT_MODE = 'webchat';
 
 /**
  * Construye el frame de request "connect" que OpenClaw espera
