@@ -1,13 +1,12 @@
 // ── OpenClaw WebSocket Proxy ─────────────────────────────────────────────────
 // Reenvía /ws/openclaw al WebSocket local de OpenClaw en localhost:18789
 //
-// El gateway envía connect.challenge a todas las conexiones WebSocket.
-// Si no se responde, el gateway cierra la conexión tras un timeout.
+// Protocolo de handshake:
+//   1. Gateway envía connect.challenge con nonce
+//   2. Proxy responde con frame {type:"req", method:"connect"} (cli/cli/operator)
+//   3. Gateway responde con {type:"res"} confirmando sesión
 //
-// Estrategia: interceptar el challenge y responder con el handshake correcto,
-// usando las credenciales del gateway (token de openclaw.json).
-// Usamos client.id=cli, mode=cli (no requiere origin check ni device identity
-// obligatoria según el source code).
+// Reconexión automática con backoff exponencial si upstream se cae.
 // ─────────────────────────────────────────────────────────────────────────────
 import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
@@ -17,7 +16,7 @@ import { homedir } from 'os';
 
 const OPENCLAW_URL = process.env.OPENCLAW_WS_URL || 'ws://localhost:18789';
 
-// Leer el token directamente de openclaw.json (la fuente de verdad)
+// ── Leer token del gateway ──────────────────────────────────────────────────
 let OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || '';
 if (!OPENCLAW_TOKEN) {
   try {
@@ -32,9 +31,14 @@ if (!OPENCLAW_TOKEN) {
   }
 }
 
+// ── Backoff config ──────────────────────────────────────────────────────────
+const BACKOFF_INITIAL_MS = 1000;
+const BACKOFF_MAX_MS     = 30000;
+const BACKOFF_FACTOR     = 2;
+
 /**
  * Construye el frame de request "connect" para responder al challenge.
- * Usa cli/cli que no requiere origin check.
+ * Usa cli/cli que no requiere origin check ni device identity.
  */
 function buildConnectFrame() {
   return {
@@ -70,92 +74,130 @@ export function setupOpenClawProxy(httpServer) {
   };
 
   wss.on('connection', (clientWs) => {
-    console.log('[OPENCLAW-PROXY] Cliente conectado, abriendo conexión a', OPENCLAW_URL);
+    console.log('[OPENCLAW-PROXY] Cliente conectado');
 
-    let upstreamWs;
-    try {
-      upstreamWs = new WebSocket(OPENCLAW_URL);
-    } catch (err) {
-      console.error('[OPENCLAW-PROXY] Error al crear conexión upstream:', err.message);
-      clientWs.send(JSON.stringify({ type: 'error', error: 'No se pudo conectar a OpenClaw' }));
-      clientWs.close();
-      return;
-    }
-
+    let upstreamWs    = null;
     let upstreamReady = false;
     let handshakeDone = false;
     let connectReqId  = null;
+    let backoffMs     = BACKOFF_INITIAL_MS;
+    let reconnectTimer = null;
+    let clientClosed  = false;
     const pendingMessages = [];
 
-    upstreamWs.on('open', () => {
-      console.log('[OPENCLAW-PROXY] ✓ WebSocket abierto, esperando connect.challenge...');
-    });
+    // ── Conectar al upstream con handshake ─────────────────────────────────
+    function connectUpstream() {
+      if (clientClosed) return;
 
-    // Upstream (OpenClaw) → lógica
-    upstreamWs.on('message', (data) => {
-      const raw = data.toString();
-      let parsed;
-      try { parsed = JSON.parse(raw); } catch {
-        if (clientWs.readyState === WebSocket.OPEN) clientWs.send(raw);
+      // Limpiar conexión anterior
+      if (upstreamWs) {
+        try { upstreamWs.removeAllListeners(); upstreamWs.close(); } catch {}
+      }
+      upstreamReady = false;
+      handshakeDone = false;
+      connectReqId  = null;
+
+      try {
+        upstreamWs = new WebSocket(OPENCLAW_URL);
+      } catch (err) {
+        console.error('[OPENCLAW-PROXY] Error al crear conexión:', err.message);
+        scheduleReconnect();
         return;
       }
 
-      // 1. Interceptar connect.challenge
-      if (!handshakeDone && parsed.type === 'event' && parsed.event === 'connect.challenge') {
-        const nonce = parsed.payload?.nonce;
-        console.log('[OPENCLAW-PROXY] ← connect.challenge (nonce:', nonce, ')');
-        const frame = buildConnectFrame();
-        connectReqId = frame.id;
-        console.log('[OPENCLAW-PROXY] → connect request (cli/cli, operator)');
-        upstreamWs.send(JSON.stringify(frame));
-        handshakeDone = true;
-        return;
-      }
+      upstreamWs.on('open', () => {
+        console.log('[OPENCLAW-PROXY] ✓ WebSocket abierto, esperando challenge...');
+        // Reset backoff on successful open
+        backoffMs = BACKOFF_INITIAL_MS;
+      });
 
-      // 2. Interceptar respuesta al connect
-      if (parsed.type === 'res' && !upstreamReady && connectReqId && parsed.id === connectReqId) {
-        if (parsed.error) {
-          console.error('[OPENCLAW-PROXY] ✗ Connect rechazado:', JSON.stringify(parsed.error));
-          clientWs.send(JSON.stringify({
-            type: 'error',
-            error: `OpenClaw: ${parsed.error.message || parsed.error.code || 'unknown'}`,
-          }));
-          // No cerrar — dejar que el gateway decida
+      upstreamWs.on('message', (data) => {
+        const raw = data.toString();
+        let parsed;
+        try { parsed = JSON.parse(raw); } catch {
+          if (clientWs.readyState === WebSocket.OPEN) clientWs.send(raw);
           return;
         }
-        console.log('[OPENCLAW-PROXY] ✓ Handshake completado');
-        upstreamReady = true;
-        const sessionId = parsed.result?.sessionId || parsed.result?.id || 'proxy';
-        clientWs.send(JSON.stringify({ type: 'connected', sessionId }));
 
-        for (const msg of pendingMessages) upstreamWs.send(msg);
-        pendingMessages.length = 0;
-        return;
-      }
+        // 1. Interceptar connect.challenge
+        if (!handshakeDone && parsed.type === 'event' && parsed.event === 'connect.challenge') {
+          console.log('[OPENCLAW-PROXY] ← challenge, respondiendo...');
+          const frame = buildConnectFrame();
+          connectReqId = frame.id;
+          upstreamWs.send(JSON.stringify(frame));
+          handshakeDone = true;
+          return;
+        }
 
-      // 3. Reenviar todo lo demás al browser
-      if (clientWs.readyState === WebSocket.OPEN) {
-        clientWs.send(raw);
-      }
-    });
+        // 2. Interceptar respuesta al connect
+        if (parsed.type === 'res' && !upstreamReady && connectReqId && parsed.id === connectReqId) {
+          if (parsed.error) {
+            console.error('[OPENCLAW-PROXY] ✗ Connect rechazado:', parsed.error.message || parsed.error.code);
+            notifyClient({ type: 'error', error: `OpenClaw: ${parsed.error.message || 'unknown'}` });
+            scheduleReconnect();
+            return;
+          }
+          console.log('[OPENCLAW-PROXY] ✓ Handshake completado');
+          upstreamReady = true;
+          backoffMs = BACKOFF_INITIAL_MS; // Reset on success
+          const sessionId = parsed.result?.sessionId || parsed.result?.id || 'proxy';
+          notifyClient({ type: 'connected', sessionId });
 
-    upstreamWs.on('error', (err) => {
-      console.error('[OPENCLAW-PROXY] Error upstream:', err.message);
+          // Enviar mensajes en cola
+          for (const msg of pendingMessages) upstreamWs.send(msg);
+          pendingMessages.length = 0;
+          return;
+        }
+
+        // 3. Reenviar todo lo demás al browser
+        if (clientWs.readyState === WebSocket.OPEN) {
+          clientWs.send(raw);
+        }
+      });
+
+      upstreamWs.on('error', (err) => {
+        console.error('[OPENCLAW-PROXY] Error upstream:', err.message);
+        notifyClient({ type: 'error', error: `OpenClaw: ${err.message}` });
+      });
+
+      upstreamWs.on('close', (code, reason) => {
+        const reasonStr = reason?.toString() || 'sin motivo';
+        console.log(`[OPENCLAW-PROXY] Upstream cerrado (code:${code}, reason:${reasonStr})`);
+        upstreamReady = false;
+
+        if (!clientClosed) {
+          notifyClient({ type: 'event', event: 'reconnecting', backoffMs });
+          scheduleReconnect();
+        }
+      });
+    }
+
+    // ── Reconexión con backoff exponencial ─────────────────────────────────
+    function scheduleReconnect() {
+      if (clientClosed || reconnectTimer) return;
+      const jitter = Math.random() * 500;
+      const delay = Math.min(backoffMs + jitter, BACKOFF_MAX_MS);
+      console.log(`[OPENCLAW-PROXY] Reconectando en ${Math.round(delay)}ms...`);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        backoffMs = Math.min(backoffMs * BACKOFF_FACTOR, BACKOFF_MAX_MS);
+        connectUpstream();
+      }, delay);
+    }
+
+    // ── Helper para enviar al browser ─────────────────────────────────────
+    function notifyClient(obj) {
       try {
-        clientWs.send(JSON.stringify({ type: 'error', error: `OpenClaw: ${err.message}` }));
+        if (clientWs.readyState === WebSocket.OPEN) {
+          clientWs.send(JSON.stringify(obj));
+        }
       } catch {}
-    });
+    }
 
-    upstreamWs.on('close', (code, reason) => {
-      const reasonStr = reason?.toString() || 'sin motivo';
-      console.log(`[OPENCLAW-PROXY] Upstream cerrado (code:${code}, reason:${reasonStr})`);
-      try { clientWs.close(code, reason?.toString()); } catch {}
-    });
-
-    // Cliente (browser) → Upstream
+    // ── Cliente (browser) → Upstream ──────────────────────────────────────
     clientWs.on('message', (data) => {
       const msg = data.toString();
-      if (upstreamReady && upstreamWs.readyState === WebSocket.OPEN) {
+      if (upstreamReady && upstreamWs?.readyState === WebSocket.OPEN) {
         upstreamWs.send(msg);
       } else {
         pendingMessages.push(msg);
@@ -164,13 +206,20 @@ export function setupOpenClawProxy(httpServer) {
 
     clientWs.on('close', () => {
       console.log('[OPENCLAW-PROXY] Cliente desconectado');
-      try { upstreamWs.close(); } catch {}
+      clientClosed = true;
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      try { upstreamWs?.close(); } catch {}
     });
 
     clientWs.on('error', (err) => {
       console.error('[OPENCLAW-PROXY] Error cliente:', err.message);
-      try { upstreamWs.close(); } catch {}
+      clientClosed = true;
+      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+      try { upstreamWs?.close(); } catch {}
     });
+
+    // ── Iniciar primera conexión ──────────────────────────────────────────
+    connectUpstream();
   });
 
   console.log('[SERVER] ✓ OpenClaw Proxy: /ws/openclaw → ' + OPENCLAW_URL);
