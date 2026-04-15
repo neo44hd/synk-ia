@@ -456,6 +456,9 @@ body {
       <a class="nav-mod" href="/terminal" target="_blank" title="Claude Code Terminal">
         <span>🤖</span> Terminal
       </a>
+      <a class="nav-mod" href="http://100.78.4.14:4400" target="_blank" title="SINKIA Commerce — TPV">
+        <span>🛒</span> Commerce
+      </a>
       <!-- AI Stack (externo) -->
       <div style="width:1px;height:16px;background:var(--border);margin:0 4px"></div>
       <a class="nav-mod ext" id="nav-webui" href="http://localhost:3030" target="_blank">
@@ -499,6 +502,11 @@ body {
         <div class="today-num" id="today-revo">—</div>
         <div class="today-lbl">Ventas hoy</div>
         <div class="today-sub" id="today-revo-sub">Datos Revo XEF</div>
+      </div>
+      <div class="today-card c-blue">
+        <div class="today-num" id="today-commerce">—</div>
+        <div class="today-lbl">Commerce</div>
+        <div class="today-sub" id="today-commerce-sub">SINKIA TPV</div>
       </div>
     </div>
 
@@ -564,6 +572,15 @@ body {
         <div class="mod-title">Terminal IA</div>
         <div class="mod-desc">Claude Code en el navegador — desarrollo y gestión del servidor</div>
         <div class="mod-port">sinkialabs.com/terminal</div>
+      </a>
+
+      <a class="mod-card accent-blue" href="http://100.78.4.14:4400" target="_blank" id="card-commerce">
+        <span class="mod-card-status" id="st-commerce"></span>
+        <span class="mod-badge" id="badge-commerce" style="background:var(--blue)">0</span>
+        <span class="mod-icon">🛒</span>
+        <div class="mod-title">SINKIA Commerce</div>
+        <div class="mod-desc">TPV nativo con VeriFactu — 200 productos, cobro, cocina, pedidos online</div>
+        <div class="mod-port">100.78.4.14:4400</div>
       </a>
     </div>
 
@@ -659,6 +676,11 @@ body {
         <div class="action-icon">🍗</div>
         <div class="action-title">Sync Revo ahora</div>
         <div class="action-desc">Forzar sync TPV Revo XEF</div>
+      </div>
+      <div class="action-card" onclick="window.open('http://100.78.4.14:4400/pos','_blank')">
+        <div class="action-icon">🛒</div>
+        <div class="action-title">Abrir TPV</div>
+        <div class="action-desc">SINKIA Commerce — Punto de venta</div>
       </div>
       <div class="action-card" onclick="window.open('/documents','_blank')">
         <div class="action-icon">📄</div>
@@ -830,12 +852,27 @@ async function loadTodayMetrics() {
   // Revo — resumen diario (si está disponible)
   try {
     const res = await fetch('/api/health').then(r=>r.json());
-    // Placeholder — el resumen diario se carga desde data/revo/resumen_diario.json
-    // cuando revoAgent haya sincronizado
     const svcs = res.services || {};
     document.getElementById('today-revo').textContent     = svcs.revo ? '✓' : '—';
     document.getElementById('today-revo-sub').textContent = svcs.revo ? 'TPV conectado' : 'Sin datos aún';
   } catch {}
+
+  // SINKIA Commerce — métricas en vivo desde Mac Mini
+  try {
+    const cRes = await fetch('http://100.78.4.14:4400/api/dashboard/stats').then(r=>r.json());
+    if (cRes.success) {
+      const d = cRes.data;
+      const rev = d.today.revenue;
+      document.getElementById('today-commerce').textContent     = rev > 0 ? `€${rev.toFixed(0)}` : d.today.orders + ' ped.';
+      document.getElementById('today-commerce-sub').textContent = `${d.catalog.products} productos · ${d.today.ordersClosed} cerrados`;
+      document.getElementById('badge-commerce').textContent     = d.today.orders;
+      document.getElementById('st-commerce').className          = 'mod-card-status ok';
+    }
+  } catch {
+    document.getElementById('today-commerce').textContent     = '—';
+    document.getElementById('today-commerce-sub').textContent = 'Sin conexión';
+    document.getElementById('st-commerce').className          = 'mod-card-status err';
+  }
 }
 
 // ── Services grid ─────────────────────────────────────────────────────────
