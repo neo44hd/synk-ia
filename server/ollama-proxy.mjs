@@ -262,6 +262,48 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── Pass-through: rutas nativas de Ollama (/api/*) ────────────────
+  // OpenClaw y otros clientes nativos llaman a /api/chat, /api/tags, etc.
+  // Reenviamos directamente a Ollama sin transformar.
+  if (url?.startsWith('/api/')) {
+    try {
+      const targetUrl = `${OLLAMA_HOST}${req.url}`;
+      const fetchOpts = { method: req.method, headers: { 'Content-Type': 'application/json' } };
+
+      if (req.method === 'POST' || req.method === 'PUT') {
+        const body = await readBody(req);
+        fetchOpts.body = JSON.stringify(body);
+      }
+
+      const ollamaRes = await fetch(targetUrl, fetchOpts);
+      const contentType = ollamaRes.headers.get('content-type') || 'application/json';
+
+      // Streaming (Ollama usa application/x-ndjson para streams)
+      if (contentType.includes('ndjson') || contentType.includes('stream')) {
+        res.writeHead(ollamaRes.status, {
+          'Content-Type': contentType,
+          'Transfer-Encoding': 'chunked',
+        });
+        const reader = ollamaRes.body.getReader();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          res.write(value);
+        }
+        res.end();
+      } else {
+        const text = await ollamaRes.text();
+        res.writeHead(ollamaRes.status, { 'Content-Type': contentType });
+        res.end(text);
+      }
+    } catch (err) {
+      console.error(`[PROXY] /api/* pass-through error: ${err.message}`);
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: { message: `Ollama unreachable: ${err.message}` } }));
+    }
+    return;
+  }
+
   // ── 404 ───────────────────────────────────────────────────────────
   res.writeHead(404, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ error: { message: 'Not found', path: url } }));
