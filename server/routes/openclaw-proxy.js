@@ -1,93 +1,23 @@
 // ── OpenClaw WebSocket Proxy ─────────────────────────────────────────────────
-// Reenvía /ws/openclaw al WebSocket local de OpenClaw en localhost:18789
+// Conecta la pestaña OpenClaw del chat web con functiongemma vía Ollama
 //
-// Protocolo de handshake:
-//   1. Gateway envía connect.challenge con nonce
-//   2. Proxy responde con frame {type:"req", method:"connect"} (cli/cli/operator)
-//   3. Gateway responde con {type:"res"} confirmando sesión
-//
-// Reconexión automática con backoff exponencial si upstream se cae.
+// Anteriormente intentaba usar el gateway RPC de OpenClaw, pero functiongemma
+// no soporta tools y el system prompt del gateway excede su contexto (16K).
+// Ahora habla directamente con Ollama HTTP API (/api/chat) para máxima
+// fiabilidad. Mantiene historial de conversación por sesión de WebSocket.
 // ─────────────────────────────────────────────────────────────────────────────
 import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
 
-const OPENCLAW_URL = process.env.OPENCLAW_WS_URL || 'ws://localhost:18789';
-const OPENCLAW_CONFIG_PATH = join(homedir(), '.openclaw', 'openclaw.json');
+const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11435';
+const MODEL = process.env.OPENCLAW_MODEL || 'functiongemma:latest';
+const SYSTEM_PROMPT = `Eres SynK-IA OpenClaw, asistente inteligente de Chicken Palace Ibiza.
+Responde siempre en español, de forma directa y concisa.
+No uses razonamiento interno. Ve directo a la respuesta.
+Eres amable, profesional y eficiente.`;
 
-// Origins que el gateway debe permitir para conexiones webchat/control-ui
-const REQUIRED_ORIGINS = [
-  'https://sinkialabs.com',
-  'https://www.sinkialabs.com',
-  'http://localhost:3001',
-  'http://127.0.0.1:18789',
-];
-
-// ── Leer token y parchear allowedOrigins ────────────────────────────────────
-let OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || '';
-try {
-  const config = JSON.parse(readFileSync(OPENCLAW_CONFIG_PATH, 'utf-8'));
-
-  // Leer token
-  if (!OPENCLAW_TOKEN) {
-    OPENCLAW_TOKEN = config?.gateway?.auth?.token || '';
-    if (OPENCLAW_TOKEN) {
-      console.log('[OPENCLAW-PROXY] Token leído de ~/.openclaw/openclaw.json');
-    }
-  }
-
-  // Asegurar que allowedOrigins incluye los dominios necesarios
-  const controlUi = config?.gateway?.controlUi;
-  if (controlUi) {
-    const origins = Array.isArray(controlUi.allowedOrigins) ? controlUi.allowedOrigins : [];
-    const missing = REQUIRED_ORIGINS.filter(o => !origins.includes(o));
-    if (missing.length > 0) {
-      controlUi.allowedOrigins = [...origins, ...missing];
-      writeFileSync(OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf-8');
-      console.log('[OPENCLAW-PROXY] ✓ allowedOrigins actualizado:', controlUi.allowedOrigins.join(', '));
-      console.log('[OPENCLAW-PROXY]   ⚠ Reinicia OpenClaw gateway para aplicar cambios');
-    } else {
-      console.log('[OPENCLAW-PROXY] ✓ allowedOrigins OK:', origins.join(', '));
-    }
-  }
-} catch (err) {
-  console.warn('[OPENCLAW-PROXY] No se pudo leer/actualizar openclaw.json:', err.message);
-}
-
-// ── Backoff config ──────────────────────────────────────────────────────────
-const BACKOFF_INITIAL_MS = 1000;
-const BACKOFF_MAX_MS     = 30000;
-const BACKOFF_FACTOR     = 2;
-
-/**
- * Construye el frame de request "connect" para responder al challenge.
- * Usa cli/cli que no requiere origin check ni device identity.
- */
-function buildConnectFrame() {
-  return {
-    type: 'req',
-    id: randomUUID(),
-    method: 'connect',
-    params: {
-      minProtocol: 3,
-      maxProtocol: 3,
-      client: {
-        id: 'cli',
-        version: '1.0.0',
-        platform: process.platform,
-        mode: 'cli',
-      },
-      caps: [],
-      auth: {
-        token: OPENCLAW_TOKEN,
-      },
-      role: 'operator',
-      scopes: ['*'],
-    },
-  };
-}
+// Máximo de mensajes en historial para no exceder contexto
+const MAX_HISTORY = 20;
 
 export function setupOpenClawProxy(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
@@ -101,198 +31,126 @@ export function setupOpenClawProxy(httpServer) {
   wss.on('connection', (clientWs) => {
     console.log('[OPENCLAW-PROXY] Cliente conectado');
 
-    let upstreamWs    = null;
-    let upstreamReady = false;
-    let handshakeDone = false;
-    let connectReqId  = null;
-    let backoffMs     = BACKOFF_INITIAL_MS;
-    let reconnectTimer = null;
-    let clientClosed  = false;
-    const pendingMessages = [];
+    const sessionId = randomUUID();
+    const history = []; // Array of {role, content}
 
-    // ── Conectar al upstream con handshake ─────────────────────────────────
-    function connectUpstream() {
-      if (clientClosed) return;
+    // Notificar al frontend que estamos conectados
+    send(clientWs, {
+      type: 'connected',
+      sessionId,
+    });
 
-      // Limpiar conexión anterior
-      if (upstreamWs) {
-        try { upstreamWs.removeAllListeners(); upstreamWs.close(); } catch {}
-      }
-      upstreamReady = false;
-      handshakeDone = false;
-      connectReqId  = null;
-
+    clientWs.on('message', async (data) => {
+      let parsed;
       try {
-        upstreamWs = new WebSocket(OPENCLAW_URL);
-      } catch (err) {
-        console.error('[OPENCLAW-PROXY] Error al crear conexión:', err.message);
-        scheduleReconnect();
+        parsed = JSON.parse(data.toString());
+      } catch {
+        send(clientWs, { type: 'error', error: 'Mensaje inválido' });
         return;
       }
 
-      upstreamWs.on('open', () => {
-        console.log('[OPENCLAW-PROXY] ✓ WebSocket abierto, esperando challenge...');
-        // Reset backoff on successful open
-        backoffMs = BACKOFF_INITIAL_MS;
-      });
+      // El frontend envía {type:'ask', task:'...'}
+      const userMessage = parsed.task || parsed.message || parsed.text;
+      if (!userMessage) {
+        send(clientWs, { type: 'error', error: 'Sin mensaje' });
+        return;
+      }
 
-      upstreamWs.on('message', (data) => {
-        const raw = data.toString();
-        let parsed;
-        try { parsed = JSON.parse(raw); } catch {
-          if (clientWs.readyState === WebSocket.OPEN) clientWs.send(raw);
-          return;
-        }
+      console.log('[OPENCLAW-PROXY] → Ollama:', userMessage.slice(0, 80));
 
-        // 1. Interceptar connect.challenge
-        if (!handshakeDone && parsed.type === 'event' && parsed.event === 'connect.challenge') {
-          console.log('[OPENCLAW-PROXY] ← challenge, respondiendo...');
-          const frame = buildConnectFrame();
-          connectReqId = frame.id;
-          upstreamWs.send(JSON.stringify(frame));
-          handshakeDone = true;
-          return;
-        }
+      // Añadir al historial
+      history.push({ role: 'user', content: userMessage });
 
-        // 2. Interceptar respuesta al connect
-        if (parsed.type === 'res' && !upstreamReady && connectReqId && parsed.id === connectReqId) {
-          if (parsed.error) {
-            console.error('[OPENCLAW-PROXY] ✗ Connect rechazado:', parsed.error.message || parsed.error.code);
-            notifyClient({ type: 'error', error: `OpenClaw: ${parsed.error.message || 'unknown'}` });
-            scheduleReconnect();
-            return;
-          }
-          console.log('[OPENCLAW-PROXY] ✓ Handshake completado');
-          upstreamReady = true;
-          backoffMs = BACKOFF_INITIAL_MS; // Reset on success
-          const sessionId = parsed.result?.sessionId || parsed.result?.id || 'proxy';
-          notifyClient({ type: 'connected', sessionId });
+      // Trim history si excede máximo
+      while (history.length > MAX_HISTORY) {
+        history.shift();
+      }
 
-          // Enviar mensajes en cola
-          for (const msg of pendingMessages) upstreamWs.send(msg);
-          pendingMessages.length = 0;
-          return;
-        }
+      // Indicar que estamos procesando
+      send(clientWs, { type: 'processing', task: 'Pensando...' });
 
-        // 3. Traducir respuestas RPC de OpenClaw → formato simple para el frontend
-        // El frontend espera {type:'response', response:'text'} o {type:'processing', task:'...'}
-        if (parsed.type === 'res' && parsed.result) {
-          // Respuesta final del agente
-          const text = parsed.result?.text || parsed.result?.message || parsed.result?.content
-            || (typeof parsed.result === 'string' ? parsed.result : JSON.stringify(parsed.result));
-          notifyClient({ type: 'response', response: text });
-          return;
-        }
-        if (parsed.type === 'res' && parsed.error) {
-          notifyClient({ type: 'error', error: parsed.error.message || parsed.error.code || 'Unknown error' });
-          return;
-        }
-        if (parsed.type === 'event' && parsed.event === 'agent.progress') {
-          const step = parsed.data?.step || parsed.data?.status || 'Procesando...';
-          notifyClient({ type: 'processing', task: step });
-          return;
-        }
-        if (parsed.type === 'event' && parsed.event === 'agent.stream') {
-          const chunk = parsed.data?.text || parsed.data?.content || parsed.data?.delta || '';
-          if (chunk) notifyClient({ type: 'response', response: chunk });
-          return;
-        }
-
-        // Reenviar todo lo demás sin transformar
-        if (clientWs.readyState === WebSocket.OPEN) {
-          clientWs.send(raw);
-        }
-      });
-
-      upstreamWs.on('error', (err) => {
-        console.error('[OPENCLAW-PROXY] Error upstream:', err.message);
-        notifyClient({ type: 'error', error: `OpenClaw: ${err.message}` });
-      });
-
-      upstreamWs.on('close', (code, reason) => {
-        const reasonStr = reason?.toString() || 'sin motivo';
-        console.log(`[OPENCLAW-PROXY] Upstream cerrado (code:${code}, reason:${reasonStr})`);
-        upstreamReady = false;
-
-        if (!clientClosed) {
-          notifyClient({ type: 'event', event: 'reconnecting', backoffMs });
-          scheduleReconnect();
-        }
-      });
-    }
-
-    // ── Reconexión con backoff exponencial ─────────────────────────────────
-    function scheduleReconnect() {
-      if (clientClosed || reconnectTimer) return;
-      const jitter = Math.random() * 500;
-      const delay = Math.min(backoffMs + jitter, BACKOFF_MAX_MS);
-      console.log(`[OPENCLAW-PROXY] Reconectando en ${Math.round(delay)}ms...`);
-      reconnectTimer = setTimeout(() => {
-        reconnectTimer = null;
-        backoffMs = Math.min(backoffMs * BACKOFF_FACTOR, BACKOFF_MAX_MS);
-        connectUpstream();
-      }, delay);
-    }
-
-    // ── Helper para enviar al browser ─────────────────────────────────────
-    function notifyClient(obj) {
       try {
-        if (clientWs.readyState === WebSocket.OPEN) {
-          clientWs.send(JSON.stringify(obj));
-        }
-      } catch {}
-    }
+        const response = await callOllama(history);
+        
+        // Añadir respuesta al historial
+        history.push({ role: 'assistant', content: response });
 
-    // ── Cliente (browser) → Upstream ──────────────────────────────────────
-    // El frontend envía {type:'ask', task:'...'} pero OpenClaw gateway espera
-    // el protocolo RPC: {type:'req', method:'agent', id:'...', params:{...}}
-    clientWs.on('message', (data) => {
-      let msg = data.toString();
-
-      // Traducir formato frontend → protocolo OpenClaw RPC
-      try {
-        const parsed = JSON.parse(msg);
-        if (parsed.type === 'ask' && parsed.task) {
-          const rpcMsg = {
-            type: 'req',
-            id: randomUUID(),
-            method: 'agent',
-            params: {
-              idempotencyKey: randomUUID(),
-              agentId: 'main',
-              message: parsed.task,
-            },
-          };
-          msg = JSON.stringify(rpcMsg);
-          console.log('[OPENCLAW-PROXY] → agent RPC:', parsed.task.slice(0, 80));
-        }
-      } catch {}
-
-      if (upstreamReady && upstreamWs?.readyState === WebSocket.OPEN) {
-        upstreamWs.send(msg);
-      } else {
-        pendingMessages.push(msg);
+        // Enviar respuesta al frontend
+        send(clientWs, { type: 'response', response });
+        console.log('[OPENCLAW-PROXY] ← Ollama:', response.slice(0, 80));
+      } catch (err) {
+        console.error('[OPENCLAW-PROXY] Error Ollama:', err.message);
+        send(clientWs, {
+          type: 'error',
+          error: `Error: ${err.message}`,
+        });
       }
     });
 
     clientWs.on('close', () => {
       console.log('[OPENCLAW-PROXY] Cliente desconectado');
-      clientClosed = true;
-      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-      try { upstreamWs?.close(); } catch {}
     });
 
     clientWs.on('error', (err) => {
       console.error('[OPENCLAW-PROXY] Error cliente:', err.message);
-      clientClosed = true;
-      if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-      try { upstreamWs?.close(); } catch {}
     });
-
-    // ── Iniciar primera conexión ──────────────────────────────────────────
-    connectUpstream();
   });
 
-  console.log('[SERVER] ✓ OpenClaw Proxy: /ws/openclaw → ' + OPENCLAW_URL);
+  console.log(`[SERVER] ✓ OpenClaw Proxy: /ws/openclaw → ${OLLAMA_BASE} (${MODEL})`);
   return wss;
+}
+
+/**
+ * Llama a Ollama /api/chat con el historial de mensajes.
+ * No usa streaming para simplificar — devuelve la respuesta completa.
+ */
+async function callOllama(history) {
+  const body = {
+    model: MODEL,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...history,
+    ],
+    stream: false,
+    options: {
+      num_predict: 2048,
+      temperature: 0.7,
+    },
+  };
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120_000); // 2 min timeout
+
+  try {
+    const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Ollama ${res.status}: ${text.slice(0, 200)}`);
+    }
+
+    const data = await res.json();
+    const content = data.message?.content || data.response || '';
+    
+    if (!content) {
+      throw new Error('Respuesta vacía de Ollama');
+    }
+
+    return content.trim();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function send(ws, obj) {
+  try {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(obj));
+    }
+  } catch {}
 }
