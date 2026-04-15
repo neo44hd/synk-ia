@@ -1082,11 +1082,12 @@ function connectClaw() {
 
 function handleClaw(m){
   if(m.type==='connected'){document.getElementById('claw-session').textContent='Session: '+(m.sessionId||'').slice(0,8)+'...';return;}
-  if(m.type==='processing'){addSysMsg('claw','⏳ '+m.task);return;}
-  if(m.type==='response'){addClawResp(m.response);return;}
-  if(m.type==='error'){addClawErr(m.error||m.message);return;}
-  if(m.text||m.content||m.response)addClawResp(m.text||m.content||m.response);
+  if(m.type==='processing'){removeClawProcessing();addSysMsg('claw','⏳ '+m.task);return;}
+  if(m.type==='response'){removeClawProcessing();addClawResp(m.response);return;}
+  if(m.type==='error'){removeClawProcessing();addClawErr(m.error||m.message);return;}
+  if(m.text||m.content||m.response){removeClawProcessing();addClawResp(m.text||m.content||m.response);}
 }
+function removeClawProcessing(){const w=document.getElementById('claw-wrap');if(!w)return;for(const el of [...w.children]){if(el.textContent.includes('⏳'))el.remove();}}
 
 async function clawSend(){
   const inp=document.getElementById('claw-in'),text=inp.value.trim();
