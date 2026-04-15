@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="hat" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0ea5e9" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Outer ring -->
+  <circle cx="60" cy="60" r="56" stroke="url(#glow)" stroke-width="2.5" opacity="0.25"/>
+
+  <!-- Brain body -->
+  <g filter="url(#shadow)">
+    <!-- Left hemisphere -->
+    <path d="M42 72 C28 70 22 58 24 48 C26 38 34 32 42 32 C40 28 42 22 48 20 C54 18 58 22 58 22" 
+          stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" fill="rgba(14,165,233,0.08)"/>
+    <!-- Right hemisphere -->
+    <path d="M78 72 C92 70 98 58 96 48 C94 38 86 32 78 32 C80 28 78 22 72 20 C66 18 62 22 62 22" 
+          stroke="#0ea5e9" stroke-width="2.5" stroke-linecap="round" fill="rgba(14,165,233,0.08)"/>
+    <!-- Center split -->
+    <path d="M60 22 L60 72" stroke="#0ea5e9" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.5"/>
+    <!-- Brain folds left -->
+    <path d="M36 50 C42 48 48 52 54 48" stroke="#0ea5e9" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <path d="M34 60 C40 57 46 62 52 58" stroke="#0ea5e9" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <!-- Brain folds right -->
+    <path d="M84 50 C78 48 72 52 66 48" stroke="#0ea5e9" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <path d="M86 60 C80 57 74 62 68 58" stroke="#0ea5e9" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <!-- Brain stem -->
+    <path d="M54 72 Q60 78 66 72" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- Chef hat -->
+  <g>
+    <!-- Hat puffs (toque) -->
+    <ellipse cx="46" cy="18" rx="10" ry="9" fill="url(#hat)" stroke="#cbd5e1" stroke-width="1"/>
+    <ellipse cx="60" cy="14" rx="11" ry="10" fill="url(#hat)" stroke="#cbd5e1" stroke-width="1"/>
+    <ellipse cx="74" cy="18" rx="10" ry="9" fill="url(#hat)" stroke="#cbd5e1" stroke-width="1"/>
+    <!-- Hat band -->
+    <rect x="40" y="22" width="40" height="7" rx="2" fill="url(#hat)" stroke="#cbd5e1" stroke-width="1"/>
+    <!-- Band line -->
+    <line x1="42" y1="25.5" x2="78" y2="25.5" stroke="#0ea5e9" stroke-width="1.5" opacity="0.7"/>
+  </g>
+
+  <!-- Crossed knives -->
+  <g opacity="0.9">
+    <!-- Left knife (blade goes down-right) -->
+    <g transform="rotate(-35, 60, 92)">
+      <!-- Blade -->
+      <path d="M60 78 L56 98 Q60 100 64 98 Z" fill="#94a3b8" stroke="#64748b" stroke-width="0.8"/>
+      <!-- Handle -->
+      <rect x="57" y="98" width="6" height="14" rx="2" fill="#334155" stroke="#475569" stroke-width="0.8"/>
+      <!-- Bolster -->
+      <rect x="56" y="97" width="8" height="3" rx="1" fill="#64748b"/>
+      <!-- Blade shine -->
+      <line x1="60" y1="80" x2="59" y2="94" stroke="white" stroke-width="0.6" opacity="0.4"/>
+    </g>
+    <!-- Right knife (blade goes down-left) -->
+    <g transform="rotate(35, 60, 92)">
+      <!-- Blade -->
+      <path d="M60 78 L56 98 Q60 100 64 98 Z" fill="#94a3b8" stroke="#64748b" stroke-width="0.8"/>
+      <!-- Handle -->
+      <rect x="57" y="98" width="6" height="14" rx="2" fill="#334155" stroke="#475569" stroke-width="0.8"/>
+      <!-- Bolster -->
+      <rect x="56" y="97" width="8" height="3" rx="1" fill="#64748b"/>
+      <!-- Blade shine -->
+      <line x1="60" y1="80" x2="59" y2="94" stroke="white" stroke-width="0.6" opacity="0.4"/>
+    </g>
+  </g>
+
+  <!-- Neural dots -->
+  <circle cx="42" cy="40" r="2" fill="#0ea5e9" opacity="0.7"/>
+  <circle cx="78" cy="40" r="2" fill="#0ea5e9" opacity="0.7"/>
+  <circle cx="50" cy="55" r="1.5" fill="#38bdf8" opacity="0.5"/>
+  <circle cx="70" cy="55" r="1.5" fill="#38bdf8" opacity="0.5"/>
+  <circle cx="60" cy="40" r="1.5" fill="#38bdf8" opacity="0.6"/>
+</svg>

@@ -574,13 +574,13 @@ body {
         <div class="mod-port">sinkialabs.com/terminal</div>
       </a>
 
-      <a class="mod-card accent-blue" href="http://100.78.4.14:4400" target="_blank" id="card-commerce">
+      <a class="mod-card accent-blue" href="/commerce" target="_blank" id="card-commerce">
         <span class="mod-card-status" id="st-commerce"></span>
         <span class="mod-badge" id="badge-commerce" style="background:var(--blue)">0</span>
-        <span class="mod-icon">🛒</span>
+        <span class="mod-icon" id="icon-commerce"></span>
         <div class="mod-title">SINKIA Commerce</div>
         <div class="mod-desc">TPV nativo con VeriFactu — 200 productos, cobro, cocina, pedidos online</div>
-        <div class="mod-port">100.78.4.14:4400</div>
+        <div class="mod-port">sinkialabs.com/commerce</div>
       </a>
     </div>
 
@@ -677,10 +677,10 @@ body {
         <div class="action-title">Sync Revo ahora</div>
         <div class="action-desc">Forzar sync TPV Revo XEF</div>
       </div>
-      <div class="action-card" onclick="window.open('http://100.78.4.14:4400/pos','_blank')">
-        <div class="action-icon">🛒</div>
-        <div class="action-title">Abrir TPV</div>
-        <div class="action-desc">SINKIA Commerce — Punto de venta</div>
+      <div class="action-card" onclick="window.open('/commerce','_blank')">
+        <div class="action-icon" id="action-icon-commerce"></div>
+        <div class="action-title">Abrir Commerce</div>
+        <div class="action-desc">SINKIA Commerce — Panel completo</div>
       </div>
       <div class="action-card" onclick="window.open('/documents','_blank')">
         <div class="action-icon">📄</div>
@@ -859,7 +859,7 @@ async function loadTodayMetrics() {
 
   // SINKIA Commerce — métricas en vivo desde Mac Mini
   try {
-    const cRes = await fetch('http://100.78.4.14:4400/api/dashboard/stats').then(r=>r.json());
+    const cRes = await fetch('/api/commerce/dashboard/stats').then(r=>r.json());
     if (cRes.success) {
       const d = cRes.data;
       const rev = d.today.revenue;
@@ -1138,6 +1138,16 @@ function fmtUp(s) {
 document.getElementById('token-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') doLogin();
 });
+
+// ── SINKIA Commerce logo injection ────────────────────────────────────────
+(function() {
+  const logoUrl = '/sinkia-commerce-logo.svg';
+  const logoStyle = 'width:30px;height:30px;';
+  const el1 = document.getElementById('icon-commerce');
+  if (el1) el1.innerHTML = `<img src="${logoUrl}" style="${logoStyle}">`;
+  const el2 = document.getElementById('action-icon-commerce');
+  if (el2) el2.innerHTML = `<img src="${logoUrl}" style="${logoStyle}">`;
+})();
 </script>
 </body>
 </html>

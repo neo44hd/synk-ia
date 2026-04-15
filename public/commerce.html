@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinkia — Commerce</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #080808;
+  --surface:   #111111;
+  --surface2:  #181818;
+  --surface3:  #1e1e1e;
+  --border:    #222222;
+  --border2:   #2a2a2a;
+  --text:      #e8e8e8;
+  --muted:     #555;
+  --muted2:    #888;
+  --green:     #22c55e;
+  --green-dim: #15803d;
+  --green-bg:  rgba(34,197,94,.08);
+  --red:       #ef4444;
+  --yellow:    #eab308;
+  --blue:      #3b82f6;
+  --purple:    #a855f7;
+  --orange:    #f97316;
+  --cyan:      #06b6d4;
+  --sinkia:    #0ea5e9;
+  --sinkia-dim:#0284c7;
+  --radius:    12px;
+  --radius-sm: 8px;
+}
+
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 20;
+}
+.header-logo {
+  font-size: 18px; font-weight: 900; letter-spacing: -.5px;
+  color: var(--text);
+}
+.header-logo span { color: var(--sinkia); }
+.header-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--sinkia); opacity: .8;
+  background: rgba(14,165,233,.1); padding: 3px 10px; border-radius: 6px;
+}
+.header-sep { flex: 1; }
+.header-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--muted2);
+  background: var(--surface2); padding: 4px 12px; border-radius: 20px;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+.dot.red { background: var(--red); }
+.dot.yellow { background: var(--yellow); }
+.back-btn {
+  font-size: 12px; color: var(--muted2); text-decoration: none;
+  padding: 4px 10px; border-radius: 6px;
+  transition: all .15s;
+}
+.back-btn:hover { color: var(--text); background: var(--surface2); }
+#clock { font-size: 12px; color: var(--muted2); font-variant-numeric: tabular-nums; }
+
+/* ── Main ───────────────────────────────────────────────────────────── */
+.main { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+.sec-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--muted); margin-bottom: 12px;
+}
+
+/* ── Metrics grid ───────────────────────────────────────────────────── */
+.metrics-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px; margin-bottom: 28px;
+}
+.metric-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  transition: border-color .2s;
+}
+.metric-card:hover { border-color: var(--border2); }
+.metric-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.metric-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.metric-icon.green { background: rgba(34,197,94,.1); }
+.metric-icon.blue { background: rgba(59,130,246,.1); }
+.metric-icon.purple { background: rgba(168,85,247,.1); }
+.metric-icon.sinkia { background: rgba(14,165,233,.1); }
+.metric-icon.orange { background: rgba(249,115,22,.1); }
+.metric-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 8px;
+  border-radius: 20px; background: var(--surface2); color: var(--muted2);
+}
+.metric-badge.green { background: rgba(34,197,94,.1); color: var(--green); }
+.metric-badge.blue  { background: rgba(59,130,246,.1); color: var(--blue); }
+.metric-badge.sinkia { background: rgba(14,165,233,.1); color: var(--sinkia); }
+.metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); font-weight: 600; }
+.metric-value { font-size: 22px; font-weight: 800; color: var(--text); margin: 2px 0; }
+.metric-value.green { color: var(--green); }
+.metric-value.blue { color: var(--blue); }
+.metric-value.sinkia { color: var(--sinkia); }
+.metric-detail { font-size: 11px; color: var(--muted2); }
+
+/* ── Module cards ───────────────────────────────────────────────────── */
+.mod-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px; margin-bottom: 28px;
+}
+.mod-card {
+  display: block; text-decoration: none; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  transition: all .2s; position: relative;
+}
+.mod-card:hover { border-color: var(--sinkia); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,.3); }
+.mod-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+.mod-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.mod-desc { font-size: 11px; color: var(--muted2); line-height: 1.4; margin-bottom: 8px; }
+.mod-port { font-size: 10px; color: var(--muted); font-family: 'SF Mono', monospace; }
+.mod-status {
+  position: absolute; top: 12px; right: 12px;
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.mod-status.ok { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,.4); }
+.mod-status.err { background: var(--red); }
+
+/* ── Orders table ───────────────────────────────────────────────────── */
+.table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden; margin-bottom: 28px;
+}
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: left; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--muted); padding: 10px 16px;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+th.right { text-align: right; }
+td { padding: 10px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+td.right { text-align: right; }
+td.mono { font-family: 'SF Mono', monospace; font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+.type-badge {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 6px;
+  background: rgba(14,165,233,.1); color: var(--sinkia);
+}
+
+/* ── Products grid ──────────────────────────────────────────────────── */
+.products-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px; margin-bottom: 28px;
+}
+.product-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  transition: border-color .2s;
+}
+.product-card:hover { border-color: var(--border2); }
+.product-img {
+  width: 100%; aspect-ratio: 1; object-fit: cover;
+  background: var(--surface2); display: block;
+}
+.product-img-placeholder {
+  width: 100%; aspect-ratio: 1; background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 24px;
+}
+.product-info { padding: 8px 10px; }
+.product-name { font-size: 11px; font-weight: 600; line-height: 1.3; color: var(--text); }
+.product-price { font-size: 12px; font-weight: 800; color: var(--sinkia); margin-top: 2px; }
+
+/* ── Group tabs ─────────────────────────────────────────────────────── */
+.group-tabs {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
+  margin-bottom: 16px; -webkit-overflow-scrolling: touch;
+}
+.group-tab {
+  flex-shrink: 0; padding: 6px 14px; border-radius: 8px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  background: var(--surface2); color: var(--muted2);
+  border: 1px solid var(--border); transition: all .15s;
+  white-space: nowrap;
+}
+.group-tab:hover { color: var(--text); border-color: var(--border2); }
+.group-tab.active { background: var(--sinkia); color: #fff; border-color: var(--sinkia); }
+
+/* ── Empty / Loading ────────────────────────────────────────────────── */
+.empty-state {
+  text-align: center; padding: 40px 20px; color: var(--muted);
+}
+.empty-state .icon { font-size: 40px; margin-bottom: 8px; }
+.loading { text-align: center; padding: 60px; color: var(--muted2); }
+.spinner {
+  width: 32px; height: 32px; border: 3px solid var(--border);
+  border-top-color: var(--sinkia); border-radius: 50%;
+  animation: spin .8s linear infinite; margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .mod-grid { grid-template-columns: 1fr; }
+  .products-grid { grid-template-columns: repeat(3, 1fr); }
+  .header { padding: 8px 12px; gap: 8px; }
+}
+</style>
+</head>
+<body>
+
+  <!-- ── HEADER ──────────────────────────────────────────────────────── -->
+  <header class="header">
+    <img src="/sinkia-commerce-logo.svg" alt="SINKIA Commerce" style="width:32px;height:32px;">
+    <div class="header-logo">sinkia<span>.</span></div>
+    <div class="header-label">Commerce</div>
+    <div class="header-sep"></div>
+    <div class="header-pill">
+      <div class="dot" id="conn-dot"></div>
+      <span id="conn-text">Conectando...</span>
+    </div>
+    <span id="clock"></span>
+    <a href="/admin" class="back-btn">← Admin</a>
+  </header>
+
+  <!-- ── CONTENIDO ───────────────────────────────────────────────────── -->
+  <div class="main" id="main-content">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Conectando con SINKIA Commerce...</p>
+    </div>
+  </div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────
+const COMMERCE_API = '/api/commerce';
+let statsData = null;
+let menuData = null;
+let activeGroup = null;
+
+// ── Clock ─────────────────────────────────────────────────────────────────
+function updateClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleDateString('es-ES',{weekday:'short',day:'numeric',month:'short'}) + ' · ' +
+    n.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function fmt(v) { return `€${parseFloat(v||0).toFixed(2)}`; }
+function fmtTime(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+}
+const TYPE_LABELS = { dine_in:'Sala', bar:'Barra', takeaway:'Llevar', delivery:'Delivery', web:'Web' };
+
+// ── Init ──────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const [statsRes, menuRes] = await Promise.all([
+      fetch(`${COMMERCE_API}/dashboard/stats`).then(r => r.json()),
+      fetch(`${COMMERCE_API}/catalog/menu`).then(r => r.json()),
+    ]);
+
+    if (!statsRes.success) throw new Error('Stats failed');
+    statsData = statsRes.data;
+    menuData = menuRes.success ? menuRes.data : null;
+
+    document.getElementById('conn-dot').className = 'dot';
+    document.getElementById('conn-text').textContent = 'Online';
+    render();
+  } catch (err) {
+    document.getElementById('conn-dot').className = 'dot red';
+    document.getElementById('conn-text').textContent = 'Sin conexión';
+    document.getElementById('main-content').innerHTML = `
+      <div class="empty-state">
+        <div class="icon">⚠️</div>
+        <p style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">No se puede conectar con Commerce</p>
+        <p style="font-size:12px">El servicio en el Mac Mini no responde. Verifica que sinkia-commerce está corriendo.</p>
+      </div>`;
+  }
+}
+
+// Auto-refresh stats
+setInterval(async () => {
+  try {
+    const res = await fetch(`${COMMERCE_API}/dashboard/stats`).then(r=>r.json());
+    if (res.success) {
+      statsData = res.data;
+      renderMetrics();
+      renderOrders();
+      document.getElementById('conn-dot').className = 'dot';
+      document.getElementById('conn-text').textContent = 'Online';
+    }
+  } catch {
+    document.getElementById('conn-dot').className = 'dot red';
+    document.getElementById('conn-text').textContent = 'Sin conexión';
+  }
+}, 15000);
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function render() {
+  const s = statsData;
+  const main = document.getElementById('main-content');
+
+  main.innerHTML = `
+    <!-- Métricas -->
+    <div class="sec-title">Panel de control</div>
+    <div class="metrics-grid" id="metrics-grid"></div>
+
+    <!-- Módulos rápidos -->
+    <div class="sec-title">Acceso directo</div>
+    <div class="mod-grid">
+      <a class="mod-card" href="http://100.78.4.14:4400/pos" target="_blank">
+        <span class="mod-status ok"></span>
+        <span class="mod-icon">🖥️</span>
+        <div class="mod-title">Punto de Venta</div>
+        <div class="mod-desc">Abrir TPV — cobrar, carrito, modificadores</div>
+        <div class="mod-port">Red local · :4400/pos</div>
+      </a>
+      <a class="mod-card" href="http://100.78.4.14:4400" target="_blank">
+        <span class="mod-status ok"></span>
+        <span class="mod-icon">🌐</span>
+        <div class="mod-title">App Directa</div>
+        <div class="mod-desc">Acceder al servidor Commerce directamente</div>
+        <div class="mod-port">Red local · :4400</div>
+      </a>
+      <a class="mod-card" href="/admin">
+        <span class="mod-icon">⚙️</span>
+        <div class="mod-title">Volver al Admin</div>
+        <div class="mod-desc">Panel principal de Sinkia</div>
+        <div class="mod-port">sinkialabs.com/admin</div>
+      </a>
+    </div>
+
+    <!-- Pedidos abiertos -->
+    <div class="sec-title">Pedidos abiertos</div>
+    <div id="orders-section"></div>
+
+    <!-- Catálogo -->
+    <div class="sec-title">Catálogo (${s.catalog.products} productos)</div>
+    <div id="group-tabs"></div>
+    <div id="products-grid"></div>
+
+    <!-- Footer -->
+    <div style="margin-top:28px; padding:16px 0; border-top:1px solid var(--border); display:flex; gap:12px; flex-wrap:wrap; font-size:11px; color:var(--muted)">
+      <span>SINKIA Commerce v${s.system.version}</span>
+      <span>·</span>
+      <span>Chicken Palace Ibiza</span>
+      <span>·</span>
+      <span>CIF B56908486</span>
+      <span>·</span>
+      <span>VeriFactu: ${s.system.verifactuMode}</span>
+      <span>·</span>
+      <span>Uptime: ${s.system.uptimeHuman}</span>
+    </div>
+  `;
+
+  renderMetrics();
+  renderOrders();
+  renderCatalog();
+}
+
+function renderMetrics() {
+  const s = statsData;
+  document.getElementById('metrics-grid').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon green">🟢</div>
+        <div class="metric-badge green">${s.system.status === 'healthy' ? 'Operativo' : 'Degradado'}</div>
+      </div>
+      <div class="metric-label">Sistema</div>
+      <div class="metric-value green">${s.system.uptimeHuman}</div>
+      <div class="metric-detail">VeriFactu ${s.system.verifactuMode}</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon sinkia">📦</div>
+        <div class="metric-badge sinkia">${s.catalog.productsWithImage} con imagen</div>
+      </div>
+      <div class="metric-label">Catálogo</div>
+      <div class="metric-value">${s.catalog.products}</div>
+      <div class="metric-detail">${s.catalog.groups} grupos · ${s.catalog.categories} categorías</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon blue">💰</div>
+        <div class="metric-badge blue">${s.today.ordersClosed} cerrados</div>
+      </div>
+      <div class="metric-label">Ventas hoy</div>
+      <div class="metric-value blue">${fmt(s.today.revenue)}</div>
+      <div class="metric-detail">${s.today.orders} pedidos · Ticket medio ${fmt(s.today.avgTicket)}</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon purple">💳</div>
+        ${s.shift ? `<div class="metric-badge green">Abierto</div>` : `<div class="metric-badge">Cerrado</div>`}
+      </div>
+      <div class="metric-label">Turno de caja</div>
+      <div class="metric-value">${s.shift ? fmtTime(s.shift.opened_at) : '—'}</div>
+      <div class="metric-detail">${s.shift ? `Fondo: €${parseFloat(s.shift.opening_cash||0).toFixed(0)}` : 'Sin turno activo'}</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-top">
+        <div class="metric-icon orange">🧾</div>
+        <div class="metric-badge">${s.today.ordersOpen} abiertos</div>
+      </div>
+      <div class="metric-label">Pedidos hoy</div>
+      <div class="metric-value">${s.today.orders}</div>
+      <div class="metric-detail">${s.today.ordersClosed} cerrados · ${s.today.ordersCancelled} cancelados</div>
+    </div>
+  `;
+}
+
+function renderOrders() {
+  const orders = statsData.openOrders || [];
+  const el = document.getElementById('orders-section');
+  if (!orders.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>No hay pedidos abiertos</p></div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Pedido</th><th>Tipo</th><th>Mesa</th><th class="right">Total</th><th class="right">Hora</th>
+        </tr></thead>
+        <tbody>
+          ${orders.map(o => `
+            <tr>
+              <td class="mono">${o.order_number}</td>
+              <td><span class="type-badge">${TYPE_LABELS[o.order_type]||o.order_type}</span></td>
+              <td>${o.table_name||'—'}</td>
+              <td class="right mono">${fmt(o.total)}</td>
+              <td class="right" style="color:var(--muted2)">${fmtTime(o.created_at)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderCatalog() {
+  if (!menuData) return;
+  const { groups, categories } = menuData;
+
+  // Group tabs
+  const tabsEl = document.getElementById('group-tabs');
+  tabsEl.innerHTML = `
+    <div class="group-tabs">
+      <div class="group-tab ${activeGroup===null?'active':''}" onclick="setGroup(null)">Todos</div>
+      ${groups.map(g => `
+        <div class="group-tab ${activeGroup===g.id?'active':''}" onclick="setGroup(${g.id})">${g.name}</div>
+      `).join('')}
+    </div>`;
+
+  // Filter categories by group
+  const filtered = activeGroup
+    ? categories.filter(c => c.group_id === activeGroup)
+    : categories;
+
+  // Flatten products
+  const products = filtered.flatMap(c => (c.products||[]).slice(0, 12));
+  const shown = products.slice(0, 24);
+
+  const gridEl = document.getElementById('products-grid');
+  if (!shown.length) {
+    gridEl.innerHTML = `<div class="empty-state"><div class="icon">📦</div><p>Sin productos en este grupo</p></div>`;
+    return;
+  }
+
+  gridEl.innerHTML = `
+    <div class="products-grid">
+      ${shown.map(p => `
+        <div class="product-card">
+          ${p.photo
+            ? `<img class="product-img" src="${COMMERCE_API}/images${p.photo.startsWith('/images') ? p.photo.replace('/images','') : '/products/' + p.photo}" onerror="this.outerHTML='<div class=product-img-placeholder>📷</div>'" loading="lazy">`
+            : `<div class="product-img-placeholder">📷</div>`}
+          <div class="product-info">
+            <div class="product-name">${p.name}</div>
+            <div class="product-price">${fmt(p.base_price)}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    ${products.length > 24 ? `<p style="text-align:center;color:var(--muted);font-size:12px;margin-top:8px">y ${products.length - 24} productos más...</p>` : ''}
+  `;
+}
+
+function setGroup(id) {
+  activeGroup = id;
+  renderCatalog();
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

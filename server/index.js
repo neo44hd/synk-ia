@@ -63,6 +63,47 @@ if (process.env.NODE_ENV !== 'production') {
 app.use('/api/auth', authRouter);
 app.use('/api/filebrain', filebrainRouter);
 
+
+// ── Proxy: SINKIA Commerce (Mac Mini) ─────────────────────────────────────
+const COMMERCE_URL = process.env.COMMERCE_URL || 'http://100.78.4.14:4400';
+
+// Proxy imágenes de Commerce
+app.use('/api/commerce/images', async (req, res) => {
+  try {
+    const targetUrl = COMMERCE_URL + '/images' + req.url;
+    const upstream = await fetch(targetUrl, { signal: AbortSignal.timeout(8000) });
+    if (!upstream.ok) return res.status(upstream.status).end();
+    const contentType = upstream.headers.get('content-type');
+    if (contentType) res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+    res.send(buffer);
+  } catch {
+    res.status(502).end();
+  }
+});
+
+// Proxy API Commerce
+app.use('/api/commerce', async (req, res) => {
+  try {
+    const targetUrl = COMMERCE_URL + '/api' + req.url;
+    const opts = {
+      method: req.method,
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(8000),
+    };
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+      opts.body = JSON.stringify(req.body);
+    }
+    const upstream = await fetch(targetUrl, opts);
+    const data = await upstream.json();
+    res.status(upstream.status).json(data);
+  } catch (err) {
+    res.status(502).json({ success: false, error: 'Commerce service unavailable' });
+  }
+});
+
+
 // ── Rutas de negocio ──────────────────────────────────────────────────────────
 app.use('/api/email',  emailRouter);
 app.use('/api/biloop', biloopRouter);
@@ -134,6 +175,10 @@ try {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distPath  = path.join(__dirname, '..', 'dist');
 
+// Servir assets estáticos de public/ (logos, SVGs, etc.)
+const publicPath = path.join(__dirnameRoot, '..', 'public');
+app.use(express.static(publicPath, { maxAge: '7d' }));
+
 // Servir admin.html en /admin (fuera del SPA de React)
 const adminHtml = path.join(__dirnameRoot, '..', 'public', 'admin.html');
 if (existsSync(adminHtml)) {
@@ -164,6 +209,13 @@ if (existsSync(trabajadoresHtml)) {
   app.get('/trabajadores', (_req, res) => res.sendFile(trabajadoresHtml));
   console.log('[SERVER] ✓ Portal Trabajadores: /trabajadores');
 }
+
+const commerceHtml = path.join(__dirnameRoot, '..', 'public', 'commerce.html');
+if (existsSync(commerceHtml)) {
+  app.get('/commerce', (_req, res) => res.sendFile(commerceHtml));
+  console.log('[SERVER] ✓ Commerce: /commerce');
+}
+
 
 if (existsSync(distPath)) {
   app.use(express.static(distPath));
