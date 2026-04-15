@@ -38,6 +38,10 @@ const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173')
 if (!ALLOWED_ORIGINS.includes('https://sinkialabs.com')) {
   ALLOWED_ORIGINS.push('https://sinkialabs.com', 'http://sinkialabs.com');
 }
+// www variant (Cloudflare tunnel serves both)
+if (!ALLOWED_ORIGINS.includes('https://www.sinkialabs.com')) {
+  ALLOWED_ORIGINS.push('https://www.sinkialabs.com', 'http://www.sinkialabs.com');
+}
 
 app.use(cors({
   origin: (origin, cb) => {

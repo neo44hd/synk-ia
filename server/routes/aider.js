@@ -15,9 +15,10 @@ import path from 'path';
 
 const router = Router();
 
-const AIDER_BIN    = process.env.AIDER_BIN || 'aider';
+const HOME_DIR     = process.env.HOME || '/Users/davidnows';
+const AIDER_BIN    = process.env.AIDER_BIN || `${HOME_DIR}/.local/bin/aider`;
 const OLLAMA_URL   = process.env.OLLAMA_URL || 'http://localhost:11434';
-const AIDER_MODEL  = process.env.AIDER_MODEL || 'ollama/qwen3.5';
+const AIDER_MODEL  = process.env.AIDER_MODEL || 'ollama/qwen2.5-coder:14b';
 const PROJECT_DIR  = process.env.AIDER_PROJECT_DIR || process.env.SINKIA_DIR || '/Users/davidnows/sinkia';
 
 // ── POST /api/aider — enviar mensaje a Aider ─────────────────────────────────
@@ -50,6 +51,7 @@ router.post('/', async (req, res) => {
       cwd: PROJECT_DIR,
       env: {
         ...process.env,
+        PATH: `${HOME_DIR}/.local/bin:/opt/homebrew/bin:/usr/local/bin:${process.env.PATH || '/usr/bin'}`,
         OLLAMA_API_BASE: OLLAMA_URL,
       },
       timeout: 120_000,
@@ -109,8 +111,10 @@ router.get('/status', async (_req, res) => {
   try {
     // Check if aider binary exists
     const { execSync } = await import('child_process');
-    const version = execSync(`${AIDER_BIN} --version 2>/dev/null`, { timeout: 5000 })
-      .toString().trim();
+    const version = execSync(`${AIDER_BIN} --version 2>/dev/null`, {
+      timeout: 5000,
+      env: { ...process.env, PATH: `${HOME_DIR}/.local/bin:/opt/homebrew/bin:/usr/local/bin:${process.env.PATH || '/usr/bin'}` },
+    }).toString().trim();
     res.json({
       available: true,
       version,

@@ -20,6 +20,7 @@ const OPENCLAW_CONFIG_PATH = join(homedir(), '.openclaw', 'openclaw.json');
 // Origins que el gateway debe permitir para conexiones webchat/control-ui
 const REQUIRED_ORIGINS = [
   'https://sinkialabs.com',
+  'https://www.sinkialabs.com',
   'http://localhost:3001',
   'http://127.0.0.1:18789',
 ];
