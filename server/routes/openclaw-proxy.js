@@ -5,6 +5,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 
 const OPENCLAW_URL = process.env.OPENCLAW_WS_URL || 'ws://localhost:18789';
+const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || 'sinkia-openclaw-2026';
 
 export function setupOpenClawProxy(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
@@ -21,7 +22,12 @@ export function setupOpenClawProxy(httpServer) {
 
     let upstreamWs;
     try {
-      upstreamWs = new WebSocket(OPENCLAW_URL);
+      upstreamWs = new WebSocket(OPENCLAW_URL, {
+        headers: {
+          'Authorization': `Bearer ${OPENCLAW_TOKEN}`,
+          'X-Auth-Token': OPENCLAW_TOKEN,
+        }
+      });
     } catch (err) {
       console.error('[OPENCLAW-PROXY] Error al crear conexión upstream:', err.message);
       clientWs.send(JSON.stringify({ type: 'error', error: 'No se pudo conectar a OpenClaw' }));
@@ -61,7 +67,8 @@ export function setupOpenClawProxy(httpServer) {
     });
 
     upstreamWs.on('close', (code, reason) => {
-      console.log(`[OPENCLAW-PROXY] Upstream cerrado (${code})`);
+      const reasonStr = reason?.toString() || 'sin motivo';
+      console.log(`[OPENCLAW-PROXY] Upstream cerrado (code:${code}, reason:${reasonStr})`);
       try { clientWs.close(code, reason?.toString()); } catch {}
     });
 
