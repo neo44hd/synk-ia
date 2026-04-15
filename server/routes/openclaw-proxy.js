@@ -7,7 +7,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
 
 const OPENCLAW_URL   = process.env.OPENCLAW_WS_URL  || 'ws://localhost:18789';
-const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN    || 'sinkia-openclaw-2026';
+const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN    || '';
 
 // Valores válidos sacados de openclaw/dist/message-channel-DXsjCySM.js
 // GATEWAY_CLIENT_IDS: webchat-ui, openclaw-control-ui, openclaw-tui, webchat,
