@@ -584,7 +584,7 @@ body {
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     PANEL 3 — OPENCLAW (functiongemma)
+     PANEL 3 — OPENCLAW (qwen3.5)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div class="panel" id="p-claw">
   <div class="status-bar">
@@ -596,7 +596,7 @@ body {
     <div class="chat-wrap" id="claw-wrap">
       <div class="empty" id="claw-empty">
         <div class="empty-icon">🐾</div>
-        <div class="empty-title">OpenClaw · functiongemma</div>
+        <div class="empty-title">OpenClaw · qwen3.5</div>
         <div class="empty-sub">Agente de funciones con Claude Code via WebSocket</div>
       </div>
     </div>
@@ -746,7 +746,7 @@ document.querySelectorAll('.tab').forEach(t => {
 function clearActive() {
   if (active === 'chat')  return clearPanel('chat', '✦', 'Chat IA · qwen3.5', 'Conversación libre con tu modelo local');
   if (active === 'brain') return clearPanel('brain', '🧠', 'SynK-IA Brain · codegemma:7b', 'Cerebro de negocio');
-  if (active === 'claw')  return clearPanel('claw', '🐾', 'OpenClaw · functiongemma', 'Agente de funciones');
+  if (active === 'claw')  return clearPanel('claw', '🐾', 'OpenClaw · qwen3.5', 'Asistente inteligente');
   if (active === 'aider') return clearPanel('aider', '⚡', 'Aider · qwen2.5-coder:14b', 'Asistente de código con Aider');
   if (active === 'claude') return clearPanel('claude', '🤖', 'Claude Code · qwen2.5-coder:14b', 'Chat directo con Claude Code proxy');
 }
@@ -1062,7 +1062,7 @@ async function brainSend() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  3. OPENCLAW — functiongemma via WebSocket
+//  3. OPENCLAW — qwen3.5 via WebSocket
 // ══════════════════════════════════════════════════════════════════════════════
 let clawWs=null, clawConn=false;
 

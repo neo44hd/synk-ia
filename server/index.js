@@ -182,7 +182,15 @@ const distPath  = path.join(__dirname, '..', 'dist');
 
 // Servir assets estáticos de public/ (logos, SVGs, etc.)
 const publicPath = path.join(__dirnameRoot, '..', 'public');
-app.use(express.static(publicPath, { maxAge: '7d' }));
+app.use(express.static(publicPath, {
+  maxAge: '7d',
+  setHeaders: (res, filePath) => {
+    // No cachear HTML — cambian frecuentemente
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  },
+}));
 
 // Servir admin.html en /admin (fuera del SPA de React)
 const adminHtml = path.join(__dirnameRoot, '..', 'public', 'admin.html');
@@ -193,7 +201,10 @@ if (existsSync(adminHtml)) {
 
 const chatHtml = path.join(__dirnameRoot, '..', 'public', 'chat.html');
 if (existsSync(chatHtml)) {
-  app.get('/chat', (_req, res) => res.sendFile(chatHtml));
+  app.get('/chat', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.sendFile(chatHtml);
+  });
   console.log('[SERVER] ✓ Chat IA: /chat');
 }
 

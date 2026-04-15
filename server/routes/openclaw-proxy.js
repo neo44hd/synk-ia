@@ -1,17 +1,20 @@
 // ── OpenClaw WebSocket Proxy ─────────────────────────────────────────────────
-// Conecta la pestaña OpenClaw del chat web con functiongemma vía Ollama
+// Conecta la pestaña OpenClaw del chat web con qwen3.5 vía Ollama
 //
-// functiongemma es un modelo completion-only (268M params, gemma3 base).
-// No soporta chat/tools, así que usamos /api/generate con formato de
-// prompt conversacional. Mantiene historial por sesión WebSocket.
+// Usa qwen3.5 vía Ollama /api/chat para respuestas coherentes.
+// functiongemma (268M) es demasiado pequeño para chat conversacional.
+// Mantiene historial por sesión WebSocket.
 // ─────────────────────────────────────────────────────────────────────────────
 import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11435';
-const MODEL = process.env.OPENCLAW_MODEL || 'functiongemma:latest';
+const MODEL = process.env.OPENCLAW_MODEL || 'qwen3.5:latest';
 
-const SYSTEM_CONTEXT = `Eres SynK-IA OpenClaw, asistente de Chicken Palace Ibiza. Responde siempre en español, de forma directa y concisa.`;
+const SYSTEM_CONTEXT = `/no_think
+Eres SynK-IA OpenClaw, asistente inteligente de Chicken Palace Ibiza.
+Responde siempre en español, de forma directa y concisa.
+No uses razonamiento interno ni bloques <think>. Ve directo a la respuesta.`;
 
 // Máximo de turnos de historial (pares user/assistant)
 const MAX_TURNS = 8;
@@ -63,7 +66,7 @@ export function setupOpenClawProxy(httpServer) {
       send(clientWs, { type: 'processing', task: 'Pensando...' });
 
       try {
-        const response = await callOllamaGenerate(history);
+        const response = await callOllamaChat(history);
         history.push({ role: 'assistant', text: response });
         send(clientWs, { type: 'response', response });
         console.log('[OPENCLAW-PROXY] ← Ollama:', response.slice(0, 80));
@@ -87,35 +90,22 @@ export function setupOpenClawProxy(httpServer) {
 }
 
 /**
- * Construye el prompt conversacional y llama a Ollama /api/generate.
- * functiongemma es completion-only, no soporta /api/chat.
+ * Llama a Ollama /api/chat con historial de mensajes.
  */
-function buildPrompt(history) {
-  let prompt = SYSTEM_CONTEXT + '\n\n';
-  for (const msg of history) {
-    if (msg.role === 'user') {
-      prompt += `User: ${msg.text}\n`;
-    } else {
-      prompt += `Assistant: ${msg.text}\n`;
-    }
-  }
-  prompt += 'Assistant:';
-  return prompt;
-}
-
-async function callOllamaGenerate(history) {
-  const prompt = buildPrompt(history);
+async function callOllamaChat(history) {
+  const messages = [
+    { role: 'system', content: SYSTEM_CONTEXT },
+    ...history.map(m => ({ role: m.role, content: m.text })),
+  ];
 
   const body = {
     model: MODEL,
-    prompt,
+    messages,
     stream: false,
     options: {
       num_predict: 512,
-      temperature: 0.6,
-      repeat_penalty: 1.3,
-      top_p: 0.9,
-      stop: ['User:', '\n\n\n'],
+      temperature: 0.7,
+      repeat_penalty: 1.2,
     },
   };
 
@@ -123,7 +113,7 @@ async function callOllamaGenerate(history) {
   const timeout = setTimeout(() => controller.abort(), 120_000);
 
   try {
-    const res = await fetch(`${OLLAMA_BASE}/api/generate`, {
+    const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -136,15 +126,13 @@ async function callOllamaGenerate(history) {
     }
 
     const data = await res.json();
-    let content = (data.response || '').trim();
+    let content = (data.message?.content || data.response || '').trim();
+
+    // Quitar bloques <think>...</think> si el modelo los genera
+    content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
     if (!content) {
       throw new Error('Respuesta vacía de Ollama');
-    }
-
-    // Limpiar prefijos residuales
-    if (content.startsWith('Assistant:')) {
-      content = content.slice('Assistant:'.length).trim();
     }
 
     // Truncar si hay repetición excesiva (safety net)
@@ -167,8 +155,8 @@ function deduplicateLoops(text) {
     const idx = text.indexOf(match[0]);
     return text.slice(0, idx + match[1].length).trim() + '...';
   }
-  // Si el texto excede 1500 chars, truncar (functiongemma es 268M, no debe generar tanto)
-  if (text.length > 1500) {
+  // Si el texto excede 2000 chars, truncar
+  if (text.length > 2000) {
     const cutoff = text.lastIndexOf('.', 1500);
     return text.slice(0, cutoff > 0 ? cutoff + 1 : 1500).trim();
   }
