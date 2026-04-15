@@ -46,7 +46,7 @@ function buildConnectFrame(nonce) {
       auth: {
         token: OPENCLAW_TOKEN,
       },
-      role:   'user',
+      role:   'operator',
       scopes: ['*'],
       // device: OMITIDO — requiere keypair (publicKey, signature, signedAt, nonce)
       //         y es opcional según el source code de OpenClaw
