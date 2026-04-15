@@ -8,6 +8,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync }  from 'fs';
 import path            from 'path';
 import { fileURLToPath } from 'url';
+import { syncAfterDocument } from './dataSync.js';
 
 const __dirname     = path.dirname(fileURLToPath(import.meta.url));
 
@@ -691,6 +692,9 @@ export async function processDocument(filePath, mimeType, originalName) {
   const docs = await loadJSON(DOCS_FILE, []);
   docs.unshift(record);
   await saveJSON(DOCS_FILE, docs.slice(0, 2000));
+
+  // Sincronizar con la API genérica (document.json, provider.json, invoice.json)
+  try { syncAfterDocument(); } catch (e) { console.warn('[DOCS] Sync warning:', e.message); }
 
   console.log(`[DOCS] ✓ ${originalName} → ${validated.tipo} en ${record.tiempo_ms}ms`);
   return record;

@@ -21,6 +21,7 @@ import documentsRouter        from './routes/documents.js';
 import trabajadoresRouter     from './routes/trabajadores.js';
 import { authRouter }         from './routes/auth.js';
 import { filebrainRouter }    from './routes/filebrain.js';
+import { syncAll }            from './services/dataSync.js';
 
 // Cargar .env desde server/ (donde realmente está el archivo)
 const __dirnameRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -244,6 +245,9 @@ app.use((err, _req, res, _next) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n[SERVER] ✓ Puerto ${PORT} | ${new Date().toISOString()}`);
   console.log(`[SERVER] CORS: ${ALLOWED_ORIGINS.join(', ')}\n`);
+
+  // ── Sincronización inicial de datos ─────────────────────────────────────────
+  try { syncAll(); } catch (e) { console.error('[SYNC] Startup sync error:', e.message); }
 
   // ── WebSocket handlers ──────────────────────────────────────────────────────
   let terminalWss = null;

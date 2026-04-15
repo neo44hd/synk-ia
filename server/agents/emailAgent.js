@@ -17,6 +17,7 @@ import { writeFile, mkdir, readFile } from 'fs/promises';
 import { existsSync }   from 'fs';
 import path             from 'path';
 import { processDocument, getDocuments, getEntities } from '../services/documentProcessor.js';
+import { syncAfterEmails } from '../services/dataSync.js';
 
 const DATA_DIR    = process.env.DATA_DIR    || '/Users/davidnows/sinkia/data';
 const UPLOADS_DIR = process.env.UPLOADS_DIR || '/Users/davidnows/sinkia/uploads';
@@ -249,6 +250,9 @@ export async function syncEmails({ since, limit, processWithAI = true } = {}) {
 
       const conDocs = newEmails.filter(e => e.documentos_procesados?.length > 0);
       console.log(`[EMAIL] ✓ ${newEmails.length} nuevos — ${conDocs.length} con documentos procesados`);
+
+      // Sincronizar emails con la API genérica
+      try { syncAfterEmails(); } catch (e) { console.warn('[EMAIL] Sync warning:', e.message); }
     } else {
       console.log('[EMAIL] Sin emails nuevos');
     }
