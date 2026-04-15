@@ -1,23 +1,20 @@
 // ── OpenClaw WebSocket Proxy ─────────────────────────────────────────────────
 // Conecta la pestaña OpenClaw del chat web con functiongemma vía Ollama
 //
-// Anteriormente intentaba usar el gateway RPC de OpenClaw, pero functiongemma
-// no soporta tools y el system prompt del gateway excede su contexto (16K).
-// Ahora habla directamente con Ollama HTTP API (/api/chat) para máxima
-// fiabilidad. Mantiene historial de conversación por sesión de WebSocket.
+// functiongemma es un modelo completion-only (268M params, gemma3 base).
+// No soporta chat/tools, así que usamos /api/generate con formato de
+// prompt conversacional. Mantiene historial por sesión WebSocket.
 // ─────────────────────────────────────────────────────────────────────────────
 import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11435';
 const MODEL = process.env.OPENCLAW_MODEL || 'functiongemma:latest';
-const SYSTEM_PROMPT = `Eres SynK-IA OpenClaw, asistente inteligente de Chicken Palace Ibiza.
-Responde siempre en español, de forma directa y concisa.
-No uses razonamiento interno. Ve directo a la respuesta.
-Eres amable, profesional y eficiente.`;
 
-// Máximo de mensajes en historial para no exceder contexto
-const MAX_HISTORY = 20;
+const SYSTEM_CONTEXT = `Eres SynK-IA OpenClaw, asistente de Chicken Palace Ibiza. Responde siempre en español, de forma directa y concisa.`;
+
+// Máximo de turnos de historial (pares user/assistant)
+const MAX_TURNS = 8;
 
 export function setupOpenClawProxy(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
@@ -32,13 +29,10 @@ export function setupOpenClawProxy(httpServer) {
     console.log('[OPENCLAW-PROXY] Cliente conectado');
 
     const sessionId = randomUUID();
-    const history = []; // Array of {role, content}
+    const history = []; // Array of {role:'user'|'assistant', text:string}
 
     // Notificar al frontend que estamos conectados
-    send(clientWs, {
-      type: 'connected',
-      sessionId,
-    });
+    send(clientWs, { type: 'connected', sessionId });
 
     clientWs.on('message', async (data) => {
       let parsed;
@@ -49,7 +43,6 @@ export function setupOpenClawProxy(httpServer) {
         return;
       }
 
-      // El frontend envía {type:'ask', task:'...'}
       const userMessage = parsed.task || parsed.message || parsed.text;
       if (!userMessage) {
         send(clientWs, { type: 'error', error: 'Sin mensaje' });
@@ -59,31 +52,24 @@ export function setupOpenClawProxy(httpServer) {
       console.log('[OPENCLAW-PROXY] → Ollama:', userMessage.slice(0, 80));
 
       // Añadir al historial
-      history.push({ role: 'user', content: userMessage });
+      history.push({ role: 'user', text: userMessage });
 
-      // Trim history si excede máximo
-      while (history.length > MAX_HISTORY) {
+      // Trim historial
+      while (history.length > MAX_TURNS * 2) {
         history.shift();
       }
 
-      // Indicar que estamos procesando
+      // Indicar procesamiento
       send(clientWs, { type: 'processing', task: 'Pensando...' });
 
       try {
-        const response = await callOllama(history);
-        
-        // Añadir respuesta al historial
-        history.push({ role: 'assistant', content: response });
-
-        // Enviar respuesta al frontend
+        const response = await callOllamaGenerate(history);
+        history.push({ role: 'assistant', text: response });
         send(clientWs, { type: 'response', response });
         console.log('[OPENCLAW-PROXY] ← Ollama:', response.slice(0, 80));
       } catch (err) {
         console.error('[OPENCLAW-PROXY] Error Ollama:', err.message);
-        send(clientWs, {
-          type: 'error',
-          error: `Error: ${err.message}`,
-        });
+        send(clientWs, { type: 'error', error: `Error: ${err.message}` });
       }
     });
 
@@ -101,28 +87,43 @@ export function setupOpenClawProxy(httpServer) {
 }
 
 /**
- * Llama a Ollama /api/chat con el historial de mensajes.
- * No usa streaming para simplificar — devuelve la respuesta completa.
+ * Construye el prompt conversacional y llama a Ollama /api/generate.
+ * functiongemma es completion-only, no soporta /api/chat.
  */
-async function callOllama(history) {
+function buildPrompt(history) {
+  let prompt = SYSTEM_CONTEXT + '\n\n';
+  for (const msg of history) {
+    if (msg.role === 'user') {
+      prompt += `User: ${msg.text}\n`;
+    } else {
+      prompt += `Assistant: ${msg.text}\n`;
+    }
+  }
+  prompt += 'Assistant:';
+  return prompt;
+}
+
+async function callOllamaGenerate(history) {
+  const prompt = buildPrompt(history);
+
   const body = {
     model: MODEL,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...history,
-    ],
+    prompt,
     stream: false,
     options: {
-      num_predict: 2048,
-      temperature: 0.7,
+      num_predict: 512,
+      temperature: 0.6,
+      repeat_penalty: 1.3,
+      top_p: 0.9,
+      stop: ['User:', '\n\n\n'],
     },
   };
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120_000); // 2 min timeout
+  const timeout = setTimeout(() => controller.abort(), 120_000);
 
   try {
-    const res = await fetch(`${OLLAMA_BASE}/api/chat`, {
+    const res = await fetch(`${OLLAMA_BASE}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -135,16 +136,43 @@ async function callOllama(history) {
     }
 
     const data = await res.json();
-    const content = data.message?.content || data.response || '';
-    
+    let content = (data.response || '').trim();
+
     if (!content) {
       throw new Error('Respuesta vacía de Ollama');
     }
 
-    return content.trim();
+    // Limpiar prefijos residuales
+    if (content.startsWith('Assistant:')) {
+      content = content.slice('Assistant:'.length).trim();
+    }
+
+    // Truncar si hay repetición excesiva (safety net)
+    content = deduplicateLoops(content);
+
+    return content;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/**
+ * Detecta y corta patrones repetitivos en la respuesta.
+ * Si una frase se repite 3+ veces seguidas, la corta a 1 aparición.
+ */
+function deduplicateLoops(text) {
+  // Detectar repeticiones de frases de 10+ chars
+  const match = text.match(/(.{10,}?)\1{2,}/);
+  if (match) {
+    const idx = text.indexOf(match[0]);
+    return text.slice(0, idx + match[1].length).trim() + '...';
+  }
+  // Si el texto excede 1500 chars, truncar (functiongemma es 268M, no debe generar tanto)
+  if (text.length > 1500) {
+    const cutoff = text.lastIndexOf('.', 1500);
+    return text.slice(0, cutoff > 0 ? cutoff + 1 : 1500).trim();
+  }
+  return text;
 }
 
 function send(ws, obj) {
