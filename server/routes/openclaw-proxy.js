@@ -1,11 +1,46 @@
 // ── OpenClaw WebSocket Proxy ─────────────────────────────────────────────────
-// Reenvía /ws/openclaw al WebSocket local de OpenClaw en localhost:18790
-// para que el tráfico pase por el túnel de Cloudflare (puerto 3001).
+// Reenvía /ws/openclaw al WebSocket local de OpenClaw en localhost:18789
+// Intercepta el handshake connect.challenge y responde con el frame "connect"
+// para autenticarse automáticamente ante el gateway.
 // ─────────────────────────────────────────────────────────────────────────────
 import { WebSocketServer, WebSocket } from 'ws';
+import { randomUUID } from 'crypto';
 
-const OPENCLAW_URL = process.env.OPENCLAW_WS_URL || 'ws://localhost:18789';
-const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || 'sinkia-openclaw-2026';
+const OPENCLAW_URL  = process.env.OPENCLAW_WS_URL  || 'ws://localhost:18789';
+const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN   || 'sinkia-openclaw-2026';
+
+/**
+ * Construye el frame de request "connect" que OpenClaw espera
+ * después de enviar connect.challenge.
+ */
+function buildConnectFrame(nonce) {
+  return {
+    type: 'req',
+    id:   randomUUID(),
+    method: 'connect',
+    params: {
+      minProtocol: 3,
+      maxProtocol: 3,
+      client: {
+        id:       'sinkia-web-proxy',
+        version:  '1.0.0',
+        platform: 'node',
+        mode:     'proxy',
+      },
+      caps: {},
+      auth: {
+        token: OPENCLAW_TOKEN,
+      },
+      role:   'user',
+      scopes: ['*'],
+      device: {
+        id:   'sinkia-proxy-' + randomUUID().slice(0, 8),
+        name: 'SynK-IA Web Proxy',
+        type: 'server',
+      },
+    },
+  };
+}
 
 export function setupOpenClawProxy(httpServer) {
   const wss = new WebSocketServer({ noServer: true });
@@ -26,7 +61,7 @@ export function setupOpenClawProxy(httpServer) {
         headers: {
           'Authorization': `Bearer ${OPENCLAW_TOKEN}`,
           'X-Auth-Token': OPENCLAW_TOKEN,
-        }
+        },
       });
     } catch (err) {
       console.error('[OPENCLAW-PROXY] Error al crear conexión upstream:', err.message);
@@ -35,27 +70,70 @@ export function setupOpenClawProxy(httpServer) {
       return;
     }
 
-    let upstreamReady = false;
+    let upstreamReady   = false;   // true después del handshake completo
+    let handshakeDone   = false;   // ya respondimos al challenge
     const pendingMessages = [];
 
     upstreamWs.on('open', () => {
-      console.log('[OPENCLAW-PROXY] ✓ Conectado a OpenClaw upstream');
-      upstreamReady = true;
-      // Enviar mensajes pendientes
-      for (const msg of pendingMessages) {
-        upstreamWs.send(msg);
-      }
-      pendingMessages.length = 0;
+      console.log('[OPENCLAW-PROXY] ✓ WebSocket abierto a OpenClaw, esperando connect.challenge...');
     });
 
-    // Upstream (OpenClaw) → Cliente (browser)
+    // ── Upstream (OpenClaw) → lógica de handshake + reenvío al cliente ──
     upstreamWs.on('message', (data) => {
+      const raw = data.toString();
+      let parsed;
+
       try {
-        if (clientWs.readyState === WebSocket.OPEN) {
-          clientWs.send(data.toString());
+        parsed = JSON.parse(raw);
+      } catch {
+        // Si no es JSON, reenviar tal cual
+        if (clientWs.readyState === WebSocket.OPEN) clientWs.send(raw);
+        return;
+      }
+
+      // ── 1. Interceptar connect.challenge ──
+      if (!handshakeDone && parsed.type === 'event' && parsed.event === 'connect.challenge') {
+        const nonce = parsed.payload?.nonce;
+        console.log('[OPENCLAW-PROXY] ← connect.challenge recibido (nonce:', nonce, ')');
+
+        const connectFrame = buildConnectFrame(nonce);
+        console.log('[OPENCLAW-PROXY] → Enviando connect request frame...');
+        upstreamWs.send(JSON.stringify(connectFrame));
+        handshakeDone = true;
+        return; // No reenviar el challenge al browser
+      }
+
+      // ── 2. Interceptar respuesta al connect (res) ──
+      if (parsed.type === 'res' && !upstreamReady) {
+        // Respuesta al request "connect" — puede ser ok o error
+        if (parsed.error) {
+          console.error('[OPENCLAW-PROXY] ✗ Connect rechazado:', JSON.stringify(parsed.error));
+          clientWs.send(JSON.stringify({
+            type: 'error',
+            error: `OpenClaw rechazó la conexión: ${parsed.error.message || parsed.error.code || 'unknown'}`,
+          }));
+          upstreamWs.close();
+          return;
         }
-      } catch (err) {
-        console.error('[OPENCLAW-PROXY] Error reenviando a cliente:', err.message);
+
+        console.log('[OPENCLAW-PROXY] ✓ Handshake completado — sesión activa');
+        upstreamReady = true;
+
+        // Notificar al browser que estamos conectados
+        const sessionId = parsed.result?.sessionId || parsed.result?.id || randomUUID();
+        clientWs.send(JSON.stringify({ type: 'connected', sessionId }));
+
+        // Enviar mensajes que estaban en cola
+        for (const msg of pendingMessages) {
+          upstreamWs.send(msg);
+        }
+        pendingMessages.length = 0;
+        return;
+      }
+
+      // ── 3. Reenviar todo lo demás al browser ──
+      if (clientWs.readyState === WebSocket.OPEN) {
+        clientWs.send(raw);
       }
     });
 
@@ -72,9 +150,36 @@ export function setupOpenClawProxy(httpServer) {
       try { clientWs.close(code, reason?.toString()); } catch {}
     });
 
-    // Cliente (browser) → Upstream (OpenClaw)
+    // ── Cliente (browser) → Upstream (OpenClaw) ──
     clientWs.on('message', (data) => {
       const msg = data.toString();
+
+      // Transformar mensajes del browser al formato que OpenClaw entiende
+      let parsed;
+      try { parsed = JSON.parse(msg); } catch { parsed = null; }
+
+      if (parsed && parsed.type === 'ask') {
+        // El browser envía {type:"ask", task:"..."} — convertir a request frame
+        const reqFrame = {
+          type: 'req',
+          id:   randomUUID(),
+          method: 'ask',
+          params: {
+            task:         parsed.task,
+            contextFiles: parsed.contextFiles || [],
+            autoContext:  parsed.autoContext || false,
+          },
+        };
+        const frameStr = JSON.stringify(reqFrame);
+        if (upstreamReady && upstreamWs.readyState === WebSocket.OPEN) {
+          upstreamWs.send(frameStr);
+        } else {
+          pendingMessages.push(frameStr);
+        }
+        return;
+      }
+
+      // Cualquier otro mensaje, reenviar tal cual
       if (upstreamReady && upstreamWs.readyState === WebSocket.OPEN) {
         upstreamWs.send(msg);
       } else {
