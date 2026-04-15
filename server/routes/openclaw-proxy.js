@@ -10,25 +10,49 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
 const OPENCLAW_URL = process.env.OPENCLAW_WS_URL || 'ws://localhost:18789';
+const OPENCLAW_CONFIG_PATH = join(homedir(), '.openclaw', 'openclaw.json');
 
-// ── Leer token del gateway ──────────────────────────────────────────────────
+// Origins que el gateway debe permitir para conexiones webchat/control-ui
+const REQUIRED_ORIGINS = [
+  'https://sinkialabs.com',
+  'http://localhost:3001',
+  'http://127.0.0.1:18789',
+];
+
+// ── Leer token y parchear allowedOrigins ────────────────────────────────────
 let OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN || '';
-if (!OPENCLAW_TOKEN) {
-  try {
-    const configPath = join(homedir(), '.openclaw', 'openclaw.json');
-    const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+try {
+  const config = JSON.parse(readFileSync(OPENCLAW_CONFIG_PATH, 'utf-8'));
+
+  // Leer token
+  if (!OPENCLAW_TOKEN) {
     OPENCLAW_TOKEN = config?.gateway?.auth?.token || '';
     if (OPENCLAW_TOKEN) {
       console.log('[OPENCLAW-PROXY] Token leído de ~/.openclaw/openclaw.json');
     }
-  } catch (err) {
-    console.warn('[OPENCLAW-PROXY] No se pudo leer openclaw.json:', err.message);
   }
+
+  // Asegurar que allowedOrigins incluye los dominios necesarios
+  const controlUi = config?.gateway?.controlUi;
+  if (controlUi) {
+    const origins = Array.isArray(controlUi.allowedOrigins) ? controlUi.allowedOrigins : [];
+    const missing = REQUIRED_ORIGINS.filter(o => !origins.includes(o));
+    if (missing.length > 0) {
+      controlUi.allowedOrigins = [...origins, ...missing];
+      writeFileSync(OPENCLAW_CONFIG_PATH, JSON.stringify(config, null, 2) + '\n', 'utf-8');
+      console.log('[OPENCLAW-PROXY] ✓ allowedOrigins actualizado:', controlUi.allowedOrigins.join(', '));
+      console.log('[OPENCLAW-PROXY]   ⚠ Reinicia OpenClaw gateway para aplicar cambios');
+    } else {
+      console.log('[OPENCLAW-PROXY] ✓ allowedOrigins OK:', origins.join(', '));
+    }
+  }
+} catch (err) {
+  console.warn('[OPENCLAW-PROXY] No se pudo leer/actualizar openclaw.json:', err.message);
 }
 
 // ── Backoff config ──────────────────────────────────────────────────────────
