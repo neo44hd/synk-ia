@@ -174,7 +174,31 @@ export function setupOpenClawProxy(httpServer) {
           return;
         }
 
-        // 3. Reenviar todo lo demás al browser
+        // 3. Traducir respuestas RPC de OpenClaw → formato simple para el frontend
+        // El frontend espera {type:'response', response:'text'} o {type:'processing', task:'...'}
+        if (parsed.type === 'res' && parsed.result) {
+          // Respuesta final del agente
+          const text = parsed.result?.text || parsed.result?.message || parsed.result?.content
+            || (typeof parsed.result === 'string' ? parsed.result : JSON.stringify(parsed.result));
+          notifyClient({ type: 'response', response: text });
+          return;
+        }
+        if (parsed.type === 'res' && parsed.error) {
+          notifyClient({ type: 'error', error: parsed.error.message || parsed.error.code || 'Unknown error' });
+          return;
+        }
+        if (parsed.type === 'event' && parsed.event === 'agent.progress') {
+          const step = parsed.data?.step || parsed.data?.status || 'Procesando...';
+          notifyClient({ type: 'processing', task: step });
+          return;
+        }
+        if (parsed.type === 'event' && parsed.event === 'agent.stream') {
+          const chunk = parsed.data?.text || parsed.data?.content || parsed.data?.delta || '';
+          if (chunk) notifyClient({ type: 'response', response: chunk });
+          return;
+        }
+
+        // Reenviar todo lo demás sin transformar
         if (clientWs.readyState === WebSocket.OPEN) {
           clientWs.send(raw);
         }
@@ -220,8 +244,30 @@ export function setupOpenClawProxy(httpServer) {
     }
 
     // ── Cliente (browser) → Upstream ──────────────────────────────────────
+    // El frontend envía {type:'ask', task:'...'} pero OpenClaw gateway espera
+    // el protocolo RPC: {type:'req', method:'agent', id:'...', params:{...}}
     clientWs.on('message', (data) => {
-      const msg = data.toString();
+      let msg = data.toString();
+
+      // Traducir formato frontend → protocolo OpenClaw RPC
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed.type === 'ask' && parsed.task) {
+          const rpcMsg = {
+            type: 'req',
+            id: randomUUID(),
+            method: 'agent',
+            params: {
+              idempotencyKey: randomUUID(),
+              agentId: 'main',
+              message: parsed.task,
+            },
+          };
+          msg = JSON.stringify(rpcMsg);
+          console.log('[OPENCLAW-PROXY] → agent RPC:', parsed.task.slice(0, 80));
+        }
+      } catch {}
+
       if (upstreamReady && upstreamWs?.readyState === WebSocket.OPEN) {
         upstreamWs.send(msg);
       } else {
