@@ -16,11 +16,11 @@
 
 // ── Configuración ──────────────────────────────────────────────────────────
 const OLLAMA_URL  = process.env.OLLAMA_URL   || 'http://localhost:11434';
-const MODEL       = process.env.OLLAMA_MODEL || 'phi4-mini';
+const MODEL       = process.env.ANALYZER_MODEL || 'qwen3.5';
 const TIMEOUT_MS  = 180_000;   // 3 minutos — modelos locales pueden ser lentos
-const MAX_TOKENS  = 2500;
+const MAX_TOKENS  = 4000;      // qwen3.5 soporta más tokens de salida
 const TEMPERATURE = 0.05;      // Casi determinista para clasificación
-const MAX_TEXT    = 6000;      // Caracteres máximos de texto que se envían al LLM
+const MAX_TEXT    = 10000;     // qwen3.5 tiene contexto más amplio, aprovechar
 
 // Datos fijos de MI EMPRESA (receptor en casi todos los documentos)
 const MI_EMPRESA = {

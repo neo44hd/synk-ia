@@ -40,6 +40,9 @@ const OLLAMA_URL = process.env.OLLAMA_URL   || 'http://localhost:11434';
 const MODEL      = process.env.OLLAMA_MODEL || 'phi4-mini';
 const IS_VL      = /vl|vision|visual/i.test(MODEL);
 
+// Modelo OCR dedicado — glm-ocr (0.9B, #1 OmniDocBench, 1.86 pag/s)
+const OCR_MODEL  = process.env.OCR_MODEL || 'glm-ocr';
+
 // Límite de texto extraído antes del truncado inteligente
 const MAX_CHARS  = 12_000;
 
@@ -230,20 +233,26 @@ async function extractPdf(filePath) {
 
     console.log(`[EXTRACTOR] PDF sin texto → intentando OCR (${parsed.numpages} páginas)`);
 
-    // PDF escaneado → OCR vía pdftoppm + Tesseract
+    // 1) Intentar OCR dedicado con glm-ocr (más preciso para documentos)
+    const glmResult = await ocrPdfViaGlm(filePath);
+    if (glmResult && glmResult.ok) {
+      return { ...glmResult, metadata: { ...(glmResult.metadata || {}), pages: parsed.numpages } };
+    }
+
+    // 2) Fallback: Tesseract clásico
     const ocrResult = await ocrPdfViaImages(filePath);
     if (ocrResult.ok) {
       return { ...ocrResult, metadata: { ...(ocrResult.metadata || {}), pages: parsed.numpages } };
     }
 
-    // Si hay modelo VL, intentar visión directa en la primera página
+    // 3) Fallback: modelo VL si está disponible
     if (IS_VL) {
       const visionResult = await extractPdfViaVision(filePath, parsed.numpages);
       if (visionResult.ok) return visionResult;
     }
 
     return fail('pdf-escaneado-sin-ocr',
-      'PDF escaneado sin texto extraíble. Instala tesseract y poppler: brew install tesseract tesseract-lang poppler',
+      'PDF escaneado sin texto extraíble. Ni glm-ocr ni Tesseract pudieron extraer texto.',
       { pages: parsed.numpages });
 
   } catch (err) {
@@ -254,7 +263,13 @@ async function extractPdf(filePath) {
 // ── Imágenes ───────────────────────────────────────────────────────────────
 
 async function extractImage(filePath, mime, ext) {
-  // Si el modelo soporta visión, usarlo directamente
+  // 1) Intentar OCR dedicado con glm-ocr (mejor para documentos escaneados)
+  const glmResult = await glmOcrImage(filePath);
+  if (glmResult && glmResult.ok) {
+    return glmResult;
+  }
+
+  // 2) Si el modelo soporta visión, intentar VL
   if (IS_VL) {
     try {
       const text = await visionExtract(filePath, mime || extToMime(ext));
@@ -266,7 +281,7 @@ async function extractImage(filePath, mime, ext) {
     }
   }
 
-  // OCR con Tesseract
+  // 3) Fallback: Tesseract
   return ocrImage(filePath);
 }
 
@@ -1098,6 +1113,102 @@ async function ocrPdfViaImages(filePath) {
 
   } catch (err) {
     return fail('ocr-pdf-error', `Error en OCR de PDF: ${err.message}`);
+  } finally {
+    await rm(tmpDir, { recursive: true }).catch(() => {});
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  OCR DEDICADO — GLM-OCR (via Ollama)
+//  Modelo ligero (0.9B params), #1 en OmniDocBench, ~1.86 pag/s en M4 Pro
+//  Protocolo: /api/chat con imagen base64 y prompt "Text recognition:"
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** OCR de una sola imagen con glm-ocr vía Ollama */
+async function glmOcrImage(filePath) {
+  try {
+    const buf    = await readFile(filePath);
+    const base64 = buf.toString('base64');
+
+    const controller = new AbortController();
+    const timer      = setTimeout(() => controller.abort(), 120_000);
+
+    try {
+      const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal:  controller.signal,
+        body:    JSON.stringify({
+          model:  OCR_MODEL,
+          stream: false,
+          messages: [{
+            role: 'user',
+            content:  'Text recognition:',
+            images:   [base64],
+          }],
+        }),
+      });
+
+      if (!res.ok) throw new Error(`glm-ocr HTTP ${res.status}`);
+      const data = await res.json();
+      const text = cleanText(data?.message?.content || '');
+
+      if (text.length > 10) {
+        return ok(text, 'glm-ocr', { ocr_model: OCR_MODEL });
+      }
+      return null; // sin texto útil, dejar que el fallback intente
+
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (err) {
+    console.warn(`[EXTRACTOR] glm-ocr falló: ${err.message}`);
+    return null; // fallback a Tesseract
+  }
+}
+
+/** OCR de PDF escaneado: pdftoppm → imágenes → glm-ocr (página a página) */
+async function ocrPdfViaGlm(filePath) {
+  const tmpDir = await makeTempDir('pdfglm');
+  try {
+    const prefix = path.join(tmpDir, 'page');
+
+    // Convertir PDF a imágenes PNG a 300 DPI (máx 15 páginas)
+    await execAsync('pdftoppm', ['-png', '-r', '300', '-l', '15', filePath, prefix], { timeout: 120_000 });
+
+    const files = (await readdir(tmpDir)).filter(f => f.endsWith('.png')).sort();
+    if (files.length === 0) {
+      return null; // pdftoppm no disponible, fallback
+    }
+
+    console.log(`[EXTRACTOR] glm-ocr: procesando ${files.length} páginas...`);
+    const pageTexts = [];
+
+    for (const file of files) {
+      try {
+        const imgPath = path.join(tmpDir, file);
+        const result  = await glmOcrImage(imgPath);
+        if (result && result.ok && result.text.length > 5) {
+          pageTexts.push(result.text);
+        }
+      } catch { /* continuar con siguiente página */ }
+    }
+
+    const fullText = pageTexts.join('\n\n--- Página ---\n\n');
+
+    if (fullText.length > 20) {
+      console.log(`[EXTRACTOR] glm-ocr: ${files.length} páginas → ${fullText.length} chars`);
+      return ok(fullText, 'glm-ocr-pdf', {
+        pages:     files.length,
+        ocr_model: OCR_MODEL,
+      });
+    }
+
+    return null; // texto insuficiente, fallback
+
+  } catch (err) {
+    console.warn(`[EXTRACTOR] glm-ocr PDF falló: ${err.message}`);
+    return null;
   } finally {
     await rm(tmpDir, { recursive: true }).catch(() => {});
   }
