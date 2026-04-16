@@ -196,4 +196,51 @@ router.post('/rebuild', (req, res) => {
   );
 });
 
+// ── Deploy completo (git pull + install + rebuild node-pty + build + restart) ─
+router.post('/deploy', (req, res) => {
+  const root = path.resolve(__dirname, '../..');
+  const steps = [
+    `cd ${root} && git pull origin main`,
+    `cd ${root}/server && npm install`,
+    `cd ${root}/server && npm rebuild node-pty 2>/dev/null || true`,
+    `cd ${root} && npm run build 2>/dev/null || true`,
+    `pm2 restart sinkia-api --update-env`,
+  ].join(' && ');
+
+  res.json({ ok: true, message: 'Deploy completo iniciado en background...' });
+  console.log('[ADMIN] ▶ Deploy completo iniciado');
+
+  exec(steps, { timeout: 300_000 }, (err, stdout, stderr) => {
+    if (err) {
+      console.error('[ADMIN] ✗ Deploy error:', err.message);
+      if (stderr) console.error('[ADMIN] stderr:', stderr.slice(0, 500));
+    } else {
+      console.log('[ADMIN] ✓ Deploy completo finalizado');
+      if (stdout) console.log('[ADMIN] stdout:', stdout.slice(0, 500));
+    }
+  });
+});
+
+// ── Ejecutar comando arbitrario (solo para admin) ────────────────────────────
+router.post('/exec', (req, res) => {
+  const { command } = req.body;
+  if (!command || typeof command !== 'string') {
+    return res.status(400).json({ error: 'Campo "command" requerido' });
+  }
+  // Limitar a 500 chars por seguridad
+  if (command.length > 500) {
+    return res.status(400).json({ error: 'Comando demasiado largo (máx 500 chars)' });
+  }
+  try {
+    const output = execSync(command, {
+      timeout: 30_000,
+      cwd: '/Users/davidnows/sinkia',
+      env: { ...process.env, HOME: '/Users/davidnows', PATH: '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:' + (process.env.PATH || '') },
+    }).toString();
+    res.json({ ok: true, output });
+  } catch (err) {
+    res.json({ ok: false, error: err.message, output: err.stdout?.toString() || '', stderr: err.stderr?.toString() || '' });
+  }
+});
+
 export const adminRouter = router;
