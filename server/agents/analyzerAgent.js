@@ -17,7 +17,7 @@
 // ── Configuración ──────────────────────────────────────────────────────────
 const OLLAMA_URL  = process.env.OLLAMA_URL   || 'http://localhost:11434';
 const MODEL       = process.env.ANALYZER_MODEL || 'qwen3.5';
-const TIMEOUT_MS  = 180_000;   // 3 minutos — modelos locales pueden ser lentos
+const TIMEOUT_MS  = 300_000;   // 5 minutos — qwen3.5 (9.7B) necesita más tiempo
 const MAX_TOKENS  = 4000;      // qwen3.5 soporta más tokens de salida
 const TEMPERATURE = 0.05;      // Casi determinista para clasificación
 const MAX_TEXT    = 10000;     // qwen3.5 tiene contexto más amplio, aprovechar
@@ -590,6 +590,7 @@ async function llmCall(messages) {
         temperature: TEMPERATURE,
         max_tokens:  MAX_TOKENS,
         stream:      false,
+        response_format: { type: 'json_object' },
       }),
     });
 
