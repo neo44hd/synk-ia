@@ -22,6 +22,7 @@ import trabajadoresRouter     from './routes/trabajadores.js';
 import { authRouter }         from './routes/auth.js';
 import { filebrainRouter }    from './routes/filebrain.js';
 import { syncAll }            from './services/dataSync.js';
+import filemanagerRouter      from './routes/filemanager.js';
 
 // Cargar .env desde server/ (donde realmente está el archivo)
 const __dirnameRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -119,6 +120,7 @@ app.use('/api/files',  filesRouter);
 app.use('/api/admin',     adminRouter);
 app.use('/api/documents',    documentsRouter);
 app.use('/api/trabajadores', trabajadoresRouter);
+app.use('/api/filemanager',  filemanagerRouter);
 app.use('/claude',     claudeProxyRouter);  // Proxy local para Claude Code
 app.use('/api/chat',   chatRouter);          // Chat IA local
 
@@ -230,6 +232,12 @@ const commerceHtml = path.join(__dirnameRoot, '..', 'public', 'commerce.html');
 if (existsSync(commerceHtml)) {
   app.get('/commerce', (_req, res) => res.sendFile(commerceHtml));
   console.log('[SERVER] ✓ Commerce: /commerce');
+}
+
+const filemanagerHtml = path.join(__dirnameRoot, '..', 'public', 'filemanager.html');
+if (existsSync(filemanagerHtml)) {
+  app.get('/filemanager', (_req, res) => res.sendFile(filemanagerHtml));
+  console.log('[SERVER] ✓ Explorador de Archivos: /filemanager');
 }
 
 
