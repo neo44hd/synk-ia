@@ -60,7 +60,7 @@ const upload = multer({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function authMiddleware(req, res, next) {
-  const token = req.headers['x-admin-token'];
+  const token = req.headers['x-admin-token'] || req.query.token;
   if (!token || token !== ADMIN_TOKEN) {
     return res.status(401).json({ error: 'Token de administrador inválido o ausente' });
   }
