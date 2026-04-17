@@ -298,10 +298,7 @@ function parseAnalysisJSON(raw, fallbackHint = '') {
   // Estrategia 1: parseo directo
   try {
     const parsed = JSON.parse(cleaned);
-    if (parsed && typeof parsed === 'object') {
-      console.log(`[ANALIZADOR] 🔍 JSON parseado directo — keys: ${Object.keys(parsed).slice(0, 8).join(', ')} | tipo=${parsed.tipo}`);
-      return parsed;
-    }
+    if (parsed && typeof parsed === 'object') return parsed;
   } catch (_) {}
 
   // Estrategia 2: extraer el bloque {} más grande
@@ -310,7 +307,7 @@ function parseAnalysisJSON(raw, fallbackHint = '') {
     try {
       const parsed = JSON.parse(block);
       if (parsed && typeof parsed === 'object') {
-        console.log(`[ANALIZADOR] 🔍 JSON extraído bloque — keys: ${Object.keys(parsed).slice(0, 8).join(', ')} | tipo=${parsed.tipo}`);
+        console.log('[ANALIZADOR] JSON extraído con bloque más grande');
         return parsed;
       }
     } catch (_) {}
