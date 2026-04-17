@@ -475,16 +475,19 @@ function normalizeAnalysis(raw) {
   }
   
   if (!d.tipo) {
-    // Intentar inferir tipo de las keys alternativas
-    if (d.factura || d.numero_factura || d.n_factura) {
+    // Intentar inferir tipo de las keys alternativas (ES/EN/CAT)
+    if (d.factura || d.numero_factura || d.n_factura || d.factura_numero || d.invoice || d.invoice_number) {
       d.tipo = 'factura_recibida';
       console.log('[ANALIZADOR] Tipo inferido de keys alternativas → factura_recibida');
-    } else if (d.albaran || d.numero_albaran) {
+    } else if (d.albaran || d.numero_albaran || d.delivery_note) {
       d.tipo = 'albaran';
-    } else if (d.nomina || d.tipo_documento === 'nomina') {
+    } else if (d.nomina || d.tipo_documento === 'nomina' || d.payslip) {
       d.tipo = 'nomina';
-    } else if (d.recibo || d.tipo_documento === 'recibo') {
+    } else if (d.recibo || d.tipo_documento === 'recibo' || d.receipt) {
       d.tipo = 'ticket';
+    } else if (d.transactions || d.movimientos) {
+      d.tipo = 'factura_recibida'; // Compilado de transacciones = facturas
+      console.log('[ANALIZADOR] Tipo inferido de transactions/movimientos → factura_recibida');
     }
   }
   // Mapear emisor de campos alternativos
@@ -499,14 +502,23 @@ function normalizeAnalysis(raw) {
     d.receptor = { nombre: typeof nombre === 'string' ? nombre : nombre?.nombre || nombre?.name || String(nombre) };
     if (d.nif_cliente || d.cif_cliente) d.receptor.cif_nif = d.nif_cliente || d.cif_cliente;
   }
-  // Mapear importes de campos alternativos
+  // Mapear importes de campos alternativos (ES/EN/CAT)
   if (!d.importes) {
-    const total = d.total_factura || d.total || d.importe || d.amount;
+    const total = d.total_factura || d.total || d.importe || d.amount || d.total_spent || d.total_brut;
     if (total != null) {
       d.importes = { total: parseFloat(total) || null, moneda: d.moneda || d.currency || 'EUR' };
       if (d.iva != null) d.importes.iva_total = parseFloat(d.iva) || null;
       if (d.base_imponible != null) d.importes.base_imponible = parseFloat(d.base_imponible) || null;
     }
+  }
+  // Mapear emisor/receptor de campos en catalán
+  if (!d.emisor && d.client) {
+    // En facturas de proveedores, 'client' suele ser el receptor (Chicken Palace)
+    // El emisor sería el que emite la factura
+  }
+  if (!d.receptor && (d.client || d.nif_client || d.cod_client)) {
+    d.receptor = { nombre: typeof d.client === 'string' ? d.client : d.client?.nom || MI_EMPRESA.nombre };
+    if (d.nif_client) d.receptor.cif_nif = d.nif_client;
   }
   // Mapear confianza
   if (d.confianza == null && d.confidence != null) d.confianza = d.confidence;
