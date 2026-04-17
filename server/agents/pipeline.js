@@ -232,17 +232,31 @@ export async function reprocessFile(docId) {
   if (!doc) {
     throw new Error(`[PIPELINE] Documento no encontrado: ${docId}`);
   }
-  if (!doc.extraction?.ok) {
-    throw new Error(`[PIPELINE] No se puede reprocesar: extracción original fallida (${docId})`);
-  }
-
   console.log(`[PIPELINE] Reprocesando: ${doc.original_name} (${docId})`);
   pipelineEvents.emit('pipeline:start', { docId, originalName: doc.original_name, mode: 'reprocess' });
 
-  const startTime    = Date.now();
-  const errors       = [];
-  const agentsCompleted = ['extractor']; // La extracción original se conserva
-  const extractedData   = doc.extraction;
+  const startTime       = Date.now();
+  const errors          = [];
+  const agentsCompleted = [];
+
+  // ── Re-extracción (siempre, para aprovechar nuevos modelos OCR) ──────
+  let extractedData = null;
+  try {
+    pipelineEvents.emit('pipeline:step', { docId, step: 'extractor', status: 'running' });
+    extractedData = await extract(doc.file_path, doc.mime_type, doc.original_name);
+    doc.extraction = { ...extractedData, ok: true };
+    agentsCompleted.push('extractor');
+    pipelineEvents.emit('pipeline:step', { docId, step: 'extractor', status: 'done' });
+    console.log(`[PIPELINE] [1/3] Re-extracción completada. Método: ${extractedData?.method}`);
+  } catch (err) {
+    console.warn(`[PIPELINE] Extracción falló, usando original: ${err.message}`);
+    extractedData = doc.extraction || {};
+    agentsCompleted.push('extractor');
+  }
+
+  // Añadir originalName y mimeType al extractedData para el analyzer
+  extractedData.originalName = doc.original_name;
+  extractedData.mimeType     = doc.mime_type;
 
   // ── Re-análisis ──────────────────────────────────────────────────────────
   let analysisResult = null;
