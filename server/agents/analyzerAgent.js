@@ -580,17 +580,20 @@ async function llmCall(messages) {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
+    // Usar API nativa de Ollama (/api/chat) que soporta format:"json" correctamente
+    const response = await fetch(`${OLLAMA_URL}/api/chat`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       signal:  controller.signal,
       body: JSON.stringify({
-        model:       MODEL,
+        model:   MODEL,
         messages,
-        temperature: TEMPERATURE,
-        max_tokens:  MAX_TOKENS,
-        stream:      false,
-        response_format: { type: 'json_object' },
+        stream:  false,
+        format:  'json',
+        options: {
+          temperature:  TEMPERATURE,
+          num_predict:  MAX_TOKENS,
+        },
       }),
     });
 
@@ -600,7 +603,8 @@ async function llmCall(messages) {
     }
 
     const data    = await response.json();
-    const content = data?.choices?.[0]?.message?.content || '';
+    // API nativa devuelve { message: { content: '...' } }
+    const content = data?.message?.content || '';
     return stripThinking(content.trim());
 
   } finally {
@@ -612,16 +616,13 @@ async function llmCall(messages) {
  * Llamada con imagen (modelos VL) — envía la imagen como image_url en el contenido.
  */
 async function llmCallVision(imageBase64, mimeType) {
-  const imageUrl = `data:${mimeType};base64,${imageBase64}`;
-
+  // Usar API nativa de Ollama con campo "images" para visión
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
     {
-      role: 'user',
-      content: [
-        { type: 'text',      text: 'Analiza este documento y devuelve el JSON solicitado:' },
-        { type: 'image_url', image_url: { url: imageUrl } },
-      ],
+      role:    'user',
+      content: 'Analiza este documento y devuelve el JSON solicitado:',
+      images:  [imageBase64],
     },
   ];
 
