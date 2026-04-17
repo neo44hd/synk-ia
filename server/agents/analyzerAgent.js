@@ -589,7 +589,8 @@ async function llmCall(messages) {
         model:   MODEL,
         messages,
         stream:  false,
-        format:  'json',
+        // NO usar format:'json' — causa conflicto con thinking mode de qwen3.5
+        // El prompt del sistema ya fuerza JSON y stripThinking + repairJSON lo limpian
         options: {
           temperature:  TEMPERATURE,
           num_predict:  MAX_TOKENS,
