@@ -1146,6 +1146,10 @@ async function glmOcrImage(filePath) {
             content:  'Text recognition:',
             images:   [base64],
           }],
+          options: {
+            num_ctx: 16384,      // glm-ocr necesita contexto amplio para imagenes
+            temperature: 0,      // OCR determinista
+          },
         }),
       });
 
