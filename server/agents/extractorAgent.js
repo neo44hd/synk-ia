@@ -1131,7 +1131,7 @@ async function glmOcrImage(filePath) {
     const base64 = buf.toString('base64');
 
     const controller = new AbortController();
-    const timer      = setTimeout(() => controller.abort(), 120_000);
+    const timer      = setTimeout(() => controller.abort(), 300_000); // 5 min per page for heavy scans
 
     try {
       const res = await fetch(`${OLLAMA_URL}/api/chat`, {
