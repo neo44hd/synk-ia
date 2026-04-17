@@ -449,6 +449,48 @@ function deepClean(obj) {
 function normalizeAnalysis(raw) {
   const d = deepClean(raw) || {};
 
+  // ── Mapeo de estructuras alternativas (qwen3.5 a veces ignora el schema) ──
+  if (!d.tipo) {
+    // Intentar inferir tipo de las keys alternativas
+    if (d.factura || d.numero_factura || d.n_factura) {
+      d.tipo = 'factura_recibida';
+      console.log('[ANALIZADOR] Tipo inferido de keys alternativas → factura_recibida');
+    } else if (d.albaran || d.numero_albaran) {
+      d.tipo = 'albaran';
+    } else if (d.nomina || d.tipo_documento === 'nomina') {
+      d.tipo = 'nomina';
+    } else if (d.recibo || d.tipo_documento === 'recibo') {
+      d.tipo = 'ticket';
+    }
+  }
+  // Mapear emisor de campos alternativos
+  if (!d.emisor && (d.proveedor || d.supplier || d.vendor)) {
+    const nombre = d.proveedor || d.supplier || d.vendor;
+    d.emisor = { nombre: typeof nombre === 'string' ? nombre : nombre?.nombre || nombre?.name || String(nombre) };
+    if (d.nif_proveedor || d.cif_proveedor) d.emisor.cif_nif = d.nif_proveedor || d.cif_proveedor;
+  }
+  // Mapear receptor de campos alternativos
+  if (!d.receptor && (d.cliente || d.customer || d.buyer)) {
+    const nombre = d.cliente || d.customer || d.buyer;
+    d.receptor = { nombre: typeof nombre === 'string' ? nombre : nombre?.nombre || nombre?.name || String(nombre) };
+    if (d.nif_cliente || d.cif_cliente) d.receptor.cif_nif = d.nif_cliente || d.cif_cliente;
+  }
+  // Mapear importes de campos alternativos
+  if (!d.importes) {
+    const total = d.total_factura || d.total || d.importe || d.amount;
+    if (total != null) {
+      d.importes = { total: parseFloat(total) || null, moneda: d.moneda || d.currency || 'EUR' };
+      if (d.iva != null) d.importes.iva_total = parseFloat(d.iva) || null;
+      if (d.base_imponible != null) d.importes.base_imponible = parseFloat(d.base_imponible) || null;
+    }
+  }
+  // Mapear confianza
+  if (d.confianza == null && d.confidence != null) d.confianza = d.confidence;
+  if (d.confianza == null) d.confianza = 0.85; // Default para JSON parseado correctamente
+  // Mapear resumen
+  if (!d.resumen && d.summary) d.resumen = d.summary;
+  if (!d.resumen && d.descripcion) d.resumen = d.descripcion;
+
   // Tipo — asegurar que es válido
   if (!TIPOS_VALIDOS.includes(d.tipo)) {
     console.log(`[ANALIZADOR] Tipo desconocido: "${d.tipo}" → 'otro'`);
