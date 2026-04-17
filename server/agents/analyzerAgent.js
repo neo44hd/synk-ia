@@ -450,6 +450,30 @@ function normalizeAnalysis(raw) {
   const d = deepClean(raw) || {};
 
   // ── Mapeo de estructuras alternativas (qwen3.5 a veces ignora el schema) ──
+  
+  // Si el modelo devuelve un array wrapper ({facturas:[...], albaranes:[...]}), aplanarlo
+  const arrayKey = Object.keys(d).find(k => Array.isArray(d[k]) && d[k].length > 0);
+  if (arrayKey && Object.keys(d).length <= 2 && !d.tipo) {
+    const items = d[arrayKey];
+    const first = items[0] || {};
+    // Copiar campos del primer item al nivel raíz
+    Object.assign(d, first);
+    // Inferir tipo del nombre del array
+    const keyLower = arrayKey.toLowerCase();
+    if (keyLower.includes('factura')) d.tipo = d.tipo || 'factura_recibida';
+    else if (keyLower.includes('albaran')) d.tipo = d.tipo || 'albaran';
+    else if (keyLower.includes('nomina')) d.tipo = d.tipo || 'nomina';
+    // Sumar totales de todos los items
+    const allTotals = items.map(i => parseFloat(i.total_factura || i.total || i.importe || 0)).filter(n => n > 0);
+    if (allTotals.length > 0) {
+      d.total_factura = allTotals.reduce((a, b) => a + b, 0);
+    }
+    // Tomar proveedor del primer item si existe
+    if (!d.proveedor && first.proveedor) d.proveedor = first.proveedor;
+    if (!d.emisor && first.emisor) d.emisor = first.emisor;
+    console.log(`[ANALIZADOR] Array wrapper '${arrayKey}' con ${items.length} items → aplanado, tipo=${d.tipo}`);
+  }
+  
   if (!d.tipo) {
     // Intentar inferir tipo de las keys alternativas
     if (d.factura || d.numero_factura || d.n_factura) {
