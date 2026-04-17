@@ -703,7 +703,7 @@ export async function analyze(extractedData) {
         { role: 'system', content: SYSTEM_PROMPT },
         {
           role: 'user',
-          content: `${contextoPrevio}DOCUMENTO:\n${textoTruncado}`,
+          content: `${contextoPrevio}DOCUMENTO:\n${textoTruncado}\n\nIMPORTANTE: Responde ÚNICAMENTE con el JSON especificado. NO escribas explicaciones, NO uses markdown. Tu respuesta debe empezar con { y terminar con }.`,
         },
       ];
 
