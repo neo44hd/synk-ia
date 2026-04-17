@@ -25,6 +25,8 @@ import {
   getRevoResumen,
 } from './agents/revoAgent.js';
 
+import { syncAll } from './services/dataSync.js';
+
 // ── Estado compartido ────────────────────────────────────────────────────────
 const INTERVALS = {
   email: 5  * 60 * 1000,   // 5 minutos
@@ -44,6 +46,8 @@ async function runEmailSync() {
     const r = syncResults.email;
     if (r.success) {
       console.log(`[SYNC-WORKER] ✓ Email: ${r.nuevos ?? 0} nuevos, ${r.con_documentos ?? 0} con documentos, ${r.procesados ?? 0} procesados con IA`);
+      // Sincronizar entidades después de cada ciclo de email
+      try { syncAll(); } catch (e) { console.error('[SYNC-WORKER] dataSync error:', e.message); }
     } else {
       console.warn('[SYNC-WORKER] ⚠ Email:', r.error || 'fallo sin detalle');
     }

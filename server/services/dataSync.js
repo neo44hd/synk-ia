@@ -232,10 +232,13 @@ function syncProviders() {
 
   // Fuente 2: Extraer emisores de todos los documentos procesados
   const allDocs = getAllDocs();
+  const EXCLUDED_PROVIDERS = ['jose riquer', 'josé riquer', 'chicken palace'];
   for (const doc of allDocs) {
     const emisor = doc.analisis?.emisor;
     if (!emisor || !emisor.nombre) continue;
     if (emisor.rol === 'empresa' || emisor.rol === 'cliente') continue; // skip non-providers
+    // José Riquer es la calle del negocio, no un proveedor
+    if (EXCLUDED_PROVIDERS.some(ex => emisor.nombre.toLowerCase().includes(ex))) continue;
 
     const name = emisor.nombre.trim();
     const cif = emisor.cif_nif || '';
@@ -332,7 +335,7 @@ function syncInvoices() {
       currency: a.moneda,
       payment_method: a.forma_pago,
       category: 'otros',
-      status: 'pendiente',
+      status: 'pagada',
       file_name: doc.nombre_archivo,
       items: (a.conceptos || []).map(c => ({
         description: c.descripcion,

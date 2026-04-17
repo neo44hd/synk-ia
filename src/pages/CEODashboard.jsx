@@ -106,34 +106,42 @@ export default function CEODashboard() {
   }, [navigate]);
 
   // Datos principales
+  // Auto-refresh cada 30s para datos en tiempo real
+  const REFETCH_MS = 30_000;
+
   const { data: invoices = [] } = useQuery({
     queryKey: ['ceo-invoices'],
     queryFn: () => base44.entities.Invoice.list('-created_date', 500),
-    staleTime: 60000
+    staleTime: 15000,
+    refetchInterval: REFETCH_MS
   });
 
   const { data: providers = [] } = useQuery({
     queryKey: ['ceo-providers'],
     queryFn: () => base44.entities.Provider.list('-created_date', 200),
-    staleTime: 60000
+    staleTime: 15000,
+    refetchInterval: REFETCH_MS
   });
 
   const { data: employees = [] } = useQuery({
     queryKey: ['ceo-employees'],
     queryFn: () => base44.entities.Employee.list(),
-    staleTime: 60000
+    staleTime: 15000,
+    refetchInterval: REFETCH_MS
   });
 
   const { data: payrolls = [] } = useQuery({
     queryKey: ['ceo-payrolls'],
     queryFn: () => base44.entities.Payroll.list('-period', 200),
-    staleTime: 60000
+    staleTime: 15000,
+    refetchInterval: REFETCH_MS
   });
 
   const { data: timesheets = [] } = useQuery({
     queryKey: ['ceo-timesheets'],
     queryFn: () => base44.entities.Timesheet.list('-date', 500),
-    staleTime: 60000
+    staleTime: 15000,
+    refetchInterval: REFETCH_MS
   });
 
   const { data: sales = [] } = useQuery({
@@ -145,7 +153,8 @@ export default function CEODashboard() {
         return [];
       }
     },
-    staleTime: 60000
+    staleTime: 15000,
+    refetchInterval: REFETCH_MS
   });
 
   // Calcular KPIs
