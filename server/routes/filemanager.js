@@ -224,6 +224,9 @@ router.delete('/documents/:id', (req, res) => {
  * Re-ejecuta el pipeline (Analyzer + Organizer) sobre un documento existente.
  */
 router.post('/documents/:id/reprocess', async (req, res) => {
+  // PDFs escaneados con glm-ocr pueden tardar 10-15 min → desactivar timeout HTTP
+  req.setTimeout(0);
+  res.setTimeout(0);
   try {
     const record = await reprocessFile(req.params.id);
     res.json({ success: true, document: record });
