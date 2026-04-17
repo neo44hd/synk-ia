@@ -7,7 +7,8 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH   = join(__dirname, '..', 'data', 'documents.json');
+const DATA_DIR  = process.env.DATA_DIR || join(__dirname, '..', '..', 'data');
+const DB_PATH   = join(DATA_DIR, 'filemanager_docs.json');
 
 // Import analyzer and organizer
 const { analyzeDocument } = await import('../agents/analyzerAgent.js');
