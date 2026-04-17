@@ -266,6 +266,10 @@ app.use((err, _req, res, _next) => {
 
 // ── Arranque ──────────────────────────────────────────────────────────────────
 const server = app.listen(PORT, '0.0.0.0', () => {
+  // OCR de PDFs escaneados puede tardar 15+ min — desactivar timeouts HTTP
+  server.requestTimeout = 0;
+  server.headersTimeout = 0;
+  server.timeout = 0;
   console.log(`\n[SERVER] ✓ Puerto ${PORT} | ${new Date().toISOString()}`);
   console.log(`[SERVER] CORS: ${ALLOWED_ORIGINS.join(', ')}\n`);
 
