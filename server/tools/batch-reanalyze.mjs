@@ -23,8 +23,9 @@ function saveDB(db) {
 
 async function reanalyze(docId) {
   const db = loadDB();
-  const doc = db.documents?.find(d => d.id === docId);
-  if (!doc) throw new Error(`Doc ${docId} not found`);
+  const docs = Array.isArray(db) ? db : (db.documents || []);
+  const doc = docs.find(d => d.id === docId);
+  if (!doc) throw new Error(`Doc ${docId} not found in ${docs.length} docs`);
   
   const text   = doc.extraction?.text || '';
   const method = doc.extraction?.method || 'unknown';
@@ -41,7 +42,8 @@ async function reanalyze(docId) {
   
   // Update DB
   const db2 = loadDB();
-  const doc2 = db2.documents.find(d => d.id === docId);
+  const docs2 = Array.isArray(db2) ? db2 : (db2.documents || []);
+  const doc2 = docs2.find(d => d.id === docId);
   doc2.analysis = analysis;
   doc2.status = 'processed';
   doc2.updated_at = new Date().toISOString();
@@ -71,7 +73,8 @@ async function main() {
   for (const docId of targetIds) {
     const t0 = Date.now();
     const db = loadDB();
-    const doc = db.documents?.find(d => d.id === docId);
+    const allDocs = Array.isArray(db) ? db : (db.documents || []);
+    const doc = allDocs.find(d => d.id === docId);
     const name = doc?.original_name || docId;
     
     console.log(`[${new Date().toISOString()}] → ${name} (${docId})`);
