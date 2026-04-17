@@ -604,9 +604,20 @@ async function llmCall(messages) {
     }
 
     const data    = await response.json();
-    // API nativa devuelve { message: { content: '...' } }
-    const content = data?.message?.content || '';
-    return stripThinking(content.trim());
+    // API nativa devuelve { message: { content: '...', thinking: '...' } }
+    const rawContent = data?.message?.content || '';
+    const thinking   = data?.message?.thinking || '';
+    console.log(`[ANALIZADOR] Raw response — content: ${rawContent.length} chars, thinking: ${thinking.length} chars`);
+    if (!rawContent && thinking) {
+      console.log(`[ANALIZADOR] ⚠ Content vacío pero hay thinking (${thinking.length} chars). Intentando extraer JSON del thinking...`);
+      // Si el content está vacío pero el thinking contiene JSON, intentar extraerlo
+      const jsonMatch = thinking.match(/\{[\s\S]*\}/);  
+      if (jsonMatch) return stripThinking(jsonMatch[0].trim());
+    }
+    if (!rawContent) {
+      console.warn(`[ANALIZADOR] ⚠ Respuesta completamente vacía del modelo. Keys: ${Object.keys(data?.message || {}).join(', ')}`);
+    }
+    return stripThinking(rawContent.trim());
 
   } finally {
     clearTimeout(timer);
