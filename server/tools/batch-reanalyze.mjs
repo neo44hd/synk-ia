@@ -11,8 +11,8 @@ const DATA_DIR  = process.env.DATA_DIR || join(__dirname, '..', '..', 'data');
 const DB_PATH   = join(DATA_DIR, 'filemanager_docs.json');
 
 // Import analyzer and organizer
-const { analyzeDocument } = await import('../agents/analyzerAgent.js');
-const { organizeDocument } = await import('../agents/organizerAgent.js');
+const { analyze } = await import('../agents/analyzerAgent.js');
+const { organize } = await import('../agents/organizerAgent.js');
 
 function loadDB() {
   return JSON.parse(readFileSync(DB_PATH, 'utf-8'));
@@ -38,7 +38,8 @@ async function reanalyze(docId) {
   console.log(`  Texto: ${text.length} chars | método: ${method}`);
   
   // Re-analyze
-  const analysis = await analyzeDocument(text, name, method);
+  const result = await analyze({ text, method, originalName: name, mimeType: doc.mime_type || '' });
+  const analysis = result.analysis;
   
   // Update DB
   const db2 = loadDB();
@@ -49,10 +50,16 @@ async function reanalyze(docId) {
   doc2.updated_at = new Date().toISOString();
   
   // Re-organize
-  const orgResult = await organizeDocument(doc2);
-  if (orgResult.storagePath) {
-    doc2.storage_path = orgResult.storagePath;
-    doc2.tags = orgResult.tags || doc2.tags;
+  try {
+    const orgResult = await organize(analysis, { text, method }, name);
+    if (orgResult?.storagePath) {
+      doc2.storage_path = orgResult.storagePath;
+    }
+    if (orgResult?.tags) {
+      doc2.tags = orgResult.tags;
+    }
+  } catch (orgErr) {
+    console.log(`  ⚠ Organizer error (non-fatal): ${orgErr.message}`);
   }
   
   saveDB(db2);
