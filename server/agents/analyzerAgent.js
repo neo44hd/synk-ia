@@ -20,7 +20,7 @@ const MODEL       = process.env.ANALYZER_MODEL || 'qwen3.5';
 const TIMEOUT_MS  = 600_000;   // 10 minutos — PDFs largos (Coca Cola 13pg) necesitan más tiempo con qwen3.5
 const MAX_TOKENS  = 4000;      // qwen3.5 soporta más tokens de salida
 const TEMPERATURE = 0.05;      // Casi determinista para clasificación
-const MAX_TEXT    = 10000;     // qwen3.5 tiene contexto más amplio, aprovechar
+const MAX_TEXT    = 5000;      // 5K chars — qwen3.5 pierde la estructura JSON con textos >5K
 
 // Datos fijos de MI EMPRESA (receptor en casi todos los documentos)
 const MI_EMPRESA = {
