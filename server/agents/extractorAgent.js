@@ -1149,7 +1149,10 @@ async function glmOcrImage(filePath) {
         }),
       });
 
-      if (!res.ok) throw new Error(`glm-ocr HTTP ${res.status}`);
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => '');
+        throw new Error(`glm-ocr HTTP ${res.status}: ${errBody.slice(0, 200)}`);
+      }
       const data = await res.json();
       const text = cleanText(data?.message?.content || '');
 
@@ -1173,8 +1176,8 @@ async function ocrPdfViaGlm(filePath) {
   try {
     const prefix = path.join(tmpDir, 'page');
 
-    // Convertir PDF a imágenes PNG a 300 DPI (máx 15 páginas)
-    await execAsync('pdftoppm', ['-png', '-r', '300', '-l', '15', filePath, prefix], { timeout: 120_000 });
+    // Convertir PDF a imágenes PNG a 200 DPI (balance calidad/tamaño para OCR, máx 15 páginas)
+    await execAsync('pdftoppm', ['-png', '-r', '200', '-l', '15', filePath, prefix], { timeout: 120_000 });
 
     const files = (await readdir(tmpDir)).filter(f => f.endsWith('.png')).sort();
     if (files.length === 0) {
