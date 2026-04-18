@@ -427,6 +427,68 @@ function syncClients() {
   return added;
 }
 
+// ─── Sync documentos procesados → uploadedfile.json (Archivo Inteligente) ──
+function syncUploadedFiles() {
+  const allDocs = getAllDocs();
+  const existing = readJSON('uploadedfile.json');
+  const existingSourceIds = new Set(existing.map(f => f.source_id));
+
+  let added = 0;
+  for (const doc of allDocs) {
+    if (existingSourceIds.has(doc.id)) continue;
+
+    const a = doc.analisis;
+    const tipoMap = {
+      'factura_recibida': 'Factura',
+      'factura_emitida': 'Factura',
+      'albaran': 'Albarán',
+      'nomina': 'Nómina',
+      'contrato': 'Contrato',
+      'otro': 'Otros'
+    };
+
+    existing.push({
+      id: generateId(),
+      source_id: doc.id,
+      filename: doc.nombre_archivo,
+      file_url: null,
+      source: 'Pipeline IA',
+      upload_date: doc.procesado || new Date().toISOString(),
+      uploaded_by: 'Sistema',
+      size: null,
+      content_type: doc.mime_type || 'application/pdf',
+      processing_status: 'completed',
+      detected_type: tipoMap[a.tipo] || 'Otros',
+      metadata: {
+        extraction_method: doc.metodo_extraccion,
+        pages: doc.paginas,
+        confidence: a.confianza,
+        processing_completed: new Date().toISOString(),
+        extracted: {
+          provider: a.emisor?.nombre || '',
+          providerCif: a.emisor?.cif_nif || '',
+          invoiceNumber: a.numero_documento || '',
+          invoiceDate: a.fecha || null,
+          subtotal: a.base_imponible || null,
+          iva: a.iva_total || null,
+          total: a.total || null,
+          summary: a.resumen || '',
+          documentType: { label: tipoMap[a.tipo] || 'Otros' }
+        }
+      },
+      created_date: doc.procesado || new Date().toISOString(),
+      updated_date: new Date().toISOString()
+    });
+    added++;
+  }
+
+  if (added > 0) {
+    writeJSON('uploadedfile.json', existing);
+    console.log(`[SYNC] UploadedFiles: +${added} (${existing.length} total)`);
+  }
+  return added;
+}
+
 // ─── Full sync (all entities) ───────────────────────────────────────────
 export function syncAll() {
   console.log('[SYNC] Starting full data sync...');
@@ -435,7 +497,8 @@ export function syncAll() {
     providers: syncProviders(),
     invoices: syncInvoices(),
     emails: syncEmails(),
-    clients: syncClients()
+    clients: syncClients(),
+    uploadedFiles: syncUploadedFiles()
   };
   const total = Object.values(results).reduce((s, n) => s + n, 0);
   if (total > 0) {
@@ -452,6 +515,7 @@ export function syncAfterDocument() {
     syncDocuments();
     syncProviders();
     syncInvoices();
+    syncUploadedFiles();
   } catch (err) {
     console.error('[SYNC] Error syncing after document:', err.message);
   }
