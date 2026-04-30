@@ -109,6 +109,151 @@ app.use('/api/commerce', async (req, res) => {
   }
 });
 
+// ── Proxies: Stack IA local (Docker) ─────────────────────────────────────────
+// Permiten acceder a los servicios local desde fuera del Mac (via tunnel o red)
+
+// Open WebUI (puerto 3030)
+app.use('/webui', async (req, res) => {
+  try {
+    const targetUrl = `http://localhost:3030${req.url}`;
+    const opts = {
+      method: req.method,
+      headers: req.headers,
+      signal: AbortSignal.timeout(15000),
+    };
+    // No re-enviar headers HTTP/2 específicos
+    delete opts.headers['host'];
+    delete opts.headers['connection'];
+    
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      // Para métodos POST, PUT, etc.
+      const chunks = [];
+      req.on('data', chunk => chunks.push(chunk));
+      req.on('end', async () => {
+        if (chunks.length) opts.body = Buffer.concat(chunks);
+        const upstream = await fetch(targetUrl, opts);
+        res.status(upstream.status);
+        upstream.headers.forEach((val, key) => {
+          if (key !== 'content-length') res.setHeader(key, val);
+        });
+        const buffer = Buffer.from(await upstream.arrayBuffer());
+        res.send(buffer);
+      });
+    } else {
+      const upstream = await fetch(targetUrl, opts);
+      res.status(upstream.status);
+      upstream.headers.forEach((val, key) => {
+        if (key !== 'content-length') res.setHeader(key, val);
+      });
+      const buffer = Buffer.from(await upstream.arrayBuffer());
+      res.send(buffer);
+    }
+  } catch (err) {
+    res.status(502).json({ success: false, error: 'WebUI service unavailable', details: err.message });
+  }
+});
+
+// n8n (puerto 5678)
+app.use('/n8n', async (req, res) => {
+  try {
+    const targetUrl = `http://localhost:5678${req.url}`;
+    const opts = {
+      method: req.method,
+      headers: req.headers,
+      signal: AbortSignal.timeout(15000),
+    };
+    delete opts.headers['host'];
+    delete opts.headers['connection'];
+    
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      const chunks = [];
+      req.on('data', chunk => chunks.push(chunk));
+      req.on('end', async () => {
+        if (chunks.length) opts.body = Buffer.concat(chunks);
+        const upstream = await fetch(targetUrl, opts);
+        res.status(upstream.status);
+        upstream.headers.forEach((val, key) => {
+          if (key !== 'content-length') res.setHeader(key, val);
+        });
+        const buffer = Buffer.from(await upstream.arrayBuffer());
+        res.send(buffer);
+      });
+    } else {
+      const upstream = await fetch(targetUrl, opts);
+      res.status(upstream.status);
+      upstream.headers.forEach((val, key) => {
+        if (key !== 'content-length') res.setHeader(key, val);
+      });
+      const buffer = Buffer.from(await upstream.arrayBuffer());
+      res.send(buffer);
+    }
+  } catch (err) {
+    res.status(502).json({ success: false, error: 'n8n service unavailable', details: err.message });
+  }
+});
+
+// SearXNG (puerto 8888)
+app.use('/searxng', async (req, res) => {
+  try {
+    const targetUrl = `http://localhost:8888${req.url}`;
+    const opts = {
+      method: req.method,
+      headers: req.headers,
+      signal: AbortSignal.timeout(15000),
+    };
+    delete opts.headers['host'];
+    delete opts.headers['connection'];
+    
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      const chunks = [];
+      req.on('data', chunk => chunks.push(chunk));
+      req.on('end', async () => {
+        if (chunks.length) opts.body = Buffer.concat(chunks);
+        const upstream = await fetch(targetUrl, opts);
+        res.status(upstream.status);
+        upstream.headers.forEach((val, key) => {
+          if (key !== 'content-length') res.setHeader(key, val);
+        });
+        const buffer = Buffer.from(await upstream.arrayBuffer());
+        res.send(buffer);
+      });
+    } else {
+      const upstream = await fetch(targetUrl, opts);
+      res.status(upstream.status);
+      upstream.headers.forEach((val, key) => {
+        if (key !== 'content-length') res.setHeader(key, val);
+      });
+      const buffer = Buffer.from(await upstream.arrayBuffer());
+      res.send(buffer);
+    }
+  } catch (err) {
+    res.status(502).json({ success: false, error: 'SearXNG service unavailable', details: err.message });
+  }
+});
+
+// Qdrant (puerto 6333)
+app.use('/qdrant', async (req, res) => {
+  try {
+    const targetUrl = `http://localhost:6333${req.url}`;
+    const opts = {
+      method: req.method,
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(15000),
+    };
+    
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+      opts.body = JSON.stringify(req.body);
+    }
+    const upstream = await fetch(targetUrl, opts);
+    const data = await upstream.json();
+    res.status(upstream.status).json(data);
+  } catch (err) {
+    res.status(502).json({ success: false, error: 'Qdrant service unavailable', details: err.message });
+  }
+});
+
+console.log('[SERVER] ✓ AI Stack proxies: /webui, /n8n, /searxng, /qdrant');
+
 
 // ── Rutas de negocio ──────────────────────────────────────────────────────────
 app.use('/api/email',  emailRouter);

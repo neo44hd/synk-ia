@@ -30,7 +30,7 @@ import {
   Building2,
   ChevronRight,
   Trash2
-} from "lucide-react";
+, ChevronDown, ChevronUp} from 'lucide-react';
 import { format } from "date-fns";
 import { toast } from "sonner";
 import FilePreviewModal from "@/components/FilePreviewModal";
@@ -46,6 +46,7 @@ export default function DocumentArchive() {
   const [processingLogs, setProcessingLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
+  const [expandedParents, setExpandedParents] = useState({}); // GROUP_EXPAND_V3
   const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
   const logsEndRef = useRef(null);
@@ -552,6 +553,49 @@ export default function DocumentArchive() {
     }
   };
 
+  
+  // GROUP_EXPAND_V3 — agrupa padre/hijos del split de V3
+  function groupFiles(list) {
+    const byBase = new Map();
+    const childRe = /^(.+?)\s*\[p\.\d+-\d+\]\s*$/;
+    // Primero, identificar padres por filename limpio
+    const parents = [];
+    const childrenOf = new Map();
+    for (const f of list) {
+      const fn = f.filename || '';
+      const m = fn.match(childRe);
+      if (m) {
+        const baseName = m[1].trim();
+        if (!childrenOf.has(baseName)) childrenOf.set(baseName, []);
+        childrenOf.get(baseName).push(f);
+      } else {
+        parents.push(f);
+      }
+    }
+    // Aplanar en el orden deseado: padre, luego sus hijos (si expandido)
+    const out = [];
+    for (const p of parents) {
+      const kids = childrenOf.get(p.filename || '') || [];
+      const key = p.id;
+      const hasKids = kids.length > 0;
+      out.push({ ...p, _hasKids: hasKids, _isChild: false, _kidsCount: kids.length });
+      if (hasKids && expandedParents[key]) {
+        for (const k of kids) out.push({ ...k, _isChild: true, _hasKids: false });
+      }
+    }
+    // Hijos huérfanos (base sin padre en la lista)
+    for (const [base, kids] of childrenOf.entries()) {
+      if (!parents.some(p => (p.filename || '') === base)) {
+        for (const k of kids) out.push({ ...k, _isChild: true, _hasKids: false });
+      }
+    }
+    return out;
+  }
+
+  function toggleExpand(id) {
+    setExpandedParents(s => ({ ...s, [id]: !s[id] }));
+  }
+
   const filteredFiles = files.filter(file => {
     const metadata = file.metadata || {};
     const searchLower = searchQuery.toLowerCase();
@@ -840,10 +884,20 @@ export default function DocumentArchive() {
                       <TableCell colSpan={5} className="text-center py-8 text-zinc-500">Vacío.</TableCell>
                     </TableRow>
                   ) : (
-                    filteredFiles.map((file) => (
-                      <TableRow key={file.id} className={`${getRowStyle(file)} transition-colors`}>
+                    groupFiles(filteredFiles).map((file) => (
+                      <TableRow key={file.id} className={`${getRowStyle(file)} transition-colors${file._isChild ? ' bg-zinc-900/40' : ''}`}>
                         <TableCell>
-                          <div className="flex items-center gap-3">
+                          <div className={`flex items-center gap-3${file._isChild ? ' pl-8' : ''}`}>
+                            {file._hasKids && (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); toggleExpand(file.id); }}
+                                className="text-zinc-400 hover:text-white transition-colors"
+                                aria-label={expandedParents[file.id] ? 'Ocultar hijos' : 'Mostrar hijos'}
+                              >
+                                {expandedParents[file.id] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                              </button>
+                            )}
                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                               getRowStyle(file).includes('violet') ? 'bg-violet-900/30' : 
                               getRowStyle(file).includes('cyan') ? 'bg-cyan-900/30' :
@@ -856,7 +910,7 @@ export default function DocumentArchive() {
                               }`} />
                             </div>
                             <div>
-                              <p className="font-medium text-white">{file.filename}</p>
+                              <p className="font-medium text-white">{file.filename}{file._hasKids ? ` · ${file._kidsCount} documentos` : ''}</p>
                               <p className="text-xs text-zinc-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                             </div>
                           </div>

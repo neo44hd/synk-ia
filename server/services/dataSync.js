@@ -70,6 +70,9 @@ function normalizeFilemanagerDoc(doc) {
       fecha_vencimiento: a.fechas?.vencimiento || null,
       emisor: a.emisor || {},
       receptor: a.receptor || {},
+      trabajador: a.trabajador || null,
+      parent_v3_id: doc.parent_v3_id || undefined,
+      v3_id: doc.v3_id || undefined,
       numero_documento: a.referencias?.numero_documento || '',
       base_imponible: toNum(importes.base_imponible),
       iva_total: toNum(importes.iva_total),
@@ -107,6 +110,9 @@ function normalizeOldDoc(doc) {
       fecha_vencimiento: a.fecha_vencimiento || null,
       emisor: a.emisor || {},
       receptor: a.receptor || {},
+      trabajador: a.trabajador || null,
+      parent_v3_id: doc.parent_v3_id || undefined,
+      v3_id: doc.v3_id || undefined,
       numero_documento: a.numero_documento || '',
       base_imponible: toNum(a.base_imponible),
       iva_total: toNum(a.iva_total),
@@ -428,24 +434,70 @@ function syncClients() {
 }
 
 // ─── Sync documentos procesados → uploadedfile.json (Archivo Inteligente) ──
+// SYNC_UPLOADED_V3_V1 — parcheado para motor V3: mapea 'recibo', rellena plano
 function syncUploadedFiles() {
   const allDocs = getAllDocs();
   const existing = readJSON('uploadedfile.json');
   const existingSourceIds = new Set(existing.map(f => f.source_id));
 
+  const tipoMap = {
+    'factura_recibida': 'Factura',
+    'factura_emitida': 'Factura',
+    'albaran': 'Albarán',
+    'nomina': 'Nómina',
+    'contrato': 'Contrato',
+    'recibo': 'Recibo',
+    'escritura': 'Escritura',
+    'pdf_multi_factura': 'Múltiples',
+    'otro': 'Otros'
+  };
+
   let added = 0;
   for (const doc of allDocs) {
     if (existingSourceIds.has(doc.id)) continue;
 
-    const a = doc.analisis;
-    const tipoMap = {
-      'factura_recibida': 'Factura',
-      'factura_emitida': 'Factura',
-      'albaran': 'Albarán',
-      'nomina': 'Nómina',
-      'contrato': 'Contrato',
-      'otro': 'Otros'
-    };
+    const a = doc.analisis || {};
+    const tipoLabel = tipoMap[a.tipo] || 'Otros';
+
+    // Detectar proveedor/trabajador/importe en formato plano
+    // Regla dura: Chicken Palace es SIEMPRE receptor, NUNCA emisor.
+    // Nóminas → trabajador va a employee_name (icono User en la UI)
+    // Recibos/Facturas → emisor va a provider (icono Building). Nunca Chicken.
+    const isChickenEmisor = /chicken\s*palace/i.test(a.emisor?.nombre || '');
+    const emisorNombre = (a.emisor?.nombre || '').trim();
+    const receptorNombre = (a.receptor?.nombre || '').trim();
+    const trabajadorNombre = (a.trabajador?.nombre_completo || a.trabajador?.nombre || '').trim();
+
+    let providerName = '';
+    if (a.tipo === 'nomina') {
+      // nómina: el trabajador va en employee_name, no en provider
+      providerName = '';
+    } else if (isChickenEmisor) {
+      // Chicken es receptor real. El proveedor es... el receptor que V3 puso mal,
+      // o (peor caso) dejamos emisor porque no hay alternativa.
+      providerName = receptorNombre || emisorNombre;
+    } else {
+      providerName = emisorNombre || receptorNombre;
+    }
+    const employeeName =
+      a.trabajador?.nombre_completo ||
+      a.trabajador?.nombre ||
+      '';
+    const employeeDni =
+      a.trabajador?.dni ||
+      a.trabajador?.nif ||
+      '';
+    const amount = a.total ?? a.base_imponible ?? null;
+
+    // Destino inferido para que la tabla muestre el link
+    let destination = null;
+    if (a.tipo === 'nomina' && employeeName) {
+      destination = { type: 'Employee', id: doc.id, name: employeeName, section: 'Equipo' };
+    } else if ((a.tipo || '').startsWith('factura') && providerName) {
+      destination = { type: 'Invoice', id: doc.id, name: providerName + (amount ? ' - ' + amount + '€' : ''), section: 'Facturas' };
+    } else if (a.tipo === 'recibo' && providerName) {
+      destination = { type: 'Invoice', id: doc.id, name: providerName + (amount ? ' - ' + amount + '€' : ''), section: 'Recibos' };
+    }
 
     existing.push({
       id: generateId(),
@@ -458,22 +510,34 @@ function syncUploadedFiles() {
       size: null,
       content_type: doc.mime_type || 'application/pdf',
       processing_status: 'completed',
-      detected_type: tipoMap[a.tipo] || 'Otros',
+      detected_type: tipoLabel,
       metadata: {
+        // plano (lo que la UI de Archivo Global lee directamente)
+        provider: providerName || undefined,
+        employee_name: employeeName || undefined,
+        employee_dni: employeeDni || undefined,
+        amount: amount != null ? Number(amount) : undefined,
+        document_date: a.fecha || undefined,
+        summary: a.resumen || undefined,
+        destination: destination || undefined,
+
+        // compat con flujo antiguo
         extraction_method: doc.metodo_extraccion,
         pages: doc.paginas,
         confidence: a.confianza,
         processing_completed: new Date().toISOString(),
+        parent_v3_id: doc.parent_v3_id || undefined,
+        v3_id: doc.v3_id || undefined,
         extracted: {
-          provider: a.emisor?.nombre || '',
+          provider: providerName,
           providerCif: a.emisor?.cif_nif || '',
           invoiceNumber: a.numero_documento || '',
           invoiceDate: a.fecha || null,
           subtotal: a.base_imponible || null,
           iva: a.iva_total || null,
-          total: a.total || null,
+          total: amount,
           summary: a.resumen || '',
-          documentType: { label: tipoMap[a.tipo] || 'Otros' }
+          documentType: { label: tipoLabel }
         }
       },
       created_date: doc.procesado || new Date().toISOString(),
@@ -484,7 +548,82 @@ function syncUploadedFiles() {
 
   if (added > 0) {
     writeJSON('uploadedfile.json', existing);
-    console.log(`[SYNC] UploadedFiles: +${added} (${existing.length} total)`);
+    console.log('[SYNC] UploadedFiles: +' + added + ' (' + existing.length + ' total)');
+  }
+  return added;
+}
+
+
+// ─── Sync empleados desde nóminas (auto-creación, tipoMap=nomina) ─────────
+// SYNC_EMPLOYEES_V3 — crea Employee y acumula payrolls[] sin duplicar
+function syncEmployees() {
+  const allDocs = getAllDocs();
+  const existing = readJSON('employee.json') || [];
+
+  // índice por nombre normalizado
+  const byName = new Map(
+    existing.map(e => [String(e.full_name || '').trim().toUpperCase(), e])
+  );
+
+  let added = 0;
+  let updated = 0;
+
+  for (const doc of allDocs) {
+    const a = doc.analisis || {};
+    if (a.tipo !== 'nomina') continue;
+
+    const nombre = (a.trabajador?.nombre_completo || a.trabajador?.nombre || a.receptor?.nombre || '').trim();
+    if (!nombre) continue;
+
+    const key = nombre.toUpperCase();
+    const dni = a.trabajador?.dni || a.trabajador?.nif || a.receptor?.cif_nif || '';
+    const net = Number(a.total || 0);
+    const period = (a.fecha || '').slice(0, 7) || new Date().toISOString().slice(0, 7);
+    const payroll = {
+      period,
+      net_salary: net,
+      gross_salary: Number(a.base_imponible || net),
+      date_processed: new Date().toISOString(),
+      source_doc_id: doc.id,
+      source_v3_id: doc.v3_id || null
+    };
+
+    let emp = byName.get(key);
+    if (!emp) {
+      emp = {
+        id: generateId(),
+        full_name: nombre,
+        dni,
+        position: a.trabajador?.puesto || a.trabajador?.categoria_profesional || '',
+        nss: a.trabajador?.nss || '',
+        salary_net: net,
+        salary_gross: Number(a.base_imponible || net),
+        status: 'activo',
+        start_date: a.trabajador?.antiguedad || null,
+        payrolls: [payroll],
+        created_date: new Date().toISOString(),
+        updated_date: new Date().toISOString()
+      };
+      existing.push(emp);
+      byName.set(key, emp);
+      added++;
+    } else {
+      // ¿Nómina ya registrada?
+      const payrolls = emp.payrolls || [];
+      const dup = payrolls.some(p => p.period === period && Math.abs((p.net_salary || 0) - net) < 0.01);
+      if (!dup) {
+        payrolls.push(payroll);
+        emp.payrolls = payrolls;
+        emp.salary_net = net; // último conocido
+        emp.updated_date = new Date().toISOString();
+        updated++;
+      }
+    }
+  }
+
+  if (added > 0 || updated > 0) {
+    writeJSON('employee.json', existing);
+    console.log('[SYNC] Employees: +' + added + ' nuevos, ' + updated + ' nóminas añadidas (' + existing.length + ' total)');
   }
   return added;
 }
@@ -498,7 +637,8 @@ export function syncAll() {
     invoices: syncInvoices(),
     emails: syncEmails(),
     clients: syncClients(),
-    uploadedFiles: syncUploadedFiles()
+    uploadedFiles: syncUploadedFiles(),
+    employees: syncEmployees()
   };
   const total = Object.values(results).reduce((s, n) => s + n, 0);
   if (total > 0) {
@@ -516,6 +656,7 @@ export function syncAfterDocument() {
     syncProviders();
     syncInvoices();
     syncUploadedFiles();
+    syncEmployees();
   } catch (err) {
     console.error('[SYNC] Error syncing after document:', err.message);
   }

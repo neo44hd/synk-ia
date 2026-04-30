@@ -599,36 +599,52 @@ body {
     <div class="sec-title" style="margin-top:28px">Stack IA local</div>
     <div class="mod-grid">
 
-      <a class="mod-card accent-cyan" href="http://localhost:3030" target="_blank" id="card-webui">
+      <a class="mod-card accent-cyan" href="/webui" target="_blank" id="card-webui">
         <span class="mod-card-status" id="st-webui"></span>
         <span class="mod-icon">🌐</span>
         <div class="mod-title">Open WebUI</div>
         <div class="mod-desc">Asistente IA local con búsqueda web, RAG y memoria de documentos</div>
-        <div class="mod-port">localhost:3030</div>
+        <div class="mod-port">sinkialabs.com/webui</div>
       </a>
 
-      <a class="mod-card accent-orange" href="http://localhost:5678" target="_blank" id="card-n8n">
+      <a class="mod-card accent-orange" href="/n8n" target="_blank" id="card-n8n">
         <span class="mod-card-status" id="st-n8n"></span>
         <span class="mod-icon">⚡</span>
         <div class="mod-title">n8n</div>
         <div class="mod-desc">Automatizaciones, workflows y subagentes conectados a todo el sistema</div>
-        <div class="mod-port">localhost:5678</div>
+        <div class="mod-port">sinkialabs.com/n8n</div>
       </a>
 
-      <a class="mod-card accent-blue" href="http://localhost:8888" target="_blank" id="card-searxng">
+      <a class="mod-card accent-blue" href="/searxng" target="_blank" id="card-searxng">
         <span class="mod-card-status" id="st-searxng"></span>
         <span class="mod-icon">🔍</span>
         <div class="mod-title">SearXNG</div>
         <div class="mod-desc">Motor de búsqueda web privado y gratuito — alimenta Open WebUI</div>
-        <div class="mod-port">localhost:8888</div>
+        <div class="mod-port">sinkialabs.com/searxng</div>
       </a>
 
-      <a class="mod-card accent-purple" href="http://localhost:6333/dashboard" target="_blank" id="card-qdrant">
+      <a class="mod-card accent-purple" href="/qdrant/dashboard" target="_blank" id="card-qdrant">
         <span class="mod-card-status" id="st-qdrant"></span>
         <span class="mod-icon">🧠</span>
         <div class="mod-title">Qdrant</div>
         <div class="mod-desc">Memoria vectorial — el asistente recuerda y busca en documentos</div>
-        <div class="mod-port">localhost:6333</div>
+        <div class="mod-port">sinkialabs.com/qdrant</div>
+      </a>
+
+      <a class="mod-card accent-pink" href="/api" target="_blank" id="card-sinkia-api">
+        <span class="mod-card-status" id="st-sinkia-api"></span>
+        <span class="mod-icon">⚙️</span>
+        <div class="mod-title">Sinkia API</div>
+        <div class="mod-desc">Motor backend — documentos, emails, trabajadores, commerce, IA</div>
+        <div class="mod-port">sinkialabs.com/api</div>
+      </a>
+
+      <a class="mod-card accent-orange" href="https://claw.sinkialabs.com" target="_blank" id="card-claw">
+        <span class="mod-card-status" id="st-claw"></span>
+        <span class="mod-icon">🦞</span>
+        <div class="mod-title">OpenClaw</div>
+        <div class="mod-desc">Gateway del agente IA SynK-IA — conectado a Telegram y al chat web</div>
+        <div class="mod-port">claw.sinkialabs.com</div>
       </a>
     </div>
 
@@ -947,11 +963,12 @@ async function triggerSync(type) {
 async function checkAIStack() {
   // Mapa de servicio backend → id del DOM
   const svcMap = [
-    { key: 'ollama',     id: null,      ndot: null          },
-    { key: 'open_webui', id: 'webui',   ndot: 'ndot-webui'  },
-    { key: 'n8n',        id: 'n8n',     ndot: 'ndot-n8n'    },
-    { key: 'searxng',    id: 'searxng', ndot: null          },
-    { key: 'qdrant',     id: 'qdrant',  ndot: null          },
+    { key: 'ollama',       id: null,          ndot: null          },
+    { key: 'open_webui',   id: 'webui',       ndot: 'ndot-webui'  },
+    { key: 'n8n',          id: 'n8n',         ndot: 'ndot-n8n'    },
+    { key: 'searxng',      id: 'searxng',     ndot: null          },
+    { key: 'qdrant',       id: 'qdrant',      ndot: null          },
+    { key: 'sinkia_api',   id: 'sinkia-api',  ndot: null          },
   ];
 
   try {

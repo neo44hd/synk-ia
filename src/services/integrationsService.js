@@ -190,6 +190,23 @@ export async function UploadFile({ file }) {
 
 export async function ExtractDataFromUploadedFile({ file_url, json_schema, extraction_schema }) {
   const schema = json_schema || extraction_schema;
+  // V3_PROXY_FRONT_V1 — atajo hacia el motor V3 vía backend
+  if (file_url && !file_url.startsWith('local://')) {
+    try {
+      const data = await apiPost('/api/ai/extract-document', {
+        file_url,
+        json_schema: schema,
+        filename: (file_url.split('/').pop() || ''),
+      });
+      if (data.status === 'success' && data.output) {
+        console.log('[ExtractDataFromUploadedFile] V3 extraction OK', data.engine, data.model);
+        return { status: 'success', output: data.output };
+      }
+      console.warn('[ExtractDataFromUploadedFile] V3 no devolvió OK, fallback al flujo clásico');
+    } catch (e) {
+      console.warn('[ExtractDataFromUploadedFile] V3 error, fallback:', e.message);
+    }
+  }
 
   let file = _pendingFiles.get(file_url);
 
