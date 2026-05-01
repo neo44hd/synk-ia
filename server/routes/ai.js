@@ -277,6 +277,19 @@ aiRouter.get('/models', async (req, res) => {
   }
 });
 
+// ─── GET /api/ai/tags ────────────────────────────────────────────────────────
+// Alias to /models for backward compatibility
+aiRouter.get('/tags', async (req, res) => {
+  try {
+    const r = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error(`Ollama ${r.status}`);
+    const data = await r.json();
+    res.json({ success: true, models: data.models || [], count: (data.models || []).length, engine: 'ollama' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ─── POST /api/ai/generate ───────────────────────────────────────────────────
 // Compatible con /api/ollama/generate
 aiRouter.post('/generate', async (req, res) => {

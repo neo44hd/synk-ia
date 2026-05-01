@@ -43,6 +43,10 @@ if (!ALLOWED_ORIGINS.includes('https://sinkialabs.com')) {
 if (!ALLOWED_ORIGINS.includes('https://www.sinkialabs.com')) {
   ALLOWED_ORIGINS.push('https://www.sinkialabs.com', 'http://www.sinkialabs.com');
 }
+// Production frontend served from :3001 (PM2)
+if (!ALLOWED_ORIGINS.includes('http://localhost:3001')) {
+  ALLOWED_ORIGINS.push('http://localhost:3001');
+}
 
 app.use(cors({
   origin: (origin, cb) => {

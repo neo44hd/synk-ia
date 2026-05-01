@@ -94,6 +94,10 @@ export default function CEODashboard() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        if (!currentUser) {
+          console.log('No user authenticated, allowing dashboard view (read-only mode)');
+          return;
+        }
         if (currentUser.permission_level !== 'super_admin' && currentUser.permission_level !== 'admin' && currentUser.role !== 'ceo') {
           toast.error('Acceso restringido a CEO');
           navigate(createPageUrl("Dashboard"));
