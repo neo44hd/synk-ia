@@ -39,6 +39,9 @@
   "agents": {
     "defaults": {
       "workspace": "~/.openclaw/workspace",
+      "sandbox": {
+        "mode": "all"
+      },
       "subagents": {
         "runTimeoutSeconds": 300,
         "maxConcurrent": 2
@@ -53,12 +56,12 @@
         "agentDir": "~/.openclaw/agents/brain/agent",
         "model": "ollama/gemma4:26b",
         "sandbox": {
-          "mode": "off"
+          "mode": "all"
         },
         "tools": {
           "allow": [
             "read", "write", "edit", "glob", "grep",
-            "exec", "fetch", "apply_patch",
+            "exec", "apply_patch",
             "subagent", "agent_message"
           ]
         }
@@ -70,7 +73,7 @@
         "agentDir": "~/.openclaw/agents/coder/agent",
         "model": "ollama/qwen2.5-coder:14b",
         "sandbox": {
-          "mode": "off"
+          "mode": "all"
         },
         "tools": {
           "allow": [
@@ -86,7 +89,7 @@
         "agentDir": "~/.openclaw/agents/docs/agent",
         "model": "ollama/qwen3.5:latest",
         "sandbox": {
-          "mode": "off"
+          "mode": "all"
         },
         "tools": {
           "allow": [
@@ -101,11 +104,11 @@
         "agentDir": "~/.openclaw/agents/monitor/agent",
         "model": "ollama/phi4-mini",
         "sandbox": {
-          "mode": "off"
+          "mode": "all"
         },
         "tools": {
           "allow": [
-            "read", "exec", "glob", "grep", "fetch"
+            "read", "exec", "glob", "grep"
           ]
         }
       }
@@ -113,6 +116,10 @@
   },
 
   "tools": {
+    "deny": ["group:web", "browser"],
+    "fs": {
+      "workspaceOnly": true
+    },
     "agentToAgent": {
       "enabled": true,
       "allow": ["brain", "coder", "docs", "monitor"]
@@ -129,8 +136,7 @@
       "timeout": 120000
     },
     "fetch": {
-      "enabled": true,
-      "allowedDomains": ["*"]
+      "enabled": false
     }
   },
 

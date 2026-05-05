@@ -99,6 +99,25 @@ Configuración: `openclaw.json` en la raíz del repo.
 Misiones: `.openclaw/missions/synkia-master.md`
 
 ---
+## Seguridad OpenClaw (hardening aplicado)
+
+Baseline aplicado en `openclaw.json`:
+- `agents.defaults.sandbox.mode: "all"` y agentes `brain/coder/docs/monitor` con sandbox activo.
+- `tools.deny: ["group:web", "browser"]` para bloquear herramientas web y navegador.
+- `tools.fs.workspaceOnly: true` para limitar acceso de archivos al workspace.
+- `tools.fetch.enabled: false` y eliminación de `fetch` en permisos de agentes con mayor riesgo.
+
+Verificación recomendada:
+```bash
+openclaw security audit --deep
+openclaw gateway status
+```
+
+Resultado esperado tras hardening:
+- `0 critical` en auditoría de seguridad.
+- Gateway en estado `running` y usando el archivo de configuración activo.
+
+---
 
 ## Servicios del servidor
 
