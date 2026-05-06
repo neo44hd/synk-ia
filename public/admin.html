@@ -459,15 +459,15 @@ body {
       <a class="nav-mod" href="/terminal" target="_blank" title="Claude Code Terminal">
         <span>🤖</span> Terminal
       </a>
-      <a class="nav-mod" href="http://100.78.4.14:4400" target="_blank" title="SINKIA Commerce — TPV">
+      <a class="nav-mod" href="https://commerce.sinkialabs.com" target="_blank" title="SINKIA Commerce — TPV">
         <span>🛒</span> Commerce
       </a>
       <!-- AI Stack (externo) -->
       <div style="width:1px;height:16px;background:var(--border);margin:0 4px"></div>
-      <a class="nav-mod ext" id="nav-webui" href="http://localhost:3030" target="_blank">
+      <a class="nav-mod ext" id="nav-webui" href="https://chat.sinkialabs.com" target="_blank">
         <span class="nav-dot" id="ndot-webui"></span> Open WebUI
       </a>
-      <a class="nav-mod ext" id="nav-n8n" href="http://localhost:5678" target="_blank">
+      <a class="nav-mod ext" id="nav-n8n" href="https://n8n.sinkialabs.com" target="_blank">
         <span class="nav-dot" id="ndot-n8n"></span> n8n
       </a>
     </nav>
@@ -599,36 +599,36 @@ body {
     <div class="sec-title" style="margin-top:28px">Stack IA local</div>
     <div class="mod-grid">
 
-      <a class="mod-card accent-cyan" href="http://localhost:3030" target="_blank" id="card-webui">
+      <a class="mod-card accent-cyan" href="https://chat.sinkialabs.com" target="_blank" id="card-webui">
         <span class="mod-card-status" id="st-webui"></span>
         <span class="mod-icon">🌐</span>
         <div class="mod-title">Open WebUI</div>
         <div class="mod-desc">Asistente IA local con búsqueda web, RAG y memoria de documentos</div>
-        <div class="mod-port">localhost:3030</div>
+        <div class="mod-port">chat.sinkialabs.com</div>
       </a>
 
-      <a class="mod-card accent-orange" href="http://localhost:5678" target="_blank" id="card-n8n">
+      <a class="mod-card accent-orange" href="https://n8n.sinkialabs.com" target="_blank" id="card-n8n">
         <span class="mod-card-status" id="st-n8n"></span>
         <span class="mod-icon">⚡</span>
         <div class="mod-title">n8n</div>
         <div class="mod-desc">Automatizaciones, workflows y subagentes conectados a todo el sistema</div>
-        <div class="mod-port">localhost:5678</div>
+        <div class="mod-port">n8n.sinkialabs.com</div>
       </a>
 
-      <a class="mod-card accent-blue" href="http://localhost:8888" target="_blank" id="card-searxng">
+      <a class="mod-card accent-blue" href="https://sinkialabs.com/searxng" target="_blank" id="card-searxng">
         <span class="mod-card-status" id="st-searxng"></span>
         <span class="mod-icon">🔍</span>
         <div class="mod-title">SearXNG</div>
         <div class="mod-desc">Motor de búsqueda web privado y gratuito — alimenta Open WebUI</div>
-        <div class="mod-port">localhost:8888</div>
+        <div class="mod-port">sinkialabs.com/searxng</div>
       </a>
 
-      <a class="mod-card accent-purple" href="http://localhost:6333/dashboard" target="_blank" id="card-qdrant">
+      <a class="mod-card accent-purple" href="https://sinkialabs.com/qdrant/dashboard" target="_blank" id="card-qdrant">
         <span class="mod-card-status" id="st-qdrant"></span>
         <span class="mod-icon">🧠</span>
         <div class="mod-title">Qdrant</div>
         <div class="mod-desc">Memoria vectorial — el asistente recuerda y busca en documentos</div>
-        <div class="mod-port">localhost:6333</div>
+        <div class="mod-port">sinkialabs.com/qdrant/dashboard</div>
       </a>
 
       <a class="mod-card accent-pink" href="/api/health" target="_blank" id="card-sinkia-api">
@@ -636,7 +636,7 @@ body {
         <span class="mod-icon">⚙️</span>
         <div class="mod-title">Sinkia API</div>
         <div class="mod-desc">Motor backend — documentos, emails, trabajadores, commerce, IA</div>
-        <div class="mod-port">sinkialabs.com/api</div>
+        <div class="mod-port">sinkialabs.com/api/health</div>
       </a>
 
       <a class="mod-card accent-orange" href="https://claw.sinkialabs.com" target="_blank" id="card-claw">
@@ -714,12 +714,12 @@ body {
         <div class="action-title">Subir documento</div>
         <div class="action-desc">Procesar con IA ahora</div>
       </div>
-      <div class="action-card" onclick="window.open('http://localhost:3030','_blank')">
+      <div class="action-card" onclick="window.open('https://chat.sinkialabs.com','_blank')">
         <div class="action-icon">🌐</div>
         <div class="action-title">Open WebUI</div>
         <div class="action-desc">Asistente IA local</div>
       </div>
-      <div class="action-card" onclick="window.open('http://localhost:5678','_blank')">
+      <div class="action-card" onclick="window.open('https://n8n.sinkialabs.com','_blank')">
         <div class="action-icon">⚡</div>
         <div class="action-title">n8n Workflows</div>
         <div class="action-desc">Gestionar automatizaciones</div>
@@ -1178,4 +1178,258 @@ document.getElementById('token-input').addEventListener('keydown', e => {
 })();
 </script>
 </body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MISSION CONTROL PANEL - Claude Code Integration
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="mission-control-panel" style="padding: 24px; max-width: 1400px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h2 style="font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 12px;">
+      🎯 Mission Control
+    </h2>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <span style="font-size: 12px; color: var(--muted2);">
+        Última actualización: <span id="mission-last-update">--</span>
+      </span>
+      <button onclick="loadMissionControlCards()" style="
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+      ">⟳ Actualizar</button>
+    </div>
+  </div>
+  
+  <div id="mission-cards-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 16px;">
+    <!-- Las tarjetas se cargan dinámicamente -->
+    <div style="
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      color: var(--muted2);
+    ">
+      Cargando tarjetas de Mission Control...
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// MISSION CONTROL CARDS LOADER
+// ═══════════════════════════════════════════════════════════════
+
+let missionCardsLoaded = false;
+
+async function loadMissionControlCards() {
+  try {
+    const response = await fetch('/api/mission-control/cards');
+    const data = await response.json();
+    
+    if (data.success && data.cards) {
+      const container = document.getElementById('mission-cards-container');
+      container.innerHTML = '';
+      
+      data.cards.forEach(card => {
+        const cardEl = createMissionCard(card);
+        container.appendChild(cardEl);
+      });
+      
+      document.getElementById('mission-last-update').textContent = 
+        new Date(data.timestamp).toLocaleString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      
+      missionCardsLoaded = true;
+    }
+  } catch (error) {
+    console.error('Error loading Mission Control cards:', error);
+    const container = document.getElementById('mission-cards-container');
+    container.innerHTML = `
+      <div style="
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        text-align: center;
+        color: var(--red);
+      ">
+        ⚠️ Error cargando tarjetas. Revisa que el backend esté funcionando.
+      </div>
+    `;
+  }
+}
+
+function createMissionCard(card) {
+  const div = document.createElement('div');
+  div.style.cssText = `
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  `;
+  
+  const statusColors = {
+    'healthy': 'var(--green)',
+    'optimized': 'var(--cyan)',
+    'completed': 'var(--blue)',
+    'warning': 'var(--yellow)',
+    'error': 'var(--red)'
+  };
+  
+  const priorityColors = {
+    'high': 'var(--orange)',
+    'critical': 'var(--red)',
+    'normal': 'var(--muted2)'
+  };
+  
+  const statusColor = statusColors[card.status] || 'var(--muted)';
+  const priorityColor = priorityColors[card.priority] || 'var(--muted2)';
+  
+  div.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+      <h3 style="font-size: 15px; font-weight: 600; flex: 1;">${card.title}</h3>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span style="
+          background: ${priorityColor}20;
+          color: ${priorityColor};
+          padding: 3px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+        ">${card.priority}</span>
+        <span style="
+          background: ${statusColor}20;
+          color: ${statusColor};
+          padding: 3px 6px;
+          border-radius: 4px;
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+        ">${card.status}</span>
+      </div>
+    </div>
+    
+    ${card.description ? `
+      <p style="color: var(--muted2); font-size: 12px; margin-bottom: 12px;">
+        ${card.description}
+      </p>
+    ` : ''}
+    
+    <div style="background: var(--bg); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+      ${Object.entries(card.data).map(([key, value]) => `
+        <div style="
+          display: flex;
+          justify-content: space-between;
+          padding: 6px 0;
+          border-bottom: 1px solid var(--border);
+          font-size: 12px;
+        ">
+          <span style="color: var(--muted2); text-transform: capitalize;">
+            ${key.replace(/([A-Z])/g, ' $1').trim()}
+          </span>
+          <span style="font-weight: 600;">${value}</span>
+        </div>
+      `).join('')}
+    </div>
+    
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      ${card.actions.map(action => `
+        <button 
+          onclick="executeMissionAction('${card.id}', '${action.action}', event)"
+          style="
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 80px;
+          "
+          onmouseover="this.style.borderColor='var(--green-dim)'"
+          onmouseout="this.style.borderColor='var(--border)'"
+        >${action.label}</button>
+      `).join('')}
+    </div>
+  `;
+  
+  div.onmouseover = () => {
+    div.style.borderColor = 'var(--green-dim)';
+    div.style.transform = 'translateY(-2px)';
+  };
+  div.onmouseout = () => {
+    div.style.borderColor = 'var(--border)';
+    div.style.transform = 'translateY(0)';
+  };
+  
+  return div;
+}
+
+async function executeMissionAction(cardId, action, event) {
+  event.stopPropagation();
+  
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.textContent = '⏳ Ejecutando...';
+  btn.disabled = true;
+  
+  try {
+    const response = await fetch('/api/mission-control/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cardId, action })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      btn.textContent = '✓ Éxito';
+      btn.style.color = 'var(--green)';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.color = 'var(--text)';
+        btn.disabled = false;
+        loadMissionControlCards(); // Recargar tarjetas
+      }, 1500);
+    } else {
+      throw new Error(data.error);
+    }
+  } catch (error) {
+    btn.textContent = '✗ Error';
+    btn.style.color = 'var(--red)';
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.color = 'var(--text)';
+      btn.disabled = false;
+    }, 2000);
+    console.error('Error executing action:', error);
+  }
+}
+
+// Cargar tarjetas cuando el DOM esté listo
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadMissionControlCards);
+} else {
+  loadMissionControlCards();
+}
+
+// Recargar cada 60 segundos
+setInterval(() => {
+  if (missionCardsLoaded) {
+    loadMissionControlCards();
+  }
+}, 60000);
+</script>
 </html>

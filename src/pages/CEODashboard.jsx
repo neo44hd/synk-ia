@@ -61,6 +61,7 @@ import {
 import { exportService } from "@/services/exportService";
 import { backupService } from "@/services/backupService";
 import { auditService } from "@/services/auditService";
+import MissionControlCards from "@/components/dashboard/MissionControlCards";
 import { Shield, HardDrive } from "lucide-react";
 
 const COLORS = ['#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
@@ -391,6 +392,9 @@ export default function CEODashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Mission Control - Tarjetas de Mantenimiento y Sync */}
+        <MissionControlCards />
 
         {/* Fila de empleados y alertas */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
