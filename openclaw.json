@@ -140,6 +140,18 @@
     }
   },
 
+  "commands": {
+    "ownerAllowFrom": ["telegram:5665555949"]
+  },
+
+  "channels": {
+    "telegram": {
+      "groupPolicy": "allowlist",
+      "groupAllowFrom": ["5665555949"],
+      "allowFrom": ["5665555949"]
+    }
+  },
+
   "sessions": {
     "history": {
       "maxTokens": 16384,
