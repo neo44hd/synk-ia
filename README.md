@@ -101,11 +101,12 @@ Misiones: `.openclaw/missions/synkia-master.md`
 ---
 ## Seguridad OpenClaw (hardening aplicado)
 
-Baseline aplicado en `openclaw.json`:
-- `agents.defaults.sandbox.mode: "all"` y agentes `brain/coder/docs/monitor` con sandbox activo.
+Hardening aplicado en la configuración activa del gateway: `~/.openclaw/openclaw.json`
+- `channels.telegram.groupPolicy: "allowlist"` (se cerró `open` para grupos).
+- `agents.defaults.sandbox.mode: "all"` y agentes `main/brain/coder/docs/monitor` con sandbox activo.
 - `tools.deny: ["group:web", "browser"]` para bloquear herramientas web y navegador.
 - `tools.fs.workspaceOnly: true` para limitar acceso de archivos al workspace.
-- `tools.fetch.enabled: false` y eliminación de `fetch` en permisos de agentes con mayor riesgo.
+- `tools.elevated.enabled: false` para desactivar herramientas elevadas por defecto.
 
 Verificación recomendada:
 ```bash
@@ -115,6 +116,7 @@ openclaw gateway status
 
 Resultado esperado tras hardening:
 - `0 critical` en auditoría de seguridad.
+- `1 warn` residual por heurística de confianza multiusuario (informativo si el entorno es de operador único).
 - Gateway en estado `running` y usando el archivo de configuración activo.
 
 ---
