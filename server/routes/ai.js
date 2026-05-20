@@ -1,9 +1,14 @@
 /**
  * ai.js — AI endpoints via Ollama HTTP API
+ * ==========================================
  * API surface IDÉNTICA a la versión anterior (node-llama-cpp).
  * El frontend no necesita ningún cambio.
  *
  * Backend: Ollama (localhost:11434) — configurable via .env
+ *
+ * NOTA: Se eliminaron los helpers V3 (v3Ingest, v3WaitDone, v3Children,
+ *       v3FieldsToFrontendSchema) y el proxy a api-v3.sinkialabs.com.
+ *       Todo el procesamiento es ahora local.
  */
 
 import { Router } from 'express';
@@ -14,140 +19,6 @@ const __dirname  = path.dirname(fileURLToPath(import.meta.url));
 
 const OLLAMA_URL = process.env.OLLAMA_URL   || 'http://localhost:11434';
 const MODEL      = process.env.OLLAMA_MODEL || 'qwen3.5';
-
-
-// ─── V3 Proxy helpers ────────────────────────────────────────────────────────
-// V3_PROXY_EXTRACT_V1 (marker)
-const V3_API = process.env.V3_API_URL || 'https://api-v3.sinkialabs.com';
-
-async function v3Ingest(buf, filename, mime) {
-  const form = new FormData();
-  form.append('file', new Blob([buf], { type: mime || 'application/octet-stream' }), filename);
-  const res = await fetch(V3_API + '/api/ingest', { method: 'POST', body: form });
-  if (!res.ok) throw new Error('V3 ingest HTTP ' + res.status);
-  return await res.json();
-}
-
-async function v3WaitDone(id, maxMs = 120000) {
-  const t0 = Date.now();
-  while (Date.now() - t0 < maxMs) {
-    const r = await fetch(V3_API + '/api/documents/' + id);
-    if (r.ok) {
-      const d = await r.json();
-      if (d.status === 'done') return d;
-      if (d.status === 'error') throw new Error(d.error_message || 'V3 error');
-    }
-    await new Promise(s => setTimeout(s, 2000));
-  }
-  return null;
-}
-
-async function v3Children(parentId, maxMs = 180000) {
-  const t0 = Date.now();
-  while (Date.now() - t0 < maxMs) {
-    try {
-      const r = await fetch(V3_API + '/api/documents?parent_id=' + parentId + '&limit=200');
-      if (r.ok) {
-        const data = await r.json();
-        const all = Array.isArray(data) ? data : (data.items || data.documents || []);
-        const kids = all.filter(d => String(d.parent_id) === String(parentId));
-        if (kids.length > 0 && kids.every(k => k.status === 'done' || k.status === 'error')) {
-          const full = await Promise.all(
-            kids.filter(k => k.status === 'done').map(async k => {
-              try {
-                const rr = await fetch(V3_API + '/api/documents/' + k.id);
-                return rr.ok ? await rr.json() : k;
-              } catch { return k; }
-            })
-          );
-          return full;
-        }
-      }
-    } catch {}
-    await new Promise(s => setTimeout(s, 3000));
-  }
-  return [];
-}
-
-// Mapea el extracted_fields de V3 al schema genérico que espera el frontend
-function v3FieldsToFrontendSchema(v3Doc, childrenDocs = []) {
-  const f = v3Doc.extracted_fields || {};
-  const tipo = f.tipo || v3Doc.doc_type || 'otro';
-
-  const typeMap = {
-    factura_recibida: 'Factura',
-    factura_emitida:  'Factura',
-    nomina:           'Nómina',
-    recibo:           'Recibo',
-    contrato:         'Contrato',
-    escritura:        'Escritura',
-    albaran:          'Albarán',
-    ticket:           'Ticket',
-    pdf_multi_factura:'Nómina',
-  };
-
-  const document_type = typeMap[tipo] || (tipo.charAt(0).toUpperCase() + tipo.slice(1));
-
-  // Si es un PDF multi-factura con hijos → has_multiple_records=true
-  if (childrenDocs.length > 0) {
-    const records = childrenDocs.map(k => {
-      const kf = k.extracted_fields || {};
-      const isNomina = kf.tipo === 'nomina';
-      const w = kf.trabajador || {};
-      const rec = kf.receptor || {};
-      const em = kf.emisor || {};
-      return {
-        employee_name:  w.nombre_completo || rec.nombre || null,
-        employee_dni:   w.dni || rec.cif_nif || null,
-        amount:         kf.total ?? null,
-        gross_salary:   kf.base_imponible ?? null,
-        social_security: null,
-        irpf: null,
-        document_date:  kf.fecha || null,
-        period:         kf.fecha ? kf.fecha.slice(0, 7) : null,
-        provider_name:  em.nombre || null,
-        provider_cif:   em.cif_nif || null,
-        invoice_number: kf.numero_documento || null,
-        document_type:  typeMap[kf.tipo] || 'Nómina',
-      };
-    });
-    return {
-      document_type,
-      has_multiple_records: true,
-      records,
-      summary: f.resumen || v3Doc.filename,
-    };
-  }
-
-  // Documento simple — mapeo directo
-  const emisor = f.emisor || {};
-  const receptor = f.receptor || {};
-  const trabajador = f.trabajador || {};
-
-  return {
-    document_type,
-    has_multiple_records: false,
-    provider_name:   emisor.nombre || null,
-    provider_cif:    emisor.cif_nif || null,
-    employee_name:   trabajador.nombre_completo || (tipo === 'nomina' ? receptor.nombre : null),
-    employee_dni:    trabajador.dni || null,
-    amount:          f.total ?? null,
-    gross_salary:    f.base_imponible ?? null,
-    social_security: null,
-    irpf:            null,
-    subtotal:        f.base_imponible ?? null,
-    iva:             f.iva_total ?? null,
-    document_date:   f.fecha || null,
-    due_date:        f.fecha_vencimiento || null,
-    period:          f.fecha ? f.fecha.slice(0, 7) : null,
-    invoice_number:  f.numero_documento || null,
-    summary:         f.resumen || '',
-    _v3_id:          v3Doc.id,
-    _v3_confidence:  v3Doc.confidence ? parseFloat(v3Doc.confidence) : null,
-  };
-}
-
-export const aiRouter = Router();
 
 // ─── Helper: llamar a Ollama ─────────────────────────────────────────────────
 async function ollamaGenerate({ prompt, system, format, temperature = 0.1, maxTokens = 1024 }) {
@@ -396,48 +267,12 @@ aiRouter.get('/status', async (req, res) => {
   }
 });
 
-
 // ─── POST /api/ai/extract-document ───────────────────────────────────────────
 // Extrae datos estructurados de texto de documento según un JSON Schema dinámico.
 // A diferencia de /classify (schema fijo), aquí el schema viene del cliente.
-// Usado por integrationsService.ExtractDataFromUploadedFile.
+// Procesamiento 100% local vía Ollama.
 aiRouter.post('/extract-document', async (req, res) => {
-  const { text, json_schema, filename, file_url } = req.body;
-
-  // ─── V3 PATH: si viene file_url, usa el motor V3 ──────────────────────
-  if (file_url) {
-    try {
-      const path = await import('path');
-      const { readFile } = await import('fs/promises');
-      const UPLOADS_DIR = process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads');
-      // file_url suele ser /api/files/serve/<nombre>
-      const name = file_url.split('/').pop();
-      const absPath = path.join(UPLOADS_DIR, name);
-      const buf = await readFile(absPath);
-      const ingested = await v3Ingest(buf, filename || name, req.body.mimetype);
-      console.log('[V3-PROXY] ingested id=' + ingested.id + ' for ' + (filename || name));
-      const done = await v3WaitDone(ingested.id, 120000);
-      if (!done) {
-        return res.json({ status: 'error', output: null, details: 'V3 timeout' });
-      }
-      let kids = [];
-      if (done.child_count && done.child_count > 0) {
-        kids = await v3Children(done.id, 180000);
-        console.log('[V3-PROXY] ' + kids.length + ' hijos recuperados');
-      }
-      const output = v3FieldsToFrontendSchema(done, kids);
-      return res.json({
-        status: 'success',
-        output,
-        engine: 'v3',
-        model: (done.extracted_fields || {})._model || 'v3',
-        duration: done.processing_ms || null,
-      });
-    } catch (e) {
-      console.error('[V3-PROXY] Error:', e.message);
-      // cae al flujo antiguo si V3 falla
-    }
-  }
+  const { text, json_schema, filename } = req.body;
 
   if (!text || text.trim().length < 10) {
     return res.json({ status: 'error', output: null, details: 'Texto insuficiente para extracción' });
@@ -485,7 +320,7 @@ Devuelves ÚNICAMENTE JSON válido sin texto adicional ni bloques markdown.`,
       status:  'error',
       output:  null,
       details: 'El LLM no devolvió JSON válido',
-      raw:     response?.substring(0, 200),
+      raw:     result.response?.substring(0, 200),
     });
   } catch (err) {
     console.error('[extract-document]', err.message);

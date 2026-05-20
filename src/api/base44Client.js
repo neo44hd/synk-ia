@@ -1,7 +1,7 @@
 /**
  * SYNK-IA - Cliente de Datos Local (Compatibilidad)
  * © 2024 David Roldan - Chicken Palace Ibiza
- * Futuro: SYNK-IA LABS
+ * © SynK-IA
  * 
  * Este archivo proporciona compatibilidad con el código existente
  * que usaba Base44 SDK, ahora usando almacenamiento local.
@@ -15,11 +15,11 @@ import { integrationsService } from '../services/integrationsService';
 /**
  * Objeto de compatibilidad que simula la estructura de Base44 SDK
  */
-export const base44 = {
+export const synkia = {
   entities: dataService,
   auth: authService,
   functions: functionsService,
   integrations: integrationsService
 };
 
-export default base44;
+export default synkia;
