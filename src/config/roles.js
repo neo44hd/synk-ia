@@ -164,94 +164,92 @@ export const ROLE_PERMISSIONS = {
 // null = ruta pública, [] = solo autenticación requerida
 export const ROUTE_PERMISSIONS = {
   // Rutas públicas (sin autenticación)
-  '/pedir': null,
-  '/OrdersDashboard': null, // También pública para pedidos
+  '/ordersdashboard': null, // También pública para pedidos
   
   // Rutas que solo requieren autenticación (cualquier rol)
   '/': [],
-  '/Home': [],
-  '/MyProfile': [PERMISSIONS.VIEW_OWN_PROFILE],
-  '/Notifications': [],
+  '/home': [],
+  '/myprofile': [PERMISSIONS.VIEW_OWN_PROFILE],
+  '/notifications': [],
   
   // Dashboard y general
-  '/Dashboard': [PERMISSIONS.VIEW_DASHBOARD],
+  '/dashboard': [PERMISSIONS.VIEW_DASHBOARD],
   
   // Finanzas
-  '/Albaranes': [PERMISSIONS.VIEW_ALBARANES],
-  '/Billing': [PERMISSIONS.VIEW_BILLING],
-  '/Invoices': [PERMISSIONS.VIEW_INVOICES],
-  '/GestorFacturas': [PERMISSIONS.VIEW_INVOICES],
-  '/FinanceDashboard': [PERMISSIONS.VIEW_FINANCE],
-  '/VeriFactu': [PERMISSIONS.VIEW_VERIFACTU],
+  '/albaranes': [PERMISSIONS.VIEW_ALBARANES],
+  '/billing': [PERMISSIONS.VIEW_BILLING],
+  '/invoices': [PERMISSIONS.VIEW_INVOICES],
+  '/gestorfacturas': [PERMISSIONS.VIEW_INVOICES],
+  '/financedashboard': [PERMISSIONS.VIEW_FINANCE],
+  '/verifactu': [PERMISSIONS.VIEW_VERIFACTU],
   
   // RRHH
-  '/Staff': [PERMISSIONS.VIEW_STAFF],
-  '/Contracts': [PERMISSIONS.VIEW_CONTRACTS],
-  '/Payrolls': [PERMISSIONS.VIEW_PAYROLLS],
-  '/VacationRequests': [PERMISSIONS.VIEW_VACATION_REQUESTS],
-  '/Timesheets': [PERMISSIONS.VIEW_TIMESHEETS],
-  '/AttendanceControl': [PERMISSIONS.VIEW_ATTENDANCE],
-  '/HRDocuments': [PERMISSIONS.VIEW_HR_DOCUMENTS],
-  '/HRAgent': [PERMISSIONS.VIEW_STAFF],
-  '/MutuaManager': [PERMISSIONS.VIEW_STAFF],
+  '/staff': [PERMISSIONS.VIEW_STAFF],
+  '/contracts': [PERMISSIONS.VIEW_CONTRACTS],
+  '/payrolls': [PERMISSIONS.VIEW_PAYROLLS],
+  '/vacationrequests': [PERMISSIONS.VIEW_VACATION_REQUESTS],
+  '/timesheets': [PERMISSIONS.VIEW_TIMESHEETS],
+  '/attendancecontrol': [PERMISSIONS.VIEW_ATTENDANCE],
+  '/hrdocuments': [PERMISSIONS.VIEW_HR_DOCUMENTS],
+  '/hragent': [PERMISSIONS.VIEW_STAFF],
+  '/mutuamanager': [PERMISSIONS.VIEW_STAFF],
   
   // Portal empleado
-  '/EmployeeHome': [PERMISSIONS.VIEW_EMPLOYEE_PORTAL],
-  '/WorkerInterface': [PERMISSIONS.VIEW_EMPLOYEE_PORTAL],
-  '/WorkerMobile': [PERMISSIONS.VIEW_EMPLOYEE_PORTAL],
+  '/employeehome': [PERMISSIONS.VIEW_EMPLOYEE_PORTAL],
+  '/workerinterface': [PERMISSIONS.VIEW_EMPLOYEE_PORTAL],
+  '/workermobile': [PERMISSIONS.VIEW_EMPLOYEE_PORTAL],
   
   // Operaciones
-  '/Providers': [PERMISSIONS.VIEW_PROVIDERS],
-  '/ProductInventory': [PERMISSIONS.VIEW_INVENTORY],
-  '/ProductionControl': [PERMISSIONS.VIEW_PRODUCTION],
-  '/KitchenDisplay': [PERMISSIONS.VIEW_KITCHEN],
-  '/Comparator': [PERMISSIONS.VIEW_PROVIDERS],
+  '/providers': [PERMISSIONS.VIEW_PROVIDERS],
+  '/productinventory': [PERMISSIONS.VIEW_INVENTORY],
+  '/productioncontrol': [PERMISSIONS.VIEW_PRODUCTION],
+  '/kitchendisplay': [PERMISSIONS.VIEW_KITCHEN],
+  '/comparator': [PERMISSIONS.VIEW_PROVIDERS],
   
   // Gestión de Carta
-  '/MenuManagement': [PERMISSIONS.VIEW_REVO],
   
   // Integraciones
-  '/BiloopAgent': [PERMISSIONS.VIEW_BILOOP],
-  '/BiloopDocuments': [PERMISSIONS.VIEW_BILOOP],
-  '/BiloopImport': [PERMISSIONS.VIEW_BILOOP],
-  '/RevoDashboard': [PERMISSIONS.VIEW_REVO],
-  '/RevoSync': [PERMISSIONS.VIEW_REVO],
-  '/RevoManual': [PERMISSIONS.VIEW_REVO],
-  '/WebSync': [PERMISSIONS.VIEW_REVO],
-  '/EmailSetup': [PERMISSIONS.VIEW_EMAIL],
-  '/EmailProcessor': [PERMISSIONS.VIEW_EMAIL],
-  '/EmailTriage': [PERMISSIONS.VIEW_EMAIL],
-  '/SmartMailbox': [PERMISSIONS.VIEW_EMAIL],
+  '/biloopagent': [PERMISSIONS.VIEW_BILOOP],
+  '/biloopdocuments': [PERMISSIONS.VIEW_BILOOP],
+  '/biloopimport': [PERMISSIONS.VIEW_BILOOP],
+  '/revodashboard': [PERMISSIONS.VIEW_REVO],
+  '/revosync': [PERMISSIONS.VIEW_REVO],
+  '/revomanual': [PERMISSIONS.VIEW_REVO],
+  '/websync': [PERMISSIONS.VIEW_REVO],
+  '/emailsetup': [PERMISSIONS.VIEW_EMAIL],
+  '/emailprocessor': [PERMISSIONS.VIEW_EMAIL],
+  '/emailtriage': [PERMISSIONS.VIEW_EMAIL],
+  '/smartmailbox': [PERMISSIONS.VIEW_EMAIL],
   
   // Sistema y configuración
-  '/SystemOverview': [PERMISSIONS.VIEW_SYSTEM_CONFIG],
-  '/CronSetup': [PERMISSIONS.MANAGE_SYSTEM_CONFIG],
-  '/ApiDiagnostics': [PERMISSIONS.VIEW_DIAGNOSTICS],
-  '/ConnectionDiagnostics': [PERMISSIONS.VIEW_DIAGNOSTICS],
-  '/AutomationHub': [PERMISSIONS.VIEW_AUTOMATION],
-  '/SecurityCameras': [PERMISSIONS.VIEW_SECURITY],
+  '/systemoverview': [PERMISSIONS.VIEW_SYSTEM_CONFIG],
+  '/cronsetup': [PERMISSIONS.MANAGE_SYSTEM_CONFIG],
+  '/apidiagnostics': [PERMISSIONS.VIEW_DIAGNOSTICS],
+  '/connectiondiagnostics': [PERMISSIONS.VIEW_DIAGNOSTICS],
+  '/automationhub': [PERMISSIONS.VIEW_AUTOMATION],
+  '/securitycameras': [PERMISSIONS.VIEW_SECURITY],
   
   // Legal y documentos
-  '/LegalVault': [PERMISSIONS.VIEW_LEGAL],
-  '/CompanyDocs': [PERMISSIONS.VIEW_DOCUMENTS],
-  '/DocumentArchive': [PERMISSIONS.VIEW_DOCUMENTS],
-  '/RGPDManager': [PERMISSIONS.VIEW_RGPD],
+  '/legalvault': [PERMISSIONS.VIEW_LEGAL],
+  '/companydocs': [PERMISSIONS.VIEW_DOCUMENTS],
+  '/documentarchive': [PERMISSIONS.VIEW_DOCUMENTS],
+  '/rgpdmanager': [PERMISSIONS.VIEW_RGPD],
   
   // Gestoria
-  '/PortalGestoria': [PERMISSIONS.VIEW_GESTORIA],
-  '/PortalLogin': null, // Página de login siempre pública
+  '/portalgestoria': [PERMISSIONS.VIEW_GESTORIA],
+  '/portallogin': null, // Página de login siempre pública
   
   // IA y agentes
-  '/CEOBrain': [PERMISSIONS.VIEW_CEO_BRAIN],
-  '/CentralAgent': [PERMISSIONS.VIEW_AGENTS],
-  '/VoiceCommands': [PERMISSIONS.VIEW_VOICE_COMMANDS],
+  '/ceobrain': [PERMISSIONS.VIEW_CEO_BRAIN],
+  '/centralagent': [PERMISSIONS.VIEW_AGENTS],
+  '/voicecommands': [PERMISSIONS.VIEW_VOICE_COMMANDS],
   
   // Reportes
-  '/ExecutiveReports': [PERMISSIONS.VIEW_REPORTS],
-  '/BusinessAnalysis': [PERMISSIONS.VIEW_BUSINESS_ANALYSIS],
+  '/executivereports': [PERMISSIONS.VIEW_REPORTS],
+  '/businessanalysis': [PERMISSIONS.VIEW_BUSINESS_ANALYSIS],
   
   // Showcase (demo)
-  '/Showcase': []
+  '/showcase': []
 };
 
 // Función helper para verificar si un rol tiene un permiso

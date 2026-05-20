@@ -118,14 +118,14 @@ export function AccessDenied() {
         
         <div className="space-y-3">
           <a 
-            href="/Home" 
+            href="/home" 
             className="block w-full px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
           >
             Volver al Inicio
           </a>
           
           <a 
-            href="/EmployeeHome" 
+            href="/employeehome" 
             className="block w-full px-4 py-2 bg-zinc-700 text-white rounded-lg hover:bg-zinc-600 transition-colors"
           >
             Portal del Empleado
