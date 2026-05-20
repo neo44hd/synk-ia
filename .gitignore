@@ -71,3 +71,21 @@ coverage
 # Modelos GGUF (varios GB — no versionar)
 models/
 *.gguf
+
+# ===== DATOS DE PRODUCCIÓN — NUNCA VERSIONAR =====
+uploads/
+data/
+*.pdf
+*.zip
+*.xlsx
+*.xls
+*.docx
+*.doc
+*.eml
+
+# Backups
+*.backup
+*.backup.*
+
+# Dist (se genera con build)
+dist/
