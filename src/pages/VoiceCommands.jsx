@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ export default function VoiceCommands() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error('Error loading user:', error);
@@ -122,7 +122,7 @@ export default function VoiceCommands() {
     }
   ];
 
-  const whatsappURL = base44.agents.getWhatsAppConnectURL('voice_assistant');
+  const whatsappURL = synkia.agents.getWhatsAppConnectURL('voice_assistant');
 
   return (
     <div className="p-4 md:p-8 min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">

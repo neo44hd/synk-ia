@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,13 @@ export default function KitchenDisplay() {
 
   const { data: orders = [] } = useQuery({
     queryKey: ['kitchen-orders'],
-    queryFn: () => base44.entities.Order.list('-order_date', 50),
+    queryFn: () => synkia.entities.Order.list('-order_date', 50),
     initialData: [],
     refetchInterval: 5000, // Refresh cada 5s
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Order.update(id, data),
+    mutationFn: ({ id, data }) => synkia.entities.Order.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kitchen-orders'] });
     },

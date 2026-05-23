@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,22 +74,22 @@ export default function SmartMailbox() {
     queryKey: ["emails", activeFolder],
     queryFn: async () => {
       if (activeFolder === "all") {
-        return base44.entities.EmailMessage.list("-received_date", 200);
+        return synkia.entities.EmailMessage.list("-received_date", 200);
       }
-      return base44.entities.EmailMessage.filter({ folder: activeFolder }, "-received_date", 100);
+      return synkia.entities.EmailMessage.filter({ folder: activeFolder }, "-received_date", 100);
     }
   });
 
   // Cargar contactos
   const { data: contacts = [], refetch: refetchContacts } = useQuery({
     queryKey: ["emailContacts"],
-    queryFn: () => base44.entities.EmailContact.list("-emails_received", 100)
+    queryFn: () => synkia.entities.EmailContact.list("-emails_received", 100)
   });
 
   // Contar emails por carpeta
   const { data: allEmails = [] } = useQuery({
     queryKey: ["allEmails"],
-    queryFn: () => base44.entities.EmailMessage.list("-received_date", 500)
+    queryFn: () => synkia.entities.EmailMessage.list("-received_date", 500)
   });
 
   const folderCounts = FOLDERS.reduce((acc, folder) => {
@@ -103,7 +103,7 @@ export default function SmartMailbox() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const response = await base44.functions.invoke("smartEmailProcessor");
+      const response = await synkia.functions.invoke("smartEmailProcessor");
       const data = response.data;
       
       if (data.success) {
@@ -124,7 +124,7 @@ export default function SmartMailbox() {
   // Mover email
   const moveEmail = async (emailId, newFolder) => {
     try {
-      await base44.entities.EmailMessage.update(emailId, { folder: newFolder });
+      await synkia.entities.EmailMessage.update(emailId, { folder: newFolder });
       toast.success(`Movido a ${newFolder}`);
       refetchEmails();
       queryClient.invalidateQueries(["allEmails"]);
@@ -136,7 +136,7 @@ export default function SmartMailbox() {
   // Marcar como leído/no leído
   const toggleRead = async (emailId, currentState) => {
     try {
-      await base44.entities.EmailMessage.update(emailId, { is_read: !currentState });
+      await synkia.entities.EmailMessage.update(emailId, { is_read: !currentState });
       refetchEmails();
     } catch (error) {
       toast.error("Error actualizando");
@@ -146,7 +146,7 @@ export default function SmartMailbox() {
   // Marcar como favorito
   const toggleStar = async (emailId, currentState) => {
     try {
-      await base44.entities.EmailMessage.update(emailId, { is_starred: !currentState });
+      await synkia.entities.EmailMessage.update(emailId, { is_starred: !currentState });
       refetchEmails();
     } catch (error) {
       toast.error("Error actualizando");
@@ -156,7 +156,7 @@ export default function SmartMailbox() {
   // Toggle contacto favorito
   const toggleContactFavorite = async (contactId, currentState) => {
     try {
-      await base44.entities.EmailContact.update(contactId, { is_favorite: !currentState });
+      await synkia.entities.EmailContact.update(contactId, { is_favorite: !currentState });
       toast.success(currentState ? "Quitado de favoritos" : "Añadido a favoritos");
       refetchContacts();
     } catch (error) {
@@ -167,7 +167,7 @@ export default function SmartMailbox() {
   // Bloquear contacto
   const blockContact = async (contactId, currentState) => {
     try {
-      await base44.entities.EmailContact.update(contactId, { is_blocked: !currentState });
+      await synkia.entities.EmailContact.update(contactId, { is_blocked: !currentState });
       toast.success(currentState ? "Desbloqueado" : "Bloqueado");
       refetchContacts();
     } catch (error) {

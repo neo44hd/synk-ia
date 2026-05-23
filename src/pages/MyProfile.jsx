@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ export default function MyProfile() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
         setFormData({
           phone: currentUser.phone || '',
@@ -46,7 +46,7 @@ export default function MyProfile() {
   }, []);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => base44.auth.updateMe(data),
+    mutationFn: (data) => synkia.auth.updateMe(data),
     onSuccess: () => {
       toast.success('Perfil actualizado correctamente');
       setIsEditing(false);
@@ -55,7 +55,7 @@ export default function MyProfile() {
   });
 
   const loadUser = async () => {
-    const currentUser = await base44.auth.me();
+    const currentUser = await synkia.auth.me();
     setUser(currentUser);
   };
 

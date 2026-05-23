@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,13 +28,13 @@ export default function WebSync() {
 
   const { data: menuItems = [] } = useQuery({
     queryKey: ['menu-items'],
-    queryFn: () => base44.entities.MenuItem.list(),
+    queryFn: () => synkia.entities.MenuItem.list(),
     initialData: [],
   });
 
   const { data: syncHistory = [] } = useQuery({
     queryKey: ['web-sync-history'],
-    queryFn: () => base44.entities.WebSync.list('-sync_date', 20),
+    queryFn: () => synkia.entities.WebSync.list('-sync_date', 20),
     initialData: [],
   });
 
@@ -75,7 +75,7 @@ export default function WebSync() {
       // - O webhook a la web
       
       // Por ahora, simulamos y guardamos el log
-      const syncRecord = await base44.entities.WebSync.create({
+      const syncRecord = await synkia.entities.WebSync.create({
         sync_type: 'precios',
         source: 'revo',
         platform: platform,
@@ -104,7 +104,7 @@ export default function WebSync() {
       console.error('Sync error:', error);
       toast.error('Error en la sincronización');
       
-      await base44.entities.WebSync.create({
+      await synkia.entities.WebSync.create({
         sync_type: 'precios',
         source: 'revo',
         platform: platform,

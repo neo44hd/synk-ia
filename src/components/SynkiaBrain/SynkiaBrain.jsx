@@ -18,7 +18,7 @@ import {
   Maximize2
 } from 'lucide-react';
 import { SynkiaBrainService } from '@/services/synkiaBrainService';
-import { base44 } from '@/api/base44Client';
+import { synkia } from '@/api/synkiaClient';
 
 // Componente principal SYNK-IA BRAIN
 export default function SynkiaBrain({ isOpen, onClose, onToggle }) {
@@ -184,9 +184,9 @@ Tu asistente de inteligencia empresarial unificado. Tengo acceso a toda la infor
       if (result.type === 'system' || result.type === 'help' || result.type === 'data' || result.type === 'error') {
         assistantContent = result.content;
       } else if (result.type === 'chat') {
-        // Para mensajes de chat, usar el agente de Base44
+        // Para mensajes de chat, delegar al orquestador
         try {
-          const response = await base44.integrations.AI.GetChatResponse({
+          const response = await synkia.integrations.AI.GetChatResponse({
             system_prompt: SynkiaBrainService.systemPrompt,
             messages: messages.map(m => ({
               role: m.role,

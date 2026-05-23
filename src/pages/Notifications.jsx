@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export default function Notifications() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error('Error loading user:', error);
@@ -37,7 +37,7 @@ export default function Notifications() {
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications', filterType, filterRead],
     queryFn: async () => {
-      let all = await base44.entities.Notification.list('-created_date');
+      let all = await synkia.entities.Notification.list('-created_date');
       all = all.filter(n => n.user_id === user?.id || n.user_id === 'all');
       
       if (filterType !== 'all') {
@@ -59,7 +59,7 @@ export default function Notifications() {
     mutationFn: async () => {
       const unread = notifications.filter(n => !n.read);
       await Promise.all(
-        unread.map(n => base44.entities.Notification.update(n.id, { read: true }))
+        unread.map(n => synkia.entities.Notification.update(n.id, { read: true }))
       );
     },
     onSuccess: () => {
@@ -68,14 +68,14 @@ export default function Notifications() {
   });
 
   const markAsReadMutation = useMutation({
-    mutationFn: (id) => base44.entities.Notification.update(id, { read: true }),
+    mutationFn: (id) => synkia.entities.Notification.update(id, { read: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Notification.delete(id),
+    mutationFn: (id) => synkia.entities.Notification.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },

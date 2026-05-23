@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,22 +20,22 @@ export default function FinanceDashboard() {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list('-invoice_date'),
+    queryFn: () => synkia.entities.Invoice.list('-invoice_date'),
   });
 
   const { data: providers = [] } = useQuery({
     queryKey: ['providers'],
-    queryFn: () => base44.entities.Provider.list(),
+    queryFn: () => synkia.entities.Provider.list(),
   });
 
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
-    queryFn: () => base44.entities.Product.list('-total_spent'),
+    queryFn: () => synkia.entities.Product.list('-total_spent'),
   });
 
   const { data: salesInvoices = [] } = useQuery({
     queryKey: ['sales-invoices'],
-    queryFn: () => base44.entities.SalesInvoice.list('-invoice_date'),
+    queryFn: () => synkia.entities.SalesInvoice.list('-invoice_date'),
   });
 
   // KPIs

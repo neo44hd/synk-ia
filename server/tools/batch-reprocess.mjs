@@ -3,7 +3,7 @@
 // Usage: node batch-reprocess.mjs [docId1 docId2 ...]
 // If no IDs given, reprocesses ALL documents
 
-const BASE = process.env.API_URL || 'http://localhost:3001';
+const BASE = process.env.API_URL || 'http://localhost:59401';
 const TOKEN = process.env.ADMIN_TOKEN || 'sinkia2026';
 
 async function reprocess(docId, name) {

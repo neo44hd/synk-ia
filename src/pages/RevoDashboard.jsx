@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -37,25 +37,25 @@ import { format, subDays } from "date-fns";
 export default function RevoDashboard() {
   const { data: sales = [] } = useQuery({
     queryKey: ['sales'],
-    queryFn: () => base44.entities.Sale.list('-sale_date'),
+    queryFn: () => synkia.entities.Sale.list('-sale_date'),
     initialData: [],
   });
 
   const { data: menuItems = [] } = useQuery({
     queryKey: ['menu-items'],
-    queryFn: () => base44.entities.MenuItem.list(),
+    queryFn: () => synkia.entities.MenuItem.list(),
     initialData: [],
   });
 
   const { data: revoEmployees = [] } = useQuery({
     queryKey: ['revo-employees'],
-    queryFn: () => base44.entities.RevoEmployee.list(),
+    queryFn: () => synkia.entities.RevoEmployee.list(),
     initialData: [],
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list(),
+    queryFn: () => synkia.entities.Invoice.list(),
     initialData: [],
   });
 

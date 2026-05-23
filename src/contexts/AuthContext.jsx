@@ -88,7 +88,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Función de login (redirige al login de Base44)
+  // Función de login
   const login = useCallback(() => {
     User.login();
   }, []);

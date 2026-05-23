@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,12 +70,12 @@ export default function HRDocuments() {
 
   const { data: contracts = [] } = useQuery({
     queryKey: ['contracts'],
-    queryFn: () => base44.entities.Contract.list('-created_date'),
+    queryFn: () => synkia.entities.Contract.list('-created_date'),
   });
 
   const { data: employees = [] } = useQuery({
     queryKey: ['revo-employees'],
-    queryFn: () => base44.entities.RevoEmployee.list('-created_date'),
+    queryFn: () => synkia.entities.RevoEmployee.list('-created_date'),
   });
 
   const createContractMutation = useMutation({
@@ -83,11 +83,11 @@ export default function HRDocuments() {
       let file_url = null;
       if (data.file) {
         setIsUploading(true);
-        const result = await base44.integrations.Core.UploadFile({ file: data.file });
+        const result = await synkia.integrations.Core.UploadFile({ file: data.file });
         file_url = result.file_url;
       }
       
-      return base44.entities.Contract.create({
+      return synkia.entities.Contract.create({
         employee_name: data.employee_name,
         contract_type: data.contract_type,
         position: data.position,
@@ -115,7 +115,7 @@ export default function HRDocuments() {
   });
 
   const createEmployeeMutation = useMutation({
-    mutationFn: (data) => base44.entities.RevoEmployee.create({
+    mutationFn: (data) => synkia.entities.RevoEmployee.create({
       name: data.name,
       role: data.role,
       phone: data.phone,
@@ -135,7 +135,7 @@ export default function HRDocuments() {
   });
 
   const deleteContractMutation = useMutation({
-    mutationFn: (id) => base44.entities.Contract.delete(id),
+    mutationFn: (id) => synkia.entities.Contract.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
       toast.success('Contrato eliminado');
@@ -143,7 +143,7 @@ export default function HRDocuments() {
   });
 
   const deleteEmployeeMutation = useMutation({
-    mutationFn: (id) => base44.entities.RevoEmployee.delete(id),
+    mutationFn: (id) => synkia.entities.RevoEmployee.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['revo-employees'] });
       toast.success('Empleado eliminado');

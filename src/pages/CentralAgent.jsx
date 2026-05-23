@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,7 @@ export default function CentralAgent() {
 
   const initConversation = async () => {
     try {
-      const newConversation = await base44.agents.createConversation({
+      const newConversation = await synkia.agents.createConversation({
         agent_name: "central_coordinator",
         metadata: {
           name: "Chat con IA Central",
@@ -49,7 +49,7 @@ export default function CentralAgent() {
       setConversation(newConversation);
       setMessages(newConversation.messages || []);
 
-      base44.agents.subscribeToConversation(newConversation.id, (data) => {
+      synkia.agents.subscribeToConversation(newConversation.id, (data) => {
         setMessages(data.messages || []);
       });
     } catch (error) {
@@ -74,7 +74,7 @@ export default function CentralAgent() {
         messageContent = `${userMessage}\n\n[Contexto del Sistema]\n${JSON.stringify(enriched.context, null, 2)}`;
       }
 
-      await base44.agents.addMessage(conversation, {
+      await synkia.agents.addMessage(conversation, {
         role: "user",
         content: messageContent
       });
@@ -92,9 +92,9 @@ export default function CentralAgent() {
 
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await synkia.integrations.Core.UploadFile({ file });
       
-      await base44.agents.addMessage(conversation, {
+      await synkia.agents.addMessage(conversation, {
         role: "user",
         content: `He subido un archivo (${file.name}). Por favor, procésalo y toma las acciones necesarias.`,
         file_urls: [file_url]
@@ -124,7 +124,7 @@ export default function CentralAgent() {
     }
   ];
 
-  const whatsappURL = base44.agents.getWhatsAppConnectURL('central_coordinator');
+  const whatsappURL = synkia.agents.getWhatsAppConnectURL('central_coordinator');
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-purple-50 to-indigo-50">

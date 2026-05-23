@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,14 +60,14 @@ export default function MutuaManager() {
   const { data: incidents = [] } = useQuery({
     queryKey: ['mutua-incidents', filterStatus],
     queryFn: async () => {
-      const all = await base44.entities.MutuaIncident.list('-incident_date');
+      const all = await synkia.entities.MutuaIncident.list('-incident_date');
       if (filterStatus === 'all') return all;
       return all.filter(i => i.status === filterStatus);
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.MutuaIncident.create(data),
+    mutationFn: (data) => synkia.entities.MutuaIncident.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mutua-incidents'] });
       toast.success('Incidente registrado correctamente');
@@ -97,7 +97,7 @@ export default function MutuaManager() {
 
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await synkia.integrations.Core.UploadFile({ file });
       setFormData({ ...formData, parte_file_url: file_url });
       toast.success('Parte subido correctamente');
     } catch (error) {

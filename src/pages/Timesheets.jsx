@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ export default function Timesheets() {
   React.useEffect(() => {
     const loadUser = async () => {
       try {
-        const user = await base44.auth.me();
+        const user = await synkia.auth.me();
         setCurrentUser(user);
       } catch (error) {
         console.error('Error loading user:', error);
@@ -29,7 +29,7 @@ export default function Timesheets() {
   const { data: timesheets = [] } = useQuery({
     queryKey: ['timesheets', selectedDate],
     queryFn: async () => {
-      const all = await base44.entities.Timesheet.list('-date');
+      const all = await synkia.entities.Timesheet.list('-date');
       return all.filter(t => t.date === selectedDate);
     },
     initialData: [],
@@ -37,7 +37,7 @@ export default function Timesheets() {
 
   const { data: allTimesheets = [] } = useQuery({
     queryKey: ['timesheets-all'],
-    queryFn: () => base44.entities.Timesheet.list('-date', 100),
+    queryFn: () => synkia.entities.Timesheet.list('-date', 100),
     initialData: [],
   });
 
@@ -46,7 +46,7 @@ export default function Timesheets() {
       const now = new Date();
       const checkInTime = format(now, 'HH:mm');
       
-      return base44.entities.Timesheet.create({
+      return synkia.entities.Timesheet.create({
         user_id: currentUser.id,
         user_name: currentUser.full_name,
         date: selectedDate,
@@ -71,7 +71,7 @@ export default function Timesheets() {
       const [outHour, outMin] = checkOutTime.split(':').map(Number);
       const totalHours = ((outHour * 60 + outMin) - (inHour * 60 + inMin)) / 60;
       
-      return base44.entities.Timesheet.update(timesheetId, {
+      return synkia.entities.Timesheet.update(timesheetId, {
         check_out: checkOutTime,
         total_hours: Math.round(totalHours * 100) / 100,
         status: 'completo'

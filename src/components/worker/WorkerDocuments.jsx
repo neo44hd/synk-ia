@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Button } from "@/components/ui/button";
 import { X, FileText, Download, Eye, DollarSign } from "lucide-react";
 import { format } from "date-fns";
@@ -9,7 +9,7 @@ export default function WorkerDocuments({ onClose, user }) {
   const { data: contract } = useQuery({
     queryKey: ['my-contract'],
     queryFn: async () => {
-      const contracts = await base44.entities.Contract.list();
+      const contracts = await synkia.entities.Contract.list();
       return contracts.find(c => c.employee_id === user?.id || c.employee_name === user?.full_name);
     },
     enabled: !!user,
@@ -18,7 +18,7 @@ export default function WorkerDocuments({ onClose, user }) {
   const { data: payrolls = [] } = useQuery({
     queryKey: ['my-payrolls'],
     queryFn: async () => {
-      const all = await base44.entities.Payroll.list('-period');
+      const all = await synkia.entities.Payroll.list('-period');
       return all.filter(p => p.employee_id === user?.id || p.employee_name === user?.full_name);
     },
     enabled: !!user,

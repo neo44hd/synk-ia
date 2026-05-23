@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -92,7 +92,7 @@ export default function AutomationHub() {
     setIsSyncing({ ...isSyncing, biloop: true });
     try {
       const functionName = useRealApis ? 'biloopRealSync' : 'biloopAutoSync';
-      const response = await base44.functions.invoke(functionName);
+      const response = await synkia.functions.invoke(functionName);
       setResults({ ...results, biloop: response.data });
       
       const source = response.data?.source || 'unknown';
@@ -115,7 +115,7 @@ export default function AutomationHub() {
     setIsSyncing({ ...isSyncing, revo: true });
     try {
       const functionName = useRealApis ? 'revoRealSync' : 'revoAutoSync';
-      const response = await base44.functions.invoke(functionName);
+      const response = await synkia.functions.invoke(functionName);
       setResults({ ...results, revo: response.data });
       
       const source = response.data?.source || 'unknown';
@@ -137,7 +137,7 @@ export default function AutomationHub() {
   const runEmailProcessor = async () => {
     setIsSyncing({ ...isSyncing, email: true });
     try {
-      const response = await base44.functions.invoke('emailAutoProcessor');
+      const response = await synkia.functions.invoke('emailAutoProcessor');
       setResults({ ...results, email: response.data });
       
       if (response.data?.success) {
@@ -162,7 +162,7 @@ export default function AutomationHub() {
     toast.info('🗑️ Eliminando datos de prueba...', { duration: 3000 });
     
     try {
-      const response = await base44.functions.invoke('resetAndSyncReal');
+      const response = await synkia.functions.invoke('resetAndSyncReal');
       setResults({ ...results, reset: response.data });
       
       const summary = response.data?.summary;
@@ -206,7 +206,7 @@ export default function AutomationHub() {
 
   const runAllSync = async () => {
     toast.info('🔄 Iniciando sincronización completa...');
-    await base44.functions.invoke('fullDataSync'); //
+    await synkia.functions.invoke('fullDataSync'); //
 //    await runRevoSync();
 //    await runEmailProcessor();
     toast.success('🎉 ¡Sincronización completa finalizada!');

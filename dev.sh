@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════
 #  SYNK-IA — Script de desarrollo con aider + Ollama
-#  Uso: ./dev.sh              → aider con qwen3:14b (por defecto)
-#       ./dev.sh coder        → aider con qwen3-coder (código complejo)
-#       ./dev.sh light        → aider con qwen3.5 (rápido, tareas simples)
+#  Uso: ./dev.sh              → aider con harmonic-hermes-9b (por defecto)
+#       ./dev.sh coder        → aider con qwen2.5-coder (código rápido)
+#       ./dev.sh light        → aider con qwen2.5-coder (ultraligero)
 # ═══════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -31,16 +31,16 @@ echo -e "${GREEN}✓ Ollama activo${NC}"
 MODE="${1:-default}"
 case "$MODE" in
   coder)
-    MODEL="ollama_chat/qwen3-coder:latest"
-    DESC="qwen3-coder (18GB — código complejo)"
+    MODEL="ollama_chat/qwen2.5-coder:latest"
+    DESC="qwen2.5-coder (0.4GB — código rápido)"
     ;;
   light)
-    MODEL="ollama_chat/qwen3.5:latest"
-    DESC="qwen3.5 (6.6GB — tareas rápidas)"
+    MODEL="ollama_chat/qwen2.5-coder:latest"
+    DESC="qwen2.5-coder (0.4GB — tareas ultraligeras)"
     ;;
   *)
-    MODEL="ollama_chat/qwen3:14b"
-    DESC="qwen3:14b (9.3GB — equilibrio)"
+    MODEL="ollama_chat/harmonic-hermes-9b"
+    DESC="harmonic-hermes-9b (5.0GB — equilibrio calidad/velocidad)"
     ;;
 esac
 

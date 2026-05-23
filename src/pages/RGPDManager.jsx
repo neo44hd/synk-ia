@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,14 +56,14 @@ export default function RGPDManager() {
   const { data: items = [] } = useQuery({
     queryKey: ['rgpd-items', filterType],
     queryFn: async () => {
-      const all = await base44.entities.RGPDCompliance.list('-created_date');
+      const all = await synkia.entities.RGPDCompliance.list('-created_date');
       if (filterType === 'all') return all;
       return all.filter(i => i.item_type === filterType);
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.RGPDCompliance.create(data),
+    mutationFn: (data) => synkia.entities.RGPDCompliance.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rgpd-items'] });
       toast.success('Registro creado correctamente');
@@ -92,7 +92,7 @@ export default function RGPDManager() {
 
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await synkia.integrations.Core.UploadFile({ file });
       setFormData({ ...formData, file_url });
       toast.success('Archivo subido');
     } catch (error) {

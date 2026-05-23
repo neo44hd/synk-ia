@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +21,7 @@ export default function Contracts() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error('Error loading user:', error);
@@ -33,7 +33,7 @@ export default function Contracts() {
   const { data: contracts = [], isLoading } = useQuery({
     queryKey: ['contracts'],
     queryFn: async () => {
-      const allContracts = await base44.entities.Contract.list('-created_date');
+      const allContracts = await synkia.entities.Contract.list('-created_date');
       
       // Si no es admin, solo muestra su contrato
       if (user && user.permission_level !== 'super_admin' && user.permission_level !== 'admin') {

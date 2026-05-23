@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +55,7 @@ export default function Albaranes() {
   const { data: albaranes = [], isLoading } = useQuery({
     queryKey: ['albaranes', filterStatus],
     queryFn: async () => {
-      const all = await base44.entities.Albaran.list('-fecha_emision');
+      const all = await synkia.entities.Albaran.list('-fecha_emision');
       if (filterStatus === 'all') return all;
       return all.filter(a => a.status === filterStatus);
     },
@@ -64,12 +64,12 @@ export default function Albaranes() {
 
   const { data: providers = [] } = useQuery({
     queryKey: ['providers'],
-    queryFn: () => base44.entities.Provider.list(),
+    queryFn: () => synkia.entities.Provider.list(),
     initialData: [],
   });
 
   const createAlbaranMutation = useMutation({
-    mutationFn: (data) => base44.entities.Albaran.create(data),
+    mutationFn: (data) => synkia.entities.Albaran.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['albaranes'] });
       toast.success('✅ Albarán creado con normativa SS');

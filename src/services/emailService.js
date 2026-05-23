@@ -4,7 +4,7 @@
  * Migrado: localStorage.lastEmailSync → /api/data/emailintegration (persistencia en servidor)
  */
 
-import { base44 } from '../api/base44Client';
+import { synkia } from '../api/synkiaClient';
 
 const API_BASE = '/api/data/emailintegration';
 
@@ -327,7 +327,7 @@ class EmailService {
         message: 'Conectando con Gmail...'
       });
 
-      const response = await base44.functions.invoke("smartEmailProcessor", {
+      const response = await synkia.functions.invoke("smartEmailProcessor", {
         maxResults: maxEmails,
         startDate: startDate.toISOString(),
         folders: folders
@@ -458,7 +458,7 @@ class EmailService {
 
   async _findOrCreateProvider(email) {
     try {
-      const providers = await base44.entities.Provider.filter({
+      const providers = await synkia.entities.Provider.filter({
         email: email.sender_email
       });
 
@@ -469,7 +469,7 @@ class EmailService {
       const providerName = email.sender_name ||
         email.sender_email.split('@')[0].replace(/[._-]/g, ' ');
 
-      const newProvider = await base44.entities.Provider.create({
+      const newProvider = await synkia.entities.Provider.create({
         name: providerName,
         email: email.sender_email,
         status: 'active',
@@ -486,7 +486,7 @@ class EmailService {
 
   async getEmailStats() {
     try {
-      const allEmails = await base44.entities.EmailMessage.list("-received_date", 500);
+      const allEmails = await synkia.entities.EmailMessage.list("-received_date", 500);
 
       const lastSync = await getLastSync();
 

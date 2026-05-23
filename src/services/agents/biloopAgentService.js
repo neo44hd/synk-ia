@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 
 /**
  * BILOOP AGENT SERVICE
@@ -62,7 +62,7 @@ Trabaja principalmente con archivos exportados de Biloop o facturas escaneadas.`
         errors: []
       };
 
-      // Usar el sistema de extracción de Base44
+      // Extracción de documentos
       if (fileType === 'pdf' || fileType === 'image') {
         result = await this.extractFromDocument(fileUrl, fileName);
       } else if (fileType === 'csv' || fileType === 'excel') {
@@ -100,8 +100,7 @@ Trabaja principalmente con archivos exportados de Biloop o facturas escaneadas.`
    */
   async extractFromDocument(fileUrl, fileName) {
     try {
-      // Usar el servicio de extracción de Base44
-      const extraction = await base44.integrations.Core.ExtractData({
+      const extraction = await synkia.integrations.Core.ExtractData({
         file_url: fileUrl,
         extraction_type: 'invoice'
       });
@@ -129,8 +128,8 @@ Trabaja principalmente con archivos exportados de Biloop o facturas escaneadas.`
   async extractFromSpreadsheet(fileUrl, fileName) {
     try {
       // Para CSV/Excel, podríamos leer el archivo y parsearlo
-      // Por ahora, usamos el servicio de Base44
-      const extraction = await base44.integrations.Core.ExtractData({
+      // Procesando...
+      const extraction = await synkia.integrations.Core.ExtractData({
         file_url: fileUrl,
         extraction_type: 'spreadsheet'
       });
@@ -164,7 +163,7 @@ Trabaja principalmente con archivos exportados de Biloop o facturas escaneadas.`
 
       for (const invoiceData of invoicesData) {
         try {
-          const invoice = await base44.entities.Invoice.create(invoiceData);
+          const invoice = await synkia.entities.Invoice.create(invoiceData);
           results.success.push(invoice);
         } catch (error) {
           results.failed.push({
@@ -189,7 +188,7 @@ Trabaja principalmente con archivos exportados de Biloop o facturas escaneadas.`
       const since = new Date();
       since.setDate(since.getDate() - days);
 
-      const invoices = await base44.entities.Invoice.list({
+      const invoices = await synkia.entities.Invoice.list({
         type: 'expense',
         since: since.toISOString()
       });
@@ -224,7 +223,7 @@ Trabaja principalmente con archivos exportados de Biloop o facturas escaneadas.`
    */
   async compareProviderPrices(productOrService) {
     try {
-      const invoices = await base44.entities.Invoice.list();
+      const invoices = await synkia.entities.Invoice.list();
       
       // Filtrar facturas que contengan el producto/servicio
       const relevant = invoices.filter(inv => 

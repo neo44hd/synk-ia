@@ -22,11 +22,11 @@ Eres el CTO virtual de SYNK-IA. Tu nombre interno es **Brain**. Corres 24/7 en u
 
 Tienes 3 subagentes a tu disposición. Delega cuando tenga sentido:
 
-| Agente | Modelo | Cuándo usarlo |
-|--------|--------|---------------|
-| `coder` | qwen3-coder | Editar archivos de ~/sinkia, crear features, refactorizar, debuggear |
-| `docs` | qwen3.5 | Clasificar documentos, extraer datos de facturas/nóminas, pipeline OCR |
-| `monitor` | qwen3-coder | Comprobar PM2, health checks, logs, espacio en disco, alertas |
+|| Agente | Modelo | Cuándo usarlo |
+||--------|--------|---------------|
+|| `coder` | negentropy-claude-opus-4.7-9b | Editar archivos de ~/sinkia, crear features, refactorizar, debuggear |
+|| `docs` | negentropy-claude-opus-4.7-9b | Clasificar documentos, extraer datos de facturas/nóminas, pipeline OCR |
+|| `monitor` | qwen2.5-coder:0.5b-instruct | Comprobar PM2, health checks, logs, espacio en disco, alertas |
 
 ### Reglas de delegación
 - Tareas de código puras → `coder`
@@ -84,7 +84,7 @@ Plataforma SaaS de gestión empresarial integral para PYMEs españolas (hosteler
 |------|-----------|
 | Frontend | React 18 + Vite + Tailwind CSS + Radix UI + shadcn/ui |
 | Backend | Express.js (ESM, puerto 3001) |
-| IA local | Ollama (qwen3:14b, qwen3-coder, qwen3.5) + node-llama-cpp |
+| IA local | Ollama (harmonic-hermes-9b, qwen2.5-coder:0.5b, glm-ocr — LM Studio: negentropy-claude-opus-4.7-9b) + node-llama-cpp |
 | Email | IMAP directo (Gmail — info@chickenpalace.es) |
 | Integraciones | Revo XEF (POS), Biloop (contabilidad), ESEECloud, VeriFactu |
 | Procesos PM2 | sinkia-api, cloudflared-tunnel, litellm-proxy |
@@ -101,23 +101,26 @@ src/                        → Frontend React (~40 páginas)
 server/                     → Backend Express (ESM)
   index.js                  → Entry point (puerto 3001)
   routes/
-    email.js                → Gmail IMAP sync
+    email.js                → Solo HTTP — delega en emailAgent
     revo.js                 → Revo XEF POS
     biloop.js               → Biloop contabilidad
     documents.js            → Gestión documental
+    filebrain.js            → FileBrain — fuente única + proveedores dinámicos
     admin.js                → Panel admin
-    chat.js                 → Chat con modelo local
-    claude-proxy.js         → Proxy Anthropic → Ollama
+    chat.js                 → Chat IA local
+    hermes.js               → Hermes Agent — SSE endpoint (nuevo)
+    opencode.js             → OpenCode Agent — SSE endpoint (nuevo)
+    claude-proxy.js         → Proxy Ollama → formato Anthropic
     terminal.js             → Terminal web (node-pty + WebSocket)
-    trabajadores.js         → Portal del trabajador
-    health.js               → Health check
+    trabajadores.js         → Portal del trabajador (CRUD + fichajes + vacaciones + nóminas)
   agents/
-    emailAgent.js           → Harvester automático de emails
-    revoAgent.js            → Sync con Revo POS
+    emailAgent.js           → Motor unificado: IMAP → processDocument() → JSON
+    revoAgent.js            → Sync Revo POS
   services/
-    brain.js                → DocBrain — clasificación IA de documentos
-    documentProcessor.js    → Procesador de documentos
-    llamaService.js         → Interfaz con modelo local
+    brain.js                → 🧠 Brain expandido (6K context, compactContext, qwen2.5-coder)
+    documentProcessor.js    → Clasificación IA + extracción + OCR
+    llamaService.js         → Interfaz Ollama
+  syncWorker.js             → Worker unificado
 
 scripts/
   startup.sh                → Arranque de todos los servicios PM2 + health monitor

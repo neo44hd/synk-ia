@@ -9,7 +9,7 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { synkia } from '@/api/synkiaClient';
 import { docBrain } from '@/services/docBrainService';
 import { ocrService } from '@/services/ocrService';
 import { invoiceExtractor } from '@/services/invoiceExtractorService';
@@ -43,7 +43,7 @@ export function useDocBrain() {
     for (const file of pending) {
       try {
         // Step 1: Extraer texto
-        await base44.entities.UploadedFile.update(file.id, {
+        await synkia.entities.UploadedFile.update(file.id, {
           processing_status: 'ocr_processing'
         });
 
@@ -83,7 +83,7 @@ export function useDocBrain() {
         }
 
         // Step 2: DocBrain classification + extraction
-        await base44.entities.UploadedFile.update(file.id, {
+        await synkia.entities.UploadedFile.update(file.id, {
           processing_status: 'extracting'
         });
 
@@ -150,7 +150,7 @@ export function useDocBrain() {
               : 'error';
 
         // Step 6: Save everything
-        await base44.entities.UploadedFile.update(file.id, {
+        await synkia.entities.UploadedFile.update(file.id, {
           processing_status: finalStatus,
           detected_type: mergedData.documentType || 'Otros',
           metadata: {
@@ -179,7 +179,7 @@ export function useDocBrain() {
       } catch (error) {
         console.error(`DocBrain error processing ${file.filename}:`, error);
         errors++;
-        await base44.entities.UploadedFile.update(file.id, {
+        await synkia.entities.UploadedFile.update(file.id, {
           processing_status: 'error',
           metadata: {
             ...file.metadata,
@@ -246,7 +246,7 @@ async function autoLinkProvider(name, cif, extra = {}) {
   try {
     // Try CIF first
     if (cif) {
-      const byCif = await base44.entities.Provider.filter({ cif });
+      const byCif = await synkia.entities.Provider.filter({ cif });
       if (byCif.length > 0) {
         return { type: 'linked', id: byCif[0].id, name: byCif[0].name, method: 'cif' };
       }
@@ -254,14 +254,14 @@ async function autoLinkProvider(name, cif, extra = {}) {
 
     // Try name
     if (name) {
-      const byName = await base44.entities.Provider.filter({ name });
+      const byName = await synkia.entities.Provider.filter({ name });
       if (byName.length > 0) {
         return { type: 'linked', id: byName[0].id, name: byName[0].name, method: 'name' };
       }
     }
 
     // Create new
-    const newProvider = await base44.entities.Provider.create({
+    const newProvider = await synkia.entities.Provider.create({
       name: name || 'Proveedor sin nombre',
       cif: cif || '',
       address: extra.address || '',

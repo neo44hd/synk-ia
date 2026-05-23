@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,7 @@ export default function ConnectionDiagnostics() {
     setTesting({ ...testing, [service]: true });
     try {
       const functionName = `test${service.charAt(0).toUpperCase() + service.slice(1)}Connection`;
-      const response = await base44.functions.invoke(functionName);
+      const response = await synkia.functions.invoke(functionName);
       setResults({ ...results, [service]: response.data });
     } catch (error) {
       setResults({ 

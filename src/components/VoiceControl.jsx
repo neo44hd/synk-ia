@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -26,7 +26,7 @@ export default function VoiceControl() {
     // Load user
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error('Error loading user:', error);
@@ -86,7 +86,7 @@ export default function VoiceControl() {
     
     try {
       // Usar IA para interpretar el comando
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await synkia.integrations.Core.InvokeLLM({
         prompt: `
 Eres el asistente de voz de SYNK-IA. Interpreta este comando y responde en JSON:
 

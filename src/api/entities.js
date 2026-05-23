@@ -1,7 +1,7 @@
 /**
  * SYNK-IA - Entidades del Sistema
  * © 2024 David Roldan - Chicken Palace Ibiza
- * Futuro: SYNK-IA LABS
+ * © SynK-IA
  * 
  * Sistema de gestión integral usando almacenamiento local
  */

@@ -220,7 +220,7 @@ export const apiMonitorService = {
   async checkBackend() {
     try {
       const start = Date.now();
-      const response = await fetch('http://localhost:3001/api/health', {
+      const response = await fetch('http://localhost:59401/api/health', {
         method: 'GET'
       });
       
@@ -238,14 +238,14 @@ export const apiMonitorService = {
         uptime: data.uptime,
         memory: data.memory,
         aiEngine: data.services?.ai?.engine,
-        endpoint: 'http://localhost:3001'
+        endpoint: 'http://localhost:59401'
       };
     } catch (error) {
       return {
         status: 'unhealthy',
         provider: 'SynK-IA Backend',
         message: 'Backend offline',
-        endpoint: 'http://localhost:3001'
+        endpoint: 'http://localhost:59401'
       };
     }
   },

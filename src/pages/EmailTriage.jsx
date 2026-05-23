@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ export default function EmailTriage() {
 
   const { data: emailAccounts = [] } = useQuery({
     queryKey: ['email-accounts'],
-    queryFn: () => base44.entities.EmailAccount.list(),
+    queryFn: () => synkia.entities.EmailAccount.list(),
     initialData: [],
   });
 
@@ -56,14 +56,14 @@ export default function EmailTriage() {
     queryKey: ['classified-emails'],
     queryFn: async () => {
       // Traer de EmailMessage (donde guarda smartEmailProcessor)
-      const emails = await base44.entities.EmailMessage.list('-received_date', 100);
+      const emails = await synkia.entities.EmailMessage.list('-received_date', 100);
       return emails;
     },
     initialData: [],
   });
 
   const createAccountMutation = useMutation({
-    mutationFn: (data) => base44.entities.EmailAccount.create(data),
+    mutationFn: (data) => synkia.entities.EmailAccount.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['email-accounts'] });
       setShowAccountDialog(false);
@@ -78,7 +78,7 @@ export default function EmailTriage() {
     try {
       // Primero probar conexión Gmail real
       toast.info('🔌 Conectando con Gmail...');
-      const testResponse = await base44.functions.invoke('testGmailConnection');
+      const testResponse = await synkia.functions.invoke('testGmailConnection');
       
       if (!testResponse.data.success) {
         toast.error(`❌ Gmail: ${testResponse.data.error || 'Error de conexión'}`);
@@ -89,11 +89,11 @@ export default function EmailTriage() {
       toast.success(`✅ Gmail conectado: ${testResponse.data.inbox_count} emails`);
       
       // Asegurar que existe la cuenta en BD
-      const existingAccounts = await base44.entities.EmailAccount.list();
+      const existingAccounts = await synkia.entities.EmailAccount.list();
       const emailAddress = testResponse.data.email;
       
       if (!existingAccounts.find(a => a.email === emailAddress)) {
-        await base44.entities.EmailAccount.create({
+        await synkia.entities.EmailAccount.create({
           email: emailAddress,
           provider: 'gmail',
           status: 'activa',
@@ -104,7 +104,7 @@ export default function EmailTriage() {
       } else {
         // Actualizar estado
         const account = existingAccounts.find(a => a.email === emailAddress);
-        await base44.entities.EmailAccount.update(account.id, {
+        await synkia.entities.EmailAccount.update(account.id, {
           status: 'activa',
           last_sync: new Date().toISOString()
         });
@@ -113,7 +113,7 @@ export default function EmailTriage() {
 
       // Ahora sincronizar emails
       toast.info('📬 Sincronizando emails...');
-      const syncResponse = await base44.functions.invoke('smartEmailProcessor');
+      const syncResponse = await synkia.functions.invoke('smartEmailProcessor');
       
       if (syncResponse.data.success) {
         toast.success(`🤖 ${syncResponse.data.results?.new_emails || 0} emails nuevos procesados`);

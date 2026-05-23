@@ -33,15 +33,26 @@ import { promisify }   from 'util';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
-const execAsync = promisify(execFile);
+// ═══════════════════════════════════════════════════════════════════════════
+//  CONFIGURACIÓN DUAL — Ollama + LM Studio
+// ═══════════════════════════════════════════════════════════════════════════
+const OLLAMA_URL      = process?.env?.OLLAMA_URL || 'http://localhost:11434';
+const LMSTUDIO_URL    = process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1';
+const LMSTUDIO_KEY    = process?.env?.LMSTUDIO_API_KEY || '';
+const OCR_PROVIDER    = process?.env?.OCR_PROVIDER || 'ollama';
+const OCR_MODEL       = process.env.OCR_MODEL || 'glm-ocr';
 
-// ── Config Ollama / modelo ────────────────────────────────────────────────
-const OLLAMA_URL = process.env.OLLAMA_URL   || 'http://localhost:11434';
-const MODEL      = process.env.OLLAMA_MODEL || 'phi4-mini';
-const IS_VL      = /vl|vision|visual/i.test(MODEL);
+function getOcrModel() {
+  return OCR_MODEL;
+}
 
-// Modelo OCR dedicado — glm-ocr (0.9B, #1 OmniDocBench, 1.86 pag/s)
-const OCR_MODEL  = process.env.OCR_MODEL || 'glm-ocr';
+function isLMStudio() {
+  return OCR_PROVIDER === 'lmstudio';
+}
+
+function getOcrEndpoint() {
+  return isLMStudio() ? LMSTUDIO_URL.replace(/\/v1\/?$/, '') : OLLAMA_URL;
+}
 
 // Límite de texto extraído antes del truncado inteligente
 const MAX_CHARS  = 12_000;
@@ -83,6 +94,11 @@ export async function extract(filePath, mimeType = '', originalName = '') {
 
   try {
     const result = await dispatchExtract(filePath, mimeType, ext, originalName);
+
+    // Sanear caracteres nulos y de control que corrompen el análisis del LLM
+    if (result.text) {
+      result.text = result.text.replace(/\0/g, '').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
+    }
 
     // Truncado inteligente si supera el límite
     if (result.text && result.text.length > MAX_CHARS) {
@@ -245,11 +261,9 @@ async function extractPdf(filePath) {
       return { ...ocrResult, metadata: { ...(ocrResult.metadata || {}), pages: parsed.numpages } };
     }
 
-    // 3) Fallback: modelo VL si está disponible
-    if (IS_VL) {
-      const visionResult = await extractPdfViaVision(filePath, parsed.numpages);
-      if (visionResult.ok) return visionResult;
-    }
+    // 3) Fallback: modelo VL
+    const visionResult = await extractPdfViaVision(filePath, parsed.numpages);
+    if (visionResult.ok) return visionResult;
 
     return fail('pdf-escaneado-sin-ocr',
       'PDF escaneado sin texto extraíble. Ni glm-ocr ni Tesseract pudieron extraer texto.',
@@ -269,8 +283,7 @@ async function extractImage(filePath, mime, ext) {
     return glmResult;
   }
 
-  // 2) Si el modelo soporta visión, intentar VL
-  if (IS_VL) {
+  // 2) Intentar VL como fallback
     try {
       const text = await visionExtract(filePath, mime || extToMime(ext));
       if (text && text.length > 10) {
@@ -279,7 +292,6 @@ async function extractImage(filePath, mime, ext) {
     } catch (err) {
       console.warn(`[EXTRACTOR] Visión VL falló: ${err.message}, intentando Tesseract`);
     }
-  }
 
   // 3) Fallback: Tesseract
   return ocrImage(filePath);
@@ -1124,53 +1136,87 @@ async function ocrPdfViaImages(filePath) {
 //  Protocolo: /api/chat con imagen base64 y prompt "Text recognition:"
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** OCR de una sola imagen con glm-ocr vía Ollama */
+/** OCR de una sola imagen con glm-ocr vía Ollama o LM Studio */
 async function glmOcrImage(filePath) {
   try {
     const buf    = await readFile(filePath);
     const base64 = buf.toString('base64');
+    const model  = getOcrModel();
 
     const controller = new AbortController();
-    const timer      = setTimeout(() => controller.abort(), 300_000); // 5 min per page for heavy scans
+    const timer      = setTimeout(() => controller.abort(), 300_000);
 
     try {
-      const res = await fetch(`${OLLAMA_URL}/api/chat`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal:  controller.signal,
-        body:    JSON.stringify({
-          model:  OCR_MODEL,
-          stream: false,
-          messages: [{
-            role: 'user',
-            content:  'Text recognition:',
-            images:   [base64],
-          }],
-          options: {
-            num_ctx: 16384,      // glm-ocr necesita contexto amplio para imagenes
-            temperature: 0,      // OCR determinista
-          },
-        }),
-      });
+      let text;
 
-      if (!res.ok) {
-        const errBody = await res.text().catch(() => '');
-        throw new Error(`glm-ocr HTTP ${res.status}: ${errBody.slice(0, 200)}`);
+      if (isLMStudio()) {
+        // LM Studio — API OpenAI-compatible
+        const response = await fetch(`${getOcrEndpoint()}/v1/chat/completions`, {
+          method:  'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(LMSTUDIO_KEY ? { 'Authorization': `Bearer ${LMSTUDIO_KEY}` } : {}),
+          },
+          signal:  controller.signal,
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'user', content: [
+                { type: 'text', text: 'Text recognition:' },
+                { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}` } },
+              ]},
+            ],
+            stream: false,
+            temperature: 0,
+            max_tokens: 2048,
+            num_ctx: parseInt(process.env.NUM_CTX || '16384', 10),
+          }),
+        });
+        if (!response.ok) {
+          const errBody = await response.text().catch(() => '');
+          throw new Error(`LMStudio ${response.status}: ${errBody.slice(0, 200)}`);
+        }
+        const data = await response.json();
+        text = cleanText(data.choices?.[0]?.message?.content || '');
+      } else {
+        // Ollama — API nativa
+        const response = await fetch(`${OLLAMA_URL}/api/chat`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal:  controller.signal,
+          body:    JSON.stringify({
+            model,
+            stream: false,
+            messages: [{
+              role: 'user',
+              content:  'Text recognition:',
+              images:   [base64],
+            }],
+            options: {
+              num_ctx: 16384,
+              temperature: 0,
+            },
+          }),
+        });
+        if (!response.ok) {
+          const errBody = await response.text().catch(() => '');
+          throw new Error(`Ollama ${response.status}: ${errBody.slice(0, 200)}`);
+        }
+        const data = await response.json();
+        text = cleanText(data?.message?.content || '');
       }
-      const data = await res.json();
-      const text = cleanText(data?.message?.content || '');
 
       if (text.length > 10) {
-        return ok(text, 'glm-ocr', { ocr_model: OCR_MODEL });
+        return ok(text, isLMStudio() ? 'glm-ocr-lmstudio' : 'glm-ocr', { ocr_model: model, provider: isLMStudio() ? 'lmstudio' : 'ollama' });
       }
-      return null; // sin texto útil, dejar que el fallback intente
+      return null;
 
     } finally {
       clearTimeout(timer);
     }
   } catch (err) {
-    console.warn(`[EXTRACTOR] glm-ocr falló: ${err.message}`);
-    return null; // fallback a Tesseract
+    console.warn(`[EXTRACTOR] glm-ocr falló (${isLMStudio() ? 'lmstudio' : 'ollama'}): ${err.message}`);
+    return null;
   }
 }
 
@@ -1222,41 +1268,74 @@ async function ocrPdfViaGlm(filePath) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  VISIÓN — OLLAMA VL
+//  VISIÓN — OCR VIA VISIÓN (Ollama VL o LM Studio)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Envía una imagen al modelo VL de Ollama y devuelve el texto extraído */
+/** Envía una imagen al modelo VL y devuelve el texto extraído */
 async function visionExtract(filePath, mime) {
   const buf    = await readFile(filePath);
   const base64 = buf.toString('base64');
   const url    = `data:${mime};base64,${base64}`;
+  const model  = getOcrModel();
 
   const controller = new AbortController();
   const timer      = setTimeout(() => controller.abort(), 240_000);
 
   try {
-    const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal:  controller.signal,
-      body:    JSON.stringify({
-        model:       MODEL,
-        stream:      false,
-        temperature: 0.05,
-        max_tokens:  3000,
-        messages: [
-          { role: 'system', content: 'Extrae todo el texto visible en esta imagen. Si es un documento, mantén la estructura. Responde solo con el texto, sin explicaciones.' },
-          { role: 'user', content: [
-            { type: 'text', text: 'Transcribe todo el texto de esta imagen:' },
-            { type: 'image_url', image_url: { url } },
-          ]},
-        ],
-      }),
-    });
+    let content;
 
-    if (!res.ok) throw new Error(`Ollama VL ${res.status}`);
-    const d = await res.json();
-    return d.choices?.[0]?.message?.content?.trim() || '';
+    if (isLMStudio()) {
+      // LM Studio — OpenAI-compatible API
+      const response = await fetch(`${getOcrEndpoint()}/v1/chat/completions`, {
+        method:  'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(LMSTUDIO_KEY ? { 'Authorization': `Bearer ${LMSTUDIO_KEY}` } : {}),
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model,
+          stream: false,
+          temperature: 0.05,
+          max_tokens: 3000,
+          messages: [
+            { role: 'system', content: 'Extrae todo el texto visible en esta imagen. Si es un documento, mantén la estructura. Responde solo con el texto, sin explicaciones.' },
+            { role: 'user', content: [
+              { type: 'text', text: 'Transcribe todo el texto de esta imagen:' },
+              { type: 'image_url', image_url: { url } },
+            ]},
+          ],
+        }),
+      });
+      if (!response.ok) throw new Error(`LMStudio VL ${response.status}`);
+      const data = await response.json();
+      content = data.choices?.[0]?.message?.content || '';
+    } else {
+      // Ollama — API nativa
+      const response = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal:  controller.signal,
+        body:    JSON.stringify({
+          model,
+          stream:      false,
+          temperature: 0.05,
+          max_tokens:  3000,
+          messages: [
+            { role: 'system', content: 'Extrae todo el texto visible en esta imagen. Si es un documento, mantén la estructura. Responde solo con el texto, sin explicaciones.' },
+            { role: 'user', content: [
+              { type: 'text', text: 'Transcribe todo el texto de esta imagen:' },
+              { type: 'image_url', image_url: { url } },
+            ]},
+          ],
+        }),
+      });
+      if (!response.ok) throw new Error(`Ollama VL ${response.status}`);
+      const data = await response.json();
+      content = data.choices?.[0]?.message?.content || '';
+    }
+
+    return content.trim();
 
   } finally {
     clearTimeout(timer);
@@ -1278,12 +1357,15 @@ async function extractPdfViaVision(filePath, totalPages) {
       try {
         const text = await visionExtract(path.join(tmpDir, file), 'image/png');
         if (text.length > 10) pageTexts.push(text);
-      } catch { /* ignorar */ }
+} catch { /* ignorar */ }
     }
 
     const fullText = pageTexts.join('\n\n--- Página ---\n\n');
     if (fullText.length > 10) {
-      return ok(fullText, 'vision-vl-pdf', { pages: totalPages });
+      return ok(fullText, isLMStudio() ? 'vision-vl-pdf-lmstudio' : 'vision-vl-pdf', {
+        pages: totalPages,
+        provider: isLMStudio() ? 'lmstudio' : 'ollama',
+      });
     }
     return fail('pdf-vision-sin-texto', 'Visión VL no extrajo texto del PDF');
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -93,7 +93,7 @@ export default function CEODashboard() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
         if (!currentUser) {
           console.log('No user authenticated, allowing dashboard view (read-only mode)');
@@ -116,35 +116,35 @@ export default function CEODashboard() {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['ceo-invoices'],
-    queryFn: () => base44.entities.Invoice.list('-created_date', 500),
+    queryFn: () => synkia.entities.Invoice.list('-created_date', 500),
     staleTime: 15000,
     refetchInterval: REFETCH_MS
   });
 
   const { data: providers = [] } = useQuery({
     queryKey: ['ceo-providers'],
-    queryFn: () => base44.entities.Provider.list('-created_date', 200),
+    queryFn: () => synkia.entities.Provider.list('-created_date', 200),
     staleTime: 15000,
     refetchInterval: REFETCH_MS
   });
 
   const { data: employees = [] } = useQuery({
     queryKey: ['ceo-employees'],
-    queryFn: () => base44.entities.Employee.list(),
+    queryFn: () => synkia.entities.Employee.list(),
     staleTime: 15000,
     refetchInterval: REFETCH_MS
   });
 
   const { data: payrolls = [] } = useQuery({
     queryKey: ['ceo-payrolls'],
-    queryFn: () => base44.entities.Payroll.list('-period', 200),
+    queryFn: () => synkia.entities.Payroll.list('-period', 200),
     staleTime: 15000,
     refetchInterval: REFETCH_MS
   });
 
   const { data: timesheets = [] } = useQuery({
     queryKey: ['ceo-timesheets'],
-    queryFn: () => base44.entities.Timesheet.list('-date', 500),
+    queryFn: () => synkia.entities.Timesheet.list('-date', 500),
     staleTime: 15000,
     refetchInterval: REFETCH_MS
   });
@@ -153,7 +153,7 @@ export default function CEODashboard() {
     queryKey: ['ceo-sales'],
     queryFn: async () => {
       try {
-        return await base44.entities.Sale.list('-date', 500);
+        return await synkia.entities.Sale.list('-date', 500);
       } catch {
         return [];
       }

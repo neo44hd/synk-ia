@@ -10,15 +10,14 @@
 //  - maxTokens de respuesta subido de 1200 → 2000
 // ═══════════════════════════════════════════════════════════════════════════
 import { getDocuments, getEntities, getStats } from './documentProcessor.js';
-import { getRevoResumen, getRevoProductos, getRevoVentas } from '../agents/revoAgent.js';
 
-const OLLAMA_URL = process.env.OLLAMA_URL            || 'http://localhost:11434';
-const MODEL      = process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3.5';
-const SEARXNG    = process.env.SEARXNG_URL    || 'http://localhost:8888';
+const OLLAMA_URL = () => process?.env?.OLLAMA_URL || 'http://localhost:11434';
+const getModel = () => process?.env?.CHAT_MODEL || 'harmonic-hermes-9b:latest';
+const SEARXNG    = () => process?.env?.SEARXNG_URL || 'http://localhost:8888';
 
 // ── Contexto ampliado: 8K chars para datos, 2K tokens de respuesta ──────────
-const MAX_CONTEXT_CHARS  = 8000;
-const MAX_RESPONSE_TOKENS = 2000;
+const MAX_CONTEXT_CHARS  = 6000;
+const MAX_RESPONSE_TOKENS = 1500;
 
 // ── Strip <think>...</think> del modelo Qwen3 thinking ─────────────────────
 function stripThinking(text) {
@@ -28,7 +27,7 @@ function stripThinking(text) {
 // ── Búsqueda web via SearXNG (cuando está disponible) ─────────────────────
 export async function searchWeb(query, n = 5) {
   try {
-    const url = `${SEARXNG}/search?q=${encodeURIComponent(query)}&format=json&language=es&categories=general`;
+    const url = `${SEARXNG()}/search?q=${encodeURIComponent(query)}&format=json&language=es&categories=general`;
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) return null;
     const data = await res.json();
@@ -47,16 +46,17 @@ async function llm(messages, { maxTokens = MAX_RESPONSE_TOKENS, temp = 0.2 } = {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 120_000);
   try {
-    const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
+    const res = await fetch(`${OLLAMA_URL()}/v1/chat/completions`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       signal:  controller.signal,
       body: JSON.stringify({
-        model:       MODEL,
+        model:       getModel(),
         messages,
         temperature: temp,
         max_tokens:  maxTokens,
         stream:      false,
+        options:     { num_ctx: parseInt(process.env.NUM_CTX || '8192', 10) },
       }),
     });
     if (!res.ok) throw new Error(`Ollama ${res.status}`);
@@ -537,10 +537,10 @@ Responde a la pregunta usando los datos anteriores.` },
   }
 
   // Streaming
-  const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
+  const res = await fetch(`${OLLAMA_URL()}/v1/chat/completions`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, messages, temperature: 0.3, max_tokens: MAX_RESPONSE_TOKENS, stream: true }),
+    body: JSON.stringify({ model: getModel(), messages, temperature: 0.3, max_tokens: MAX_RESPONSE_TOKENS, stream: true }),
   });
   return res;
 }

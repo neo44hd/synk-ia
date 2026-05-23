@@ -3,7 +3,7 @@
  * Cumplimiento Real Decreto 2026 - Registro de Jornada Laboral
  */
 
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 
 // Configuración de ubicaciones permitidas
 const ALLOWED_LOCATIONS = [
@@ -237,7 +237,7 @@ class TimeTrackingService {
       };
 
       // Guardar en base de datos
-      const result = await base44.entities.TimeRecord.create(checkInData);
+      const result = await synkia.entities.TimeRecord.create(checkInData);
 
       // Actualizar timesheet del día si es entrada o salida
       if (checkType === CHECK_TYPES.ENTRADA || checkType === CHECK_TYPES.SALIDA) {
@@ -282,7 +282,7 @@ class TimeTrackingService {
   async _updateDailyTimesheet(userId, userName, date, checkType, time) {
     try {
       // Buscar timesheet existente
-      const timesheets = await base44.entities.Timesheet.filter({
+      const timesheets = await synkia.entities.Timesheet.filter({
         user_id: userId,
         date: date
       });
@@ -290,7 +290,7 @@ class TimeTrackingService {
       if (checkType === CHECK_TYPES.ENTRADA) {
         if (timesheets.length === 0) {
           // Crear nuevo timesheet
-          await base44.entities.Timesheet.create({
+          await synkia.entities.Timesheet.create({
             user_id: userId,
             user_name: userName,
             date: date,
@@ -301,7 +301,7 @@ class TimeTrackingService {
           // Actualizar si no hay entrada
           const ts = timesheets[0];
           if (!ts.check_in) {
-            await base44.entities.Timesheet.update(ts.id, {
+            await synkia.entities.Timesheet.update(ts.id, {
               check_in: time
             });
           }
@@ -317,7 +317,7 @@ class TimeTrackingService {
             const totalMinutes = (outH * 60 + outM) - (inH * 60 + inM);
             const totalHours = Math.round(totalMinutes / 60 * 100) / 100;
             
-            await base44.entities.Timesheet.update(ts.id, {
+            await synkia.entities.Timesheet.update(ts.id, {
               check_out: time,
               total_hours: totalHours,
               status: 'completo'
@@ -365,7 +365,7 @@ class TimeTrackingService {
   async getTodayRecords(userId) {
     const today = new Date().toISOString().split('T')[0];
     try {
-      const records = await base44.entities.TimeRecord.filter({
+      const records = await synkia.entities.TimeRecord.filter({
         user_id: userId,
         date: today
       });
@@ -409,10 +409,10 @@ class TimeTrackingService {
     
     try {
       // Obtener todos los empleados
-      const users = await base44.auth.listUsers?.() || [];
+      const users = await synkia.auth.listUsers?.() || [];
       
       // Obtener todos los fichajes de hoy
-      const allRecords = await base44.entities.TimeRecord.filter({ date: today });
+      const allRecords = await synkia.entities.TimeRecord.filter({ date: today });
       
       // Agrupar por usuario
       const statusMap = new Map();
@@ -492,7 +492,7 @@ class TimeTrackingService {
    */
   async getHistory(userId, startDate, endDate) {
     try {
-      const records = await base44.entities.TimeRecord.filter({
+      const records = await synkia.entities.TimeRecord.filter({
         user_id: userId
       });
       
@@ -579,7 +579,7 @@ class TimeTrackingService {
 
   async _logAuditEvent(event) {
     try {
-      await base44.entities.AuditLog?.create?.({
+      await synkia.entities.AuditLog?.create?.({
         ...event,
         created_at: new Date().toISOString()
       });
@@ -602,7 +602,7 @@ class TimeTrackingService {
         records = await this.getHistory(userId, startDate, endDate);
       } else {
         // Obtener todos los registros del período
-        const allRecords = await base44.entities.TimeRecord.list('-timestamp', 1000);
+        const allRecords = await synkia.entities.TimeRecord.list('-timestamp', 1000);
         records = allRecords.filter(r => {
           const d = new Date(r.date);
           return d >= new Date(startDate) && d <= new Date(endDate);

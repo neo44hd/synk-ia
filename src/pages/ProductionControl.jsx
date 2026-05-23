@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,13 +20,13 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, R
 export default function ProductionControl() {
   const { data: orders = [] } = useQuery({
     queryKey: ['production-orders'],
-    queryFn: () => base44.entities.Order.list('-order_date', 200),
+    queryFn: () => synkia.entities.Order.list('-order_date', 200),
     initialData: [],
   });
 
   const { data: menuItems = [] } = useQuery({
     queryKey: ['menu-items'],
-    queryFn: () => base44.entities.MenuItem.list(),
+    queryFn: () => synkia.entities.MenuItem.list(),
     initialData: [],
   });
 

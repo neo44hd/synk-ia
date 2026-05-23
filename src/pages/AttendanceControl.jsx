@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,20 +41,20 @@ export default function AttendanceControl() {
 
   const { data: timesheets = [], isLoading } = useQuery({
     queryKey: ['timesheets-control', selectedMonth, selectedYear],
-    queryFn: () => base44.entities.Timesheet.list('-date', 1000),
+    queryFn: () => synkia.entities.Timesheet.list('-date', 1000),
     staleTime: 60000,
   });
 
   const { data: employees = [] } = useQuery({
     queryKey: ['employees-control'],
-    queryFn: () => base44.entities.Employee.list(),
+    queryFn: () => synkia.entities.Employee.list(),
     staleTime: 60000,
   });
 
   const generateReport = async () => {
     const toastId = toast.loading("Generando informe PDF...");
     try {
-      const response = await base44.functions.invoke('generateAttendanceReport', {
+      const response = await synkia.functions.invoke('generateAttendanceReport', {
         month: String(parseInt(selectedMonth) + 1).padStart(2, '0'),
         year: selectedYear
       });

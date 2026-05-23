@@ -1,5 +1,4 @@
 import express            from 'express';
-import cors               from 'cors';
 import dotenv             from 'dotenv';
 import path               from 'path';
 import { fileURLToPath }  from 'url';
@@ -7,15 +6,18 @@ import { existsSync }     from 'fs';
 import { emailRouter }       from './routes/email.js';
 import { biloopRouter }      from './routes/biloop.js';
 import { biloopPortalRouter } from './routes/biloop-portal.js';
-import { revoRouter }        from './routes/revo.js';
+// import { revoRouter }        from './routes/revo.js';  // DESACTIVADO — API denegada por Revo
 import { healthRouter }      from './routes/health.js';
 import { filesRouter }       from './routes/files.js';
 import { adminRouter }       from './routes/admin.js';
 import { claudeProxyRouter } from './routes/claude-proxy.js';
+import { lmstudioProxyRouter } from './lmstudio-proxy.mjs';
 import { chatRouter }        from './routes/chat.js';
 import { getFileTree, readFiles, searchFiles } from './services/fileContext.js';
 import { setupTerminal }      from './routes/terminal.js';
-import { setupOpenClawProxy } from './routes/openclaw-proxy.js';
+// import { setupOpenClawProxy } from './routes/openclaw-proxy.js';  // DESACTIVADO — AIDEN/OpenClaw
+import { hermesRouter }     from './routes/hermes.js';
+import { opencodeRouter }   from './routes/opencode.js';
 import { setupShellTerminal }  from './routes/shell-terminal.js';
 import documentsRouter        from './routes/documents.js';
 import trabajadoresRouter     from './routes/trabajadores.js';
@@ -23,42 +25,75 @@ import { authRouter }         from './routes/auth.js';
 import { filebrainRouter }    from './routes/filebrain.js';
 import { syncAll }            from './services/dataSync.js';
 import filemanagerRouter      from './routes/filemanager.js';
+import { orchestratorRouter } from './agents/orchestrator.js';
+import { setupAuth } from './middleware/auth.js';
+import { setupTelegramRoutes } from './bots/telegram.js';
+import { accountingRouter } from './agents/accountingAgent.js';
+import { legalRouter }       from './agents/legalAgent.js';
+import { hrRouter }          from './agents/hrAgent.js';
+import multer from 'multer';
 
 // Cargar .env desde server/ (donde realmente está el archivo)
 const __dirnameRoot = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirnameRoot, '.env') });
+dotenv.config({ path: path.join(__dirnameRoot, '..', '.env'), override: true });
 
 const app  = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process?.env?.PORT || 3001;
 
-// ── CORS ─────────────────────────────────────────────────────────────────────
-const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || 'http://localhost:5173')
-  .split(',').map(o => o.trim());
-
-// Mantiene compatibilidad con el origen hardcodeado anterior
-if (!ALLOWED_ORIGINS.includes('https://sinkialabs.com')) {
-  ALLOWED_ORIGINS.push('https://sinkialabs.com', 'http://sinkialabs.com');
-}
-// www variant (Cloudflare tunnel serves both)
-if (!ALLOWED_ORIGINS.includes('https://www.sinkialabs.com')) {
-  ALLOWED_ORIGINS.push('https://www.sinkialabs.com', 'http://www.sinkialabs.com');
-}
-// Production frontend served from :3001 (PM2)
-if (!ALLOWED_ORIGINS.includes('http://localhost:3001')) {
-  ALLOWED_ORIGINS.push('http://localhost:3001');
-}
-
-app.use(cors({
-  origin: (origin, cb) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS bloqueado: ${origin}`));
-  },
-  credentials: true,
-}));
-
-// ── Body parsers ─────────────────────────────────────────────────────────────
+// ── Body parser con límite alto para payloads IA ──────────────────────────────
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// ── Rate limiter simple (anti-uptime-checker) ────────────────────────────────
+const rateLimit = (() => {
+  const hits = new Map();
+  const WINDOW = 10000;  // 10s
+  const MAX = 15;        // máx 15 peticiones por ventana
+  return (req, res, next) => {
+    // No limitar localhost ni Tailscale
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    if (ip === '127.0.0.1' || ip === '::1' || ip.startsWith('100.64.') || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+      return next();
+    }
+    const now = Date.now();
+    let entry = hits.get(ip);
+    if (!entry || now - entry.windowStart > WINDOW) {
+      entry = { count: 1, windowStart: now };
+      hits.set(ip, entry);
+    } else {
+      entry.count++;
+      if (entry.count > MAX) {
+        res.setHeader('Retry-After', '10');
+        return res.status(429).json({ error: 'Too many requests' });
+      }
+    }
+    next();
+  };
+})();
+
+app.use(rateLimit);
+
+// ── Multer
+
+// ── Multer (upload de archivos para orquestador) ──────────────────────────────
+const upload = multer({
+  dest: '/tmp/synkia-uploads/',
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (_req, file, cb) => {
+    if (['application/pdf','text/plain','text/csv','application/json',
+         'image/png','image/jpeg','image/tiff'].includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de archivo no soportado'));
+    }
+  },
+});
+
+// ── Auth + Tailscale-only + Body parsers + CORS (auth.js) ──────────────────
+setupAuth(app);
+
+// ── Telegram Bot ────────────────────────────────────────────────────────────────
+setupTelegramRoutes(app);
 
 // ── Logger (dev) ──────────────────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {
@@ -75,7 +110,7 @@ app.use('/api/filebrain', filebrainRouter);
 
 
 // ── Proxy: SINKIA Commerce (Mac Mini) ─────────────────────────────────────
-const COMMERCE_URL = process.env.COMMERCE_URL || 'http://100.78.4.14:4400';
+const COMMERCE_URL = process?.env?.COMMERCE_URL || 'http://100.78.4.14:4400';
 
 // Proxy imágenes de Commerce
 app.use('/api/commerce/images', async (req, res) => {
@@ -263,15 +298,22 @@ console.log('[SERVER] ✓ AI Stack proxies: /webui, /n8n, /searxng, /qdrant');
 app.use('/api/email',  emailRouter);
 app.use('/api/biloop', biloopRouter);
 app.use('/api/biloop', biloopPortalRouter);
-app.use('/api/revo',   revoRouter);
+// app.use('/api/revo',   revoRouter);  // DESACTIVADO
 app.use('/api/health', healthRouter);
 app.use('/api/files',  filesRouter);
 app.use('/api/admin',     adminRouter);
 app.use('/api/documents',    documentsRouter);
 app.use('/api/trabajadores', trabajadoresRouter);
 app.use('/api/filemanager',  filemanagerRouter);
+app.use('/api/orchestrator', upload.single('file'), orchestratorRouter);
+app.use('/api/accounting', accountingRouter);
+app.use('/api/legal',       legalRouter);
+app.use('/api/hr',          hrRouter);
 app.use('/claude',     claudeProxyRouter);  // Proxy local para Claude Code
 app.use('/api/chat',   chatRouter);          // Chat IA local
+app.use('/lmstudio',   lmstudioProxyRouter); // Proxy local para LM Studio
+app.use('/api/hermes',   hermesRouter);
+app.use('/api/opencode', opencodeRouter);
 
 // ── API de archivos compartida (todos los chats) ───────────────────────────
 app.get('/api/files/tree', async (_req, res) => {
@@ -289,20 +331,21 @@ app.post('/api/files/read', express.json(), async (req, res) => {
 });
 console.log('[SERVER] ✓ File Context API: /api/files/{tree,search,read}');
 
-// ── Aiden (control de agentes OpenClaw) ──────────────────────────────────────
-try {
-  const { aidenRouter } = await import('./routes/aiden.js');
-  app.use('/api/aiden', aidenRouter);
-  console.log('[SERVER] ✓ Aiden: /api/aiden (control de agentes OpenClaw)');
-} catch (e) {
-  console.error('[SERVER] ✗ Aiden falló al cargar:', e.message);
-}
+// ── Aiden (control de agentes OpenClaw) — DESACTIVADO ────────────────────────
+// try {
+//   const { aidenRouter } = await import('./routes/aiden.js');
+//   app.use('/api/aiden', aidenRouter);
+//   console.log('[SERVER] ✓ Aiden: /api/aiden (control de agentes OpenClaw)');
+// } catch (e) {
+//   console.error('[SERVER] ✗ Aiden falló al cargar:', e.message);
+// }
+console.log('[SERVER] ⊘ Aiden/OpenClaw: desactivado');
 
 // ── Aider (Claude Code coding assistant) ─────────────────────────────────────
 try {
   const { aiderRouter } = await import('./routes/aider.js');
   app.use('/api/aider', aiderRouter);
-  console.log(`[SERVER] ✓ Aider: /api/aider (modelo: ${process.env.AIDER_MODEL || 'ollama/qwen3.5'})`);
+  console.log(`[SERVER] ✓ Aider: /api/aider (modelo: ${process?.env?.AIDER_MODEL || 'ollama/harmonic-hermes-9b:latest'})`);
 } catch (e) {
   console.error('[SERVER] ✗ Aider falló al cargar:', e.message);
 }
@@ -322,7 +365,8 @@ try {
   const { aiRouter } = await import('./routes/ai.js');
   app.use('/api/ollama', aiRouter);
   app.use('/api/ai',     aiRouter);
-  console.log(`[SERVER] ✓ AI Engine (Ollama) → ${process.env.OLLAMA_URL || 'http://localhost:11434'} / ${process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3.5'}`);
+  console.log(`[SERVER] ✓ AI Engine (Triple) → Ollama: ${process?.env?.OLLAMA_URL || 'http://localhost:11434'} | LM Studio: ${process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1'} | OpenRouter: ${process?.env?.OPENROUTER_URL || 'https://openrouter.ai/api/v1'}`);
+console.log(`[SERVER]   LM Studio Models: negentropy-claude-opus-4.7-9b, deepseek/deepseek-r1-0528-qwen3-8b`);
 } catch (e) {
   console.error('[SERVER] ✗ AI Engine falló al cargar:', e.message);
 }
@@ -390,6 +434,18 @@ if (existsSync(filemanagerHtml)) {
 }
 
 
+// Servir mc.html en /mc y en / (Mission Control landing)
+const mcHtml = path.join(__dirnameRoot, '..', 'public', 'mc.html');
+if (existsSync(mcHtml)) {
+  app.get('/mc', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.sendFile(mcHtml);
+  });
+  // Landing en root
+  app.get('/', (_req, res) => res.sendFile(mcHtml));
+  console.log('[SERVER] ✓ Mission Control: /mc y / (landing)');
+}
+
 if (existsSync(distPath)) {
   app.use(express.static(distPath));
   // SPA fallback — cualquier ruta no-API devuelve index.html
@@ -414,52 +470,92 @@ app.use((err, _req, res, _next) => {
 });
 
 // ── Arranque ──────────────────────────────────────────────────────────────────
-const server = app.listen(PORT, '0.0.0.0', () => {
-  // OCR de PDFs escaneados puede tardar 15+ min — desactivar timeouts HTTP
-  server.requestTimeout = 0;
-  server.headersTimeout = 0;
-  server.timeout = 0;
-  console.log(`\n[SERVER] ✓ Puerto ${PORT} | ${new Date().toISOString()}`);
-  console.log(`[SERVER] CORS: ${ALLOWED_ORIGINS.join(', ')}\n`);
+import { createServer as createNetServer } from 'net';
 
-  // ── Sincronización inicial de datos ─────────────────────────────────────────
-  try { syncAll(); } catch (e) { console.error('[SYNC] Startup sync error:', e.message); }
+/**
+ * Espera a que el puerto esté libre y arranca el servidor con retry.
+ * Maneja race conditions donde otro proceso captura el puerto inmediatamente.
+ */
+async function startServer(app, port, maxRetries = 15) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // Esperar a que el puerto esté libre
+    await new Promise((resolve, reject) => {
+      const tester = createNetServer();
+      tester.once('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+          setTimeout(resolve, 500);
+        } else {
+          reject(err);
+        }
+      });
+      tester.once('listening', () => { tester.close(); resolve(); });
+      tester.listen(port, '0.0.0.0');
+    });
 
-  // ── WebSocket handlers ──────────────────────────────────────────────────────
-  let terminalWss = null;
-  let openclawWss = null;
-  let shellWss    = null;
-
-  try { terminalWss = setupTerminal(server); } catch (e) { console.error('[TERMINAL] ✗', e.message); }
-  try { openclawWss = setupOpenClawProxy(server); } catch (e) { console.error('[OPENCLAW-PROXY] ✗', e.message); }
-  try { shellWss    = setupShellTerminal(server); } catch (e) { console.error('[SHELL-TERMINAL] ✗', e.message); }
-
-  // ── Dispatcher centralizado de WebSocket upgrades ──────────────────────────
-  server.on('upgrade', (req, socket, head) => {
-    let pathname;
-    try { pathname = new URL(req.url, 'http://localhost').pathname; }
-    catch { socket.destroy(); return; }
-
-    if (pathname === '/terminal/ws' && terminalWss) {
-      terminalWss.handleUpgradeRequest(req, socket, head);
-    } else if (pathname === '/ws/openclaw' && openclawWss) {
-      openclawWss.handleUpgradeRequest(req, socket, head);
-    } else if (pathname === '/ws/shell' && shellWss) {
-      shellWss.handleUpgradeRequest(req, socket, head);
-    } else {
-      socket.destroy();
-    }
-  });
-
-  import('./syncWorker.js').then(({ startSyncWorker }) => {
+    // Intentar arrancar
     try {
-      startSyncWorker();
-      console.log('[SYNC-WORKER] ✓ Iniciado');
+      const server = await new Promise((resolve, reject) => {
+        const s = app.listen(port, '0.0.0.0', () => resolve(s));
+        s.once('error', (err) => {
+          s.close();
+          reject(err);
+        });
+      });
+
+      // OCR de PDFs escaneados puede tardar 15+ min — desactivar timeouts HTTP
+      server.requestTimeout = 0;
+      server.headersTimeout = 0;
+      server.timeout = 0;
+      console.log(`\n[SERVER] ✓ Puerto ${PORT} | ${new Date().toISOString()}\n`);
+
+      // ── Sincronización inicial de datos ─────────────────────────────────────────
+      try { syncAll(); } catch (e) { console.error('[SYNC] Startup sync error:', e.message); }
+
+      // ── WebSocket handlers ──────────────────────────────────────────────────────
+      let terminalWss = null;
+      let shellWss    = null;
+
+      try { terminalWss = setupTerminal(server); } catch (e) { console.error('[TERMINAL] ✗', e.message); }
+      try { shellWss    = setupShellTerminal(server); } catch (e) { console.error('[SHELL-TERMINAL] ✗', e.message); }
+
+      // ── Dispatcher centralizado de WebSocket upgrades ──────────────────────────
+      server.on('upgrade', (req, socket, head) => {
+        let pathname;
+        try { pathname = new URL(req.url, 'http://localhost').pathname; }
+        catch { socket.destroy(); return; }
+
+        if (pathname === '/terminal/ws' && terminalWss) {
+          terminalWss.handleUpgradeRequest(req, socket, head);
+        } else if (pathname === '/ws/shell' && shellWss) {
+          shellWss.handleUpgradeRequest(req, socket, head);
+        } else {
+          socket.destroy();
+        }
+      });
+
+      import('./syncWorker.js').then(({ startSyncWorker }) => {
+        try {
+          startSyncWorker();
+          console.log('[SYNC-WORKER] ✓ Iniciado');
+        } catch (err) {
+          console.error('[SYNC-WORKER] ✗', err.message);
+        }
+      }).catch(err => console.error('[SYNC-WORKER] ✗ No se pudo cargar:', err.message));
+
+      return server;
     } catch (err) {
-      console.error('[SYNC-WORKER] ✗', err.message);
+      if (err.code === 'EADDRINUSE' && attempt < maxRetries) {
+        console.warn(`[SERVER] ⚠ Puerto ${port} ocupado, esperando reintento ${attempt + 1}/${maxRetries}...`);
+        await new Promise(r => setTimeout(r, 1500));
+        continue;
+      }
+      throw err;
     }
-  }).catch(err => console.error('[SYNC-WORKER] ✗ No se pudo cargar:', err.message));
-});
+  }
+  throw new Error(`No se pudo iniciar el servidor en puerto ${port} después de ${maxRetries} intentos`);
+}
+
+const server = await startServer(app, PORT);
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────
 async function shutdown(signal) {

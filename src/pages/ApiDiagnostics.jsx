@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,7 @@ export default function ApiDiagnostics() {
 
   const checkSecretsStatus = async () => {
     try {
-      const response = await base44.functions.invoke('checkSecretsStatus');
+      const response = await synkia.functions.invoke('checkSecretsStatus');
       setSecretsStatus(response.data);
     } catch (error) {
       console.error('Error checking secrets:', error);
@@ -48,7 +48,7 @@ export default function ApiDiagnostics() {
   const testBiloop = async () => {
     setTesting({ ...testing, biloop: true });
     try {
-      const response = await base44.functions.invoke('testBiloopConnection');
+      const response = await synkia.functions.invoke('testBiloopConnection');
       setResults({ ...results, biloop: response.data });
       if (response.data?.success) {
         toast.success(`✅ BILOOP CONECTADO - ${response.data.working_endpoints?.length || 0} endpoints OK`);
@@ -66,7 +66,7 @@ export default function ApiDiagnostics() {
   const testRevo = async () => {
     setTesting({ ...testing, revo: true });
     try {
-      const response = await base44.functions.invoke('testRevoConnection');
+      const response = await synkia.functions.invoke('testRevoConnection');
       setResults({ ...results, revo: response.data });
       if (response.data?.success) {
         toast.success(`✅ REVO CONECTADO - ${response.data.working_endpoint || 'OK'}`);
@@ -84,7 +84,7 @@ export default function ApiDiagnostics() {
   const testEmail = async () => {
     setTesting({ ...testing, email: true });
     try {
-      const response = await base44.functions.invoke('testGmailConnection');
+      const response = await synkia.functions.invoke('testGmailConnection');
       setResults({ ...results, email: response.data });
       
       if (response.data?.success) {
@@ -103,7 +103,7 @@ export default function ApiDiagnostics() {
   const testEseecloud = async () => {
     setTesting({ ...testing, eseecloud: true });
     try {
-      const response = await base44.functions.invoke('eseeCloudSync', { action: 'status' });
+      const response = await synkia.functions.invoke('eseeCloudSync', { action: 'status' });
       setResults({ ...results, eseecloud: response.data });
       if (response.data?.connected) {
         toast.success('✅ ESEECLOUD CONECTADO');

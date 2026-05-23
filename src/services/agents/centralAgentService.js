@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 
 /**
  * CENTRAL AGENT SERVICE
@@ -58,7 +58,7 @@ Facilitar el trabajo del usuario automatizando tareas, proporcionando informaciÃ
 
       // Buscar en facturas
       try {
-        const invoices = await base44.entities.Invoice.list();
+        const invoices = await synkia.entities.Invoice.list();
         results.invoices = invoices.filter(inv => 
           JSON.stringify(inv).toLowerCase().includes(query.toLowerCase())
         ).slice(0, 5);
@@ -68,7 +68,7 @@ Facilitar el trabajo del usuario automatizando tareas, proporcionando informaciÃ
 
       // Buscar en clientes
       try {
-        const clients = await base44.entities.Client.list();
+        const clients = await synkia.entities.Client.list();
         results.clients = clients.filter(client => 
           JSON.stringify(client).toLowerCase().includes(query.toLowerCase())
         ).slice(0, 5);
@@ -91,7 +91,7 @@ Facilitar el trabajo del usuario automatizando tareas, proporcionando informaciÃ
       const opportunities = [];
 
       // Analizar facturas duplicadas o similares
-      const invoices = await base44.entities.Invoice.list();
+      const invoices = await synkia.entities.Invoice.list();
       
       // Agrupar por proveedor
       const byProvider = {};
@@ -144,7 +144,7 @@ Facilitar el trabajo del usuario automatizando tareas, proporcionando informaciÃ
 
       // Facturas
       try {
-        const invoices = await base44.entities.Invoice.list();
+        const invoices = await synkia.entities.Invoice.list();
         overview.invoices.total = invoices.length;
         overview.invoices.pending = invoices.filter(i => i.status === 'pending').length;
         overview.invoices.totalAmount = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
@@ -154,7 +154,7 @@ Facilitar el trabajo del usuario automatizando tareas, proporcionando informaciÃ
 
       // Clientes
       try {
-        const clients = await base44.entities.Client.list();
+        const clients = await synkia.entities.Client.list();
         overview.clients.total = clients.length;
         overview.clients.active = clients.filter(c => c.status === 'active').length;
       } catch (error) {

@@ -25,7 +25,7 @@ export default defineConfig({
     // FIX 1: Proxy API calls al backend Express
     proxy: {
       '/api': {
-        target:       'http://localhost:3001',
+        target:       'http://localhost:59401',
         changeOrigin: true,
         secure:       false,
         // Opcional: logging de proxied requests en dev

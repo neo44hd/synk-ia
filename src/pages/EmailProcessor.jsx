@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ export default function EmailProcessor() {
     queryKey: ['emails', filterCategory],
     queryFn: async () => {
       try {
-        const emails = await base44.entities.EmailIntegration.list('-received_date', 100);
+        const emails = await synkia.entities.EmailIntegration.list('-received_date', 100);
         if (filterCategory === 'all') return emails;
         return emails.filter(e => e.category === filterCategory);
       } catch (error) {
@@ -56,7 +56,7 @@ export default function EmailProcessor() {
   });
 
   const markAsReviewedMutation = useMutation({
-    mutationFn: ({ id, reviewed }) => base44.entities.EmailIntegration.update(id, { 
+    mutationFn: ({ id, reviewed }) => synkia.entities.EmailIntegration.update(id, { 
       extracted_data: { 
         ...processedEmails.find(e => e.id === id)?.extracted_data,
         reviewed 
@@ -82,7 +82,7 @@ export default function EmailProcessor() {
       
       // 1. Si hay archivo, subirlo
       if (attachmentFile) {
-        const uploadResult = await base44.integrations.Core.UploadFile({ file: attachmentFile });
+        const uploadResult = await synkia.integrations.Core.UploadFile({ file: attachmentFile });
         fileUrl = uploadResult.file_url;
       }
 
@@ -103,7 +103,7 @@ Identifica:
 Responde en formato JSON estructurado.
 `;
 
-      const analysisResult = await base44.integrations.Core.InvokeLLM({
+      const analysisResult = await synkia.integrations.Core.InvokeLLM({
         prompt,
         response_json_schema: {
           type: "object",
@@ -159,7 +159,7 @@ Responde en formato JSON estructurado.
       let savedEmail = null;
 
       // 3. Guardar el email procesado
-      savedEmail = await base44.entities.EmailIntegration.create({
+      savedEmail = await synkia.entities.EmailIntegration.create({
         subject: "Email procesado manualmente",
         sender: "procesamiento_manual@synk-ia.com",
         received_date: new Date().toISOString(),
@@ -172,13 +172,13 @@ Responde en formato JSON estructurado.
 
       // 4. Crear factura si es una factura
       if (analysisResult.is_invoice && analysisResult.invoice_data) {
-        createdInvoice = await base44.entities.Invoice.create({
+        createdInvoice = await synkia.entities.Invoice.create({
           ...analysisResult.invoice_data,
           file_url: fileUrl,
           status: 'pendiente'
         });
         
-        await base44.entities.EmailIntegration.update(savedEmail.id, {
+        await synkia.entities.EmailIntegration.update(savedEmail.id, {
           action_taken: `Factura creada: ${analysisResult.invoice_data.provider_name}`
         });
 
@@ -187,13 +187,13 @@ Responde en formato JSON estructurado.
 
       // 5. Crear proveedor si es nuevo
       if (analysisResult.is_new_provider && analysisResult.provider_data) {
-        createdProvider = await base44.entities.Provider.create({
+        createdProvider = await synkia.entities.Provider.create({
           ...analysisResult.provider_data,
           status: 'pendiente',
           rating: 3
         });
 
-        await base44.entities.EmailIntegration.update(savedEmail.id, {
+        await synkia.entities.EmailIntegration.update(savedEmail.id, {
           action_taken: (savedEmail.action_taken || '') + ` | Proveedor creado: ${analysisResult.provider_data.name}`
         });
 

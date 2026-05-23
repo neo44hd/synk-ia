@@ -1,10 +1,10 @@
 /**
  * SYNK-IA - Servicio de Datos (API Backend)
  * © 2024 David Roldan - Chicken Palace Ibiza
- * Futuro: SYNK-IA LABS
+ * © SynK-IA
  *
  * Conecta con el backend /api/data/:entity para persistencia real
- * Mantiene compatibilidad con la interfaz Base44 SDK
+ * Adaptador local de datos SynK-IA
  */
 
 const API_BASE = '/api/data';
@@ -90,7 +90,7 @@ function createEntity(name) {
   return new ApiEntity(name);
 }
 
-// Exportar todas las entidades que estaban en Base44
+// Exportar entidades del modelo de datos interno
 export const Provider = createEntity('Provider');
 export const Invoice = createEntity('Invoice');
 export const PriceComparison = createEntity('PriceComparison');

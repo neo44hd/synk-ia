@@ -47,7 +47,7 @@ export function ProtectedRoute({
 
   // Verificar autenticación para rutas protegidas
   if (!isAuthenticated) {
-    // Redirigir al login de Base44
+    // Redirigir al inicio de sesión
     login();
     return (
       <div className="flex items-center justify-center h-screen bg-zinc-950">

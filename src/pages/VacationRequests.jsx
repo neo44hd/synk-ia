@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ export default function VacationRequests() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
         setFormData(prev => ({ ...prev, employee_name: currentUser.full_name, employee_id: currentUser.id }));
       } catch (error) {
@@ -63,7 +63,7 @@ export default function VacationRequests() {
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['vacation-requests'],
     queryFn: async () => {
-      const allRequests = await base44.entities.VacationRequest.list('-created_date');
+      const allRequests = await synkia.entities.VacationRequest.list('-created_date');
       
       // Si no es admin o manager, solo muestra sus solicitudes
       if (user && user.permission_level !== 'super_admin' && user.permission_level !== 'admin' && !user.can_approve_vacations) {
@@ -77,7 +77,7 @@ export default function VacationRequests() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.VacationRequest.create(data),
+    mutationFn: (data) => synkia.entities.VacationRequest.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vacation-requests'] });
       toast.success('Solicitud creada correctamente');
@@ -88,7 +88,7 @@ export default function VacationRequests() {
 
   const approveMutation = useMutation({
     mutationFn: ({ id, approved }) => 
-      base44.entities.VacationRequest.update(id, {
+      synkia.entities.VacationRequest.update(id, {
         status: approved ? 'aprobada' : 'rechazada',
         approved_by: user?.id,
         approval_date: new Date().toISOString().split('T')[0]

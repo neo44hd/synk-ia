@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mission Control — SynK-IA</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+<style>
+:root{--bg:#0a0e1a;--s1:#111827;--s2:#1f2937;--s3:#374151;--text:#e5e7eb;--muted:#9ca3af;--accent:#3b82f6;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--pink:#ec4899;--cyan:#06b6d4;--border:#1e2d54;--card-bg:#161b26}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── Layout ── */
+.wrap{max-width:1600px;margin:0 auto;padding:16px}
+
+/* ── Header ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--border);border-radius:16px;margin-bottom:16px}
+.hdr h1{font-size:1.5em;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr .sub{color:var(--muted);font-size:.8em;margin-top:2px}
+.hdr-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.chip{background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:.75em;color:var(--muted);display:flex;align-items:center;gap:5px;transition:all .2s}
+.chip b{color:var(--text)}
+.chip.healthy{border-color:var(--green);color:var(--green)}
+.chip.alert{border-color:var(--red);color:var(--red)}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.status-dot.online{background:var(--green);box-shadow:0 0 8px var(--green)}
+.status-dot.offline{background:var(--red);box-shadow:0 0 8px var(--red)}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:2px;background:var(--s1);border-radius:12px;padding:4px;margin-bottom:16px;border:1px solid var(--border);position:sticky;top:0;z-index:10}
+.tab{flex:1;padding:10px 8px;text-align:center;cursor:pointer;border:none;background:none;color:var(--muted);font-weight:600;font-size:.8em;border-radius:10px;transition:all .25s;white-space:nowrap;font-family:inherit}
+.tab:hover{color:var(--text);background:var(--s2)}
+.tab.on{background:var(--s2);color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.page{display:none}.page.on{display:block}
+
+/* ── Alerts ── */
+.alerts{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:none}
+.alerts.show{display:block;animation:shake .3s}
+.alerts h3{color:var(--red);font-size:.9em;margin-bottom:8px}
+.alert-item{font-size:.8em;color:#fca5a5;padding:3px 0;border-bottom:1px solid rgba(239,68,68,.1)}
+
+/* ── Grid cards ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:20px}
+
+/* ── Card system (mejorado) ── */
+.metric-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden;transition:all .3s}
+.metric-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--purple))}
+.metric-card.highlight::before{background:linear-gradient(90deg,var(--green),var(--cyan))}
+.metric-card.warning::before{background:linear-gradient(90deg,var(--yellow),var(--orange))}
+.metric-card h3{font-size:.85em;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.metric-card h3 .icon{font-size:1.2em}
+.metric-value{font-size:1.8em;font-weight:800;text-align:center;padding:12px 0}
+.metric-value.lg{font-size:2em}
+.metric-label{font-size:.7em;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+
+/* ── Progress bars ── */
+.progress-container{margin-top:8px;padding:0 2px}
+.progress-label{display:flex;justify-content:space-between;font-size:.7em;color:var(--muted);margin-bottom:4px}
+.progress-bar{height:8px;background:var(--s3);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;transition:width .8s ease}
+.progress-fill.green{background:linear-gradient(90deg,#059669,var(--green))}
+.progress-fill.yellow{background:linear-gradient(90deg,#d97706,var(--yellow))}
+.progress-fill.red{background:linear-gradient(90deg,#dc2626,var(--red))}
+.progress-fill.blue{background:linear-gradient(90deg,#2563eb,var(--accent))}
+.progress-fill.purple{background:linear-gradient(90deg,#7c3aed,var(--purple))}
+
+/* ── Stat row ── */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:12px 0}
+.stat-box{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.stat-box .label{font-size:.65em;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.stat-box .value{font-size:1.3em;font-weight:700;margin-top:4px}
+
+/* ── Action buttons ── */
+.ops{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:16px}
+.op{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;text-align:center}
+.op:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.op h4{font-size:.8em;color:var(--text);margin-bottom:4px}
+.op p{font-size:.65em;color:var(--muted)}
+.op code{display:block;margin-top:6px;background:var(--s2);color:var(--green);padding:4px 8px;border-radius:4px;font-size:.65em;font-family:inherit}
+
+/* ── Regular cards ── */
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px;transition:all .3s}
+.card:hover{border-color:var(--accent);box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.card-name{font-weight:700;font-size:.9em}
+.card-type{font-size:.65em;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.badge{font-size:.6em;font-weight:600;padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.3px}
+.badge.healthy{background:rgba(16,185,129,.12);color:var(--green)}
+.badge.running{background:rgba(245,158,11,.1);color:var(--yellow)}
+.badge.unhealthy{background:rgba(239,68,68,.12);color:var(--red)}
+.badge.stopped,.badge.offline{background:rgba(100,116,139,.12);color:#94a3b8}
+.badge.online{background:rgba(16,185,129,.12);color:var(--green)}
+.card-info{font-size:.72em;color:var(--muted);margin:4px 0;line-height:1.4}
+.card-info code{background:var(--s2);padding:2px 5px;border-radius:4px;color:var(--accent);font-size:.9em}
+.card-actions{display:flex;gap:4px;margin-top:10px;flex-wrap:wrap}
+.btn{padding:5px 12px;border:1px solid transparent;border-radius:8px;cursor:pointer;font-size:.7em;font-weight:600;transition:all .15s;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{transform:scale(1.02)}
+.btn-p{background:var(--accent);color:#fff;border:none}.btn-p:hover{background:#2563eb}
+.btn-s{background:var(--s2);color:var(--text);border:1px solid var(--border)}.btn-s:hover{background:var(--s3);border-color:var(--accent)}
+.btn-d{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.15)}.btn-d:hover{background:rgba(239,68,68,.18)}
+.btn-w{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.15)}.btn-w:hover{background:rgba(245,158,11,.18)}
+.btn-g{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.15)}.btn-g:hover{background:rgba(34,197,94,.18)}
+
+/* ── Section headers ── */
+.sec{font-size:.95em;font-weight:700;color:var(--accent);margin:20px 0 12px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.5px}
+.sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+
+/* ── Render helpers ── */
+.service-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;transition:all .3s}
+.service-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.service-card h4{font-size:.85em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.service-card p{font-size:.72em;color:var(--muted)}
+.service-card .ports{margin-top:6px}
+.service-card .ports code{background:var(--s2);padding:2px 6px;border-radius:3px;font-size:.65em;color:var(--cyan);margin:2px 2px 0 0}
+
+.model-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;transition:all .3s}
+.model-card:hover{border-color:var(--accent)}
+.model-card .model-name{font-weight:700;font-size:.85em}
+.model-card .model-size{font-size:.65em;color:var(--muted);margin-top:2px}
+.model-card .model-actions{margin-top:8px;display:flex;gap:6px}
+
+/* ── Terminal ── */
+.term-wrap{background:#060a14;border:1px solid var(--border);border-radius:12px;overflow:hidden;height:400px;position:relative}
+.term-wrap .term-toolbar{background:var(--s2);padding:6px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.term-wrap .term-toolbar span{font-size:.65em;color:var(--muted)}
+.term-wrap .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px}
+.term-wrap .dot.green{background:var(--green);box-shadow:0 0 6px var(--green)}
+.term-wrap .dot.red{background:var(--red);box-shadow:0 0 6px var(--red)}
+#terminal{width:100%;height:calc(100% - 32px)}
+
+/* ── Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.on{display:flex}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:16px;width:92%;max-width:900px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 48px rgba(0,0,0,.4)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-head h3{font-size:1em}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.4em;line-height:1;padding:4px 8px;border-radius:6px;transition:all .15s}
+.modal-close:hover{background:var(--s2);color:var(--text)}
+.modal-body{flex:1;overflow:auto;padding:16px 20px}
+.log-pre{background:#060a14;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'SF Mono',SFMono-Regular,Consolas,monospace;font-size:.75em;color:var(--green);white-space:pre-wrap;word-break:break-all;max-height:55vh;overflow:auto;line-height:1.6}
+
+/* ── Hermes chat ── */
+.hermes-chat-area{height:350px;overflow-y:auto;padding:12px;background:var(--s2);border-radius:10px;margin-bottom:10px;display:none;border:1px solid var(--border)}
+.hermes-msg{padding:8px 12px;margin:4px 0;border-radius:8px;line-height:1.5}
+.hermes-msg.assistant{background:rgba(139,92,246,.08);border-left:3px solid var(--purple)}
+.hermes-msg.user{background:rgba(59,130,246,.08);border-left:3px solid var(--accent);text-align:right}
+.hermes-msg.error{background:rgba(239,68,68,.08);border-left:3px solid var(--red);color:var(--red)}
+.chat-input-row{display:flex;gap:8px;align-items:flex-end}
+.chat-input{flex:1;padding:10px 14px;background:var(--s1);border:1px solid var(--border);color:var(--text);border-radius:10px;font-family:inherit;font-size:.85em;resize:none;min-height:38px;max-height:120px}
+.chat-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,.15)}
+.chat-send-btn{background:var(--purple);color:#fff;border:none;width:42px;height:42px;border-radius:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.chat-send-btn:hover{background:#7c3aed;transform:scale(1.05)}
+
+/* ── Config panels ── */
+.config-group{margin-bottom:12px}
+.config-group label{display:block;font-size:.72em;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.config-group select,.config-group input[type="range"]{width:100%;padding:8px 10px;background:var(--s2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:.8em;font-family:inherit}
+.config-group input[type="range"]{padding:0;margin-top:4px}
+.range-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.range-row span{font-size:.75em;color:var(--text);min-width:35px;text-align:right}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#fff;padding:10px 22px;border-radius:10px;font-weight:600;font-size:.85em;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.toast.on{transform:translateX(-50%) translateY(0)}
+
+/* ── Section divider ── */
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:16px 0}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .hdr{flex-direction:column;align-items:flex-start}
+  .grid{grid-template-columns:1fr}
+  .ops{grid-template-columns:1fr 1fr}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .stat-row{grid-template-columns:1fr 1fr}
+  .term-wrap{height:300px}
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--s1)}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border)}
+
+/* ── Animations ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.fade-in{animation:fadeIn .4s ease}
+.pulse{animation:pulse 2s infinite}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- ══════════════════════════════════════════════ HEADER ════════════════════════════════════════ -->
+  <div class="hdr">
+    <div>
+      <h1>⚡ Mission Control</h1>
+      <p class="sub">SynK-IA — Centro de control del ecosistema · Chicken Palace Ibiza S.L.</p>
+    </div>
+    <div class="hdr-right" id="sys-chips"></div>
+  </div>
+
+  <!-- ═══════════════════════════════ ALERTS ═══════════════════════════════ -->
+  <div class="alerts" id="alerts">
+    <h3>🚨 Alertas del sistema</h3>
+    <div id="alert-list"></div>
+  </div>
+
+  <!-- ═══════════════════════════ TABS ═══════════════════════════ -->
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('dash',this)">🏠 Dashboard</button>
+    <button class="tab" onclick="showTab('docker',this)">🐳 Docker</button>
+    <button class="tab" onclick="showTab('agents',this)">🤖 Agentes</button>
+    <button class="tab" onclick="showTab('pipeline',this)">🔄 Pipeline IA</button>
+    <button class="tab" onclick="showTab('terminal',this)">🖥️ Terminal</button>
+    <button class="tab" onclick="showTab('ollama',this)">🦙 Ollama</button>
+    <button class="tab" onclick="showTab('network',this)">🌐 Red</button>
+    <button class="tab" onclick="showTab('repair',this)">🔧 Reparación</button>
+  </div>
+
+  <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+  <div id="p-dash" class="page on">
+    <div class="sec">📊 Resumen del sistema</div>
+    <div class="stat-row" id="system-stat-row">
+      <div class="stat-box">
+        <div class="label">🔵 RAM Uso</div>
+        <div class="value" id="ram-used" style="color:var(--cyan)">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">💾 Disco Uso</div>
+        <div class="value" id="disk-used" style="color:var(--green)">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">⚡ CPU Load</div>
+        <div class="value" id="load-val" style="color:var(--yellow)">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">🖥️ Hostname</div>
+        <div class="value" id="hostname-val" style="font-size:1em;color:var(--purple)">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">🔄 Uptime</div>
+        <div class="value" id="uptime-val" style="font-size:1em">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="label">🛡️ Estado AI</div>
+        <div class="value" id="ai-status" style="font-size:1em">—</div>
+      </div>
+    </div>
+
+    <!-- RAM bar -->
+    <div class="metric-card highlight" style="margin-bottom:16px">
+      <h3><span class="icon">🧠</span> Memoria RAM</h3>
+      <div class="metric-value lg" style="color:var(--cyan)" id="ram-total">—</div>
+      <div class="progress-container">
+        <div class="progress-label"><span>Uso actual</span><span id="ram-pct">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill green" id="ram-bar" style="width:0%"></div></div>
+      </div>
+      <div class="card-info" style="margin-top:6px">En uso: <b id="ram-used-val">—</b> · Libre: <b id="ram-free-val">—</b></div>
+    </div>
+
+    <!-- Disk bar -->
+    <div class="metric-card" style="margin-bottom:16px">
+      <h3><span class="icon">💾</span> Almacenamiento Disco</h3>
+      <div class="metric-value lg" style="color:var(--green)" id="disk-total">—</div>
+      <div class="progress-container">
+        <div class="progress-label"><span>Uso actual</span><span id="disk-pct">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill blue" id="disk-bar" style="width:0%"></div></div>
+      </div>
+      <div class="card-info" style="margin-top:6px">En uso: <b id="disk-used-val">—</b> · Libre: <b id="disk-free-val">—</b></div>
+    </div>
+
+    <!-- Quick services count -->
+    <div class="grid">
+      <div class="metric-card" id="card-docker">
+        <h3><span class="icon">🐳</span> Docker</h3>
+        <div class="metric-value" style="color:var(--green)" id="docker-count">—</div>
+        <div class="card-info">contenedores activos</div>
+        <div class="card-actions">
+          <button class="btn btn-s" onclick="showTab('docker',document.querySelector('[onclick*=docker]'))">Ver todos ↗</button>
+        </div>
+      </div>
+      <div class="metric-card" id="card-agents">
+        <h3><span class="icon">🤖</span> Agentes IA</h3>
+        <div class="metric-value" style="color:var(--purple)" id="ai-count">—</div>
+        <div class="card-info">agentes especializados</div>
+        <div class="card-actions">
+          <button class="btn btn-s" onclick="showTab('agents',document.querySelector('[onclick*=agents]'))">Ver todos ↗</button>
+        </div>
+      </div>
+      <div class="metric-card" id="card-models">
+        <h3><span class="icon">🦙</span> Modelos Ollama</h3>
+        <div class="metric-value" style="color:var(--yellow)" id="ollama-count">—</div>
+        <div class="card-info">modelos cargados</div>
+        <div class="card-actions">
+          <button class="btn btn-s" onclick="showTab('ollama',document.querySelector('[onclick*=ollama]'))">Ver todos ↗</button>
+        </div>
+      </div>
+      <div class="metric-card" id="card-pm2">
+        <h3><span class="icon">💚</span> Procesos PM2</h3>
+        <div class="metric-value" style="color:var(--cyan)" id="pm2-count">—</div>
+        <div class="card-info">procesos gestionados</div>
+        <div class="card-actions">
+          <button class="btn btn-s" onclick="runQuickRepair('pm2:status')">Ver logs ↗</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agents section -->
+    <div class="sec">🤖 Asistentes IA</div>
+    <div class="grid" id="assistants-grid"><div class="loading"><span class="spin"></span> Cargando...</div></div>
+  </div>
+
+  <!-- ═══════════════════ DOCKER ═══════════════════ -->
+  <div id="p-docker" class="page">
+    <div class="sec">🐳 Contenedores Docker</div>
+    <div class="ops" style="margin-bottom:16px">
+      <div class="op" onclick="dockerAll('restart')"><h4>🔄 Reiniciar todos</h4><code>docker restart</code></div>
+      <div class="op" onclick="dockerAll('stop')"><h4>🛑 Parar todos</h4><code>docker stop</code></div>
+      <div class="op" onclick="dockerAll('prune')"><h4>🧹 Limpiar prune</h4><code>docker system prune</code></div>
+      <div class="op" onclick="composeUp()"><h4>⬆️ Compose Up</h4><code>docker compose up</code></div>
+      <div class="op" onclick="composeDown()"><h4>⬇️ Compose Down</h4><code>docker compose down</code></div>
+    </div>
+    <div class="grid" id="docker-grid"><div class="loading"><span class="spin"></span></div></div>
+  </div>
+
+  <!-- ═══════════════════ AGENTES ═══════════════════ -->
+  <div id="p-agents" class="page">
+    <div class="sec">🤖 Agentes Especializados</div>
+    <div class="grid" id="agents-grid"><div class="loading"><span class="spin"></span></div></div>
+    <div class="section-divider"></div>
+    <div class="sec">🛠️ Herramientas de desarrollo</div>
+    <div class="ops">
+      <div class="op" onclick="copy('claude')"><h4>🤖 Claude Code</h4><p>CLI interactivo</p><code>claude</code></div>
+      <div class="op" onclick="copy('aider --model ollama_chat/gemma4:e4b --no-auto-commits')"><h4>🛠️ Aider + Gemma4</h4><p>Pair programming</p><code>aider</code></div>
+      <div class="op" onclick="copy('aider --model ollama_chat/qwen2.5-coder:latest --no-auto-commits')"><h4>🧠 Aider + Qwen2.5</h4><p>Razonamiento avanzado</p><code>aider --qwen</code></div>
+      <div class="op" onclick="copy('opencode')"><h4>💻 OpenCode</h4><p>Agente de código</p><code>opencode</code></div>
+      <div class="op" onclick="copy('codex')"><h4>📝 Codex CLI</h4><p>OpenAI Codex</p><code>codex</code></div>
+    </div>
+    <div class="section-divider"></div>
+    <div class="sec">📋 Comandos rápidos</div>
+    <div class="ops">
+      <div class="op" onclick="copy('ollama list')"><h4>🦙 Modelos Ollama</h4><code>ollama list</code></div>
+      <div class="op" onclick="copy('pm2 list')"><h4>💚 Estado PM2</h4><code>pm2 list</code></div>
+      <div class="op" onclick="copy('tailscale status')"><h4>🌐 Tailscale</h4><code>tailscale status</code></div>
+      <div class="op" onclick="copy('df -h')"><h4>💾 Espacio disco</h4><code>df -h</code></div>
+      <div class="op" onclick="copy('top -l 1')"><h4>📊 Top procesos</h4><code>top -l 1</code></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PIPELINE ═══════════════════ -->
+  <div id="p-pipeline" class="page">
+    <div class="sec">🔄 Pipeline Dual Fast/Deep</div>
+    <div class="grid" id="pipeline-grid"><div class="loading"><span class="spin"></span></div></div>
+    <div class="section-divider"></div>
+    <div class="sec">🧠 Modelos IA en uso</div>
+    <div class="grid" id="models-grid"><div class="loading"><span class="spin"></span></div></div>
+    <div class="section-divider"></div>
+    <div class="sec">🔬 Test rápido</div>
+    <div class="ops" style="margin-bottom:16px">
+      <div class="op" onclick="testModel('classify')"><h4>📋 Clasificar</h4><p>Fast Path → hermes-9b</p><code>POST /classify</code></div>
+      <div class="op" onclick="testModel('chat')"><h4>💬 Chat IA</h4><p>Deep Path → 4.7b</p><code>POST /chat</code></div>
+      <div class="op" onclick="testModel('opencode')"><h4>💻 OpenCode</h4><p>Code test</p><code>POST /opencode</code></div>
+      <div class="op" onclick="testModel('lmstudio')"><h4>🧪 LM Studio</h4><p>R1 8B via proxy</p><code>POST /lmstudio</code></div>
+    </div>
+    <div id="test-result" class="log-pre" style="display:none"></div>
+  </div>
+
+  <!-- ═══════════════ HERMES AGENT ═══════════════ -->
+  <div id="p-hermes" class="page">
+    <div class="sec">🧠 Hermes Agent</div>
+    <div class="grid">
+      <div class="card" style="border-left:3px solid var(--purple)">
+        <div class="card-top">
+          <div>
+            <div class="card-name">🤖 Hermes Chat</div>
+            <div class="card-type">Conversacional — negentropy-claude-opus-4.7-9b</div>
+          </div>
+          <span class="badge" id="hermes-mc-badge">offline</span>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-p" id="hermes-connect" onclick="hermesToggle()">🔌 Conectar</button>
+          <button class="btn btn-s" onclick="hermesReset()">↩ Reset</button>
+          <button class="btn btn-w" onclick="hermesTest()">🧪 Test</button>
+        </div>
+        <div id="hermes-info" style="margin-top:10px;padding:10px;background:var(--s2);border-radius:8px;font-size:.72em;color:var(--muted);display:none"></div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--purple)">
+        <div class="card-name" style="font-size:.85em;margin-bottom:10px">⚙ Configuración del modelo</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="config-group">
+            <label>Modelo</label>
+            <select id="hermes-model-select">
+              <option value="" disabled selected>Cargando modelos...</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="config-group">
+              <div class="range-row"><label style="margin:0">Temperature</label><span id="hermes-temp-val">0.7</span></div>
+              <input type="range" id="hermes-temperature" min="0" max="2" step="0.05" value="0.7" oninput="document.getElementById('hermes-temp-val').textContent=this.value">
+            </div>
+            <div class="config-group">
+              <div class="range-row"><label style="margin:0">Max Tokens</label><span id="hermes-tokens-val">2048</span></div>
+              <input type="range" id="hermes-max-tokens" min="256" max="8192" step="256" value="2048" oninput="document.getElementById('hermes-tokens-val').textContent=this.value">
+            </div>
+          </div>
+          <div class="config-group">
+            <div class="range-row"><label style="margin:0">Top P</label><span id="hermes-topp-val">0.9</span></div>
+            <input type="range" id="hermes-top-p" min="0" max="1" step="0.05" value="0.9" oninput="document.getElementById('hermes-topp-val').textContent=this.value">
+          </div>
+          <button class="btn btn-p" onclick="hermesSaveConfig()" style="margin-top:4px">💾 Guardar</button>
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--purple);grid-column:1/-1">
+        <div class="card-name" style="font-size:.85em;margin-bottom:8px">💬 Chat Hermes (tiempo real)</div>
+        <div class="hermes-chat-area" id="hermes-chat-area">
+          <div style="text-align:center;padding:40px;color:var(--muted)"><span class="pulse">⏳</span> Conectando...</div>
+        </div>
+        <div class="chat-input-row" id="hermes-input-row" style="display:none">
+          <textarea id="hermes-in" class="chat-input" rows="2" placeholder="Escribe un mensaje a Hermes..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();hermesChatSend()}" oninput="autoResize(this)"></textarea>
+          <button class="chat-send-btn" onclick="hermesChatSend()" title="Enviar"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#fff"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ OPENCODE ═══════════════ -->
+  <div id="p-opencode" class="page">
+    <div class="sec">💻 OpenCode Agent</div>
+    <div class="grid">
+      <div class="card" style="border-left:3px solid var(--accent)">
+        <div class="card-top">
+          <div>
+            <div class="card-name">💻 OpenCode</div>
+            <div class="card-type">Agente de código</div>
+          </div>
+          <span class="badge" id="opencode-mc-badge">offline</span>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-p" id="opencode-connect" onclick="opencodeToggle()">🔌 Conectar</button>
+          <button class="btn btn-s" onclick="opencodeReset()">↩ Reset</button>
+          <button class="btn btn-w" onclick="opencodeTest()">🧪 Test</button>
+        </div>
+        <div id="opencode-info" style="margin-top:10px;padding:10px;background:var(--s2);border-radius:8px;font-size:.72em;color:var(--muted);display:none"></div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent)">
+        <div class="card-name" style="font-size:.85em;margin-bottom:10px">⚙ Configuración</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="config-group">
+            <label>Modelo</label>
+            <select id="opencode-model-select">
+              <option value="" disabled selected>Cargando modelos...</option>
+            </select>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="config-group">
+              <div class="range-row"><label style="margin:0">Temperature</label><span id="opencode-temp-val">0.7</span></div>
+              <input type="range" id="opencode-temperature" min="0" max="2" step="0.05" value="0.7" oninput="document.getElementById('opencode-temp-val').textContent=this.value">
+            </div>
+            <div class="config-group">
+              <div class="range-row"><label style="margin:0">Max Tokens</label><span id="opencode-tokens-val">2048</span></div>
+              <input type="range" id="opencode-max-tokens" min="256" max="8192" step="256" value="2048" oninput="document.getElementById('opencode-tokens-val').textContent=this.value">
+            </div>
+          </div>
+          <button class="btn btn-p" onclick="opencodeSaveConfig()" style="margin-top:4px">💾 Guardar</button>
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent);grid-column:1/-1">
+        <div class="card-name" style="font-size:.85em;margin-bottom:8px">💬 Chat OpenCode (tiempo real)</div>
+        <div class="hermes-chat-area" id="opencode-chat-area">
+          <div style="text-align:center;padding:40px;color:var(--muted)"><span class="pulse">⏳</span> Conectando...</div>
+        </div>
+        <div class="chat-input-row" id="opencode-input-row" style="display:none">
+          <textarea id="opencode-in" class="chat-input" rows="2" placeholder="Escribe un mensaje a OpenCode..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();opencodeChatSend()}" oninput="autoResize(this)"></textarea>
+          <button class="chat-send-btn" onclick="opencodeChatSend()" title="Enviar"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#fff"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TERMINAL ═══════════════ -->
+  <div id="p-terminal" class="page">
+    <div class="sec">🖥️ Terminal Web</div>
+    <div class="term-wrap">
+      <div class="term-toolbar">
+        <span class="dot" id="term-dot"></span>
+        <span id="term-status">Desconectado</span>
+        <span style="margin-left:auto;font-size:.6em;opacity:.5">Ctrl+C para copiar · Ctrl+V para pegar</span>
+      </div>
+      <div id="terminal"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ OLLAMA ═══════════════ -->
+  <div id="p-ollama" class="page">
+    <div class="sec">🦙 Modelos Ollama</div>
+    <div class="grid" id="ollama-grid"><div class="loading"><span class="spin"></span></div></div>
+    <div class="section-divider"></div>
+    <div class="sec">⚡ Acciones</div>
+    <div class="ops">
+      <div class="op" onclick="ollamaAction('pull','qwen2.5-coder:14b')"><h4>📥 Pull Qwen2.5 14B</h4><code>ollama pull qwen2.5-coder:14b</code></div>
+      <div class="op" onclick="ollamaAction('pull','llama3.3:70b')"><h4>📥 Pull Llama 3.3 70B</h4><code>ollama pull llama3.3:70b</code></div>
+      <div class="op" onclick="ollamaAction('rm','phi4-mini:latest')"><h4>🗑️ Eliminar Phi4-Mini</h4><code>ollama rm phi4-mini</code></div>
+      <div class="op" onclick="ollamaList()"><h4>🔄 Refrescar lista</h4><code>ollama list</code></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ NETWORK ═══════════════ -->
+  <div id="p-network" class="page">
+    <div class="sec">🌐 Conectividad</div>
+    <div class="grid">
+      <div class="metric-card">
+        <h3><span class="icon">🔒</span> Tailscale</h3>
+        <div id="tailscale-status" class="card-info" style="font-size:.9em;white-space:pre-wrap;max-height:150px;overflow:auto;padding:10px;background:var(--s2);border-radius:6px">Cargando...</div>
+      </div>
+      <div class="metric-card">
+        <h3><span class="icon">☁️</span> Cloudflare Tunnel</h3>
+        <div id="cloudflare-status" class="card-info" style="font-size:.9em;white-space:pre-wrap;max-height:150px;overflow:auto;padding:10px;background:var(--s2);border-radius:6px">Cargando...</div>
+      </div>
+    </div>
+    <div class="sec">🔌 Puertos en uso</div>
+    <div class="metric-card" style="margin-bottom:16px">
+      <pre id="ports-list" style="font-size:.72em;color:var(--cyan);white-space:pre-wrap;max-height:300px;overflow:auto;margin:0;padding:14px;background:var(--s2);border-radius:8px">Cargando...</pre>
+    </div>
+    <div class="ops" style="margin-bottom:16px">
+      <div class="op" onclick="tailscaleAction('up')"><h4>🟢 Tailscale Up</h4></div>
+      <div class="op" onclick="tailscaleAction('down')"><h4>🔴 Tailscale Down</h4></div>
+      <div class="op" onclick="tailscaleAction('status')"><h4>📊 Ver estado</h4></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ REPAIR ═══════════════ -->
+  <div id="p-repair" class="page">
+    <div class="sec">🔧 Botiquín de reparación</div>
+    <div class="ops" id="repair-ops"><div class="loading"><span class="spin"></span></div></div>
+    <div class="section-divider"></div>
+    <div class="sec">📋 Log de acciones</div>
+    <div class="log-pre" id="repair-log" style="min-height:100px;max-height:300px">Sin acciones ejecutadas aún.</div>
+  </div>
+
+</div>
+
+<!-- ═══════════ LOG MODAL ═══════════ -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modal-title">📋 Logs</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><pre class="log-pre" id="modal-log">Cargando...</pre></div>
+  </div>
+</div>
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div class="toast" id="toast">✅ Copiado</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════════
+let servicesData = null, term = null, ws = null, hermesWs = null, hermesConn = false;
+
+// ════════════════════════════════════════════════════════════════
+//  TAB NAV
+// ════════════════════════════════════════════════════════════════
+function showTab(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('p-' + id)?.classList.add('on');
+  if (btn) btn.classList.add('on');
+  if (id === 'terminal' && !term) initTerminal();
+  if (id === 'network') loadNetwork();
+  if (id === 'pipeline') loadPipeline();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  UTILITIES
+// ════════════════════════════════════════════════════════════════
+function copy(t) {
+  navigator.clipboard.writeText(t).catch(() => {
+    const ta = document.createElement('textarea');
+    document.body.appendChild(ta); ta.value = t; ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  });
+  const toast = document.getElementById('toast');
+  toast.classList.add('on');
+  setTimeout(() => toast.classList.remove('on'), 1800);
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('on'); }
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function esc(t) { return escapeHtml(t || ''); }
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// Badge color by health
+function healthClass(h) {
+  if (h === 'healthy' || h === 'running' || h === 'passed' || h === 'online') return 'healthy';
+  if (h === 'unhealthy' || h === 'stopped' || h === 'failed') return 'unhealthy';
+  if (h === 'degraded' || h === 'starting' || h === 'restarting') return 'running';
+  return 'offline';
+}
+
+// ════════════════════════════════════════════════════════════════
+//  API CALLS
+// ════════════════════════════════════════════════════════════════
+const TOKEN = 'sinkia2026';
+
+function adminApi(url, opts = {}) {
+  return api(url, { headers: { ...opts.headers || {}, 'x-admin-token': TOKEN }, ...opts });
+}
+
+async function api(url, opts = {}) {
+  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DASHBOARD — SYSTEM METRICS (FIX: load from /api/admin/system)
+// ════════════════════════════════════════════════════════════════
+async function loadSystemMetrics() {
+  try {
+    const m = await adminApi('/api/admin/system');
+
+    // Hostname
+    document.getElementById('hostname-val').textContent = m.hostname || '—';
+
+    // Uptime
+    if (m.uptime !== undefined) {
+      const secs = Math.floor(m.uptime);
+      const h = Math.floor(secs / 3600);
+      const min = Math.floor((secs % 3600) / 60);
+      document.getElementById('uptime-val').textContent = `${h}h ${min}m`;
+    }
+
+    // RAM
+    if (m.memory) {
+      const ram = m.memory;
+      const totalGB = ram.totalGB || ram.total / 1024;
+      const usedGB = ram.usedGB || ram.used / 1024;
+      const freeGB = ram.freeGB || ram.free / 1024;
+      const pct = ram.pct || ((usedGB / totalGB) * 100);
+
+      document.getElementById('ram-total').textContent = `${totalGB.toFixed(1)} GB`;
+      document.getElementById('ram-used-val').textContent = `${usedGB.toFixed(1)} GB`;
+      document.getElementById('ram-free-val').textContent = `${freeGB.toFixed(1)} GB`;
+      document.getElementById('ram-used').textContent = `${usedGB.toFixed(1)} / ${totalGB.toFixed(1)} GB`;
+      document.getElementById('ram-pct').textContent = `${Math.round(pct)}%`;
+
+      const ramBar = document.getElementById('ram-bar');
+      ramBar.style.width = Math.min(pct, 100) + '%';
+
+      // Color based on usage
+      if (pct > 85) {
+        ramBar.className = 'progress-fill red';
+        document.getElementById('ram-total').style.color = 'var(--red)';
+      } else if (pct > 60) {
+        ramBar.className = 'progress-fill yellow';
+        document.getElementById('ram-total').style.color = 'var(--yellow)';
+      } else {
+        ramBar.className = 'progress-fill green';
+        document.getElementById('ram-total').style.color = 'var(--cyan)';
+      }
+    }
+
+    // Disk
+    if (m.disk) {
+      const disk = m.disk;
+      const totalGB = disk.totalGB || disk.total / 1024;
+      const usedGB = disk.usedGB || disk.used / 1024;
+      const freeGB = disk.freeGB || disk.free / 1024;
+      const pct = disk.pct || ((usedGB / totalGB) * 100);
+
+      document.getElementById('disk-total').textContent = `${totalGB.toFixed(0)} GB`;
+      document.getElementById('disk-used-val').textContent = `${usedGB.toFixed(1)} GB`;
+      document.getElementById('disk-free-val').textContent = `${freeGB.toFixed(1)} GB`;
+      document.getElementById('disk-used').textContent = `${usedGB.toFixed(1)} / ${totalGB.toFixed(0)} GB`;
+      document.getElementById('disk-pct').textContent = `${Math.round(pct)}%`;
+
+      const diskBar = document.getElementById('disk-bar');
+      diskBar.style.width = Math.min(pct, 100) + '%';
+      if (pct > 85) {
+        diskBar.className = 'progress-fill red';
+      } else {
+        diskBar.className = 'progress-fill blue';
+      }
+    }
+
+    // CPU / Load
+    if (m.load !== undefined || m.cpus) {
+      const load1 = m.load?.['1m'] || m.load1 || '—';
+      const load5 = m.load?.['5m'] || m.load5 || '—';
+      const load15 = m.load?.['15m'] || m.load15 || '—';
+      const cpus = m.cpus || m.arch || m.model || '';
+      document.getElementById('load-val').textContent = `${load1} / ${load5} / ${load15}`;
+    }
+
+    // AI status
+    try {
+      const ai = await api('/api/ai/status');
+      const el = document.getElementById('ai-status');
+      if (ai.online) {
+        el.textContent = '✅ Online';
+        el.style.color = 'var(--green)';
+      } else {
+        el.textContent = '⚠️ Degradado';
+        el.style.color = 'var(--yellow)';
+      }
+    } catch {
+      document.getElementById('ai-status').textContent = '❌ Offline';
+      document.getElementById('ai-status').style.color = 'var(--red)';
+    }
+
+  } catch (e) {
+    console.error('loadSystemMetrics error:', e);
+    document.getElementById('ram-used').textContent = 'Error';
+    document.getElementById('disk-used').textContent = 'Error';
+    document.getElementById('load-val').textContent = 'Error';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LOAD SERVICES (Docker, PM2, custom, Ollama)
+// ════════════════════════════════════════════════════════════════
+async function loadServices() {
+  try {
+    const d = await adminApi('/api/admin/services');
+    servicesData = d;
+
+    document.getElementById('docker-grid').innerHTML = d.docker?.length
+      ? d.docker.map(renderDockerCard).join('')
+      : '<div style="color:var(--muted);padding:20px;text-align:center;font-size:.8em">Sin contenedores Docker</div>';
+
+    document.getElementById('docker-full-grid').innerHTML = d.docker?.length
+      ? d.docker.map(renderDockerCard).join('')
+      : '<div style="color:var(--muted);padding:20px;text-align:center;font-size:.8em">Sin contenedores Docker</div>';
+
+    document.getElementById('pm2-grid').innerHTML = d.pm2?.length
+      ? d.pm2.map(renderPM2Card).join('')
+      : '<div style="color:var(--muted);padding:20px;text-align:center;font-size:.8em">Sin procesos PM2</div>';
+
+    document.getElementById('services-grid').innerHTML = d.custom?.length
+      ? d.custom.map(renderServiceCard).join('')
+      : '<div style="color:var(--muted);padding:20px;font-size:.8em">Sin servicios personalizados</div>';
+
+    // Ollama models in overview
+    document.getElementById('ollama-grid').innerHTML = d.ollama?.length
+      ? d.ollama.map(renderOllamaCard).join('')
+      : '<div style="color:var(--muted);padding:20px;text-align:center;font-size:.8em">Sin modelos</div>';
+
+    // Dashboard counts
+    document.getElementById('docker-count').textContent = d.docker?.length || 0;
+    document.getElementById('pm2-count').textContent = d.pm2?.length || 0;
+    document.getElementById('ollama-count').textContent = d.ollama?.length || 0;
+
+    // Alerts
+    const alertEl = document.getElementById('alerts');
+    const alertList = document.getElementById('alert-list');
+    if (d.alerts?.length) {
+      alertEl.classList.add('show');
+      alertList.innerHTML = d.alerts.map(a =>
+        `<div class="alert-item">⚠️ <b>${a.name}</b> — ${esc(a.health)}</div>`
+      ).join('');
+    } else {
+      alertEl.classList.remove('show');
+    }
+
+    // Header chips
+    document.getElementById('sys-chips').innerHTML = `
+      <div class="chip"><span class="status-dot online"></span> <b>${d.docker?.length || 0}</b> Docker</div>
+      <div class="chip"><span class="status-dot online"></span> <b>${d.pm2?.length || 0}</b> PM2</div>
+      <div class="chip"><span class="status-dot online"></span> <b>7</b> Agentes</div>
+      <div class="chip"><span class="status-dot online"></span> <b>${d.ollama?.length || 0}</b> Modelos Ollama</div>
+      <div class="chip${d.alerts?.length ? ' alert' : ''}">⚠️ <b>${d.alerts?.length || 0}</b> alertas</div>
+    `;
+
+  } catch (e) {
+    console.error('loadServices error:', e);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RENDER FUNCTIONS
+// ════════════════════════════════════════════════════════════════
+function renderDockerCard(s) {
+  const ports = s.ports?.split(',').map(p => `<code>${s.name}:${p.trim()}</code>`).join(' ') || '';
+  return `<div class="service-card">
+    <h4>🐳 ${esc(s.name)} <span class="badge ${healthClass(s.health)}">${esc(s.health || s.status || '?')}</span></h4>
+    <p>${esc(s.image?.split('/').pop() || 'docker')}${s.status ? ' · ' + esc(s.status) : ''}</p>
+    ${ports ? `<div class="ports">${ports}</div>` : ''}
+    <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">
+      <button class="btn btn-s" onclick="showLogs('${esc(s.name)}','/api/admin/docker/${s.id}/logs?lines=80')">📋 Logs</button>
+      <button class="btn btn-w" onclick="dockerAction('${s.id}','restart')">🔄 Restart</button>
+      <button class="btn btn-d" onclick="dockerAction('${s.id}','stop')">🛑 Stop</button>
+    </div>
+  </div>`;
+}
+
+function renderPM2Card(s) {
+  const mem = s.memory ? (s.memory / (1024 * 1024)).toFixed(1) + ' MB' : '—';
+  return `<div class="service-card">
+    <h4>💚 ${esc(s.name)} <span class="badge ${s.status === 'online' ? 'healthy' : healthClass(s.status)}">${esc(s.status || '?')}</span></h4>
+    <p>PID ${s.pid || '—'} · RAM ${mem} · CPU ${s.cpu || 0}% · Restarts: ${s.restarts || 0}</p>
+    <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">
+      <button class="btn btn-s" onclick="showLogs('${esc(s.name)}','/api/admin/logs/${s.name}?lines=80')">📋 Logs</button>
+      <button class="btn btn-w" onclick="pm2Action('${s.name}','restart')">🔄 Restart</button>
+      <button class="btn btn-d" onclick="pm2Action('${s.name}','stop')">🛑 Stop</button>
+    </div>
+  </div>`;
+}
+
+function renderServiceCard(s) {
+  return `<div class="service-card">
+    <h4>${s.icon || '🔧'} ${esc(s.name)} <span class="badge ${healthClass(s.health)}">${esc(s.health || '?')}</span></h4>
+    <p>puerto ${s.port}${s.url ? ' · <a href="'+s.url+'" target="_blank" style="color:var(--accent)">Abrir ↗</a>' : ''}</p>
+  </div>`;
+}
+
+function renderAgentCard(a) {
+  return `<div class="card" style="border-left:3px solid ${a.color || 'var(--accent)'}">
+    <div class="card-top">
+      <div><div class="card-name">${a.icon || '🤖'} ${a.name}</div><div class="card-type">${a.type || 'agent'}</div></div>
+      <span class="badge healthy">● activo</span>
+    </div>
+    <div class="card-info">${a.desc || ''}</div>
+    <div class="card-info">Modelo: <code>${a.model || '—'}</code></div>
+  </div>`;
+}
+
+function renderOllamaCard(m) {
+  const sizeMB = m.size ? (m.size / (1024 * 1024 * 1024)).toFixed(1) : '—';
+  const modified = m.modified_at ? new Date(m.modified_at).toLocaleString('es-ES') : '—';
+  return `<div class="model-card">
+    <div class="model-name">🦙 ${esc(m.name)} <span class="badge healthy">loaded</span></div>
+    <div class="model-size">Tamaño: ${sizeMB} GB · Modificado: ${modified}</div>
+    <div class="model-actions">
+      <button class="btn btn-d" onclick="ollamaAction('rm','${esc(m.name)}')">🗑️ Eliminar</button>
+    </div>
+  </div>`;
+}
+
+function renderPipelineCard() {
+  return `<div class="grid" style="grid-template-columns:1fr;gap:12px">
+    <div class="card" style="border-left:3px solid var(--green)">
+      <h4 style="font-size:.9em;display:flex;align-items:center;gap:6px;margin-bottom:8px">⚡ Fast Path — Clasificación Rápida</h4>
+      <div class="pipeline-flow"><span>📄 Entrada</span><span class="arrow">→</span><span class="fast">hermes-9b</span><span class="arrow">→</span><span>confianza ≥ 0.6</span><span class="arrow">→</span><span class="fast">qwen2.5-coder 0.5b</span></div>
+      <div class="card-info" style="margin-top:6px"><b>Uso:</b> Clasificación de documentos, extracción rápida</div>
+    </div>
+    <div class="card" style="border-left:3px solid var(--purple)">
+      <h4 style="font-size:.9em;display:flex;align-items:center;gap:6px;margin-bottom:8px">🧠 Deep Path — Razonamiento Profundo</h4>
+      <div class="pipeline-flow"><span>📄 Entrada</span><span class="arrow">→</span><span class="deep">hermes-9b</span><span class="arrow">→</span><span>confianza < 0.6</span><span class="arrow">→</span><span class="deep">negentropy-4.7b</span></div>
+      <div class="card-info" style="margin-top:6px"><b>Uso:</b> Documentos complejos, análisis legal, contable, RRHH</div>
+    </div>
+  </div>
+  <div class="section-divider"></div>
+  <div class="sec" style="margin-top:16px">🧪 Modelos configurados</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
+    ${[
+      { label: 'CLASSIFY', value: 'harmonic-hermes-9b:latest', color: 'var(--green)' },
+      { label: 'EXTRACT', value: 'qwen2.5-coder:0.5b-instruct', color: 'var(--cyan)' },
+      { label: 'ORCHESTRATOR', value: 'gemma2:2b', color: 'var(--yellow)' },
+      { label: 'DEEP / LEGAL / ACCOUNTING', value: 'negentropy-claude-opus-4.7-9b', color: 'var(--purple)' },
+    ].map(m => `<div class="model-card">
+      <div class="model-name">${m.label}</div>
+      <div class="model-info">${m.value}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DOCKER ACTIONS
+// ════════════════════════════════════════════════════════════════
+async function dockerAction(id, action) {
+  try {
+    const d = await adminApi(`/api/admin/docker/${id}/${action}`, { method: 'POST' });
+    addRepairLog(`Docker ${action} ${id}: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  } catch (e) { addRepairLog(`Docker ${action}: ❌ ${e.message}`); }
+  loadServices();
+}
+
+async function dockerAll(action) {
+  if (!confirm(`¿${action} todos los contenedores?`)) return;
+  const d = await adminApi(`/api/admin/docker/all/${action}`, { method: 'POST' });
+  addRepairLog(`Docker ${action} todos: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  loadServices();
+}
+
+async function composeUp() {
+  const d = await adminApi('/api/admin/docker-compose/up', { method: 'POST' });
+  addRepairLog(`Compose Up: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  loadServices();
+}
+
+async function composeDown() {
+  if (!confirm('¿Parar todos los servicios Docker Compose?')) return;
+  const d = await adminApi('/api/admin/docker-compose/down', { method: 'POST' });
+  addRepairLog(`Compose Down: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  loadServices();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PM2 ACTIONS
+// ════════════════════════════════════════════════════════════════
+async function pm2Action(name, action) {
+  const d = await adminApi(`/api/admin/processes/${name}/${action}`, { method: 'POST' });
+  addRepairLog(`PM2 ${action} ${name}: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  loadServices();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  OLLAMA ACTIONS
+// ════════════════════════════════════════════════════════════════
+async function ollamaAction(action, model) {
+  const d = await adminApi(`/api/admin/ollama/${action}/${model}`, { method: 'POST' });
+  addRepairLog(`Ollama ${action} ${model}: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  loadServices();
+  await loadOllamaModels();
+}
+
+async function ollamaList() {
+  await loadOllamaModels();
+  addRepairLog('Ollama: lista refrescada ✅');
+}
+
+async function loadOllamaModels() {
+  try {
+    const d = await adminApi('/api/admin/services');
+    document.getElementById('ollama-grid').innerHTML = d.ollama?.length
+      ? d.ollama.map(renderOllamaCard).join('')
+      : '<div style="color:var(--muted);padding:20px;text-align:center">Sin modelos</div>';
+    document.getElementById('ollama-count').textContent = d.ollama?.length || 0;
+  } catch (e) {
+    document.getElementById('ollama-grid').innerHTML = '<div style="color:var(--red);padding:10px">Error cargando modelos</div>';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TAILSCALE
+// ════════════════════════════════════════════════════════════════
+async function loadNetwork() {
+  try {
+    const [ts, cf] = await Promise.all([
+      adminApi('/api/admin/tailscale/status').catch(() => ({ status: 'No disponible' })),
+      adminApi('/api/admin/cloudflare/status').catch(() => ({ status: 'No disponible' }))
+    ]);
+    document.getElementById('tailscale-status').textContent = ts.status || ts.stdout || 'Error';
+    document.getElementById('cloudflare-status').textContent = cf.status || cf.stdout || 'Error';
+
+    const { stdout } = await adminApi('/api/admin/exec', {
+      method: 'POST',
+      body: JSON.stringify({ command: 'lsof -i -P -n 2>/dev/null | grep LISTEN || echo "Sin puertos"' })
+    });
+    document.getElementById('ports-list').textContent = stdout || 'Sin puertos en escucha';
+  } catch (e) {
+    document.getElementById('tailscale-status').textContent = 'Error: ' + e.message;
+    document.getElementById('ports-list').textContent = 'Error: ' + e.message;
+  }
+}
+
+function tailscaleAction(action) {
+  adminApi(`/api/admin/tailscale/${action}`, { method: action === 'status' ? 'GET' : 'POST' })
+    .then(d => { addRepairLog(`Tailscale ${action}: ${d.ok ? '✅' : '❌'}`); loadNetwork(); })
+    .catch(e => { addRepairLog(`Tailscale ${action}: ❌ ${e.message}`); });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PIPELINE
+// ════════════════════════════════════════════════════════════════
+async function loadPipeline() {
+  try {
+    const d = await api('/api/ai/status');
+    document.getElementById('pipeline-grid').innerHTML = renderPipelineCard();
+    if (d.models) {
+      document.getElementById('models-grid').innerHTML = Object.entries(d.models).map(([k, v]) =>
+        `<div class="model-card"><div class="model-name">${esc(k)}</div><div class="model-info"><code>${esc(v)}</code></div></div>`
+      ).join('');
+    }
+  } catch (e) {
+    document.getElementById('pipeline-grid').innerHTML = '<div style="color:var(--red);padding:10px">Error cargando pipeline: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  AGENTS
+// ════════════════════════════════════════════════════════════════
+async function loadAgents() {
+  const agents = [
+    { icon: '📄', name: 'Clasificador', type: 'CLASSIFY_MODEL', color: '#10b981', desc: 'Fast Path — clasificación documentos' },
+    { icon: '🧾', name: 'Extractor', type: 'EXTRACT_MODEL', color: '#06b6d4', desc: 'Fast Path — extracción ultra-rápida' },
+    { icon: '🧠', name: 'Orquestador', type: 'ORCHESTRATOR_MODEL', color: '#f59e0b', desc: 'Routing fast/deep por confianza' },
+    { icon: '⚖️', name: 'Legal', type: 'LEGAL_MODEL', color: '#a78bfa', desc: 'Deep Path — análisis legal' },
+    { icon: '🧾', name: 'Contabilidad', type: 'ACCOUNTING_MODEL', color: '#a78bfa', desc: 'Deep Path — análisis contable' },
+    { icon: '👤', name: 'RRHH', type: 'HR_MODEL', color: '#ec4899', desc: 'Deep Path — recursos humanos' },
+    { icon: '📊', name: 'Analytics', type: 'DEEP_MODEL', color: '#06b6d4', desc: 'Deep Path — análisis profundo' },
+  ];
+  document.getElementById('agents-grid').innerHTML = agents.map(a => renderAgentCard(a)).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MODEL TESTS
+// ════════════════════════════════════════════════════════════════
+async function testModel(type) {
+  const el = document.getElementById('test-result');
+  el.style.display = 'block';
+  el.textContent = '⏳ Enviando petición...';
+  try {
+    let res;
+    if (type === 'classify') {
+      res = await fetch('/api/ai/classify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'Esto es una factura de compra de materiales de construcción por valor de 1500€ del proveedor Juan Perez' })
+      });
+    } else if (type === 'chat') {
+      res = await fetch('/api/ai/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Hola, responde brevemente en español: ¿cuál es tu misión?' })
+      });
+    } else if (type === 'opencode') {
+      res = await fetch('/api/opencode', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: 'Escribe un hola mundo en Python' }] })
+      });
+    } else if (type === 'lmstudio') {
+      res = await fetch('/lmstudio/chat/completions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'deepseek/deepseek-r1-0528-qwen3-8b', messages: [{ role: 'user', content: 'Responde brevemente en español: ¿Cómo te llamas?' }], max_tokens: 200 })
+      });
+    }
+    const data = await res.json();
+    el.textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    el.textContent = '❌ Error: ' + e.message;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LOGS MODAL
+// ════════════════════════════════════════════════════════════════
+async function showLogs(title, url) {
+  document.getElementById('modal').classList.add('on');
+  document.getElementById('modal-title').textContent = '📋 ' + title;
+  document.getElementById('modal-log').textContent = 'Cargando...';
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    document.getElementById('modal-log').textContent = d.logs || d.output || JSON.stringify(d, null, 2);
+  } catch (e) { document.getElementById('modal-log').textContent = 'Error: ' + e.message; }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  QUICK REPAIR
+// ════════════════════════════════════════════════════════════════
+async function runQuickRepair(action) {
+  try {
+    const d = await adminApi('/api/admin/exec', {
+      method: 'POST',
+      body: JSON.stringify({ command: action })
+    });
+    addRepairLog(`${action}: ${d.stdout || d.error || 'OK'}`);
+  } catch (e) { addRepairLog(`${action}: ❌ ${e.message}`); }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  HERMES AGENT
+// ════════════════════════════════════════════════════════════════
+function hermesToggle() {
+  const btn = document.getElementById('hermes-connect');
+  if (hermesConn) {
+    if (hermesWs) { hermesWs.close(); hermesWs = null; }
+    hermesConn = false;
+    btn.textContent = '🔌 Conectar';
+    btn.className = 'btn btn-p';
+    document.getElementById('hermes-mc-badge').textContent = 'offline';
+    document.getElementById('hermes-mc-badge').className = 'badge stopped';
+    document.getElementById('hermes-chat-area').style.display = 'none';
+    document.getElementById('hermes-input-row').style.display = 'none';
+    return;
+  }
+  const model = document.getElementById('hermes-model-select').value;
+  const temp = parseFloat(document.getElementById('hermes-temperature').value);
+  const maxTokens = parseInt(document.getElementById('hermes-max-tokens').value);
+  const topP = parseFloat(document.getElementById('hermes-top-p').value);
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${proto}//${location.host}/ws/hermes?model=${encodeURIComponent(model)}&temperature=${temp}&max_tokens=${maxTokens}&top_p=${topP}&token=sinkia2026`;
+  hermesWs = new WebSocket(wsUrl);
+  btn.textContent = '⏳ Conectando…';
+  hermesWs.onopen = () => {
+    hermesConn = true;
+    btn.textContent = '🔌 Desconectar';
+    btn.className = 'btn btn-w';
+    document.getElementById('hermes-mc-badge').textContent = 'online';
+    document.getElementById('hermes-mc-badge').className = 'badge healthy';
+    document.getElementById('hermes-chat-area').style.display = 'block';
+    document.getElementById('hermes-input-row').style.display = 'flex';
+    document.getElementById('hermes-info').style.display = 'block';
+    document.getElementById('hermes-info').textContent = `Modelo: ${model} · temp: ${temp} · max_tokens: ${maxTokens} · top_p: ${topP}`;
+    document.getElementById('hermes-chat-area').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.8em">✓ Conectado a Hermes Agent</div>';
+  };
+  hermesWs.onmessage = (e) => {
+    const area = document.getElementById('hermes-chat-area');
+    try {
+      const d = JSON.parse(e.data);
+      const text = d.text || d.content || d.response || JSON.stringify(d);
+      area.innerHTML += `<div class="hermes-msg assistant"><b>🤖 Hermes:</b><br>${text.replace(/\n/g, '<br>')}</div>`;
+    } catch {
+      area.innerHTML += `<div class="hermes-msg error"><i>${esc(e.data)}</i></div>`;
+    }
+    area.scrollTop = area.scrollHeight;
+  };
+  hermesWs.onerror = () => {
+    hermesConn = false;
+    btn.textContent = '🔌 Conectar';
+    btn.className = 'btn btn-p';
+    document.getElementById('hermes-mc-badge').textContent = 'error';
+    document.getElementById('hermes-mc-badge').className = 'badge unhealthy';
+  };
+  hermesWs.onclose = () => {
+    hermesConn = false;
+    btn.textContent = '🔌 Conectar';
+    btn.className = 'btn btn-p';
+    document.getElementById('hermes-mc-badge').textContent = 'offline';
+    document.getElementById('hermes-mc-badge').className = 'badge stopped';
+  };
+}
+
+function hermesChatSend() {
+  if (!hermesConn || !hermesWs) return;
+  const inp = document.getElementById('hermes-in');
+  const text = inp.value.trim();
+  if (!text) return;
+  hermesWs.send(JSON.stringify({ message: text }));
+  document.getElementById('hermes-chat-area').innerHTML += `<div class="hermes-msg user"><b>👤 Tú:</b><br>${esc(text).replace(/\n/g, '<br>')}</div>`;
+  inp.value = '';
+  inp.style.height = 'auto';
+  document.getElementById('hermes-chat-area').scrollTop = document.getElementById('hermes-chat-area').scrollHeight;
+}
+
+function hermesReset() {
+  hermesConn = false;
+  if (hermesWs) { hermesWs.close(); hermesWs = null; }
+  document.getElementById('hermes-chat-area').style.display = 'none';
+  document.getElementById('hermes-input-row').style.display = 'none';
+  document.getElementById('hermes-connect').textContent = '🔌 Conectar';
+  document.getElementById('hermes-connect').className = 'btn btn-p';
+  document.getElementById('hermes-mc-badge').textContent = 'offline';
+  document.getElementById('hermes-mc-badge').className = 'badge stopped';
+}
+
+function hermesTest() {
+  const model = document.getElementById('hermes-model-select').value;
+  if (!model) { alert('Selecciona un modelo primero'); return; }
+  fetch('/api/hermes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: 'Hola, responde brevemente: ¿qué hora es?' }], stream: false, model })
+  }).then(r => r.json()).then(d => {
+    const area = document.getElementById('hermes-chat-area');
+    area.style.display = 'block';
+    area.innerHTML += `<div class="hermes-msg assistant"><b>🤖 Hermes (test):</b><br>${esc(d.text || d.response || JSON.stringify(d))}</div>`;
+  }).catch(e => {
+    document.getElementById('hermes-chat-area').style.display = 'block';
+    document.getElementById('hermes-chat-area').innerHTML += `<div class="hermes-msg error">Error: ${esc(e.message)}</div>`;
+  });
+}
+
+function hermesSaveConfig() {
+  const cfg = {
+    model: document.getElementById('hermes-model-select').value,
+    temperature: parseFloat(document.getElementById('hermes-temperature').value),
+    max_tokens: parseInt(document.getElementById('hermes-max-tokens').value),
+    top_p: parseFloat(document.getElementById('hermes-top-p').value)
+  };
+  localStorage.setItem('hermes-config', JSON.stringify(cfg));
+  showToast('Configuración guardada ✅');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  OPENCODE AGENT
+// ════════════════════════════════════════════════════════════════
+function opencodeToggle() {
+  const btn = document.getElementById('opencode-connect');
+  if (opencodeConn) {
+    if (opencodeWs) { opencodeWs.close(); opencodeWs = null; }
+    opencodeConn = false;
+    btn.textContent = '🔌 Conectar';
+    btn.className = 'btn btn-p';
+    document.getElementById('opencode-mc-badge').textContent = 'offline';
+    document.getElementById('opencode-mc-badge').className = 'badge stopped';
+    document.getElementById('opencode-chat-area').style.display = 'none';
+    document.getElementById('opencode-input-row').style.display = 'none';
+    return;
+  }
+  const model = document.getElementById('opencode-model-select').value;
+  const temp = parseFloat(document.getElementById('opencode-temperature').value);
+  const maxTokens = parseInt(document.getElementById('opencode-max-tokens').value);
+  const topP = parseFloat(document.getElementById('opencode-top-p')?.value || '0.9');
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const wsUrl = `${proto}//${location.host}/ws/opencode?model=${encodeURIComponent(model)}&temperature=${temp}&max_tokens=${maxTokens}&top_p=${topP}&token=sinkia2026`;
+  opencodeWs = new WebSocket(wsUrl);
+  btn.textContent = '⏳ Conectando…';
+  opencodeWs.onopen = () => {
+    opencodeConn = true;
+    btn.textContent = '🔌 Desconectar';
+    btn.className = 'btn btn-w';
+    document.getElementById('opencode-mc-badge').textContent = 'online';
+    document.getElementById('opencode-mc-badge').className = 'badge healthy';
+    document.getElementById('opencode-chat-area').style.display = 'block';
+    document.getElementById('opencode-input-row').style.display = 'flex';
+    document.getElementById('opencode-chat-area').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.8em">✓ Conectado a OpenCode Agent</div>';
+  };
+  opencodeWs.onmessage = (e) => {
+    const area = document.getElementById('opencode-chat-area');
+    try {
+      const d = JSON.parse(e.data);
+      const text = d.text || d.content || d.response || JSON.stringify(d);
+      area.innerHTML += `<div class="hermes-msg assistant"><b>💻 OpenCode:</b><br>${text.replace(/\n/g, '<br>')}</div>`;
+    } catch {
+      area.innerHTML += `<div class="hermes-msg error"><i>${esc(e.data)}</i></div>`;
+    }
+    area.scrollTop = area.scrollHeight;
+  };
+  opencodeWs.onerror = () => {
+    opencodeConn = false;
+    btn.textContent = '🔌 Conectar';
+    btn.className = 'btn btn-p';
+    document.getElementById('opencode-mc-badge').textContent = 'error';
+    document.getElementById('opencode-mc-badge').className = 'badge unhealthy';
+  };
+  opencodeWs.onclose = () => {
+    opencodeConn = false;
+    btn.textContent = '🔌 Conectar';
+    btn.className = 'btn btn-p';
+    document.getElementById('opencode-mc-badge').textContent = 'offline';
+    document.getElementById('opencode-mc-badge').className = 'badge stopped';
+  };
+}
+
+var opencodeConn = false, opencodeWs = null;
+
+function opencodeReset() {
+  opencodeConn = false;
+  if (opencodeWs) { opencodeWs.close(); opencodeWs = null; }
+  document.getElementById('opencode-chat-area').style.display = 'none';
+  document.getElementById('opencode-input-row').style.display = 'none';
+  document.getElementById('opencode-connect').textContent = '🔌 Conectar';
+  document.getElementById('opencode-connect').className = 'btn btn-p';
+  document.getElementById('opencode-mc-badge').textContent = 'offline';
+  document.getElementById('opencode-mc-badge').className = 'badge stopped';
+}
+
+function opencodeChatSend() {
+  if (!opencodeConn || !opencodeWs) return;
+  const inp = document.getElementById('opencode-in');
+  const text = inp.value.trim();
+  if (!text) return;
+  opencodeWs.send(JSON.stringify({ message: text }));
+  document.getElementById('opencode-chat-area').innerHTML += `<div class="hermes-msg user"><b>👤 Tú:</b><br>${esc(text).replace(/\n/g, '<br>')}</div>`;
+  inp.value = '';
+  inp.style.height = 'auto';
+  document.getElementById('opencode-chat-area').scrollTop = document.getElementById('opencode-chat-area').scrollHeight;
+}
+
+function opencodeTest() {
+  const model = document.getElementById('opencode-model-select').value;
+  if (!model) { alert('Selecciona un modelo primero'); return; }
+  fetch('/api/opencode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: 'Escribe un hola mundo en Python' }] })
+  }).then(r => r.json()).then(d => {
+    const area = document.getElementById('opencode-chat-area');
+    area.style.display = 'block';
+    area.innerHTML += `<div class="hermes-msg assistant"><b>💻 OpenCode (test):</b><br>${esc(d.text || d.content || JSON.stringify(d))}</div>`;
+  }).catch(e => {
+    document.getElementById('opencode-chat-area').style.display = 'block';
+    document.getElementById('opencode-chat-area').innerHTML += `<div class="hermes-msg error">Error: ${esc(e.message)}</div>`;
+  });
+}
+
+function opencodeSaveConfig() {
+  const cfg = {
+    model: document.getElementById('opencode-model-select').value,
+    temperature: parseFloat(document.getElementById('opencode-temperature').value),
+    max_tokens: parseInt(document.getElementById('opencode-max-tokens').value)
+  };
+  localStorage.setItem('opencode-config', JSON.stringify(cfg));
+  showToast('Configuración guardada ✅');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TERMINAL
+// ════════════════════════════════════════════════════════════════
+function initTerminal() {
+  if (term) return;
+  try {
+    term = new Terminal({
+      cursorBlink: true,
+      fontSize: 13,
+      fontFamily: "'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace",
+      theme: { background: '#060a14', foreground: '#e5e7eb', cursor: '#3b82f6', cursorAccent: '#060a14', selectionBackground: '#1e2d54' },
+      allowProposedApi: true,
+      scrollback: 10000
+    });
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal'));
+    fitAddon.fit();
+
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}/ws/terminal`);
+
+    document.getElementById('term-dot').className = 'dot green';
+    document.getElementById('term-status').textContent = 'Conectado';
+
+    ws.onopen = () => {
+      term.writeln('\r\n\x1b[32m✓ Conectado a terminal SynK-IA\x1b[0m\r\n');
+      term.writeln('\x1b[33mTip: Ctrl+C para copiar · Ctrl+V para pegar\x1b[0m\r\n');
+    };
+    ws.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.type === 'output') term.write(d.data);
+        if (d.type === 'exit') term.writeln('\r\n\x1b[31m✗ Sesión terminada\x1b[0m');
+      } catch {
+        // Raw data, write directly
+        term.write(e.data);
+      }
+    };
+    ws.onclose = () => {
+      term.writeln('\r\n\x1b[33m⚠ Conexión cerrada — recarga la página\x1b[0m');
+      document.getElementById('term-dot').className = 'dot red';
+      document.getElementById('term-status').textContent = 'Desconectado';
+    };
+    term.onData(data => {
+      if (ws?.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'input', data }));
+      }
+    });
+    window.addEventListener('resize', () => { try { fitAddon.fit(); } catch {} });
+  } catch (e) {
+    console.error('Terminal init error:', e);
+    document.getElementById('term-status').textContent = 'Error: ' + e.message;
+    document.getElementById('term-dot').className = 'dot red';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  REPAIR
+// ════════════════════════════════════════════════════════════════
+async function loadRepairActions() {
+  try {
+    const d = await api('/api/admin/repair/actions');
+    document.getElementById('repair-ops').innerHTML = d.actions.map(a => `
+      <div class="op" onclick="runRepair('${a.id}')">
+        <h4>${a.icon || '🔧'} ${esc(a.name)}</h4><code>${esc(a.id)}</code>
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('repair-ops').innerHTML = '<div style="color:var(--muted);padding:10px;font-size:.8em">Error cargando acciones</div>';
+  }
+}
+
+function addRepairLog(msg) {
+  const el = document.getElementById('repair-log');
+  const time = new Date().toLocaleTimeString('es-ES');
+  el.textContent = `[${time}] ${msg}\n` + el.textContent;
+}
+
+async function runRepair(action) {
+  const d = await adminApi('/api/admin/repair/' + action, { method: 'POST' });
+  addRepairLog(`${action}: ${d.ok ? '✅ OK' : '❌ ' + (d.error || 'Error')}`);
+  loadServices();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DYNAMIC MODEL LOADING
+// ════════════════════════════════════════════════════════════════
+let availableModels = { ollama: [], lmstudio: [], openrouter: [] };
+
+async function loadModels() {
+  try {
+    const res = await api('/api/ai/models');
+    if (!res.success) return;
+    availableModels = res.providers || { ollama: [], lmstudio: [], openrouter: [] };
+
+    ['hermes-model-select', 'opencode-model-select'].forEach(selId => {
+      const sel = document.getElementById(selId);
+      if (!sel) return;
+      sel.innerHTML = '';
+
+      const groups = [
+        { key: 'ollama', label: '🦙 Ollama' },
+        { key: 'lmstudio', label: '🧪 LM Studio' },
+        { key: 'openrouter', label: '☁️ OpenRouter' },
+      ];
+      for (const g of groups) {
+        if (availableModels[g.key]?.length) {
+          const grp = document.createElement('optgroup');
+          grp.label = g.label;
+          availableModels[g.key].forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m; opt.textContent = m;
+            grp.appendChild(opt);
+          });
+          sel.appendChild(grp);
+        }
+      }
+
+      // Restore saved selection
+      try {
+        const cfg = JSON.parse(localStorage.getItem(selId === 'hermes-model-select' ? 'hermes-config' : 'opencode-config'));
+        if (cfg?.model && sel.querySelector(`option[value="${cfg.model}"]`)) sel.value = cfg.model;
+      } catch {}
+    });
+  } catch (e) {
+    console.error('loadModels error:', e);
+  }
+}
+
+function getSelectedModel(selId) {
+  return document.getElementById(selId)?.value || null;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg || '✅ Copiado';
+  t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 2000);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════════
+loadServices();
+loadSystemMetrics();
+loadRepairActions();
+loadPipeline();
+loadModels();
+loadAgents();
+
+// Refresh intervals
+setInterval(loadServices, 60000);
+setInterval(loadSystemMetrics, 30000);
+setInterval(loadPipeline, 120000);
+setInterval(loadModels, 60000);
+
+</script>
+</body>
+</html>

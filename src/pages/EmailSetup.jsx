@@ -80,7 +80,7 @@ export default function EmailSetup() {
           <CardHeader className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-xl">
             <CardTitle className="flex items-center gap-3">
               <span className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center font-bold">3</span>
-              Configurar en Base44 (Dashboard)
+              Configurar el servicio
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 text-gray-300">

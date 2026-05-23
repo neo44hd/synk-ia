@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -48,7 +48,7 @@ export default function WorkerInterface() {
           setUser(JSON.parse(portalUser));
         } else {
           // Fallback a autenticación de sistema si no hay portal
-          const currentUser = await base44.auth.me();
+          const currentUser = await synkia.auth.me();
           if (currentUser) setUser(currentUser);
           else navigate(createPageUrl('PortalLogin'));
         }
@@ -94,7 +94,7 @@ export default function WorkerInterface() {
     queryKey: ['today-timesheet'],
     queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const timesheets = await base44.entities.Timesheet.list('-created_date', 10);
+      const timesheets = await synkia.entities.Timesheet.list('-created_date', 10);
       return timesheets.find(t => 
         t.date === today && 
         (t.user_id === user?.id || t.user_name === user?.full_name)
@@ -133,7 +133,7 @@ export default function WorkerInterface() {
         toast.warning("⚠️ No se pudo detectar ubicación. Se registrará sin GPS.");
       }
 
-      const res = await base44.functions.invoke('clockIn', coords);
+      const res = await synkia.functions.invoke('clockIn', coords);
       if (res.data.error) throw new Error(res.data.error);
       return res.data;
     },
@@ -160,7 +160,7 @@ export default function WorkerInterface() {
         console.warn("No se pudo obtener ubicación:", e);
       }
 
-      const res = await base44.functions.invoke('clockOut', {
+      const res = await synkia.functions.invoke('clockOut', {
         ...coords,
         timesheet_id: todayTimesheet.id
       });

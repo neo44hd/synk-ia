@@ -318,7 +318,7 @@ export default function CronSetup() {
                 <h3 className="font-bold text-lg text-white mb-2">¿Necesitas Ayuda?</h3>
                 <div className="space-y-2 text-gray-300 text-sm">
                   <p>
-                    <strong>No encuentras la opción Schedule:</strong> Contacta con soporte de Base44 en{' '}
+                    <strong>No encuentras la opción Schedule:</strong> Contacta con soporte en{' '}
                     <a href="mailto:support@chickenpalace.es" className="text-cyan-400 underline">support@chickenpalace.es</a>
                   </p>
                   <p>

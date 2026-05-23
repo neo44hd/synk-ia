@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════
-#  SINKIA — Stack IA Local completo
+#  SINKIA — Stack IA Local completo (v3 fusionado)
 #  Mac Mini M4 Pro · Apple Silicon (ARM64) · 24 GB RAM
 #
 #  Servicios:
@@ -7,12 +7,14 @@
 #    • Qdrant      → memoria vectorial / RAG             (puerto 6333)
 #    • Open WebUI  → interfaz principal del asistente   (puerto 3030)
 #    • n8n         → automatizaciones y subagentes       (puerto 5678)
+#    • Commerce TPV (sinkia-commerce-app)               (puerto 4400)
+#    • SynK-IA Frontend (mc)                            (puerto 3001)
 #
-#  Requisito: Ollama corriendo en el Mac (puerto 11434)
+#  Requisito: Ollama corriendo en el host (puerto 11434)
 #
-#  Arrancar:  docker compose up -d
-#  Parar:     docker compose down
-#  Logs:      docker compose logs -f [servicio]
+#  Arrancar:  docker compose -f docker-compose.yml up -d
+#  Parar:     docker compose -f docker-compose.yml down
+#  Logs:      docker compose -f docker-compose.yml logs -f [servicio]
 # ═══════════════════════════════════════════════════════════════════════════
 
 services:
@@ -26,8 +28,6 @@ services:
       - "8888:8080"
     volumes:
       - ./config/searxng:/etc/searxng:rw
-    environment:
-      - SEARXNG_BASE_URL=http://localhost:8888
     networks:
       - sinkia-net
     healthcheck:
@@ -49,10 +49,12 @@ services:
     networks:
       - sinkia-net
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:6333/healthz"]
+      # Qdrant image es distroless (sin wget/curl), así hacemos test TCP
+      test: ["CMD-SHELL", "echo > /dev/tcp/localhost/6333"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 10s
 
   # ── OPEN WEBUI — Interfaz principal del asistente IA ─────────────────────
   open-webui:
@@ -64,36 +66,30 @@ services:
     volumes:
       - openwebui_data:/app/backend/data
     environment:
-      # ── Ollama (modelo local)
+      # ── Ollama (modelo local del host)
       - OPENAI_API_BASE_URL=http://host.docker.internal:11434/v1
       - OPENAI_API_KEY=ollama
-
       # ── Búsqueda web vía SearXNG
       - ENABLE_RAG_WEB_SEARCH=true
       - RAG_WEB_SEARCH_ENGINE=searxng
       - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>&format=json&language=es
-
       # ── Memoria vectorial con Qdrant
       - VECTOR_DB=qdrant
       - QDRANT_URI=http://qdrant:6333
-
       # ── RAG / documentos
       - RAG_EMBEDDING_ENGINE=openai
       - RAG_EMBEDDING_MODEL=text-embedding-3-small
       - CHUNK_SIZE=1500
       - CHUNK_OVERLAP=150
-
       # ── Seguridad
       - WEBUI_SECRET_KEY=sinkia-openwebui-2026
       - ENABLE_SIGNUP=true
       - DEFAULT_USER_ROLE=admin
-
       # ── UI
       - WEBUI_NAME=Sinkia AI
       - DEFAULT_LOCALE=es
       - ENABLE_COMMUNITY_SHARING=false
       - ENABLE_MODEL_FILTER=false
-
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -120,32 +116,87 @@ services:
       - N8N_ENCRYPTION_KEY=sinkia-n8n-key-2026
       - GENERIC_TIMEZONE=Europe/Madrid
       - N8N_LOG_LEVEL=warn
-
       # ── IA: conecta con LiteLLM de Sinkia
       - N8N_AI_ENABLED=true
       - N8N_AI_PROVIDER=openai
       - N8N_AI_OPENAI_API_KEY=local
       - N8N_AI_OPENAI_BASE_URL=http://host.docker.internal:8082/v1
-
       # ── Desactivar telemetría
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_VERSION_NOTIFICATIONS_ENABLED=false
-
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - sinkia-net
 
-# ── Volúmenes persistentes ────────────────────────────────────────────────
+  # ── COMMERCE TPV — Punto de venta sinkia ─────────────────────────────────
+  commerce-app:
+    image: docker-app
+    container_name: sinkia-commerce-app
+    restart: unless-stopped
+    ports:
+      - "4400:4400"
+    networks:
+      - sinkia-net
+
+  commerce-db:
+    image: postgres:16-alpine
+    container_name: sinkia-commerce-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=sinkia
+      - POSTGRES_PASSWORD=sinkia
+      - POSTGRES_DB=commerce
+    volumes:
+      - commerce_db_data:/var/lib/postgresql/data
+    networks:
+      - sinkia-net
+
+  commerce-redis:
+    image: redis:7-alpine
+    container_name: sinkia-commerce-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - commerce_redis_data:/data
+    networks:
+      - sinkia-net
+
+  # ── SYNKIA FRONTEND — UI de Mission Control ──────────────────────────────
+  mc-frontend:
+    image: synkia-front:latest
+    container_name: synkia-app-frontend
+    build:
+      context: ../ui
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    networks:
+      - sinkia-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  Volúmenes persistentes
+# ═══════════════════════════════════════════════════════════════════════════
 volumes:
   qdrant_data:
-    driver: local
   openwebui_data:
-    driver: local
   n8n_data:
-    driver: local
+  commerce_db_data:
+  commerce_redis_data:
 
-# ── Red interna ───────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+#  Red interna
+# ═══════════════════════════════════════════════════════════════════════════
 networks:
   sinkia-net:
     driver: bridge

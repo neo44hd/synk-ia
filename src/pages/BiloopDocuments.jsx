@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ export default function BiloopDocuments() {
   const { data: biloopDocs, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['biloop-documents', dateFrom, dateTo, searchProvider],
     queryFn: async () => {
-      const response = await base44.functions.invoke('biloopGetDocuments', {
+      const response = await synkia.functions.invoke('biloopGetDocuments', {
         date_from: dateFrom,
         date_to: dateTo,
         provider: searchProvider || undefined
@@ -67,7 +67,7 @@ export default function BiloopDocuments() {
   // Obtener facturas locales para sincronizar
   const { data: localInvoices } = useQuery({
     queryKey: ['local-invoices'],
-    queryFn: () => base44.entities.Invoice.list('-created_date', 100),
+    queryFn: () => synkia.entities.Invoice.list('-created_date', 100),
     initialData: []
   });
 
@@ -81,7 +81,7 @@ export default function BiloopDocuments() {
       setPdfData(doc.pdf_url);
     } else {
       try {
-        const response = await base44.functions.invoke('biloopDownloadPdf', {
+        const response = await synkia.functions.invoke('biloopDownloadPdf', {
           biloop_id: doc.id
         });
         if (response.data?.pdf_base64) {
@@ -112,7 +112,7 @@ export default function BiloopDocuments() {
         });
       }
 
-      const response = await base44.functions.invoke('biloopUploadInvoice', {
+      const response = await synkia.functions.invoke('biloopUploadInvoice', {
         invoice_number: invoice.invoice_number,
         provider_name: invoice.provider_name,
         provider_cif: invoice.provider_cif || '',
@@ -151,7 +151,7 @@ export default function BiloopDocuments() {
         return;
       }
 
-      await base44.entities.Invoice.create({
+      await synkia.entities.Invoice.create({
         invoice_number: doc.invoice_number,
         provider_name: doc.provider_name,
         invoice_date: doc.date,

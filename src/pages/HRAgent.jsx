@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,7 +43,7 @@ export default function HRAgent() {
 
   const loadUserData = async () => {
     try {
-      const user = await base44.auth.me();
+      const user = await synkia.auth.me();
       setCurrentUser(user);
       
       // Cargar datos de nómina del usuario
@@ -59,7 +59,7 @@ export default function HRAgent() {
 
   const initConversation = async () => {
     try {
-      const newConversation = await base44.agents.createConversation({
+      const newConversation = await synkia.agents.createConversation({
         agent_name: "hr_assistant",
         metadata: {
           name: "Chat con RRHH",
@@ -69,7 +69,7 @@ export default function HRAgent() {
       setConversation(newConversation);
       setMessages(newConversation.messages || []);
 
-      base44.agents.subscribeToConversation(newConversation.id, (data) => {
+      synkia.agents.subscribeToConversation(newConversation.id, (data) => {
         setMessages(data.messages || []);
       });
     } catch (error) {
@@ -95,7 +95,7 @@ export default function HRAgent() {
         }
       }
 
-      await base44.agents.addMessage(conversation, {
+      await synkia.agents.addMessage(conversation, {
         role: "user",
         content: messageContent
       });
@@ -122,7 +122,7 @@ export default function HRAgent() {
     }
   ];
 
-  const whatsappURL = base44.agents.getWhatsAppConnectURL('hr_assistant');
+  const whatsappURL = synkia.agents.getWhatsAppConnectURL('hr_assistant');
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-pink-50 to-purple-50">

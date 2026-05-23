@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ export default function Staff() {
 
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees'],
-    queryFn: () => base44.entities.Employee.list('-created_date', 500),
+    queryFn: () => synkia.entities.Employee.list('-created_date', 500),
     staleTime: 30000,
   });
 
@@ -51,14 +51,14 @@ export default function Staff() {
   
   const generatePin = async (employee) => {
     const pin = Math.floor(1000 + Math.random() * 9000).toString();
-    await base44.entities.Employee.update(employee.id, { access_pin: pin });
+    await synkia.entities.Employee.update(employee.id, { access_pin: pin });
     queryClient.invalidateQueries({ queryKey: ['employees'] });
     toast.success(`PIN generado para ${employee.full_name}: ${pin}`);
   };
 
   const generateMagicToken = async (employee) => {
     const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    await base44.entities.Employee.update(employee.id, { magic_token: token });
+    await synkia.entities.Employee.update(employee.id, { magic_token: token });
     queryClient.invalidateQueries({ queryKey: ['employees'] });
     return token;
   };
@@ -134,7 +134,7 @@ export default function Staff() {
                   if (!confirm('⚠️ Esto sincronizará todas las nóminas del Archivo Global con cada ficha de empleado. ¿Continuar?')) return;
                   const toastId = toast.loading('🔄 Sincronizando nóminas...');
                   try {
-                    const res = await base44.functions.invoke('syncPayrollsToEmployees');
+                    const res = await synkia.functions.invoke('syncPayrollsToEmployees');
                     if (res.data.success) {
                       toast.success(res.data.message, { id: toastId });
                       queryClient.invalidateQueries({ queryKey: ['employees'] });
@@ -155,7 +155,7 @@ export default function Staff() {
                   if (!confirm('⚠️ Esto unificará todos los empleados duplicados en fichas únicas. ¿Continuar?')) return;
                   const toastId = toast.loading('🔄 Unificando empleados duplicados...');
                   try {
-                    const res = await base44.functions.invoke('mergeEmployeeDuplicates');
+                    const res = await synkia.functions.invoke('mergeEmployeeDuplicates');
                     if (res.data.success) {
                       toast.success(res.data.message, { id: toastId });
                       queryClient.invalidateQueries({ queryKey: ['employees'] });

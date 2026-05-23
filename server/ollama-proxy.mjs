@@ -10,35 +10,32 @@ const PORT = parseInt(process.env.OLLAMA_PROXY_PORT || '11435');
 const THINK = process.env.OLLAMA_THINK === 'true';
 
 // ── Modelo por defecto según cliente ────────────────────────────────────
-const DEFAULT_MODEL = process.env.OLLAMA_DEFAULT_MODEL || 'qwen3.5:latest';
+const DEFAULT_MODEL = process.env.OLLAMA_DEFAULT_MODEL || 'harmonic-hermes-9b:latest';
 
 // ── Mapeo de modelos (nombres OpenAI → modelos Ollama locales) ──────────
+// Solo modelos instalados en Ollama: harmonic-hermes-9b, qwen2.5-coder, glm-ocr
 const MODEL_MAP = {
   // Claude Code / Aider
-  'claude-3-5-sonnet-20241022': 'qwen3.5:latest',
-  'claude-3-5-sonnet': 'qwen3.5:latest',
-  'claude-3-opus': 'gemma4:26b',
-  'claude-3-haiku': 'phi4-mini:latest',
-  
+  'claude-3-5-sonnet-20241022': process.env.OLLAMA_DEFAULT_MODEL || 'harmonic-hermes-9b:latest',
+  'claude-3-5-sonnet':          process.env.OLLAMA_DEFAULT_MODEL || 'harmonic-hermes-9b:latest',
+
   // OpenAI compat
-  'gpt-4': 'qwen3.5:latest',
-  'gpt-4o': 'qwen3.5:latest',
-  'gpt-4o-mini': 'phi4-mini:latest',
-  'gpt-3.5-turbo': 'phi4-mini:latest',
-  
-  // OpenClaw
+  'gpt-4':      process.env.OLLAMA_DEFAULT_MODEL || 'harmonic-hermes-9b:latest',
+  'gpt-4o':     process.env.OLLAMA_DEFAULT_MODEL || 'harmonic-hermes-9b:latest',
+  'gpt-4o-mini': process.env.OLLAMA_DEFAULT_MODEL || 'harmonic-hermes-9b:latest',
+  'gpt-3.5-turbo': 'qwen2.5-coder:0.5b-instruct',
+
+  // OpenClaw / function calling
   'functiongemma': 'functiongemma:latest',
-  'codegemma': 'codegemma:7b',
-  'qwen3.5': 'qwen3.5:latest',
-  
+  'codegemma':     'codegemma:7b',
+  'qwen3.5':       'harmonic-hermes-9b:latest',
+
   // Directos (pass-through si el modelo existe en Ollama)
-  'gemma4:26b': 'gemma4:26b',
-  'gemma4:e4b': 'gemma4:e4b',
-  'phi4:14b': 'phi4:14b',
-  'phi4-mini': 'phi4-mini:latest',
-  'deepseek-r1:14b': 'deepseek-r1:14b',
-  'qwen2.5-coder:14b': 'qwen2.5-coder:14b',
-  'llama3.2-vision:11b': 'llama3.2-vision:11b',
+  'qwen36-tools:latest':            'harmonic-hermes-9b:latest',
+  'harmonic-hermes-9b:latest':     'harmonic-hermes-9b:latest',
+  'qwen2.5-coder:0.5b-instruct':   'qwen2.5-coder:0.5b-instruct',
+  'glm-ocr:latest':                 'glm-ocr:latest',
+  'codegemma:7b':                   'codegemma:7b',
 };
 
 function mapModel(requested) {
@@ -223,7 +220,7 @@ const server = http.createServer(async (req, res) => {
       options: {
         temperature: body.temperature ?? 0.7,
         top_p: body.top_p ?? 0.9,
-        num_predict: body.max_tokens || body.max_completion_tokens || 4096,
+        num_predict: body.max_tokens || body.max_completion_tokens || 2048,
       },
       _requestedModel: requestedModel,
     };

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ export default function PortalLogin() {
   const handleMagicLogin = async (token) => {
     setIsLoading(true);
     try {
-      const response = await base44.functions.invoke('employeeAuth', { token });
+      const response = await synkia.functions.invoke('employeeAuth', { token });
       
       if (response.data.success) {
         localStorage.setItem('portal_employee', JSON.stringify(response.data.employee));
@@ -47,7 +47,7 @@ export default function PortalLogin() {
     setIsLoading(true);
 
     try {
-      const response = await base44.functions.invoke('employeeAuth', {
+      const response = await synkia.functions.invoke('employeeAuth', {
         identifier,
         pin
       });

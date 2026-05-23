@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -37,32 +37,32 @@ export default function SystemOverview() {
   // Datos locales
   const { data: employees = [] } = useQuery({
     queryKey: ['revoEmployees'],
-    queryFn: () => base44.entities.RevoEmployee.list()
+    queryFn: () => synkia.entities.RevoEmployee.list()
   });
 
   const { data: menuItems = [] } = useQuery({
     queryKey: ['menuItems'],
-    queryFn: () => base44.entities.MenuItem.list()
+    queryFn: () => synkia.entities.MenuItem.list()
   });
 
   const { data: sales = [] } = useQuery({
     queryKey: ['sales'],
-    queryFn: () => base44.entities.Sale.list('-sale_date', 100)
+    queryFn: () => synkia.entities.Sale.list('-sale_date', 100)
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list('-invoice_date', 100)
+    queryFn: () => synkia.entities.Invoice.list('-invoice_date', 100)
   });
 
   const { data: providers = [] } = useQuery({
     queryKey: ['providers'],
-    queryFn: () => base44.entities.Provider.list()
+    queryFn: () => synkia.entities.Provider.list()
   });
 
   const { data: webSyncs = [] } = useQuery({
     queryKey: ['webSyncs'],
-    queryFn: () => base44.entities.WebSync.list('-sync_date', 10)
+    queryFn: () => synkia.entities.WebSync.list('-sync_date', 10)
   });
 
   // Escaneo completo del sistema
@@ -71,7 +71,7 @@ export default function SystemOverview() {
     toast.info('🔍 Escaneando todos los sistemas...');
 
     try {
-      const response = await base44.functions.invoke('systemFullScan');
+      const response = await synkia.functions.invoke('systemFullScan');
       setSystemStatus(response.data);
       setLastScan(new Date());
       

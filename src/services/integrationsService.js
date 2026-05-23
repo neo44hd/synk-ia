@@ -293,7 +293,7 @@ export async function ClassifyEmail({ subject, body, from }) {
   return data.classification;
 }
 
-// Namespace compatible con base44
+// Namespace compatible con synkia
 export const AI = { GetChatResponse };
 export const Core = { UploadFile, ExtractDataFromUploadedFile, InvokeLLM, UploadPrivateFile: UploadFile };
 

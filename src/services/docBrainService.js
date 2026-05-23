@@ -9,7 +9,7 @@
  */
 
 import { invoiceExtractor, DOCUMENT_TYPES } from './invoiceExtractorService';
-import { base44 } from '@/api/base44Client';
+import { synkia } from '@/api/synkiaClient';
 
 // ==========================================
 // CONSTANTES Y CONFIGURACION
@@ -330,7 +330,7 @@ class DocBrainService {
     }
 
     try {
-      const existingProviders = await base44.entities.Provider.list();
+      const existingProviders = await synkia.entities.Provider.list();
 
       let found = null;
       if (providerCIF) {
@@ -358,7 +358,7 @@ class DocBrainService {
       }
 
       if (classification.section === 'proveedores' || classification.docType === 'factura') {
-        const newProvider = await base44.entities.Provider.create({
+        const newProvider = await synkia.entities.Provider.create({
           name: providerName || 'Proveedor ' + (providerCIF || 'Nuevo'),
           company_name: providerName,
           cif: providerCIF || '',
@@ -489,7 +489,7 @@ class DocBrainService {
 
   async _createInvoiceRecord(result) {
     try {
-      await base44.entities.Invoice.create({
+      await synkia.entities.Invoice.create({
         invoice_number: result.extracted?.invoiceNumber?.value || result.id,
         provider_name: result.extracted?.provider?.name?.value || 'Desconocido',
         provider_id: result.entity?.id,

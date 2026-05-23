@@ -18,7 +18,7 @@ const router = Router();
 const HOME_DIR     = process.env.HOME || '/Users/davidnows';
 const AIDER_BIN    = process.env.AIDER_BIN || `${HOME_DIR}/.local/bin/aider`;
 const OLLAMA_URL   = process.env.OLLAMA_URL || 'http://localhost:11434';
-const AIDER_MODEL  = process.env.AIDER_MODEL || 'ollama/qwen2.5-coder:14b';
+const AIDER_MODEL  = process.env.AIDER_MODEL || 'ollama/harmonic-hermes-9b:latest';
 const PROJECT_DIR  = process.env.AIDER_PROJECT_DIR || process.env.SINKIA_DIR || '/Users/davidnows/sinkia';
 
 // ── POST /api/aider — enviar mensaje a Aider ─────────────────────────────────

@@ -1,5 +1,5 @@
 import React from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -43,32 +43,32 @@ import LiveAttendance from '@/components/dashboard/LiveAttendance';
 export default function Dashboard() {
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list('-invoice_date', 200),
+    queryFn: () => synkia.entities.Invoice.list('-invoice_date', 200),
     staleTime: 30000,
   });
   const { data: providers = [] } = useQuery({
     queryKey: ['providers'],
-    queryFn: () => base44.entities.Provider.list('-created_date', 100),
+    queryFn: () => synkia.entities.Provider.list('-created_date', 100),
     staleTime: 60000,
   });
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
-    queryFn: () => base44.entities.Product.list('-total_spent', 100),
+    queryFn: () => synkia.entities.Product.list('-total_spent', 100),
     staleTime: 60000,
   });
   const { data: salesInvoices = [] } = useQuery({
     queryKey: ['sales-invoices'],
-    queryFn: () => base44.entities.SalesInvoice.list('-invoice_date', 200),
+    queryFn: () => synkia.entities.SalesInvoice.list('-invoice_date', 200),
     staleTime: 30000,
   });
   const { data: orders = [] } = useQuery({
     queryKey: ['orders-dashboard'],
-    queryFn: () => base44.entities.Order.list('-order_date', 50),
+    queryFn: () => synkia.entities.Order.list('-order_date', 50),
     staleTime: 10000,
   });
   const { data: sales = [] } = useQuery({
     queryKey: ['sales-dashboard'],
-    queryFn: () => base44.entities.Sale.list('-sale_date', 100),
+    queryFn: () => synkia.entities.Sale.list('-sale_date', 100),
     staleTime: 30000,
   });
 

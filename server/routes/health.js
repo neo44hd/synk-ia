@@ -90,23 +90,66 @@ healthRouter.get('/', async (_req, res) => {
     },
   };
 
+  // ── Triple provider health check ──
+  const getHealthModel = () => process.env.CHAT_MODEL || process.env.OPCODE_MODEL || process.env.OLLAMA_MODEL || 'negentropy-claude-opus-4.7-9b';
+
   try {
-    const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
-    const r = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(3000) });
-    if (r.ok) {
-      const data = await r.json();
-      const models = (data.models || []).map(m => m.name);
-      status.services.ai = {
-        ready:  true,
-        engine: 'ollama',
-        model:  process.env.OLLAMA_MODEL || 'qwen3.5',
-        models,
-      };
-    } else {
-      status.services.ai = { ready: false, engine: 'ollama', error: `HTTP ${r.status}` };
+    const [ollamaRes, lmstudioRes, openrouterRes] = await Promise.allSettled([
+      fetch(process.env.OLLAMA_URL + '/api/tags', { signal: AbortSignal.timeout(3000) }),
+      fetch((process.env.LMSTUDIO_URL || 'http://localhost:1234/v1') + '/models', { signal: AbortSignal.timeout(3000) }),
+      fetch((process.env.OPENROUTER_URL || 'https://openrouter.ai/api/v1') + '/models', { signal: AbortSignal.timeout(5000) }),
+    ]);
+
+    const ollamaOk    = ollamaRes.status === 'fulfilled' && ollamaRes.value?.ok;
+    const lmstudioOk  = lmstudioRes.status === 'fulfilled' && lmstudioRes.value?.ok;
+    const openrouterOk = openrouterRes.status === 'fulfilled' && openrouterRes.value?.ok;
+
+    let allModels = [];
+    if (ollamaOk) {
+      try { allModels = [...allModels, ...((await ollamaRes.value.json()).models || []).map(m => ({ name: m.name, provider: 'ollama' }))]; } catch {}
     }
+    if (lmstudioOk) {
+      try { allModels = [...allModels, ...((await lmstudioRes.value.json()).data || []).map(m => ({ name: m.id || m.model, provider: 'lmstudio' }))]; } catch {}
+    }
+    if (openrouterOk) {
+      try { allModels = [...allModels, ...((await openrouterRes.value.json()).data || []).map(m => ({ name: m.id || m.model, provider: 'openrouter' }))]; } catch {}
+    }
+
+    const providers = {
+      ollama: ollamaOk,
+      lmstudio: lmstudioOk,
+      openrouter: openrouterOk,
+    };
+
+    const engine = (ollamaOk && lmstudioOk && openrouterOk) ? 'triple'
+                 : (ollamaOk && lmstudioOk) ? 'dual'
+                 : 'ollama';
+
+    status.services.ai = {
+      ready: true,
+      engine,
+      model: getHealthModel(),
+      models: allModels,
+      providers,
+    };
   } catch (err) {
-    status.services.ai = { ready: false, engine: 'ollama', error: err.message };
+    try {
+      const r = await fetch(process.env.OLLAMA_URL + '/api/tags', { signal: AbortSignal.timeout(3000) });
+      if (r.ok) {
+        const data = await r.json();
+        status.services.ai = {
+          ready: true,
+          engine: 'ollama',
+          model: getHealthModel(),
+          models: (data.models || []).map(m => ({ name: m.name, provider: 'ollama' })),
+          providers: { ollama: true, lmstudio: false, openrouter: false },
+        };
+      } else {
+        status.services.ai = { ready: false, engine: 'ollama', error: `HTTP ${r.status}` };
+      }
+    } catch (e) {
+      status.services.ai = { ready: false, engine: 'none', error: e.message };
+    }
   }
 
   res.json(status);
@@ -177,7 +220,7 @@ healthRouter.get('/ai', async (_req, res) => {
       ready:   true,
       engine:  'ollama',
       url:     ollamaUrl,
-      active_model: process.env.OLLAMA_MODEL || 'qwen3.5',
+      active_model: process.env.OLLAMA_MODEL || process.env.CHAT_MODEL || 'harmonic-hermes-9b:latest',
       models,
     });
   } catch (err) {
@@ -195,6 +238,6 @@ healthRouter.get('/config', (_req, res) => {
     REVO_TOKEN_LARGO:        process.env.REVO_TOKEN_LARGO         ? '***configured***' : 'NOT SET',
     ESEECLOUD_USERNAME:      process.env.ESEECLOUD_USERNAME        ? '***configured***' : 'NOT SET',
     OLLAMA_URL:              process.env.OLLAMA_URL               || 'http://localhost:11434',
-    OLLAMA_MODEL:            process.env.OLLAMA_MODEL             || 'qwen3.5',
+    OLLAMA_MODEL:            process.env.OLLAMA_MODEL || 'harmonic-hermes-9b:latest',
   });
 });

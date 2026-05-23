@@ -32,7 +32,7 @@ import {
 import { Button } from "@/components/ui/button";
 import NotificationBell from "@/components/NotificationBell";
 import { BackgroundTasksProvider, BackgroundTasksIndicator } from "@/components/BackgroundTasksManager";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 
 // Navegación Minimalista "Zen"
 const navItems = [
@@ -207,7 +207,7 @@ export default function Layout({ children }) {
                       <Settings className="w-4 h-4 mr-2" /> Automatización
                     </DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-zinc-800" />
-                    <DropdownMenuItem onClick={() => base44.auth.logout()} className="text-red-400 hover:bg-zinc-800 cursor-pointer">
+                    <DropdownMenuItem onClick={() => synkia.auth.logout()} className="text-red-400 hover:bg-zinc-800 cursor-pointer">
                       <LogOut className="w-4 h-4 mr-2" /> Cerrar sesión
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -260,7 +260,7 @@ export default function Layout({ children }) {
                 })}
                 <div className="px-6 pt-6 mt-2">
                   <Button
-                    onClick={() => base44.auth.logout()}
+                    onClick={() => synkia.auth.logout()}
                     variant="outline"
                     className="w-full border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-500/50 hover:bg-red-500/10"
                   >

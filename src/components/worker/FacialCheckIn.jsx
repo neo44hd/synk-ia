@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,20 +28,20 @@ export default function FacialCheckIn({ user }) {
   const checkInMutation = useMutation({
     mutationFn: async (data) => {
       const today = new Date().toISOString().split('T')[0];
-      const existing = await base44.entities.Timesheet.filter({
+      const existing = await synkia.entities.Timesheet.filter({
         user_id: user.id,
         date: today
       });
 
       if (existing.length > 0 && !existing[0].check_out) {
-        return base44.entities.Timesheet.update(existing[0].id, {
+        return synkia.entities.Timesheet.update(existing[0].id, {
           check_out: new Date().toTimeString().split(' ')[0],
           total_hours: calculateHours(existing[0].check_in, new Date().toTimeString().split(' ')[0]),
           status: 'completo',
           ...data
         });
       } else {
-        return base44.entities.Timesheet.create({
+        return synkia.entities.Timesheet.create({
           user_id: user.id,
           user_name: user.full_name,
           date: today,
@@ -114,10 +114,10 @@ export default function FacialCheckIn({ user }) {
       const blob = await fetch(imageData).then(r => r.blob());
       const file = new File([blob], 'facial_capture.jpg', { type: 'image/jpeg' });
       
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await synkia.integrations.Core.UploadFile({ file });
 
       // Análisis con IA
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await synkia.integrations.Core.InvokeLLM({
         prompt: `Analiza esta foto de fichaje de empleado. ¿Hay una cara visible? ¿Parece una foto legítima (no una pantalla o impresión)? Responde con análisis básico.`,
         file_urls: [file_url],
         response_json_schema: {

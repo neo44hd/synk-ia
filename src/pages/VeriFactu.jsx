@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,13 +43,13 @@ export default function VeriFactu() {
 
   const { data: config = [] } = useQuery({
     queryKey: ['verifactu-config'],
-    queryFn: () => base44.entities.VeriFactu.list(),
+    queryFn: () => synkia.entities.VeriFactu.list(),
     initialData: [],
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list('-created_date', 100),
+    queryFn: () => synkia.entities.Invoice.list('-created_date', 100),
     initialData: [],
   });
 
@@ -65,9 +65,9 @@ export default function VeriFactu() {
   const updateConfigMutation = useMutation({
     mutationFn: (data) => {
       if (currentConfig.id) {
-        return base44.entities.VeriFactu.update(currentConfig.id, data);
+        return synkia.entities.VeriFactu.update(currentConfig.id, data);
       } else {
-        return base44.entities.VeriFactu.create(data);
+        return synkia.entities.VeriFactu.create(data);
       }
     },
     onSuccess: () => {
@@ -85,7 +85,7 @@ export default function VeriFactu() {
 
     try {
       // 1. Subir certificado
-      const { file_url } = await base44.integrations.Core.UploadPrivateFile({ file: certificateFile });
+      const { file_url } = await synkia.integrations.Core.UploadPrivateFile({ file: certificateFile });
 
       // 2. Generar hash inicial
       const initialHash = await generateHash('INITIAL-HASH-' + Date.now());
@@ -156,7 +156,7 @@ export default function VeriFactu() {
         const qrData = `VF:${invoice.invoice_number}:${currentHash.substring(0, 16)}`;
         
         // Actualizar factura
-        await base44.entities.Invoice.update(invoice.id, {
+        await synkia.entities.Invoice.update(invoice.id, {
           verifactu_hash: currentHash,
           verifactu_previous_hash: previousHash,
           verifactu_sequence_number: sequence,

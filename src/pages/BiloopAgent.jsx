@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,7 +41,7 @@ export default function BiloopAgent() {
 
   const initConversation = async () => {
     try {
-      const newConversation = await base44.agents.createConversation({
+      const newConversation = await synkia.agents.createConversation({
         agent_name: "biloop_assistant",
         metadata: {
           name: "Chat con SYNK-IA",
@@ -52,7 +52,7 @@ export default function BiloopAgent() {
       setMessages(newConversation.messages || []);
 
       // Suscribirse a actualizaciones
-      base44.agents.subscribeToConversation(newConversation.id, (data) => {
+      synkia.agents.subscribeToConversation(newConversation.id, (data) => {
         setMessages(data.messages || []);
       });
     } catch (error) {
@@ -77,7 +77,7 @@ export default function BiloopAgent() {
         messageContent = `${userMessage}\n\n[Contexto de Facturas]\n${JSON.stringify(enriched.context, null, 2)}`;
       }
 
-      await base44.agents.addMessage(conversation, {
+      await synkia.agents.addMessage(conversation, {
         role: "user",
         content: messageContent
       });
@@ -109,7 +109,7 @@ export default function BiloopAgent() {
 
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await synkia.integrations.Core.UploadFile({ file });
       
       // Procesar archivo con el servicio
       const processingResult = await BiloopAgentService.processBiloopFile(file_url, file.name);
@@ -119,7 +119,7 @@ export default function BiloopAgent() {
         message += `\n\nArchivo procesado exitosamente:\n- Tipo: ${processingResult.fileType}\n- Facturas detectadas: ${processingResult.invoices?.length || 0}`;
       }
       
-      await base44.agents.addMessage(conversation, {
+      await synkia.agents.addMessage(conversation, {
         role: "user",
         content: message,
         file_urls: [file_url]
@@ -153,7 +153,7 @@ export default function BiloopAgent() {
     }
   ];
 
-  const whatsappURL = base44.agents.getWhatsAppConnectURL('biloop_assistant');
+  const whatsappURL = synkia.agents.getWhatsAppConnectURL('biloop_assistant');
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50">

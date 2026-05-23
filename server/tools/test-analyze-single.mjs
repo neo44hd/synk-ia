@@ -21,16 +21,16 @@ const text = (doc.extraction?.text || '').substring(0, 3000); // Only first 3000
 
 console.log(`Doc: ${doc.original_name}`);
 console.log(`Text (first 200): ${text.substring(0, 200)}`);
-console.log(`\n--- Calling qwen3.5 ---\n`);
+console.log(`\n--- Calling harmonic-hermes-9b ---\n`);
 
 const res = await fetch(`${OLLAMA_URL}/api/chat`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    model: 'qwen3.5',
+    model: 'harmonic-hermes-9b:latest',
     stream: false,
     think: false,
-    options: { num_predict: 2000, temperature: 0.05 },
+    options: { num_predict: 1500, temperature: 0.05 },
     messages: [
       { role: 'system', content: 'Eres un clasificador de documentos. Responde SOLO con JSON válido. El JSON debe tener esta estructura exacta: {"tipo": "factura_recibida", "confianza": 0.95, "emisor": {"nombre": "..."}, "importes": {"total": 100, "moneda": "EUR"}, "resumen": "..."}' },
       { role: 'user', content: `Clasifica este documento:\n${text}\n\nIMPORTANTE: Responde ÚNICAMENTE con JSON. Tu respuesta debe empezar con { y terminar con }.` }

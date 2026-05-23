@@ -1,6 +1,6 @@
 // v4 — render defensivo contra {value,confidence}
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ export default function Invoices() {
   const { data: invoices = [], isLoading } = useQuery({
     queryKey: ['invoices', filterStatus],
     queryFn: async () => {
-      const allInvoices = await base44.entities.Invoice.list('-created_date');
+      const allInvoices = await synkia.entities.Invoice.list('-created_date');
       if (filterStatus === 'all') return allInvoices;
       return allInvoices.filter(inv => inv.status === filterStatus);
     },
@@ -63,12 +63,12 @@ export default function Invoices() {
 
   const { data: providers = [] } = useQuery({
     queryKey: ['providers'],
-    queryFn: () => base44.entities.Provider.list(),
+    queryFn: () => synkia.entities.Provider.list(),
     initialData: [],
   });
 
   const createInvoiceMutation = useMutation({
-    mutationFn: (data) => base44.entities.Invoice.create(data),
+    mutationFn: (data) => synkia.entities.Invoice.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Factura guardada correctamente');
@@ -240,7 +240,7 @@ ${text.substring(0, 6000)}`;
 
     try {
       // 1. Upload
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await synkia.integrations.Core.UploadFile({ file });
       setUploadProgress(15);
       setProcessStatus('Extrayendo texto del PDF...');
 
@@ -288,7 +288,7 @@ ${text.substring(0, 6000)}`;
         setProcessStatus(`Analizando ${validPages.length} páginas con IA...`);
         const results = await Promise.all(
           validPages.map(pt =>
-            base44.integrations.Core.InvokeLLM({ prompt: buildPrompt(pt) })
+            synkia.integrations.Core.InvokeLLM({ prompt: buildPrompt(pt) })
               .then(r => parseInvoices(r))
               .catch(() => [])
           )
@@ -304,7 +304,7 @@ ${text.substring(0, 6000)}`;
       } else {
         // ─── Página única o PDF digital: una sola llamada ─────────
         setProcessStatus('Analizando facturas con IA...');
-        const rawResponse = await base44.integrations.Core.InvokeLLM({
+        const rawResponse = await synkia.integrations.Core.InvokeLLM({
           prompt: buildPrompt(pdfText),
         });
         invoiceList = parseInvoices(rawResponse);
@@ -320,7 +320,7 @@ ${text.substring(0, 6000)}`;
       setProcessStatus(`Guardando ${invoiceList.length} factura${invoiceList.length > 1 ? 's' : ''}...`);
 
       // 5. Auto-crear proveedores + guardar facturas
-      const existingProviders = await base44.entities.Provider.list();
+      const existingProviders = await synkia.entities.Provider.list();
       let saved = 0;
 
       for (let i = 0; i < invoiceList.length; i++) {
@@ -337,7 +337,7 @@ ${text.substring(0, 6000)}`;
           );
           if (!exists) {
             try {
-              const np = await base44.entities.Provider.create({
+              const np = await synkia.entities.Provider.create({
                 name:     provName,
                 cif:      strVal(inv.provider_cif) || '',
                 category: strVal(inv.category) || 'suministros',
@@ -350,7 +350,7 @@ ${text.substring(0, 6000)}`;
         }
 
         try {
-          await base44.entities.Invoice.create({
+          await synkia.entities.Invoice.create({
             provider_name:  provName || 'Sin proveedor',
             provider_cif:   strVal(inv.provider_cif) || '',
             invoice_number: strVal(inv.invoice_number) || `AUTO-${Date.now()}-${i}`,

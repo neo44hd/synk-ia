@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,19 +26,19 @@ export default function RevoSync() {
 
   const { data: sales = [] } = useQuery({
     queryKey: ['sales'],
-    queryFn: () => base44.entities.Sale.list('-sale_date', 50),
+    queryFn: () => synkia.entities.Sale.list('-sale_date', 50),
     initialData: [],
   });
 
   const { data: menuItems = [] } = useQuery({
     queryKey: ['menu-items'],
-    queryFn: () => base44.entities.MenuItem.list(),
+    queryFn: () => synkia.entities.MenuItem.list(),
     initialData: [],
   });
 
   const { data: revoEmployees = [] } = useQuery({
     queryKey: ['revo-employees'],
-    queryFn: () => base44.entities.RevoEmployee.list(),
+    queryFn: () => synkia.entities.RevoEmployee.list(),
     initialData: [],
   });
 
@@ -76,7 +76,7 @@ Genera datos simulados de Revo Xef para Chicken Palace Ibiza:
 Devuelve JSON estructurado.
 `;
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await synkia.integrations.Core.InvokeLLM({
         prompt,
         response_json_schema: {
           type: "object",
@@ -132,7 +132,7 @@ Devuelve JSON estructurado.
       let salesCreated = 0;
       for (const sale of result.sales || []) {
         try {
-          await base44.entities.Sale.create({
+          await synkia.entities.Sale.create({
             revo_id: `REVO-${Math.random().toString(36).substr(2, 9)}`,
             ticket_number: sale.ticket_number,
             sale_date: sale.sale_date || new Date().toISOString(),
@@ -155,7 +155,7 @@ Devuelve JSON estructurado.
       let productsCreated = 0;
       for (const item of result.menu_items || []) {
         try {
-          await base44.entities.MenuItem.create({
+          await synkia.entities.MenuItem.create({
             revo_id: `PROD-${Math.random().toString(36).substr(2, 9)}`,
             name: item.name,
             category: item.category,
@@ -175,7 +175,7 @@ Devuelve JSON estructurado.
       let employeesCreated = 0;
       for (const emp of result.employees || []) {
         try {
-          await base44.entities.RevoEmployee.create({
+          await synkia.entities.RevoEmployee.create({
             revo_id: `EMP-${Math.random().toString(36).substr(2, 9)}`,
             name: emp.name,
             role: emp.role,

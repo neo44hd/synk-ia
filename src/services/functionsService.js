@@ -8,7 +8,7 @@
  * 4. /api/biloop/sync → /api/biloop/sync (endpoint añadido en biloop.js fix)
  * 5. Todos los fetch con manejo de error unificado
  * 6. fullDataSync mejorado: no bloquea si un servicio falla
- * 7. invoke() para compatibilidad con base44.functions.invoke()
+ * 7. invoke() para compatibilidad con synkia.functions.invoke()
  */
 // ─── Helper de fetch con error handling ──────────────────────────────────────
 async function apiFetch(url, options = {}) {
@@ -105,7 +105,7 @@ export const fetchBiloopDocuments = (params = {}) => {
 export const serverHealth = () =>
   apiFetch('/api/health');
 
-// ─── invoke() — Compatibilidad con base44.functions.invoke('nombre', params) ─
+// ─── invoke() — Compatibilidad con synkia.functions.invoke('nombre', params) ─
 // Mapea nombres de funciones antiguas a endpoints reales del backend
 const FUNCTION_MAP = {
   biloopRealSync: () => apiFetch('/api/biloop/sync', { method: 'POST' }),
@@ -131,7 +131,7 @@ export async function invoke(functionName, params = {}) {
     });
   }
   const result = await fn(params);
-  // Wrap in { data: ... } para compatibilidad con base44 SDK
+  // Wrap in { data: ... } para compatibilidad con synkia SDK
   return { data: result };
 }
 
@@ -175,8 +175,8 @@ export async function fullDataSync() {
   return { success: true, results, timestamp: new Date().toISOString() };
 }
 
-// ── Export nombrado que espera base44Client.js ────────────────────────────────
-// base44Client.js hace: import { functionsService } from './functionsService'
+// ── Export nombrado — el servicio se usa directamente ────────────────────────
+// functionsService exportado directamente'
 export const functionsService = {
   invoke,
   ollamaHealth,

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,12 @@ export default function ExecutiveReports() {
 
   const { data: reports = [] } = useQuery({
     queryKey: ['reports'],
-    queryFn: () => base44.entities.Report.list('-created_date'),
+    queryFn: () => synkia.entities.Report.list('-created_date'),
     initialData: [],
   });
 
   const deleteReportMutation = useMutation({
-    mutationFn: (id) => base44.entities.Report.delete(id),
+    mutationFn: (id) => synkia.entities.Report.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       toast.success('Reporte eliminado');
@@ -40,7 +40,7 @@ export default function ExecutiveReports() {
   const generateReport = async () => {
     setGenerating(true);
     try {
-      await base44.functions.invoke('generateExecutiveReport');
+      await synkia.functions.invoke('generateExecutiveReport');
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       toast.success('Reporte generado correctamente');
     } catch (error) {

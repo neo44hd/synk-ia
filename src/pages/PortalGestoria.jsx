@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ export default function PortalGestoria() {
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
         setHasAccess(currentUser.gestoria_access === true || currentUser.role === 'admin');
       } catch (error) {
@@ -34,7 +34,7 @@ export default function PortalGestoria() {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices-gestoria'],
-    queryFn: () => base44.entities.Invoice.list('-created_date'),
+    queryFn: () => synkia.entities.Invoice.list('-created_date'),
     initialData: [],
     enabled: hasAccess,
   });
@@ -42,7 +42,7 @@ export default function PortalGestoria() {
   const { data: documents = [] } = useQuery({
     queryKey: ['documents-fiscal'],
     queryFn: async () => {
-      const allDocs = await base44.entities.Document.list('-created_date');
+      const allDocs = await synkia.entities.Document.list('-created_date');
       return allDocs.filter(doc => doc.category === 'fiscal' || doc.category === 'RGPD');
     },
     initialData: [],

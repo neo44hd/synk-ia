@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ export default function BusinessAnalysis() {
     toast.info('🔍 Escaneando negocio completo...');
     
     try {
-      const response = await base44.functions.invoke('fullBusinessScan');
+      const response = await synkia.functions.invoke('fullBusinessScan');
       setData(response.data.results);
       toast.success('✅ Análisis completado');
     } catch (error) {

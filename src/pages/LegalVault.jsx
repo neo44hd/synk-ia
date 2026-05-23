@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ export default function LegalVault() {
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['documents', filterCategory],
     queryFn: async () => {
-      const allDocs = await base44.entities.Document.list('-created_date');
+      const allDocs = await synkia.entities.Document.list('-created_date');
       if (filterCategory === 'all') return allDocs;
       return allDocs.filter(doc => doc.category === filterCategory);
     },
@@ -64,7 +64,7 @@ export default function LegalVault() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Document.create(data),
+    mutationFn: (data) => synkia.entities.Document.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] });
       toast.success('Documento guardado correctamente');
@@ -92,7 +92,7 @@ export default function LegalVault() {
 
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await synkia.integrations.Core.UploadFile({ file });
       setFormData({
         ...formData,
         file_url,

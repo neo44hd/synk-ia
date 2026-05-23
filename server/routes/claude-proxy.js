@@ -2,7 +2,7 @@
  * claude-proxy.js — Proxy Anthropic API → Ollama nativo (/api/chat)
  *
  * Permite usar Claude Code con un modelo local gratuito:
- *   export ANTHROPIC_BASE_URL=http://localhost:3001/claude
+ *   export ANTHROPIC_BASE_URL=http://localhost:59401/claude
  *   export ANTHROPIC_API_KEY=local-free
  *
  * Requiere Ollama corriendo en http://localhost:11434
@@ -19,8 +19,13 @@ import { getFileTree, readFiles, searchFiles, buildContextBlock, PROJECT_DIR } f
 
 const router = Router();
 const LOCAL_BASE  = process.env.LOCAL_LLM_URL   || 'http://localhost:11434';
-const LOCAL_MODEL = process.env.LOCAL_LLM_MODEL || 'qwen2.5-coder:14b';
-const LOCAL_CTX   = parseInt(process.env.LOCAL_LLM_CTX || '16384', 10);
+const LOCAL_MODEL = process.env.LOCAL_LLM_MODEL || 'qwen2.5-coder:0.5b-instruct';
+const LOCAL_CTX   = parseInt(process.env.LOCAL_LLM_CTX || '8192', 10);
+
+// Contexto de context window para todas las llamadas Ollama
+function getCtx() {
+  return parseInt(process.env.NUM_CTX || String(LOCAL_CTX), 10);
+}
 
 // ── System prompt compacto (reemplaza el de Claude Code que pesa ~23K tokens) ──
 const COMPACT_SYSTEM = `Eres un asistente experto de programación corriendo localmente via Ollama.
@@ -142,7 +147,7 @@ router.post('/v1/messages', async (req, res) => {
       messages: ollamaMessages,
       stream:   false,
       options: {
-        num_ctx:     LOCAL_CTX,
+        num_ctx:     getCtx(),
         num_predict: max_tokens,
         temperature,
       },
@@ -283,7 +288,7 @@ router.post('/chat', async (req, res) => {
       messages: ollamaMsgs,
       stream:   true,
       options: {
-        num_ctx:     LOCAL_CTX,
+        num_ctx:     getCtx(),
         num_predict: 4096,
         temperature: 0.1,
       },

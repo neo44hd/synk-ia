@@ -32,17 +32,19 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // ── Config ──────────────────────────────────────────────────────────────────
-const DATA_DIR = process.env.DATA_DIR || '/Users/davidnows/sinkia/data';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = process?.env?.DATA_DIR || path.join(__dirname, '..', '..', 'data');
 const ENTITIES_FILE = path.join(DATA_DIR, 'entities.json');
 const RULES_FILE = path.join(DATA_DIR, 'organizer_rules.json');
 
 // ── Identidad del negocio ───────────────────────────────────────────────────
 const MI_EMPRESA = {
-  nombre: process.env.EMPRESA_NOMBRE || 'CHICKEN PALACE IBIZA, S.L.',
-  cif:    process.env.EMPRESA_CIF    || 'B56908486',
-  email:  process.env.EMAIL_USER     || 'info@chickenpalace.es',
+  nombre: process?.env?.EMPRESA_NOMBRE || 'CHICKEN PALACE IBIZA, S.L.',
+  cif:    process?.env?.EMPRESA_CIF    || 'B56908486',
+  email:  process?.env?.EMAIL_USER     || 'info@chickenpalace.es',
   aliases: [
     'chicken palace', 'chicken palace ibiza', 'chickenpalace',
     'chicken palace ibiza s.l.', 'chicken palace ibiza sl',

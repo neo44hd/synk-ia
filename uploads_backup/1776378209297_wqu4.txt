@@ -1,0 +1,24 @@
+FACTURA Nº 2026/0042
+Fecha: 15/04/2026
+
+EMISOR:
+Distribuciones García S.L.
+CIF: B07654321
+C/ Son Castelló 15, Palma de Mallorca
+
+DESTINATARIO:
+CHICKEN PALACE IBIZA, S.L.
+CIF: B56908486
+Avda. Sant Jordi s/n, Ibiza
+
+Concepto                    Cantidad    Precio    Total
+Pechuga de pollo 2kg        20          8,50€     170,00€
+Alitas de pollo 1kg         15          4,20€     63,00€
+Muslos de pollo 2kg         10          6,80€     68,00€
+
+Base imponible: 301,00€
+IVA 10%: 30,10€
+TOTAL: 331,10€
+
+Forma de pago: Transferencia bancaria
+Vencimiento: 30/04/2026

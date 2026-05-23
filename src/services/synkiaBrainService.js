@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 
 /**
  * SYNK-IA BRAIN SERVICE
@@ -238,7 +238,7 @@ Tienes acceso completo a todos los datos empresariales: facturas, clientes, prov
 
   async getInvoiceSummary() {
     try {
-      const invoices = await base44.entities.Invoice.list();
+      const invoices = await synkia.entities.Invoice.list();
       const total = invoices.length;
       const pending = invoices.filter(inv => inv.status === 'pending');
       const paid = invoices.filter(inv => inv.status === 'paid');
@@ -265,7 +265,7 @@ ${pending.length > 0 ? `\n⚠️ Tienes ${pending.length} facturas pendientes de
 
   async getSalesSummary() {
     try {
-      const invoices = await base44.entities.Invoice.list();
+      const invoices = await synkia.entities.Invoice.list();
       const now = new Date();
 
       const today = invoices.filter(inv => {
@@ -305,8 +305,8 @@ ${pending.length > 0 ? `\n⚠️ Tienes ${pending.length} facturas pendientes de
   async getBusinessMetrics() {
     try {
       const [invoices, clients] = await Promise.all([
-        base44.entities.Invoice.list().catch(() => []),
-        base44.entities.Client.list().catch(() => [])
+        synkia.entities.Invoice.list().catch(() => []),
+        synkia.entities.Client.list().catch(() => [])
       ]);
 
       const total = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
@@ -340,10 +340,10 @@ ${pending.length > 0 ? `\n⚠️ Tienes ${pending.length} facturas pendientes de
     try {
       let employees = [];
       try {
-        employees = await base44.entities.Employee.list();
+        employees = await synkia.entities.Employee.list();
       } catch {
         try {
-          employees = await base44.entities.User.list();
+          employees = await synkia.entities.User.list();
         } catch {
           employees = [];
         }
@@ -380,7 +380,7 @@ ${employees.length > 10 ? `\n... y ${employees.length - 10} más` : ''}`,
 
   async getEmployeePayrolls(employeeEmail) {
     try {
-      const payrolls = await base44.entities.Payroll.list({
+      const payrolls = await synkia.entities.Payroll.list({
         employee_email: employeeEmail
       });
       return payrolls;
@@ -407,10 +407,10 @@ ${employees.length > 10 ? `\n... y ${employees.length - 10} más` : ''}`,
     try {
       let providers = [];
       try {
-        providers = await base44.entities.Provider.list();
+        providers = await synkia.entities.Provider.list();
       } catch {
         try {
-          providers = await base44.entities.Supplier.list();
+          providers = await synkia.entities.Supplier.list();
         } catch {
           providers = [];
         }
@@ -447,7 +447,7 @@ ${providers.length > 10 ? `\n... y ${providers.length - 10} más` : ''}`,
 
   async getExpenseSummary() {
     try {
-      const invoices = await base44.entities.Invoice.list();
+      const invoices = await synkia.entities.Invoice.list();
       const expenses = invoices.filter(inv => inv.type === 'expense' || inv.type === 'gasto');
 
       const now = new Date();
@@ -489,7 +489,7 @@ ${categoryList || '• Sin datos de categorías'}`,
 
   async processBiloopFile(fileUrl, fileName) {
     try {
-      const extraction = await base44.integrations.Core.ExtractData({
+      const extraction = await synkia.integrations.Core.ExtractData({
         file_url: fileUrl,
         extraction_type: 'invoice'
       });
@@ -515,14 +515,14 @@ ${categoryList || '• Sin datos de categorías'}`,
       const results = { invoices: [], clients: [], providers: [] };
 
       try {
-        const invoices = await base44.entities.Invoice.list();
+        const invoices = await synkia.entities.Invoice.list();
         results.invoices = invoices.filter(inv =>
           JSON.stringify(inv).toLowerCase().includes(query.toLowerCase())
         ).slice(0, 5);
       } catch {}
 
       try {
-        const clients = await base44.entities.Client.list();
+        const clients = await synkia.entities.Client.list();
         results.clients = clients.filter(client =>
           JSON.stringify(client).toLowerCase().includes(query.toLowerCase())
         ).slice(0, 5);
@@ -537,7 +537,7 @@ ${categoryList || '• Sin datos de categorías'}`,
 
   async analyzeSavingsOpportunities() {
     try {
-      const invoices = await base44.entities.Invoice.list();
+      const invoices = await synkia.entities.Invoice.list();
       const opportunities = [];
 
       const byProvider = {};
@@ -581,14 +581,14 @@ ${categoryList || '• Sin datos de categorías'}`,
       };
 
       try {
-        const invoices = await base44.entities.Invoice.list();
+        const invoices = await synkia.entities.Invoice.list();
         overview.invoices.total = invoices.length;
         overview.invoices.pending = invoices.filter(i => i.status === 'pending').length;
         overview.invoices.totalAmount = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
       } catch {}
 
       try {
-        const clients = await base44.entities.Client.list();
+        const clients = await synkia.entities.Client.list();
         overview.clients.total = clients.length;
         overview.clients.active = clients.filter(c => c.status === 'active').length;
       } catch {}

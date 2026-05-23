@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,17 +24,17 @@ export default function ProductInventory() {
 
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
-    queryFn: () => base44.entities.Product.list('-total_spent'),
+    queryFn: () => synkia.entities.Product.list('-total_spent'),
   });
 
   const { data: purchases = [] } = useQuery({
     queryKey: ['product-purchases'],
-    queryFn: () => base44.entities.ProductPurchase.list('-purchase_date'),
+    queryFn: () => synkia.entities.ProductPurchase.list('-purchase_date'),
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list(),
+    queryFn: () => synkia.entities.Invoice.list(),
   });
 
   const analyzeInvoices = async () => {
@@ -47,7 +47,7 @@ export default function ProductInventory() {
       
       for (const invoice of invoicesWithPdf.slice(0, 30)) {
         try {
-          const extraction = await base44.integrations.Core.InvokeLLM({
+          const extraction = await synkia.integrations.Core.InvokeLLM({
             prompt: `Analiza esta factura y extrae TODOS los productos/items con cantidades y precios.
             Proveedor: ${invoice.provider_name}
             Fecha: ${invoice.invoice_date}`,
@@ -76,7 +76,7 @@ export default function ProductInventory() {
             const month = invoice.invoice_date ? invoice.invoice_date.substring(0, 7) : '';
             for (const item of extraction.items) {
               if (!item.name?.trim()) continue;
-              await base44.entities.ProductPurchase.create({
+              await synkia.entities.ProductPurchase.create({
                 product_name: item.name,
                 provider_name: invoice.provider_name,
                 invoice_id: invoice.id,
@@ -107,7 +107,7 @@ export default function ProductInventory() {
   };
 
   const recalculateProductStats = async () => {
-    const allPurchases = await base44.entities.ProductPurchase.list();
+    const allPurchases = await synkia.entities.ProductPurchase.list();
     const productMap = {};
     
     for (const purchase of allPurchases) {
@@ -128,7 +128,7 @@ export default function ProductInventory() {
       productMap[key].suppliers[provider].count++;
     }
 
-    const existingProducts = await base44.entities.Product.list();
+    const existingProducts = await synkia.entities.Product.list();
     const existingByName = {};
     existingProducts.forEach(p => { existingByName[(p.name || '').toLowerCase().trim()] = p; });
 
@@ -170,9 +170,9 @@ export default function ProductInventory() {
       };
 
       if (existingByName[key]) {
-        await base44.entities.Product.update(existingByName[key].id, productData);
+        await synkia.entities.Product.update(existingByName[key].id, productData);
       } else {
-        await base44.entities.Product.create(productData);
+        await synkia.entities.Product.create(productData);
       }
     }
   };

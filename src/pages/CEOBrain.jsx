@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -114,7 +114,7 @@ export default function CEOBrain() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const user = await base44.auth.me();
+        const user = await synkia.auth.me();
         // Permitir acceso solo al CEO
         if (CEO_EMAILS.includes(user.email) || user.role === 'admin') {
           setIsAuthorized(true);
@@ -148,7 +148,7 @@ export default function CEOBrain() {
 
   const loadConversations = async () => {
     try {
-      const convs = await base44.agents.listConversations({ agent_name: "ceo_brain" });
+      const convs = await synkia.agents.listConversations({ agent_name: "ceo_brain" });
       setConversations(convs || []);
       
       // Si hay conversaciones, cargar la más reciente
@@ -162,12 +162,12 @@ export default function CEOBrain() {
 
   const loadConversation = async (conversationId) => {
     try {
-      const conv = await base44.agents.getConversation(conversationId);
+      const conv = await synkia.agents.getConversation(conversationId);
       setActiveConversation(conv);
       setMessages(conv.messages || []);
       
       // Suscribirse a actualizaciones
-      const unsubscribe = base44.agents.subscribeToConversation(conversationId, (data) => {
+      const unsubscribe = synkia.agents.subscribeToConversation(conversationId, (data) => {
         setMessages(data.messages || []);
       });
       
@@ -179,7 +179,7 @@ export default function CEOBrain() {
 
   const createNewConversation = async () => {
     try {
-      const conv = await base44.agents.createConversation({
+      const conv = await synkia.agents.createConversation({
         agent_name: "ceo_brain",
         metadata: {
           name: `Sesión ${new Date().toLocaleDateString('es-ES')}`,
@@ -192,7 +192,7 @@ export default function CEOBrain() {
       setMessages([]);
       
       // Suscribirse a la nueva conversación
-      base44.agents.subscribeToConversation(conv.id, (data) => {
+      synkia.agents.subscribeToConversation(conv.id, (data) => {
         setMessages(data.messages || []);
       });
       
@@ -224,7 +224,7 @@ export default function CEOBrain() {
         messageContent = `${messageText}\n\n[Contexto del Sistema]\n${JSON.stringify(enriched.context, null, 2)}`;
       }
 
-      await base44.agents.addMessage(activeConversation, {
+      await synkia.agents.addMessage(activeConversation, {
         role: "user",
         content: messageContent
       });

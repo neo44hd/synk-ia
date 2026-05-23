@@ -1,5 +1,5 @@
 /**
- * chat.js — Chat con Qwen3 via Ollama (OpenAI-compatible format)
+ * chat.js — Chat con soporte dual Ollama + LM Studio (OpenAI-compatible)
  *
  * Endpoints:
  *   POST /api/chat         → chat libre, SSE streaming con think tags separados
@@ -16,9 +16,25 @@ import { Router } from 'express';
 import { askBrainStream, classifyIntent, searchWeb } from '../services/brain.js';
 import { buildContextBlock } from '../services/fileContext.js';
 
-const router     = Router();
-const OLLAMA_URL = process.env.OLLAMA_URL            || 'http://localhost:11434';
-const MODEL      = process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'qwen3.5';
+// ── Configuración dual de proveedores ──────────────────────────────────────
+
+const OLLAMA_URL    = process.env.OLLAMA_URL    || 'http://localhost:11434';
+const LMSTUDIO_URL  = process?.env?.LMSTUDIO_URL     || 'http://localhost:1234/v1';
+const LMSTUDIO_KEY  = process?.env?.LMSTUDIO_API_KEY || '';
+const LMSTUDIO_MODELS = new Set([
+  'negentropy-claude-opus-4.7-9b',
+  'deepseek/deepseek-r1-0528-qwen3-8b',
+]);
+
+function getChatProvider(model) {
+  if (LMSTUDIO_MODELS.has(model)) return 'lmstudio';
+  return 'ollama';
+}
+
+const router = Router();
+const getModel = () => process.env.CHAT_PROVIDER === 'lmstudio'
+  ? (process.env.CHAT_MODEL || 'harmonic-hermes-9b:latest')
+  : (process.env.OLLAMA_CHAT_MODEL || process.env.OLLAMA_MODEL || 'harmonic-hermes-9b:latest');
 
 // ── ThinkingFilter: separa <think>...</think> del texto final ─────────────
 // Funciona en streaming, acumula buffer para manejar tags partidos entre chunks
@@ -36,7 +52,6 @@ class ThinkingFilter {
   }
 
   end() {
-    // Al final, volcar lo que quede como texto
     if (this.buf && !this.inThink) this.onText(this.buf);
     this.buf = '';
   }
@@ -44,13 +59,12 @@ class ThinkingFilter {
   _flush() {
     const OPEN  = '<think>';
     const CLOSE = '</think>';
-    const SAFE  = 8; // chars mínimos a retener por si el tag viene partido
+    const SAFE  = 8;
 
     while (true) {
       if (this.inThink) {
         const end = this.buf.indexOf(CLOSE);
         if (end === -1) {
-          // Seguimos en bloque think, volcar todo excepto los últimos SAFE chars
           if (this.buf.length > SAFE) {
             this.onThinking(this.buf.slice(0, this.buf.length - SAFE));
             this.buf = this.buf.slice(this.buf.length - SAFE);
@@ -60,12 +74,11 @@ class ThinkingFilter {
           if (end > 0) this.onThinking(this.buf.slice(0, end));
           this.buf     = this.buf.slice(end + CLOSE.length);
           this.inThink = false;
-          this.onThinking(null); // señal: fin de bloque think
+          this.onThinking(null);
         }
       } else {
         const start = this.buf.indexOf(OPEN);
         if (start === -1) {
-          // No hay tag think, volcar excepto últimos SAFE chars
           if (this.buf.length > SAFE) {
             this.onText(this.buf.slice(0, this.buf.length - SAFE));
             this.buf = this.buf.slice(this.buf.length - SAFE);
@@ -79,6 +92,71 @@ class ThinkingFilter {
       }
     }
   }
+}
+
+// ─── Llamar a Ollama (chat completions) ─────────────────────────────────────
+async function ollamaChat({ messages, system, stream, maxTokens }) {
+  const body = {
+    model: getModel(),
+    messages,
+    stream,
+    max_tokens: maxTokens || 2048,
+    options: { num_ctx: parseInt(process.env.NUM_CTX || '8192', 10) },
+  };
+  if (system) {
+    body.messages = [{ role: 'system', content: system }, ...messages];
+  }
+
+  const res = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(body),
+  });
+
+  if (!res.ok) throw new Error(`Ollama ${res.status}: ${res.statusText}`);
+  return res;
+}
+
+// ─── Llamar a LM Studio (chat completions, OpenAI-compatible) ──────────────
+async function lmstudioChat({ messages, system, stream, maxTokens }) {
+  const model = getModel();
+  const body = {
+    model,
+    messages: [...messages],
+    stream,
+    max_tokens: maxTokens || 2048,
+    temperature: 0.7,
+    num_ctx: parseInt(process.env.NUM_CTX || '8192', 10),
+  };
+  if (system) {
+    body.messages = [{ role: 'system', content: system }, ...body.messages];
+  }
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (LMSTUDIO_KEY) headers['Authorization'] = `Bearer ${LMSTUDIO_KEY}`;
+
+  const res = await fetch(`${LMSTUDIO_URL}/chat/completions`, {
+    method:  'POST',
+    headers,
+    body:    JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`LM Studio ${res.status}: ${errText}`);
+  }
+  return res;
+}
+
+// ─── Dispatcher de chat ────────────────────────────────────────────────────
+async function chatCompletion({ messages, system, stream = false, maxTokens }) {
+  const model = getModel();
+  const provider = getChatProvider(model);
+
+  if (provider === 'lmstudio') {
+    return lmstudioChat({ messages, system, stream, maxTokens });
+  }
+  return ollamaChat({ messages, system, stream, maxTokens });
 }
 
 // ── POST /api/chat ─────────────────────────────────────────────────────────
@@ -97,22 +175,25 @@ router.post('/', async (req, res) => {
 
   const allMessages = [];
   const systemContent = (system || '') + fileContext;
-  if (systemContent) allMessages.push({ role: 'system', content: systemContent });
-  allMessages.push(...messages);
+
+  // NOTA: el system se pasa en la llamada a chatCompletion, no aquí,
+  // para que el dispatcher lo coloque correctamente según el provider
 
   if (!stream) {
     // ── Respuesta sin streaming ──────────────────────────────────────────
     try {
-      const r = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ model: MODEL, messages: allMessages, stream: false, max_tokens: 8192 }),
+      const upstream = await chatCompletion({
+        messages: [...allMessages, ...messages],
+        system: systemContent,
+        stream: false,
+        maxTokens: 2048,
       });
-      const d    = await r.json();
+
+      const d    = await upstream.json();
       const text = d.choices?.[0]?.message?.content || '';
       // Limpiar think tags para respuesta no-streaming
-      const clean = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-      return res.json({ text: clean, model: MODEL });
+      const clean = text.replace(/<[\s\S]*?<\/think>/gi, '').trim();
+      return res.json({ text: clean, model: getModel() });
     } catch (e) {
       return res.status(500).json({ error: e.message });
     }
@@ -127,50 +208,68 @@ router.post('/', async (req, res) => {
   const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
 
   try {
-    const upstream = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ model: MODEL, messages: allMessages, stream: true, max_tokens: 8192 }),
+    const upstream = await chatCompletion({
+      messages: [...allMessages, ...messages],
+      system: systemContent,
+      stream: true,
+      maxTokens: 2048,
     });
 
     if (!upstream.ok) {
-      send({ type: 'error', text: `Ollama ${upstream.status}` });
+      send({ type: 'error', text: `${upstream.status}` });
       res.write('data: [DONE]\n\n');
       return res.end();
     }
 
-    const filter = new ThinkingFilter(
-      (text) => { if (text) send({ type: 'text', text }); },
-      (think) => {
-        if (!thinking) return; // si el cliente no quiere el thinking, descartarlo
-        if (think === null) send({ type: 'thinking_done' });
-        else if (think) send({ type: 'thinking', text: think });
-      },
-    );
+    // Detectar si la respuesta es SSE (LM Studio) o JSON (error)
+    const contentType = upstream.headers.get('content-type') || '';
 
-    const reader = upstream.body.getReader();
-    const dec    = new TextDecoder();
-    let   buf    = '';
+    if (contentType.includes('text/event-stream')) {
+      // ── Streaming SSE desde LM Studio u Ollama ──────────────────────
+      const reader = upstream.body.getReader();
+      const dec    = new TextDecoder();
+      let   buf    = '';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop() || '';
-      for (const line of lines) {
-        if (!line.startsWith('data:')) continue;
-        const raw = line.slice(5).trim();
-        if (raw === '[DONE]') continue;
-        try {
-          const d     = JSON.parse(raw);
-          const chunk = d.choices?.[0]?.delta?.content || '';
-          if (chunk) filter.push(chunk);
-        } catch {}
+      const filter = new ThinkingFilter(
+        (text) => { if (text) send({ type: 'text', text }); },
+        (think) => {
+          if (!thinking) return;
+          if (think === null) send({ type: 'thinking_done' });
+          else if (think) send({ type: 'thinking', text: think });
+        },
+      );
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() || '';
+        for (const line of lines) {
+          if (!line.startsWith('data:')) continue;
+          const raw = line.slice(5).trim();
+          if (raw === '[DONE]') continue;
+          try {
+            const d     = JSON.parse(raw);
+            const chunk = d.choices?.[0]?.delta?.content || '';
+            if (chunk) filter.push(chunk);
+          } catch {}
+        }
+      }
+
+      filter.end();
+
+    } else {
+      // ── Respuesta no-streaming inesperada (JSON directo) ────────────
+      const text = await upstream.text();
+      try {
+        const d = JSON.parse(text);
+        const content = d.choices?.[0]?.message?.content || d.message?.content || '';
+        if (content) send({ type: 'text', text: content });
+      } catch {
+        send({ type: 'text', text });
       }
     }
-
-    filter.end();
 
   } catch (e) {
     console.error('[CHAT] Error streaming:', e.message);
@@ -208,8 +307,6 @@ router.post('/brain', async (req, res) => {
       message,
       (step)  => send({ type: 'step', ...step }),
       (chunk) => {
-        // El brain ya devuelve texto limpio (stripThinking en llm())
-        // Solo para el stream final de generateAnswer, filtramos aquí también
         send({ type: 'text', text: chunk });
       },
       fileContext,
@@ -235,26 +332,35 @@ router.post('/search', async (req, res) => {
 // ── GET /api/chat/status ─────────────────────────────────────────────────────
 router.get('/status', async (_req, res) => {
   try {
-    const [lm, searxng] = await Promise.allSettled([
-      fetch(`${OLLAMA_URL}/v1/models`, {
-        signal: AbortSignal.timeout(3000),
-      }),
+    const [ollamaCheck, lmstudioCheck, searxng] = await Promise.allSettled([
+      fetch(`${OLLAMA_URL}/v1/models`, { signal: AbortSignal.timeout(3000) }),
+      fetch(`${LMSTUDIO_URL}/models`, { signal: AbortSignal.timeout(3000) }),
       fetch('http://localhost:8888/healthz', { signal: AbortSignal.timeout(2000) }),
     ]);
 
-    const lmOk = lm.status === 'fulfilled' && lm.value.ok;
-    const models = lmOk
-      ? ((await lm.value.json()).data?.map(m => m.id) || [])
-      : [];
+    const ollamaOk  = ollamaCheck.status === 'fulfilled' && ollamaCheck.value?.ok;
+    const lmstudioOk = lmstudioCheck.status === 'fulfilled' && lmstudioCheck.value?.ok;
+
+    let models = [];
+    if (ollamaOk) {
+      try { models = [...models, ...((await ollamaCheck.value.json()).data?.map(m => m.id) || [])]; } catch {}
+    }
+    if (lmstudioOk) {
+      try { models = [...models, ...((await lmstudioCheck.value.json()).data?.map(m => m.id || m.model) || [])]; } catch {}
+    }
+
+    const model = getModel();
 
     res.json({
-      ollama:     lmOk,
-      searxng:    searxng.status === 'fulfilled' && searxng.value.ok,
+      ollama:       ollamaOk,
+      lmstudio:     lmstudioOk,
+      searxng:      searxng.status === 'fulfilled' && searxng.value?.ok,
       models,
-      active_model: MODEL,
+      active_model: model,
+      provider:     getChatProvider(model),
     });
   } catch (e) {
-    res.json({ ollama: false, searxng: false, models: [], error: e.message });
+    res.json({ ollama: false, lmstudio: false, searxng: false, models: [], error: e.message });
   }
 });
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,17 +68,17 @@ export default function RevoManual() {
 
   const { data: sales = [] } = useQuery({
     queryKey: ['sales'],
-    queryFn: () => base44.entities.Sale.list('-sale_date', 100),
+    queryFn: () => synkia.entities.Sale.list('-sale_date', 100),
   });
 
   const { data: menuItems = [] } = useQuery({
     queryKey: ['menu-items'],
-    queryFn: () => base44.entities.MenuItem.list('-created_date'),
+    queryFn: () => synkia.entities.MenuItem.list('-created_date'),
   });
 
   const { data: employees = [] } = useQuery({
     queryKey: ['revo-employees'],
-    queryFn: () => base44.entities.RevoEmployee.list(),
+    queryFn: () => synkia.entities.RevoEmployee.list(),
   });
 
   const createSaleMutation = useMutation({
@@ -89,7 +89,7 @@ export default function RevoManual() {
       }));
       const total = parseFloat(data.total) || items.reduce((sum, i) => sum + i.total, 0);
       
-      return base44.entities.Sale.create({
+      return synkia.entities.Sale.create({
         ticket_number: `TK-${Date.now().toString().slice(-6)}`,
         sale_date: data.sale_date,
         total,
@@ -114,7 +114,7 @@ export default function RevoManual() {
   const createProductMutation = useMutation({
     mutationFn: (data) => {
       if (editingProduct) {
-        return base44.entities.MenuItem.update(editingProduct.id, {
+        return synkia.entities.MenuItem.update(editingProduct.id, {
           name: data.name,
           category: data.category,
           price: parseFloat(data.price) || 0,
@@ -124,7 +124,7 @@ export default function RevoManual() {
           status: 'activo'
         });
       }
-      return base44.entities.MenuItem.create({
+      return synkia.entities.MenuItem.create({
         name: data.name,
         category: data.category,
         price: parseFloat(data.price) || 0,
@@ -144,7 +144,7 @@ export default function RevoManual() {
   });
 
   const deleteSaleMutation = useMutation({
-    mutationFn: (id) => base44.entities.Sale.delete(id),
+    mutationFn: (id) => synkia.entities.Sale.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] });
       toast.success('Venta eliminada');
@@ -152,7 +152,7 @@ export default function RevoManual() {
   });
 
   const deleteProductMutation = useMutation({
-    mutationFn: (id) => base44.entities.MenuItem.delete(id),
+    mutationFn: (id) => synkia.entities.MenuItem.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['menu-items'] });
       toast.success('Producto eliminado');

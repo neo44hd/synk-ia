@@ -78,14 +78,14 @@ David. Fundador y único desarrollador de SYNK-IA. Tech entrepreneur full-stack 
 ## Mis conocimientos
 
 ### Domino
-- JavaScript/Node.js (Express, NestJS)
-- React + Vite + Tailwind
-- Python (scripts, FastAPI)
-- Bash/Shell scripting
-- Docker, PM2, Nginx
-- Git, GitHub Actions
-- SSH, Tailscale, Cloudflare
-- Ollama, modelos locales (qwen3.5, codegemma:7b, qwen2.5-coder:14b, functiongemma)
+|- JavaScript/Node.js (Express, NestJS)
+|- React + Vite + Tailwind
+|- Python (scripts, FastAPI)
+|- Bash/Shell scripting
+|- Docker, PM2, Nginx
+|- Git, GitHub Actions
+|- SSH, Tailscale, Cloudflare
+|- Ollama, modelos locales (harmonic-hermes-9b, qwen2.5-coder:0.5b, negentropy-claude-opus-4.7-9b, glm-ocr)
 
 ### Aprendiendo
 - Fine-tuning de modelos LLM

@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 
 /**
  * CEO BRAIN AGENT SERVICE
@@ -62,7 +62,7 @@ Tienes acceso exclusivo del CEO. Respeta la privacidad y confidencialidad de tod
    */
   async getInvoiceMetrics() {
     try {
-      const invoices = await base44.entities.Invoice.list();
+      const invoices = await synkia.entities.Invoice.list();
       const total = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
       const pending = invoices.filter(inv => inv.status === 'pending').length;
       const paid = invoices.filter(inv => inv.status === 'paid').length;
@@ -89,7 +89,7 @@ Tienes acceso exclusivo del CEO. Respeta la privacidad y confidencialidad de tod
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const invoices = await base44.entities.Invoice.list();
+      const invoices = await synkia.entities.Invoice.list();
       const recentInvoices = invoices.filter(inv => 
         new Date(inv.created_at) >= thirtyDaysAgo
       );
@@ -112,7 +112,7 @@ Tienes acceso exclusivo del CEO. Respeta la privacidad y confidencialidad de tod
    */
   async getClientMetrics() {
     try {
-      const clients = await base44.entities.Client.list();
+      const clients = await synkia.entities.Client.list();
       return {
         total: clients.length,
         active: clients.filter(c => c.status === 'active').length
@@ -129,7 +129,7 @@ Tienes acceso exclusivo del CEO. Respeta la privacidad y confidencialidad de tod
   async getExpenseMetrics() {
     try {
       // Obtener facturas de proveedores (expense invoices)
-      const expenses = await base44.entities.Invoice.list({ type: 'expense' });
+      const expenses = await synkia.entities.Invoice.list({ type: 'expense' });
       const total = expenses.reduce((sum, exp) => sum + (exp.total || 0), 0);
       
       return {

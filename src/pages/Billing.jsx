@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,17 +40,17 @@ export default function Billing() {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['sales-invoices'],
-    queryFn: () => base44.entities.SalesInvoice.list('-invoice_date', 100),
+    queryFn: () => synkia.entities.SalesInvoice.list('-invoice_date', 100),
   });
 
   const { data: quotes = [] } = useQuery({
     queryKey: ['quotes'],
-    queryFn: () => base44.entities.Quote.list('-quote_date', 100),
+    queryFn: () => synkia.entities.Quote.list('-quote_date', 100),
   });
 
   const { data: clients = [] } = useQuery({
     queryKey: ['clients'],
-    queryFn: () => base44.entities.Client.list('-created_date', 100),
+    queryFn: () => synkia.entities.Client.list('-created_date', 100),
   });
 
   const convertQuoteMutation = useMutation({
@@ -66,7 +66,7 @@ export default function Billing() {
       const invoiceNumber = `FAC-${year}-${String(nextNum).padStart(3, '0')}`;
 
       // Crear factura
-      const invoice = await base44.entities.SalesInvoice.create({
+      const invoice = await synkia.entities.SalesInvoice.create({
         invoice_number: invoiceNumber,
         client_name: quote.client_name,
         client_cif: quote.client_cif,
@@ -84,7 +84,7 @@ export default function Billing() {
       });
 
       // Actualizar presupuesto
-      await base44.entities.Quote.update(quote.id, {
+      await synkia.entities.Quote.update(quote.id, {
         status: 'facturado',
         converted_to_invoice: invoice.id
       });

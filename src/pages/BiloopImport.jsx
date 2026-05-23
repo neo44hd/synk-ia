@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -125,7 +125,7 @@ export default function BiloopImport() {
       setProcessingSteps([{ step: 'Conectando con Biloop API...', status: 'loading' }]);
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      const response = await base44.functions.invoke('biloopRealSync');
+      const response = await synkia.functions.invoke('biloopRealSync');
       
       setProcessingSteps(prev => [
         ...prev.slice(0, -1),
@@ -242,7 +242,7 @@ export default function BiloopImport() {
           { step: `📤 Subiendo [${i + 1}/${totalFiles}] ${file.name}...`, status: 'loading' }
         ]);
 
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await synkia.integrations.Core.UploadFile({ file });
         uploadedFiles.push({ file, file_url, name: file.name });
 
       } catch (uploadErr) {
@@ -265,7 +265,7 @@ export default function BiloopImport() {
     ]);
 
     // Obtener proveedores existentes UNA sola vez
-    const existingProviders = await base44.entities.Provider.list();
+    const existingProviders = await synkia.entities.Provider.list();
     const existingNames = new Set(existingProviders.map(p => p.name?.toLowerCase()));
 
     const biloopSchema = {
@@ -304,7 +304,7 @@ export default function BiloopImport() {
           { step: `🧠 Procesando [${i + 1}/${uploadedFiles.length}] ${name}...`, status: 'loading' }
         ]);
 
-        const extractionResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        const extractionResult = await synkia.integrations.Core.ExtractDataFromUploadedFile({
           file_url,
           json_schema: biloopSchema
         });
@@ -324,7 +324,7 @@ export default function BiloopImport() {
               // Crear proveedor si no existe
               const provName = invoiceData.provider_name;
               if (provName && !existingNames.has(provName.toLowerCase())) {
-                await base44.entities.Provider.create({
+                await synkia.entities.Provider.create({
                   name: provName,
                   cif: invoiceData.provider_cif || '',
                   category: invoiceData.category || 'otros',
@@ -345,7 +345,7 @@ export default function BiloopImport() {
               }
 
               // Crear factura
-              await base44.entities.Invoice.create({
+              await synkia.entities.Invoice.create({
                 provider_name: invoiceData.provider_name || 'Sin nombre',
                 invoice_number: invoiceData.invoice_number || '',
                 invoice_date: invoiceData.invoice_date || '',
@@ -450,11 +450,11 @@ export default function BiloopImport() {
       
       let file_url;
       try {
-        const uploadResult = await base44.integrations.Core.UploadFile({ file });
+        const uploadResult = await synkia.integrations.Core.UploadFile({ file });
         file_url = uploadResult.file_url;
 
         // Registrar en Archivo Documental
-        await base44.entities.UploadedFile.create({
+        await synkia.entities.UploadedFile.create({
           filename: file.name,
           file_url: file_url,
           source: "Biloop",
@@ -510,7 +510,7 @@ export default function BiloopImport() {
           { step: 'Descomprimiendo ZIP...', status: 'loading' }
         ]);
         
-        const zipResult = await base44.functions.invoke('processZipFile', { file_url });
+        const zipResult = await synkia.functions.invoke('processZipFile', { file_url });
         
         if (zipResult.data?.success) {
           extractionResult = {
@@ -593,7 +593,7 @@ export default function BiloopImport() {
       };
 
       // PASO 3: Extraer datos con IA
-      extractionResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
+      extractionResult = await synkia.integrations.Core.ExtractDataFromUploadedFile({
         file_url,
         json_schema: biloopSchema
       });
@@ -621,14 +621,14 @@ export default function BiloopImport() {
         const createdProviders = [];
         const uniqueProviderNames = [...new Set(invoicesData.map(inv => inv.provider_name).filter(Boolean))];
         
-        const existingProviders = await base44.entities.Provider.list();
+        const existingProviders = await synkia.entities.Provider.list();
         const existingNames = existingProviders.map(p => p.name);
 
         for (const providerName of uniqueProviderNames) {
           if (!existingNames.includes(providerName)) {
             try {
               const invoiceWithProvider = invoicesData.find(inv => inv.provider_name === providerName);
-              const newProvider = await base44.entities.Provider.create({
+              const newProvider = await synkia.entities.Provider.create({
                 name: providerName,
                 cif: invoiceWithProvider.provider_cif || '',
                 category: invoiceWithProvider.category || 'otros',
@@ -670,7 +670,7 @@ export default function BiloopImport() {
               }
             }
 
-            const newInvoice = await base44.entities.Invoice.create({
+            const newInvoice = await synkia.entities.Invoice.create({
               provider_name: invoiceData.provider_name || 'Sin nombre',
               invoice_number: invoiceData.invoice_number || '',
               invoice_date: invoiceData.invoice_date || '',

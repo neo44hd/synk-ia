@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,18 +35,18 @@ export default function GestorFacturas() {
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list('-invoice_date'),
+    queryFn: () => synkia.entities.Invoice.list('-invoice_date'),
     initialData: [],
   });
 
   const { data: providers = [] } = useQuery({
     queryKey: ['providers'],
-    queryFn: () => base44.entities.Provider.list(),
+    queryFn: () => synkia.entities.Provider.list(),
     initialData: [],
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Invoice.delete(id),
+    mutationFn: (id) => synkia.entities.Invoice.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Factura eliminada');
@@ -127,15 +127,15 @@ export default function GestorFacturas() {
 
     try {
       for (const file of files) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        const invoiceSchema = await base44.entities.Invoice.schema();
-        const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        const { file_url } = await synkia.integrations.Core.UploadFile({ file });
+        const invoiceSchema = await synkia.entities.Invoice.schema();
+        const result = await synkia.integrations.Core.ExtractDataFromUploadedFile({
           file_url,
           json_schema: invoiceSchema
         });
 
         if (result.status === "success" && result.output) {
-          await base44.entities.Invoice.create({
+          await synkia.entities.Invoice.create({
             ...result.output,
             file_url,
             status: result.output.status || 'pendiente'

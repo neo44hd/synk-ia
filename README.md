@@ -32,25 +32,24 @@ Mac Mini M4 Pro (24GB RAM) — macOS
 │   └── sinkia-qdrant             → puerto 6333
 │
 ├── Ollama                        → puerto 11434
-│   ├── qwen3.5:latest   (6.6 GB)  — chat general, razonamiento
-│   ├── codegemma:7b     (5.0 GB)  — clasificación docs/emails
-│   ├── functiongemma    (291 MB)   — function calling (OpenClaw)
-│   ├── gemma4:26b       (~15 GB)   — razonamiento avanzado, visión
-│   ├── qwen2.5-coder:14b (~10 GB) — código y refactoring
-│   ├── deepseek-r1:14b  (~9 GB)   — razonamiento profundo (chain-of-thought)
-│   ├── phi4:14b         (~10 GB)   — matemáticas y lógica
-│   ├── glm-ocr          (~1 GB)    — OCR de documentos
-│   ├── llama3.2-vision:11b (~8 GB) — análisis de imágenes
-│   ├── gemma4:e4b       (~5 GB)    — tareas rápidas con visión
-│   └── phi4-mini        (~3 GB)    — clasificaciones ligeras
+│   ├── harmonic-hermes-9b:latest (5.0 GB)  — chat, razonamiento, código
+│   ├── qwen2.5-coder:0.5b-instruct (0.4 GB) — código rápido, extracción
+│   └── glm-ocr:latest            (2.1 GB)   — OCR de documentos
+│
+├── LM Studio                     → puerto 1234
+│   └── negentropy-claude-opus-4.7-9b (≈2GB) — modelo principal (todas las tareas)
+│
+├── Mission Control (/mc)         → interfaz web de gestión
+│   ├── Panel Hermes Agent        — chat + configuración del modelo
+│   └── Panel OpenCode            — agente de código + configuración
 │
 ├── OpenClaw                      → puerto 18789 (HTTP + WebSocket)
 │   └── Proxy WS: /ws/openclaw en sinkia-api → localhost:18789
 │
 └── Cloudflare Tunnel
-    ├── sinkialabs.com       → localhost:3001
-    ├── chat.sinkialabs.com  → localhost:3030
-    └── claw.sinkialabs.com  → localhost:18789
+    ├── sinkialabs.com            → localhost:3001
+    ├── chat.sinkialabs.com       → localhost:3030
+    └── claw.sinkialabs.com       → localhost:18789
 ```
 
 ### Symlink de Ollama al disco externo
@@ -71,16 +70,18 @@ Ollama lee y escribe en `~/.ollama` como siempre, pero físicamente los datos es
 
 ---
 
-## 4 Cerebros — Chat IA
+## 5 Cerebros — Chat IA
 
-La interfaz `/chat` ofrece 4 pestañas con diferentes modelos y backends:
+La interfaz `/chat` ofrece 5 pestañas con diferentes modelos y backends:
 
 | Pestaña | Color | Modelo | Backend | Uso |
 |---------|-------|--------|---------|-----|
-| **Chat IA** | Verde | qwen3.5 | `/api/chat` (SSE) | Conversación libre |
-| **Brain** | Cyan | codegemma:7b + qwen3.5 | `/api/chat/brain` (SSE) | Consultas de negocio |
-| **OpenClaw** | Morado | functiongemma | `/ws/openclaw` (WebSocket proxy) | Agente de funciones |
-| **Claude Code** | Naranja | Aider + ollama/qwen3.5 | `/api/aider` (SSE) | Asistente de código |
+| **Chat IA** | Verde | harmonic-hermes-9b | `/api/chat` (SSE) | Conversación libre |
+| **Brain** | Cyan | negentropy-claude-opus-4.7-9b | `/api/chat/brain` (SSE) | Consultas de negocio |
+| **OpenClaw** | Morado | harmonic-hermes-9b | `/ws/openclaw` (WebSocket) | Agente de funciones |
+| **Claude Code** | Naranja | harmonic-hermes-9b | `/api/aider` (SSE) | Asistente de código |
+| **Hermes** | Púrpura | negentropy-claude-opus-4.7-9b | `/api/hermes` (SSE) | Asistente conversacional |
+| **OpenCode** | Cian | negentropy-claude-opus-4.7-9b | `/api/opencode` (SSE) | Agente de código |
 
 ---
 
@@ -134,11 +135,11 @@ pm2 logs sinkia-api --lines 50   # Ver logs
 ### Variables de entorno (`server/.env`)
 
 ```env
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=qwen3.5:latest
-OLLAMA_CHAT_MODEL=qwen3.5
-OLLAMA_CLASSIFY_MODEL=codegemma:7b
-AIDER_MODEL=ollama/qwen3.5
+|OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=harmonic-hermes-9b:latest
+OLLAMA_CHAT_MODEL=harmonic-hermes-9b
+OLLAMA_CLASSIFY_MODEL=qwen2.5-coder:0.5b-instruct
+AIDER_MODEL=ollama/harmonic-hermes-9b
 PORT=3001
 ADMIN_TOKEN=sinkia2026
 ```

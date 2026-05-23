@@ -1,7 +1,7 @@
 /**
  * SYNK-IA - Funciones del Sistema
  * © 2024 David Roldan - Chicken Palace Ibiza
- * Futuro: SYNK-IA LABS
+ * © SynK-IA
  */
 
 import {

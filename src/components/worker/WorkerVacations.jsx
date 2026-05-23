@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,14 +21,14 @@ export default function WorkerVacations({ onClose, user }) {
   const { data: requests = [] } = useQuery({
     queryKey: ['my-vacation-requests'],
     queryFn: async () => {
-      const all = await base44.entities.VacationRequest.list('-created_date');
+      const all = await synkia.entities.VacationRequest.list('-created_date');
       return all.filter(r => r.employee_id === user?.id || r.employee_name === user?.full_name);
     },
     enabled: !!user,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.VacationRequest.create(data),
+    mutationFn: (data) => synkia.entities.VacationRequest.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-vacation-requests'] });
       toast.success('✅ Solicitud enviada');

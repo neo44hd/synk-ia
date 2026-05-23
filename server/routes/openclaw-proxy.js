@@ -1,20 +1,20 @@
 // ── OpenClaw WebSocket Proxy ─────────────────────────────────────────────────
-// Conecta la pestaña OpenClaw del chat web con qwen3.5 vía Ollama
+// Conecta la pestaña OpenClaw del chat web con negentropy-4.7b vía Ollama
 //
-// Usa qwen3.5 vía Ollama /api/chat para respuestas coherentes.
-// functiongemma (268M) es demasiado pequeño para chat conversacional.
+// Usa qwen2.5-coder vía Ollama /api/chat para respuestas rápidas.
+// negentropy (2.5GB) es ligero y suficiente para chat conversacional.
 // Mantiene historial por sesión WebSocket.
 // ─────────────────────────────────────────────────────────────────────────────
 import { WebSocketServer, WebSocket } from 'ws';
 import { randomUUID } from 'crypto';
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11435';
-const MODEL = process.env.OPENCLAW_MODEL || 'qwen3.5:latest';
+const MODEL = process.env.OPENCLAW_MODEL || 'qwen2.5-coder:0.5b-instruct';
 
 const SYSTEM_CONTEXT = `/no_think
 Eres SynK-IA OpenClaw, asistente inteligente de Chicken Palace Ibiza.
 Responde siempre en español, de forma directa y concisa.
-No uses razonamiento interno ni bloques <think>. Ve directo a la respuesta.`;
+No uses razonamiento interno ni bloques thinking. Ve directo a la respuesta.`;
 
 // Máximo de turnos de historial (pares user/assistant)
 const MAX_TURNS = 8;

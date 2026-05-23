@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ export default function EmployeeDetail({ employee, onBack }) {
 
     setIsUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await synkia.integrations.Core.UploadFile({ file });
       
       const newItem = {
         file_url,
@@ -55,7 +55,7 @@ export default function EmployeeDetail({ employee, onBack }) {
         updatedData.documents = [...(employee.documents || []), newItem];
       }
 
-      await base44.entities.Employee.update(employee.id, updatedData);
+      await synkia.entities.Employee.update(employee.id, updatedData);
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       toast.success('Documento subido correctamente');
       onBack();
@@ -134,7 +134,7 @@ export default function EmployeeDetail({ employee, onBack }) {
                     <DropdownMenuContent className="bg-zinc-900 border-zinc-800">
                       <DropdownMenuItem 
                         onClick={async () => {
-                          await base44.entities.Employee.update(employee.id, { status: 'activo' });
+                          await synkia.entities.Employee.update(employee.id, { status: 'activo' });
                           toast.success('Estado actualizado');
                           queryClient.invalidateQueries({ queryKey: ['employees'] });
                           onBack();
@@ -145,7 +145,7 @@ export default function EmployeeDetail({ employee, onBack }) {
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={async () => {
-                          await base44.entities.Employee.update(employee.id, { status: 'baja' });
+                          await synkia.entities.Employee.update(employee.id, { status: 'baja' });
                           toast.success('Estado actualizado');
                           queryClient.invalidateQueries({ queryKey: ['employees'] });
                           onBack();
@@ -156,7 +156,7 @@ export default function EmployeeDetail({ employee, onBack }) {
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={async () => {
-                          await base44.entities.Employee.update(employee.id, { status: 'vacaciones' });
+                          await synkia.entities.Employee.update(employee.id, { status: 'vacaciones' });
                           toast.success('Estado actualizado');
                           queryClient.invalidateQueries({ queryKey: ['employees'] });
                           onBack();
@@ -167,7 +167,7 @@ export default function EmployeeDetail({ employee, onBack }) {
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={async () => {
-                          await base44.entities.Employee.update(employee.id, { status: 'baja_medica' });
+                          await synkia.entities.Employee.update(employee.id, { status: 'baja_medica' });
                           toast.success('Estado actualizado');
                           queryClient.invalidateQueries({ queryKey: ['employees'] });
                           onBack();
@@ -178,7 +178,7 @@ export default function EmployeeDetail({ employee, onBack }) {
                       </DropdownMenuItem>
                       <DropdownMenuItem 
                         onClick={async () => {
-                          await base44.entities.Employee.update(employee.id, { status: 'excedencia' });
+                          await synkia.entities.Employee.update(employee.id, { status: 'excedencia' });
                           toast.success('Estado actualizado');
                           queryClient.invalidateQueries({ queryKey: ['employees'] });
                           onBack();

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ export default function Payrolls() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error('Error loading user:', error);
@@ -32,7 +32,7 @@ export default function Payrolls() {
   const { data: payrolls = [], isLoading } = useQuery({
     queryKey: ['payrolls'],
     queryFn: async () => {
-      const allPayrolls = await base44.entities.Payroll.list('-period');
+      const allPayrolls = await synkia.entities.Payroll.list('-period');
       
       // Si no es admin, solo muestra sus nóminas
       if (user && user.permission_level !== 'super_admin' && user.permission_level !== 'admin' && !user.can_view_payrolls) {

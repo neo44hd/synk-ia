@@ -16,7 +16,7 @@ set -euo pipefail
 unset ANTHROPIC_AUTH_TOKEN 2>/dev/null || true
 
 # ── Configuración del proxy ────────────────────────────────────────────────────
-export ANTHROPIC_BASE_URL="http://localhost:3001/claude"
+export ANTHROPIC_BASE_URL="http://localhost:59401/claude"
 export ANTHROPIC_API_KEY="local-free"
 
 # Forzar modelo — Claude Code usa ANTHROPIC_MODEL como modelo principal
@@ -47,8 +47,8 @@ fi
 echo "   ✅ Ollama OK"
 
 # 2. Comprobar que SynK-IA (proxy) responde
-if ! curl -sf http://localhost:3001/claude/v1/models >/dev/null 2>&1; then
-  echo "❌ SynK-IA proxy no responde en localhost:3001/claude"
+if ! curl -sf http://localhost:59401/claude/v1/models >/dev/null 2>&1; then
+  echo "❌ SynK-IA proxy no responde en localhost:59401/claude"
   echo "   Arrancalo con: cd ~/sinkia && pm2 start sinkia-api"
   exit 1
 fi

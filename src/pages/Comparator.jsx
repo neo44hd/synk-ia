@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,13 +35,13 @@ export default function Comparator() {
 
   const { data: comparisons = [], isLoading } = useQuery({
     queryKey: ['price-comparisons'],
-    queryFn: () => base44.entities.PriceComparison.list('-savings_potential'),
+    queryFn: () => synkia.entities.PriceComparison.list('-savings_potential'),
     initialData: [],
   });
 
   const { data: invoices = [] } = useQuery({
     queryKey: ['invoices'],
-    queryFn: () => base44.entities.Invoice.list(),
+    queryFn: () => synkia.entities.Invoice.list(),
     initialData: [],
   });
 
@@ -60,7 +60,7 @@ Devuelve un análisis de precios con:
 - Ahorro potencial
 `;
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await synkia.integrations.Core.InvokeLLM({
         prompt,
         response_json_schema: {
           type: "object",
@@ -82,7 +82,7 @@ Devuelve un análisis de precios con:
         }
       });
 
-      return base44.entities.PriceComparison.create({
+      return synkia.entities.PriceComparison.create({
         product_name: productName,
         category: formData.category,
         providers_data: result.providers_data || [],

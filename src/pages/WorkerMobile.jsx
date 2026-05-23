@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export default function WorkerMobile() {
   const [activeTab, setActiveTab] = useState("home");
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    synkia.auth.me().then(setUser).catch(() => {});
   }, []);
 
   const { data: todayTimesheet } = useQuery({
@@ -34,7 +34,7 @@ export default function WorkerMobile() {
     queryFn: async () => {
       if (!user) return null;
       const today = new Date().toISOString().split('T')[0];
-      const timesheets = await base44.entities.Timesheet.filter({
+      const timesheets = await synkia.entities.Timesheet.filter({
         user_id: user.id,
         date: today
       });
@@ -46,7 +46,7 @@ export default function WorkerMobile() {
 
   const { data: myDocuments = [] } = useQuery({
     queryKey: ['my-documents', user?.id],
-    queryFn: () => base44.entities.Document.filter({ 
+    queryFn: () => synkia.entities.Document.filter({ 
       tags: user?.email 
     }),
     enabled: !!user,
@@ -55,7 +55,7 @@ export default function WorkerMobile() {
 
   const { data: myVacations = [] } = useQuery({
     queryKey: ['my-vacations', user?.id],
-    queryFn: () => base44.entities.VacationRequest.filter({
+    queryFn: () => synkia.entities.VacationRequest.filter({
       employee_id: user?.id
     }),
     enabled: !!user,
@@ -64,7 +64,7 @@ export default function WorkerMobile() {
 
   const { data: notifications = [] } = useQuery({
     queryKey: ['my-notifications', user?.id],
-    queryFn: () => base44.entities.Notification.filter({
+    queryFn: () => synkia.entities.Notification.filter({
       user_id: user?.id,
       read: false
     }),
@@ -102,7 +102,7 @@ export default function WorkerMobile() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => base44.auth.logout()}
+            onClick={() => synkia.auth.logout()}
             className="text-white hover:bg-white/10"
           >
             <LogOut className="w-5 h-5" />

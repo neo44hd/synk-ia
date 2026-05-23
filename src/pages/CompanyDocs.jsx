@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ export default function CompanyDocs() {
   const { data: documents = [] } = useQuery({
     queryKey: ['company-documents', filterCategory, filterType],
     queryFn: async () => {
-      let all = await base44.entities.CompanyDocument.list('-created_date');
+      let all = await synkia.entities.CompanyDocument.list('-created_date');
       if (filterCategory !== 'all') {
         all = all.filter(d => d.category === filterCategory);
       }
@@ -71,7 +71,7 @@ export default function CompanyDocs() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.CompanyDocument.create(data),
+    mutationFn: (data) => synkia.entities.CompanyDocument.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company-documents'] });
       toast.success('Documento registrado correctamente');
@@ -101,7 +101,7 @@ export default function CompanyDocs() {
 
     setUploadingFile(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await synkia.integrations.Core.UploadFile({ file });
       setFormData({
         ...formData,
         file_url,

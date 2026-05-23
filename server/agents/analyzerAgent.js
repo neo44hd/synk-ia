@@ -15,22 +15,30 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── Configuración ──────────────────────────────────────────────────────────
-const OLLAMA_URL  = process.env.OLLAMA_URL   || 'http://localhost:11434';
-const MODEL       = process.env.ANALYZER_MODEL || 'qwen3.5';
-const TIMEOUT_MS  = 600_000;   // 10 minutos — PDFs largos (Coca Cola 13pg) necesitan más tiempo con qwen3.5
-const MAX_TOKENS  = 4000;      // qwen3.5 soporta más tokens de salida
+const OLLAMA_URL  = process?.env?.OLLAMA_URL || 'http://localhost:11434';
+const LMSTUDIO_URL = process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1';
+const LMSTUDIO_KEY = process?.env?.LMSTUDIO_API_KEY || '';
+const ANALYZER_MODEL = process?.env?.ANALYZER_MODEL || 'negentropy-claude-opus-4.7-9b';
+const OLLAMA_MODEL   = process?.env?.OLLAMA_MODEL   || 'harmonic-hermes-9b:latest';
+const ANALYZER_PROVIDER = process?.env?.ANALYZER_PROVIDER || 'ollama';
+const TIMEOUT_MS  = 600_000;   // 10 minutos — PDFs largos necesitan más tiempo
+const MAX_TOKENS  = 2000;      // tokens de salida (reducido de 4000)
 const TEMPERATURE = 0.05;      // Casi determinista para clasificación
-const MAX_TEXT    = 5000;      // 5K chars — qwen3.5 pierde la estructura JSON con textos >5K
+const MAX_TEXT    = 5000;      // 5K chars — límite para JSON estructurado
+
+function getLlmModel() {
+  return ANALYZER_PROVIDER === 'lmstudio' ? ANALYZER_MODEL : OLLAMA_MODEL;
+}
 
 // Datos fijos de MI EMPRESA (receptor en casi todos los documentos)
 const MI_EMPRESA = {
-  nombre: process.env.EMPRESA_NOMBRE || 'CHICKEN PALACE IBIZA, S.L.',
-  cif:    process.env.EMPRESA_CIF    || 'B56908486',
-  email:  process.env.EMAIL_USER     || 'info@chickenpalace.es',
+  nombre: process?.env?.EMPRESA_NOMBRE || 'CHICKEN PALACE IBIZA, S.L.',
+  cif:    process?.env?.EMPRESA_CIF    || 'B56908486',
+  email:  process?.env?.EMAIL_USER     || 'info@chickenpalace.es',
 };
 
 // Detectar automáticamente si el modelo tiene capacidad visual
-const IS_VL_MODEL = /vl|vision|visual/i.test(MODEL);
+const IS_VL_MODEL = /vl|vision|visual/i.test(getLlmModel());
 
 // ── Tipos de documentos válidos ────────────────────────────────────────────
 const TIPOS_VALIDOS = [
@@ -232,16 +240,31 @@ function smartTruncate(text, maxChars = MAX_TEXT) {
 // ══════════════════════════════════════════════════════════════════════════
 
 /**
- * Elimina bloques <think>...</think> que generan algunos modelos (phi4, qwen3).
+ * Elimina bloques thinking de varios modelos.
+ * Soporta: qwen3 (markdown), qwen36-tools ("Here's a thinking process:"), deepseek, phi4.
  * También elimina bloques ```json ``` de markdown.
  */
 function stripThinking(text) {
   if (!text) return '';
-  return text
-    .replace(/<think>[\s\S]*?<\/think>/gi, '')
-    .replace(/```json\s*/gi, '')
-    .replace(/```\s*/g, '')
-    .trim();
+  let cleaned = text;
+
+  // Eliminar bloques XML-style (qwen3, codeqwen)
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
+
+  // Eliminar "Here's a thinking process:" seguido de lista numerada hasta el JSON
+  // qwen36-tools devuelve: "Here's a thinking process:\n\n1. **...\n\n{JSON}"
+  cleaned = cleaned.replace(/Here's a (?:deep )?thinking process:[\s\S]*?(?=\n\s*\n\s*\{)/, '');
+
+  // Eliminar prefijos tipo "Thought process:" / "Let me think..."
+  cleaned = cleaned.replace(/Thought process:[\s\S]*?(?=\n\s*\n\s*\{)/gi, '');
+  cleaned = cleaned.replace(/Let me think[\s\S]*?(?=\n\s*\n\s*\{)/gi, '');
+  cleaned = cleaned.replace(/Reasoning:[\s\S]*?(?=\n\s*\n\s*\{)/gi, '');
+
+  // Eliminar ```json y ```
+  cleaned = cleaned.replace(/```json\s*/gi, '');
+  cleaned = cleaned.replace(/```\s*/g, '');
+
+  return cleaned.trim();
 }
 
 /**
@@ -656,46 +679,55 @@ function normalizeAnalysis(raw) {
 async function llmCall(messages) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const model = getLlmModel();
 
   try {
-    // Usar API nativa de Ollama (/api/chat) que soporta format:"json" correctamente
-    const response = await fetch(`${OLLAMA_URL}/api/chat`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal:  controller.signal,
-      body: JSON.stringify({
-        model:   MODEL,
-        messages,
-        stream:  false,
-        think:   false,  // Desactivar thinking — qwen3.5 mete el JSON en thinking y deja content vacío
-        options: {
-          temperature:  TEMPERATURE,
-          num_predict:  MAX_TOKENS,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const body = await response.text().catch(() => '');
-      throw new Error(`Ollama ${response.status}: ${body.slice(0, 300)}`);
+    if (ANALYZER_PROVIDER === 'lmstudio') {
+      // LM Studio — API OpenAI-compatible
+      const response = await fetch(`${LMSTUDIO_URL}/chat/completions`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal:  controller.signal,
+        body: JSON.stringify({
+          model,
+          messages,
+          stream: false,
+          temperature: TEMPERATURE,
+          max_tokens: MAX_TOKENS,
+          num_ctx: parseInt(process.env.NUM_CTX || '8192', 10),
+          response_format: { type: 'json_object' },
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        throw new Error(`LM Studio ${response.status}: ${body.slice(0, 300)}`);
+      }
+      const data = await response.json();
+      const rawContent = data.choices?.[0]?.message?.content || '';
+      return stripThinking(rawContent.trim());
+    } else {
+      // Ollama — API nativa
+      const response = await fetch(`${OLLAMA_URL}/api/chat`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal:  controller.signal,
+        body: JSON.stringify({
+          model,
+          messages,
+          stream: false,
+          think:   false,
+          format:  'json',
+          options: { temperature: TEMPERATURE, num_predict: MAX_TOKENS, num_ctx: parseInt(process.env.NUM_CTX || '8192', 10) },
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.text().catch(() => '');
+        throw new Error(`Ollama ${response.status}: ${body.slice(0, 300)}`);
+      }
+      const data = await response.json();
+      const rawContent = data.message?.content || '';
+      return stripThinking(rawContent.trim());
     }
-
-    const data    = await response.json();
-    // API nativa devuelve { message: { content: '...', thinking: '...' } }
-    const rawContent = data?.message?.content || '';
-    const thinking   = data?.message?.thinking || '';
-    console.log(`[ANALIZADOR] Raw response — content: ${rawContent.length} chars, thinking: ${thinking.length} chars`);
-    if (!rawContent && thinking) {
-      console.log(`[ANALIZADOR] ⚠ Content vacío pero hay thinking (${thinking.length} chars). Intentando extraer JSON del thinking...`);
-      // Si el content está vacío pero el thinking contiene JSON, intentar extraerlo
-      const jsonMatch = thinking.match(/\{[\s\S]*\}/);  
-      if (jsonMatch) return stripThinking(jsonMatch[0].trim());
-    }
-    if (!rawContent) {
-      console.warn(`[ANALIZADOR] ⚠ Respuesta completamente vacía del modelo. Keys: ${Object.keys(data?.message || {}).join(', ')}`);
-    }
-    return stripThinking(rawContent.trim());
-
   } finally {
     clearTimeout(timer);
   }
@@ -747,7 +779,7 @@ export async function analyze(extractedData) {
   const start = Date.now();
   const { text = '', method = '', metadata = {}, originalName = '', mimeType = '', imageBase64, imageMime } = extractedData;
 
-  console.log(`[ANALIZADOR] Iniciando análisis — archivo: "${originalName}" | método: ${method} | modelo: ${MODEL}`);
+  console.log(`[ANALIZADOR] Iniciando análisis — archivo: "${originalName}" | método: ${method} | modelo: ${getLlmModel()}`);
 
   // ── Validar que hay algo que analizar ───────────────────────────────────
   const esVision = method === 'vision-vl' && IS_VL_MODEL && imageBase64;
@@ -757,7 +789,7 @@ export async function analyze(extractedData) {
     return {
       analysis:           normalizeAnalysis(buildFallback(msg)),
       raw_response:       '',
-      model_used:         MODEL,
+      model_used:         getLlmModel(),
       processing_time_ms: Date.now() - start,
       ok:                 false,
       error:              msg,
@@ -800,7 +832,7 @@ export async function analyze(extractedData) {
     return {
       analysis:           normalized,
       raw_response:       rawResponse,
-      model_used:         MODEL,
+      model_used:         getLlmModel(),
       processing_time_ms: elapsed,
       ok:                 true,
     };
@@ -819,7 +851,7 @@ export async function analyze(extractedData) {
     return {
       analysis:           normalizeAnalysis(buildFallback(msgError)),
       raw_response:       rawResponse || '',
-      model_used:         MODEL,
+      model_used:         getLlmModel(),
       processing_time_ms: elapsed,
       ok:                 false,
       error:              msgError,
@@ -864,7 +896,7 @@ function buildDocumentContext(originalName, mimeType, metadata) {
 export function getConfig() {
   return {
     ollamaUrl:   OLLAMA_URL,
-    model:       MODEL,
+    model:       getLlmModel(),
     isVlModel:   IS_VL_MODEL,
     timeoutMs:   TIMEOUT_MS,
     maxTokens:   MAX_TOKENS,
@@ -925,13 +957,13 @@ export async function checkHealth() {
 
     const data   = await res.json();
     const models = (data?.models || []).map(m => m.name || m.model || '');
-    const found  = models.some(m => m.includes(MODEL.split(':')[0]));
+    const found  = models.some(m => m.includes(getLlmModel().split(':')[0]));
 
-    console.log(`[ANALIZADOR] Health: Ollama OK | modelo "${MODEL}" ${found ? 'encontrado' : 'NO encontrado'}`);
+    console.log(`[ANALIZADOR] Health: Ollama OK | modelo "${getLlmModel()}" ${found ? 'encontrado' : 'NO encontrado'}`);
 
     return {
       available:     true,
-      model:         MODEL,
+      model:         getLlmModel(),
       model_loaded:  found,
       models_available: models,
     };

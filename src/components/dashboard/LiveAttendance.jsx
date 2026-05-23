@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, MapPin, Wifi, AlertCircle, User } from "lucide-react";
@@ -11,7 +11,7 @@ export default function LiveAttendance() {
     queryKey: ['live-attendance'],
     queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const all = await base44.entities.Timesheet.filter({ date: today });
+      const all = await synkia.entities.Timesheet.filter({ date: today });
       return all;
     },
     refetchInterval: 30000, // Actualizar cada 30s

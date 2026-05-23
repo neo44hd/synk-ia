@@ -16,7 +16,7 @@ import { promisify } from 'util';
 
 const execFileP = promisify(execFile);
 
-const PROJECT_DIR  = process.env.SINKIA_PROJECT_DIR || '/Users/davidnows/sinkia';
+const PROJECT_DIR  = process?.env?.SINKIA_PROJECT_DIR || '/Users/davidnows/sinkia';
 const MAX_FILE_SIZE = 100_000; // 100KB
 const MAX_CONTEXT_CHARS = 50_000; // límite total de contexto inyectado
 

@@ -59,9 +59,8 @@ Cuando implementes algo:
 - **Ollama**: Los modelos se descargan al disco externo automáticamente. Si hay archivos `._*` corruptos, limpiar con `find /Volumes/Disco\ local/sinkia-hub/ollama/data/models -name "._*" -delete`.
 
 ### Herramientas disponibles en esta máquina
-- **Ollama** (`ollama`): Modelos IA locales — qwen3.5, qwen2.5-coder:14b, gemma4:26b, deepseek-r1:14b, codegemma:7b, phi4:14b, phi4-mini, llama3.2-vision:11b, glm-ocr, functiongemma, gemma4:e4b
+|- **Ollama** (`ollama`): Modelos IA locales — harmonic-hermes-9b, qwen2.5-coder:0.5b, glm-ocr |
 - **OrbStack**: Docker ligero para macOS — usa `docker` normalmente
-- **Open WebUI**: Interfaz web en chat.sinkialabs.com (11 modelos configurados con system prompts especializados)
 - **OpenClaw**: Gateway IA multi-agente en port 18789 (claw.sinkialabs.com)
 - **PM2**: Gestor de procesos Node
 - **Homebrew**: `brew` — instala lo que necesites
@@ -103,9 +102,9 @@ Dominio: **sinkialabs.com** — Cloudflare Tunnel → Mac Mini → Express (puer
 
 | Capa | Tecnología |
 |------|-----------|
-| Frontend | React 18 + Vite + Tailwind CSS + Radix UI + shadcn/ui |
-| Backend | Express.js (ESM, puerto 3001) |
-| IA local | Ollama (qwen2.5-coder:14b, qwen3.5, gemma4:26b) |
+|| Frontend | React 18 + Vite + Tailwind CSS + Radix UI + shadcn/ui |
+|| Backend | Express.js (ESM, puerto 3001) |
+|| IA local | Ollama (harmonic-hermes-9b, qwen2.5-coder:0.5b, glm-ocr) + LM Studio (negentropy-claude-opus-4.7-9b) |
 | Email | IMAP directo (Gmail) — Pipeline unificado |
 | OCR | Tesseract + Poppler (pdftotext/pdftoppm) |
 | Integraciones | Revo XEF (POS), Biloop (contabilidad), ESEECloud, VeriFactu |
@@ -227,8 +226,8 @@ REVO_TOKEN_LARGO=****
 ASSEMPSA_BILOOP_API_KEY=****
 AI_GPU_MODE=auto
 ADMIN_TOKEN=sinkia2026
-LOCAL_LLM_MODEL=qwen2.5-coder:14b
-LOCAL_LLM_CTX=16384
+LOCAL_LLM_MODEL=negentropy/ring-2.6-1t
+LOCAL_LLM_CTX=8192
 ```
 
 ## Comandos de desarrollo
@@ -277,30 +276,13 @@ find "/Volumes/Disco local/sinkia-hub/ollama/data/models" -name "._*" -delete
 ## Ecosistema de IA local
 
 ```
-Tú (Claude Code) ← proxy → qwen2.5-coder:14b (código de producción)
+Tú (Chat) ← SSE → negentropy-claude-opus-4.7-9b (LM Studio)
 │
-├── OpenClaw (claw.sinkialabs.com:18789)
-│   ├── brain: qwen3.5 (razonamiento)
-│   ├── coder: qwen3.5 (código vía OpenClaw)
-│   ├── docs: qwen3.5 (documentación)
-│   ├── main: qwen3.5 (orquestación)
-│   └── monitor: functiongemma (herramientas)
-│
-├── Open WebUI (chat.sinkialabs.com) — 11 modelos con system prompts
-│   ├── qwen3.5:latest → Modelo estrella polivalente
-│   ├── gemma4:26b → Cerebro principal multiusos
-│   ├── deepseek-r1:14b → Razonamiento profundo
-│   ├── qwen2.5-coder:14b → Especialista código producción
-│   ├── phi4:14b → Asistente técnico intermedio
-│   ├── codegemma:7b → Operador técnico de código
-│   ├── llama3.2-vision:11b → Analista visual
-│   ├── glm-ocr:latest → Especialista OCR (facturas/nóminas)
-│   ├── functiongemma:latest → Function calling
-│   ├── gemma4:e4b → Asistente rápido y ligero
-│   └── phi4-mini:latest → Micro-asistente ultraligero
-│
-└── SynK-IA Pipeline
-    └── documentProcessor.js → Ollama API (clasificación + extracción)
+├── Hermes Agent (mc.html) → negentropy-claude-opus-4.7-9b (LM Studio)
+├── OpenCode Agent (mc.html) → negentropy-claude-opus-4.7-9b (LM Studio)
+├── Brain (server/services/brain.js) → qwen2.5-coder:0.5b-instruct (Ollama)
+├── Clasificación/Extracción → qwen2.5-coder:0.5b-instruct (Ollama) + negentropy (LM Studio)
+└── OCR (glm-ocr:latest) → Ollama
 ```
 
 ## Problemas conocidos — ARREGLAR

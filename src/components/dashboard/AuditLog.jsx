@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import {
   FileText,
   User,
@@ -26,7 +26,7 @@ export default function AuditLog() {
 
   const loadUser = async () => {
     try {
-      const currentUser = await base44.auth.me();
+      const currentUser = await synkia.auth.me();
       setUser(currentUser);
     } catch (error) {
       console.log('No user logged in');

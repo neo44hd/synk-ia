@@ -492,6 +492,8 @@ body {
     <button class="tab" data-tab="claw"><div class="dot" id="claw-dot" style="background:var(--purple);box-shadow:0 0 5px var(--purple)"></div>OpenClaw</button>
     <button class="tab" data-tab="aider"><div class="dot" style="background:var(--orange);box-shadow:0 0 5px var(--orange)"></div>Aider</button>
     <button class="tab" data-tab="claude"><div class="dot" style="background:var(--blue);box-shadow:0 0 5px var(--blue)"></div>Claude Code</button>
+    <button class="tab" data-tab="hermes"><div class="dot" style="background:var(--purple);box-shadow:0 0 5px var(--purple)"></div>Hermes</button>
+    <button class="tab" data-tab="opencode"><div class="dot" style="background:var(--cyan);box-shadow:0 0 5px var(--cyan)"></div>OpenCode</button>
   </div>
   <div class="spacer"></div>
   <button class="header-btn" onclick="clearActive()">✕ Nueva</button>
@@ -527,14 +529,14 @@ body {
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     PANEL 1 — CHAT IA (qwen3.5)
+     PANEL 1 — CHAT IA (negentropy-4.7b)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div class="panel active" id="p-chat">
   <div class="chat-area" id="chat-scroll">
     <div class="chat-wrap" id="chat-wrap">
       <div class="empty" id="chat-empty">
         <div class="empty-icon">✦</div>
-        <div class="empty-title">Chat IA · qwen3.5</div>
+        <div class="empty-title">Chat IA · negentropy-4.7b</div>
         <div class="empty-sub">Conversación libre con tu modelo local</div>
         <div class="suggestions">
           <div class="suggestion" onclick="chatSuggest(this)">¿Qué hace esta app?</div>
@@ -584,7 +586,7 @@ body {
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
-     PANEL 3 — OPENCLAW (qwen3.5)
+     PANEL 3 — OPENCLAW (negentropy-4.7b)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <div class="panel" id="p-claw">
   <div class="status-bar">
@@ -596,7 +598,7 @@ body {
     <div class="chat-wrap" id="claw-wrap">
       <div class="empty" id="claw-empty">
         <div class="empty-icon">🐾</div>
-        <div class="empty-title">OpenClaw · qwen3.5</div>
+        <div class="empty-title">OpenClaw · negentropy-4.7b</div>
         <div class="empty-sub">Agente de funciones con Claude Code via WebSocket</div>
       </div>
     </div>
@@ -638,10 +640,59 @@ body {
     <div class="input-footer"><span id="aider-status">Verificando Aider...</span><span>⏎ Enter · Shift+⏎ línea</span></div>
   </div>
 </div>
+</div>
 
-<!-- ═════════════════════════════════════════════════════════════════════════════
-     PANEL 5 — CLAUDE CODE (3 sub-vistas: Chat, Aiden, Terminal)
-     ═════════════════════════════════════════════════════════════════════════════ -->
+<!-- PANEL 6 — HERMES AGENT -->
+<div class="panel" id="p-hermes">
+  <div class="chat-area" id="hermes-scroll">
+    <div class="chat-wrap" id="hermes-wrap">
+      <div class="empty" id="hermes-empty">
+        <div class="empty-icon">🧠</div>
+        <div class="empty-title">Hermes Agent</div>
+        <div class="empty-sub">Asistente conversacional con herramientas</div>
+        <div class="suggestions">
+          <div class="suggestion" onclick="hermesSuggest(this)">Escribe un mensaje a Hermes</div>
+          <div class="suggestion" onclick="hermesSuggest(this)">¿Qué puedes hacer?</div>
+          <div class="suggestion" onclick="hermesSuggest(this)">Ayúdame con una tarea</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="input-bar">
+    <div class="input-row" id="hermes-input-row" style="display:none">
+      <textarea id="hermes-in" rows="1" placeholder="Escribe o habla..." onkeydown="kd(event,'hermes')" oninput="ar(this)"></textarea>
+      <button class="mic" id="hermes-mic" onclick="toggleMic('hermes')"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button>
+      <button class="send purple" id="hermes-send" onclick="hermesChatSend()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    </div>
+    <div class="input-footer" id="hermes-footer" style="display:none"><span id="hermes-status">Desconectado</span><span>⏎ Enter · Shift+⏎ línea</span></div>
+  </div>
+</div>
+
+<!-- PANEL 7 — OPENCODE -->
+<div class="panel" id="p-opencode">
+  <div class="chat-area" id="opencode-scroll">
+    <div class="chat-wrap" id="opencode-wrap">
+      <div class="empty" id="opencode-empty">
+        <div class="empty-icon">💻</div>
+        <div class="empty-title">OpenCode</div>
+        <div class="empty-sub">Agente de código local — edita, genera y refactoriza</div>
+        <div class="suggestions">
+          <div class="suggestion" onclick="opencodeSuggest(this)">Revisa server/index.js</div>
+          <div class="suggestion" onclick="opencodeSuggest(this)">Genera un endpoint nuevo</div>
+          <div class="suggestion" onclick="opencodeSuggest(this)">Añade tests para brain.js</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="input-bar">
+    <div class="input-row" id="opencode-input-row" style="display:none">
+      <textarea id="opencode-in" rows="1" placeholder="Instrucción para OpenCode..." onkeydown="kd(event,'opencode')" oninput="ar(this)"></textarea>
+      <button class="mic" id="opencode-mic" onclick="toggleMic('opencode')"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg></button>
+      <button class="send cyan" id="opencode-send" onclick="opencodeChatSend()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    </div>
+    <div class="input-footer" id="opencode-footer" style="display:none"><span id="opencode-status">Verificando proxy...</span><span>⏎ Enter · Shift+⏎ línea</span></div>
+  </div>
+</div>
 <div class="panel" id="p-claude">
   <!-- Sub-tabs dentro del panel Claude Code -->
   <div class="claude-subtabs">
@@ -744,11 +795,13 @@ document.querySelectorAll('.tab').forEach(t => {
 });
 
 function clearActive() {
-  if (active === 'chat')  return clearPanel('chat', '✦', 'Chat IA · qwen3.5', 'Conversación libre con tu modelo local');
-  if (active === 'brain') return clearPanel('brain', '🧠', 'SynK-IA Brain · codegemma:7b', 'Cerebro de negocio');
-  if (active === 'claw')  return clearPanel('claw', '🐾', 'OpenClaw · qwen3.5', 'Asistente inteligente');
+  if (active === 'chat')  return clearPanel('chat', '✦', 'Chat IA · negentropy-4.7b', 'Conversación libre con tu modelo local');
+  if (active === 'brain') return clearPanel('brain', '🧠', 'SynK-IA Brain · negentropy-4.7b', 'Cerebro de negocio');
+  if (active === 'claw')  return clearPanel('claw', '🐾', 'OpenClaw · negentropy-4.7b', 'Asistente inteligente');
   if (active === 'aider') return clearPanel('aider', '⚡', 'Aider · qwen2.5-coder:14b', 'Asistente de código con Aider');
   if (active === 'claude') return clearPanel('claude', '🤖', 'Claude Code · qwen2.5-coder:14b', 'Chat directo con Claude Code proxy');
+  if (active === 'hermes') return clearPanel('hermes', '🧠', 'Hermes Agent · negentropy-claude-opus-4.7-9b', 'Asistente conversacional con herramientas');
+  if (active === 'opencode') return clearPanel('opencode', '💻', 'OpenCode · negentropy-claude-opus-4.7-9b', 'Agente de código local');
 }
 
 function clearPanel(id, icon, title, sub) {
@@ -760,7 +813,7 @@ function clearPanel(id, icon, title, sub) {
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 function ar(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px'; }
-function kd(e, panel) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ({chat:chatSend,brain:brainSend,claw:clawSend,aider:aiderSend,claude:claudeSend,aiden2:aidenSend2})[panel](); } }
+function kd(e, panel) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ({chat:chatSend,brain:brainSend,claw:clawSend,aider:aiderSend,claude:claudeSend,aiden2:aidenSend2,hermes:hermesChatSend,opencode:opencodeChatSend})[panel](); } }
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function scrollB(id) { const el = document.getElementById(id + '-scroll'); el.scrollTop = el.scrollHeight; }
 
@@ -943,7 +996,7 @@ async function autoSearchFiles(query) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  1. CHAT IA — qwen3.5 via /api/chat
+//  1. CHAT IA — negentropy-4.7b via /api/chat
 // ══════════════════════════════════════════════════════════════════════════════
 let chatMsgs = [], chatBusy = false;
 
@@ -1062,7 +1115,7 @@ async function brainSend() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  3. OPENCLAW — qwen3.5 via WebSocket
+//  3. OPENCLAW — negentropy-4.7b via WebSocket
 // ══════════════════════════════════════════════════════════════════════════════
 let clawWs=null, clawConn=false;
 
@@ -1392,6 +1445,120 @@ async function aidenSend2() {
   aidenBusy = false; document.getElementById('aiden2-send').disabled = false; scrollB('aiden2');
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+//  6. HERMES AGENT — WebSocket chat
+// ══════════════════════════════════════════════════════════════════════════════
+let hermesMsgs = [], hermesBusy = false;
+let hermesWs = null, hermesConn = false;
+
+async function initHermes() {
+  try {
+    const r = await fetch('/api/hermes/status');
+    const d = await r.json();
+    document.getElementById('hermes-status').textContent = d.ready ? 'Conectado · ' + (d.model || '—') : '⚠ No disponible';
+  } catch { document.getElementById('hermes-status').textContent = '⚠ Error al conectar'; }
+}
+
+function hermesSuggest(el) { document.getElementById('hermes-in').value = el.textContent; hermesChatSend(); }
+
+async function hermesChatSend() {
+  const inp = document.getElementById('hermes-in'), text = inp.value.trim();
+  if (!text || hermesBusy) return;
+  hermesMsgs.push({role:'user',content:text});
+  addMsg('hermes','user',`<p>${esc(text)}</p>`,'👤');
+  inp.value=''; inp.style.height='auto';
+
+  const bub = addMsg('hermes','assistant','','🧠');
+  bub.classList.add('typing-cursor');
+  hermesBusy = true; document.getElementById('hermes-send').disabled = true;
+
+  let full='';
+  try {
+    const res = await fetch('/api/hermes', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:hermesMsgs, stream:true})
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const reader=res.body.getReader(), dec=new TextDecoder(); let buf='';
+    while(true){
+      const{done,value}=await reader.read(); if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop()||'';
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        const raw=line.slice(5).trim(); if(raw==='[DONE]')continue;
+        try{
+          const d=JSON.parse(raw);
+          if(d.text){full+=d.text;bub.innerHTML=md(full);addCopyBtns(bub);scrollB('hermes');}
+          if(d.type==='error'){bub.innerHTML=`<p>⚠ ${esc(d.text)}</p>`;}
+        }catch{}
+      }
+    }
+    bub.classList.remove('typing-cursor');
+    bub.innerHTML=md(full||'…');addCopyBtns(bub);
+    hermesMsgs.push({role:'assistant',content:full});
+  } catch(e){bub.classList.remove('typing-cursor');bub.innerHTML=`<p>⚠ ${esc(e.message)}</p>`;}
+  hermesBusy=false;document.getElementById('hermes-send').disabled=false;scrollB('hermes');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  7. OPENCODE — WebSocket chat
+// ══════════════════════════════════════════════════════════════════════════════
+let opencodeMsgs = [], opencodeBusy = false;
+let opencodeWs = null, opencodeConn = false;
+
+async function initOpenCode() {
+  try {
+    const r = await fetch('/api/opencode/status');
+    const d = await r.json();
+    document.getElementById('opencode-status').textContent = d.ready ? 'Conectado · ' + (d.model || '—') : '⚠ No disponible';
+  } catch { document.getElementById('opencode-status').textContent = '⚠ Error al conectar'; }
+}
+
+function opencodeSuggest(el) { document.getElementById('opencode-in').value = el.textContent; opencodeChatSend(); }
+
+async function opencodeChatSend() {
+  const inp = document.getElementById('opencode-in'), text = inp.value.trim();
+  if (!text || opencodeBusy) return;
+  opencodeMsgs.push({role:'user',content:text});
+  addMsg('opencode','user',`<p>${esc(text)}</p>`,'👤');
+  inp.value=''; inp.style.height='auto';
+
+  const bub = addMsg('opencode','assistant','','💻');
+  bub.classList.add('typing-cursor');
+  bub.style.fontFamily="'SF Mono','Fira Code',monospace";
+  bub.style.fontSize='13px';
+  opencodeBusy = true; document.getElementById('opencode-send').disabled = true;
+
+  let full='';
+  try {
+    const res = await fetch('/api/opencode', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:opencodeMsgs, stream:true})
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const reader=res.body.getReader(), dec=new TextDecoder(); let buf='';
+    while(true){
+      const{done,value}=await reader.read(); if(done)break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop()||'';
+      for(const line of lines){
+        if(!line.startsWith('data:'))continue;
+        const raw=line.slice(5).trim(); if(raw==='[DONE]')continue;
+        try{
+          const d=JSON.parse(raw);
+          if(d.text){full+=d.text;bub.innerHTML='<pre style="margin:0;background:none;border:none;padding:0"><code>'+esc(full)+'</code></pre>';scrollB('opencode');}
+          if(d.type==='error'){bub.innerHTML=`<p style="color:#fca5a5">⚠ ${esc(d.text)}</p>`;}
+        }catch{}
+      }
+    }
+    bub.classList.remove('typing-cursor');
+    if(!full.trim())bub.innerHTML='<p style="color:var(--muted)">(Sin salida)</p>';
+    opencodeMsgs.push({role:'assistant',content:full});
+  } catch(e){bub.classList.remove('typing-cursor');bub.innerHTML=`<p>⚠ ${esc(e.message)}</p>`;}
+  opencodeBusy=false;document.getElementById('opencode-send').disabled=false;scrollB('opencode');
+}
+
 // ── Shell Terminal (xterm.js + WebSocket) ────────────────────────────
 const ADMIN_TOKEN = 'sinkia2026';
 
@@ -1542,7 +1709,11 @@ function toggleMic(panel) {
 }
 
 // ── Focus ─────────────────────────────────────────────────────────────────────
-window.addEventListener('load',()=>document.getElementById('chat-in').focus());
+window.addEventListener('load',()=>{
+  document.getElementById('chat-in').focus();
+  initHermes();
+  initOpenCode();
+});
 </script>
 </body>
 </html>

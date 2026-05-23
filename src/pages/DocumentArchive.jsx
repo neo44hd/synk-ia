@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,7 +64,7 @@ export default function DocumentArchive() {
 
   const { data: files = [], isLoading } = useQuery({
     queryKey: ['uploaded-files'],
-    queryFn: () => base44.entities.UploadedFile.list('-upload_date', 1000),
+    queryFn: () => synkia.entities.UploadedFile.list('-upload_date', 1000),
     staleTime: 30000,
   });
 
@@ -73,7 +73,7 @@ export default function DocumentArchive() {
     addLog(`🔍 Analizando ${file.filename}...`, 'pending');
 
     try {
-      await base44.entities.UploadedFile.update(file.id, { processing_status: 'processing' });
+      await synkia.entities.UploadedFile.update(file.id, { processing_status: 'processing' });
 
       const isCSV = (file.filename || '').toLowerCase().endsWith('.csv') || file.content_type?.includes('csv');
 
@@ -121,7 +121,7 @@ export default function DocumentArchive() {
       };
 
       try {
-        const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        const result = await synkia.integrations.Core.ExtractDataFromUploadedFile({
           file_url: file.file_url,
           json_schema: genericSchema
         });
@@ -141,12 +141,12 @@ export default function DocumentArchive() {
               
               for (const record of data.records) {
                 if (record.employee_name) {
-                  const existing = await base44.entities.Employee.filter({ full_name: record.employee_name });
+                  const existing = await synkia.entities.Employee.filter({ full_name: record.employee_name });
                   let employee;
 
                   if (existing.length === 0) {
                     const period = record.period || (record.document_date ? record.document_date.substring(0, 7) : new Date().toISOString().substring(0, 7));
-                    employee = await base44.entities.Employee.create({
+                    employee = await synkia.entities.Employee.create({
                       full_name: record.employee_name,
                       dni: record.employee_dni || '',
                       salary_net: record.amount || 0,
@@ -183,7 +183,7 @@ export default function DocumentArchive() {
                     // Agregar nómina solo si no existe ya ese periodo
                     const periodExists = currentPayrolls.some(p => p.period === newPayroll.period);
                     if (!periodExists) {
-                      await base44.entities.Employee.update(employee.id, {
+                      await synkia.entities.Employee.update(employee.id, {
                         payrolls: [...currentPayrolls, newPayroll]
                       });
                       addLog(`📄 Nómina ${period} agregada a: ${record.employee_name}`, 'success');
@@ -202,12 +202,12 @@ export default function DocumentArchive() {
               };
             } else if (data.employee_name) {
               // Una sola nómina
-              const existing = await base44.entities.Employee.filter({ full_name: data.employee_name });
+              const existing = await synkia.entities.Employee.filter({ full_name: data.employee_name });
               let employee;
 
               if (existing.length === 0) {
                 const period = data.period || (data.document_date ? data.document_date.substring(0, 7) : new Date().toISOString().substring(0, 7));
-                employee = await base44.entities.Employee.create({
+                employee = await synkia.entities.Employee.create({
                   full_name: data.employee_name,
                   dni: data.employee_dni || '',
                   salary_net: data.amount || 0,
@@ -242,7 +242,7 @@ export default function DocumentArchive() {
                 
                 const periodExists = currentPayrolls.some(p => p.period === newPayroll.period);
                 if (!periodExists) {
-                  await base44.entities.Employee.update(employee.id, {
+                  await synkia.entities.Employee.update(employee.id, {
                     payrolls: [...currentPayrolls, newPayroll]
                   });
                   addLog(`📄 Nómina ${period} agregada a: ${data.employee_name}`, 'success');
@@ -265,9 +265,9 @@ export default function DocumentArchive() {
               
               for (const record of data.records) {
                 if (record.provider_name) {
-                  const existingProvider = await base44.entities.Provider.filter({ name: record.provider_name });
+                  const existingProvider = await synkia.entities.Provider.filter({ name: record.provider_name });
                   if (existingProvider.length === 0) {
-                    await base44.entities.Provider.create({
+                    await synkia.entities.Provider.create({
                       name: record.provider_name,
                       cif: record.provider_cif || '',
                       category: 'otros',
@@ -276,7 +276,7 @@ export default function DocumentArchive() {
                     addLog(`🏢 Proveedor creado: ${record.provider_name}`, 'success');
                   }
                   
-                  await base44.entities.Invoice.create({
+                  await synkia.entities.Invoice.create({
                     provider_name: record.provider_name,
                     invoice_number: record.invoice_number || `INV-${Date.now()}`,
                     invoice_date: record.document_date || new Date().toISOString().split('T')[0],
@@ -301,9 +301,9 @@ export default function DocumentArchive() {
               
             } else if (data.provider_name) {
               // Una sola factura
-              const existingProvider = await base44.entities.Provider.filter({ name: data.provider_name });
+              const existingProvider = await synkia.entities.Provider.filter({ name: data.provider_name });
               if (existingProvider.length === 0) {
-                await base44.entities.Provider.create({
+                await synkia.entities.Provider.create({
                   name: data.provider_name,
                   cif: data.provider_cif || '',
                   category: 'otros',
@@ -312,7 +312,7 @@ export default function DocumentArchive() {
                 addLog(`🏢 Proveedor creado: ${data.provider_name}`, 'success');
               }
 
-              const newInvoice = await base44.entities.Invoice.create({
+              const newInvoice = await synkia.entities.Invoice.create({
                 provider_name: data.provider_name,
                 invoice_number: data.invoice_number || file.filename,
                 invoice_date: data.document_date || new Date().toISOString().split('T')[0],
@@ -334,7 +334,7 @@ export default function DocumentArchive() {
             }
 
           } else if (docType.includes('escritura') || docType.includes('legal') || docType.includes('constitución')) {
-            const newDoc = await base44.entities.CompanyDocument.create({
+            const newDoc = await synkia.entities.CompanyDocument.create({
               title: file.filename,
               document_type: 'constitucion',
               category: 'legal',
@@ -352,7 +352,7 @@ export default function DocumentArchive() {
             addLog(`📜 Documento legal creado`, 'success');
           }
 
-          await base44.entities.UploadedFile.update(file.id, {
+          await synkia.entities.UploadedFile.update(file.id, {
             processing_status: 'completed',
             detected_type: data.document_type || 'Documento',
             metadata: {
@@ -368,7 +368,7 @@ export default function DocumentArchive() {
         }
       } catch (standardError) {
         if (isCSV && standardError.message.includes('encoding')) {
-          const flexResult = await base44.functions.invoke('processFlexibleCSV', {
+          const flexResult = await synkia.functions.invoke('processFlexibleCSV', {
             file_url: file.file_url,
             file_id: file.id
           });
@@ -383,7 +383,7 @@ export default function DocumentArchive() {
 
     } catch (error) {
       console.error(`Error procesando ${file.filename}:`, error);
-      await base44.entities.UploadedFile.update(file.id, { 
+      await synkia.entities.UploadedFile.update(file.id, { 
         processing_status: 'error',
         metadata: { error: error.message.substring(0, 200) }
       });
@@ -414,7 +414,7 @@ export default function DocumentArchive() {
     const toastId = toast.loading(`Reseteando ${processingFiles.length} archivos...`);
     
     for (const file of processingFiles) {
-      await base44.entities.UploadedFile.update(file.id, { processing_status: 'pending' });
+      await synkia.entities.UploadedFile.update(file.id, { processing_status: 'pending' });
     }
     
     toast.success("Estados reseteados. Ahora puedes procesar uno a uno.", { id: toastId });
@@ -424,7 +424,7 @@ export default function DocumentArchive() {
   const handleDeleteFile = async (fileId) => {
     if(!confirm("¿Eliminar este archivo del registro?")) return;
     try {
-      await base44.entities.UploadedFile.delete(fileId);
+      await synkia.entities.UploadedFile.delete(fileId);
       toast.success("Archivo eliminado");
       queryClient.invalidateQueries({ queryKey: ['uploaded-files'] });
     } catch (error) {
@@ -442,7 +442,7 @@ export default function DocumentArchive() {
     
     const toastId = toast.loading(`Eliminando ${errorFiles.length} archivos...`);
     for (const file of errorFiles) {
-      await base44.entities.UploadedFile.delete(file.id);
+      await synkia.entities.UploadedFile.delete(file.id);
     }
     toast.success(`${errorFiles.length} archivos eliminados`, { id: toastId });
     queryClient.invalidateQueries({ queryKey: ['uploaded-files'] });
@@ -504,9 +504,9 @@ export default function DocumentArchive() {
 
     for (const file of filesToUpload) {
       try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await synkia.integrations.Core.UploadFile({ file });
         
-        const newFile = await base44.entities.UploadedFile.create({
+        const newFile = await synkia.entities.UploadedFile.create({
           filename: file.name,
           file_url: file_url,
           source: "Archivo Global",

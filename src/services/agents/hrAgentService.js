@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 
 /**
  * HR AGENT SERVICE
@@ -44,7 +44,7 @@ Solo proporciona información del empleado que está consultando. Respeta la con
    */
   async getEmployeePayrolls(employeeEmail) {
     try {
-      const payrolls = await base44.entities.Payroll.list({
+      const payrolls = await synkia.entities.Payroll.list({
         employee_email: employeeEmail
       });
       return payrolls;

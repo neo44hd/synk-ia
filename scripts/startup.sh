@@ -106,7 +106,7 @@ except:
 
   # Health check HTTP del backend
   local http_ok
-  http_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/health 2>/dev/null || echo "000")
+  http_ok=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:59401/api/health 2>/dev/null || echo "000")
   if [ "$http_ok" != "200" ]; then
     failed_services="$failed_services backend-http($http_ok)"
     details="$details\n- Backend HTTP: respondio $http_ok (esperado 200)"
@@ -175,7 +175,7 @@ pm2 list
 # Health check del backend
 echo ""
 echo "🏥 Health check:"
-curl -s http://localhost:3001/api/health 2>/dev/null || echo "⚠️  Backend aún arrancando..."
+curl -s http://localhost:59401/api/health 2>/dev/null || echo "⚠️  Backend aún arrancando..."
 
 echo ""
 echo "🚀 SYNK-IA lista → https://sinkialabs.com"

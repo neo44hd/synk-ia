@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { synkia } from '@/api/synkiaClient';
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -25,7 +25,7 @@ export default function EmployeeHome() {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const currentUser = await base44.auth.me();
+        const currentUser = await synkia.auth.me();
         setUser(currentUser);
       } catch (error) {
         console.error('Error loading user:', error);
@@ -40,7 +40,7 @@ export default function EmployeeHome() {
   const { data: myPayrolls = [] } = useQuery({
     queryKey: ['my-payrolls'],
     queryFn: async () => {
-      const payrolls = await base44.entities.Payroll.list('-period', 3);
+      const payrolls = await synkia.entities.Payroll.list('-period', 3);
       return payrolls.filter(p => p.employee_id === user?.id || p.employee_name === user?.full_name);
     },
     enabled: !!user,
@@ -49,7 +49,7 @@ export default function EmployeeHome() {
   const { data: myRequests = [] } = useQuery({
     queryKey: ['my-vacation-requests'],
     queryFn: async () => {
-      const requests = await base44.entities.VacationRequest.list('-created_date', 5);
+      const requests = await synkia.entities.VacationRequest.list('-created_date', 5);
       return requests.filter(r => r.employee_id === user?.id || r.employee_name === user?.full_name);
     },
     enabled: !!user,
@@ -59,7 +59,7 @@ export default function EmployeeHome() {
     queryKey: ['today-timesheet'],
     queryFn: async () => {
       const today = format(new Date(), 'yyyy-MM-dd');
-      const timesheets = await base44.entities.Timesheet.list('-created_date', 10);
+      const timesheets = await synkia.entities.Timesheet.list('-created_date', 10);
       return timesheets.find(t => 
         t.date === today && 
         (t.user_id === user?.id || t.user_name === user?.full_name)
