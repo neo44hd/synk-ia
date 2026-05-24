@@ -1,0 +1,108 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# docker-compose.yml — SynK-IA + Ollama
+#
+# Despliegue completo con:
+#   docker compose up -d
+#
+# Requisitos:
+#   - Ollama con modelo 'harmonic-hermes-9b:latest' ya descargado
+#   - O iniciarlo con: docker compose up ollama
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ── Ollama (LLM local) ────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: synkia-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── SynK-IA API ───────────────────────────────────────────────────────────
+  synkia:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: synkia-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      # ── API Auth ──
+      - ADMIN_TOKEN=sinkia2026
+      - JWT_SECRET=synkia-secret-key-produccion
+
+      # ── Ollama ──
+      - OLLAMA_URL=http://synkia-ollama:11434
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_PORT=11434
+      - OLLAMA_MODEL=harmonic-hermes-9b:latest
+
+      # ── LM Studio (opcional, si se expone en la red) ──
+      - LMSTUDIO_URL=http://host.docker.internal:1234/v1
+      - LMSTUDIO_MODEL=negentropy-claude-opus-4.7-9b
+
+      # ── OpenRouter (cloud fallback) ──
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_URL=https://openrouter.ai/api/v1
+      - OPENROUTER_MODEL=google/gemini-2.5-flash
+
+      # ── Markitdown ──
+      - MARKITDOWN_EXE=/opt/markitdown-venv/bin/python
+      - MARKITDOWN_WRAPPER=/app/server/tools/markitdown_wrapper.py
+
+      # ── Modelos de pipeline ──
+      - CLASSIFY_MODEL=harmonic-hermes-9b:latest
+      - EXTRACT_MODEL=harmonic-hermes-9b:latest
+      - DEEP_MODEL=harmonic-hermes-9b:latest
+      - CHAT_MODEL=harmonic-hermes-9b:latest
+      - CLASSIFY_PROVIDER=ollama
+      - EXTRACT_PROVIDER=ollama
+      - DEEP_PROVIDER=ollama
+
+      # ── Telegram ──
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - TELEGRAM_MODEL=harmonic-hermes-9b:latest
+
+      # ── App ──
+      - PORT=3001
+      - NODE_ENV=production
+      - NUM_CTX=8192
+      - TEMPERATURE=0.1
+      - DISABLE_TAILSCALE_AUTH=true
+
+    volumes:
+      - synkia_uploads:/app/uploads
+      - synkia_data:/app/data
+      - ./server/.env:/app/server/.env:ro
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+# ── Volúmenes persistentes ──────────────────────────────────────────────────
+volumes:
+  ollama_data:
+  synkia_uploads:
+  synkia_data:
