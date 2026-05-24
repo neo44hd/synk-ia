@@ -29,7 +29,13 @@ const LMSTUDIO_MODELS = new Set([
   'negentropy-claude-opus-4.7-9b',
   'deepseek/deepseek-r1-0528-qwen3-8b',
 ]);
-const getModel = () => process?.env?.DOC_AGENT_MODEL || process?.env?.LMSTUDIO_MODEL || 'negentropy-claude-opus-4.7-9b';
+const getModel = () => {
+  const provider = process?.env?.DOC_AGENT_PROVIDER || 'ollama';
+  if (provider === 'lmstudio') {
+    return process?.env?.DOC_AGENT_MODEL || process?.env?.LMSTUDIO_MODEL || 'harmonic-hermes-9b:latest';
+  }
+  return process?.env?.DOC_AGENT_MODEL || 'harmonic-hermes-9b:latest';
+};
 const isLMStudio = (model) => LMSTUDIO_MODELS.has(model);
 const getEndpoint = (model) => isLMStudio(model) ? LMSTUDIO_URL : OLLAMA_URL;
 

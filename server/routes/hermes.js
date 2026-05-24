@@ -19,6 +19,7 @@ const OPENROUTER_KEY = process?.env?.OPENROUTER_API_KEY || '';
 const LMSTUDIO_MODELS = new Set([
   'negentropy-claude-opus-4.7-9b',
   'deepseek/deepseek-r1-0528-qwen3-8b',
+  'qwen/qwen3.5-32b-instruct',
   'qwen3.6-40b-claude-4.6-opus-deckard-heretic-uncensored-thinking-neo-code-di-imatrix-max',
 ]);
 
@@ -32,11 +33,13 @@ const OPENROUTER_MODELS = new Set([
   'google/gemini-2.0-pro',
   'google/gemini-1.5-flash',
   'google/gemini-1.5-pro',
+  'google/gemma-2-9b-it',
   'anthropic/claude-3.5-sonnet',
   'anthropic/claude-3.5-haiku',
   'anthropic/claude-3-opus',
   'mistralai/mistral-7b-instruct',
   'mistralai/mistral-large-2411',
+  'mistralai/mistral-nemo-12b-instruct',
   'mistralai/mixtral-8x7b-instruct',
   'mistralai/mixtral-8x22b-instruct',
   'meta-llama/llama-3.1-8b-instruct',
@@ -46,7 +49,13 @@ const OPENROUTER_MODELS = new Set([
   'meta-llama/llama-3.2-3b-instruct',
   'meta-llama/llama-3.2-11b-vision-instruct',
   'nvidia/llama-3.1-nemotron-mini-4b',
+  'microsoft/phi-4',
   'microsoft/phi-3-mini-128k-instruct',
+  'qwen/qwen2.5-coder-7b-instruct',
+  'qwen/qwen-2.5-72b-instruct',
+  'deepseek/deepseek-r1-0528-qwen3-8b',
+  'deepseek/deepseek-ring-2.5-mini-16k',
+  'deepseek/deepseek-v3',
   'nousresearch/hermes-3-mixtral-8x7b',
   'nousresearch/hermes-3-llama-3.1-8b',
 ]);

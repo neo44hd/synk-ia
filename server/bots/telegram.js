@@ -15,12 +15,39 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = join(dirname(__dirname), '..', 'data');
 
 // ── Config ────────────────────────────────────────────────────────────────────
-function getToken() { return process?.env?.TELEGRAM_BOT_TOKEN || ''; }
-function getChatId() { return process?.env?.TELEGRAM_CHAT_ID || ''; }
-function getModel() { return process?.env?.TELEGRAM_MODEL || 'harmonic-hermes-9b:latest'; }
+// Modelo activo por usuario (runtime override)
+const activeModels = new Map();
+
+function getActiveModel(chatId) {
+  return activeModels.get(String(chatId)) || process?.env?.TELEGRAM_MODEL || 'harmonic-hermes-9b:latest';
+}
+function setActiveModel(chatId, model) {
+  activeModels.set(String(chatId), model);
+  return model;
+}
 function getBackendUrl() { return process?.env?.BACKEND_URL || 'http://localhost:3001'; }
 function getOllamaUrl() { return process?.env?.OLLAMA_URL || 'http://localhost:11434'; }
+function getToken() { return process?.env?.TELEGRAM_BOT_TOKEN || ''; }
+function getChatId() { return process?.env?.TELEGRAM_CHAT_ID || ''; }
 function getMaxHist() { return parseInt(process.env.TELEGRAM_MAX_HISTORY || '20', 10); }
+
+// ── Modelos conocidos por proveedor (para validar selección) ────────────────────
+const KNOWN_MODELS = [
+  { id: 'harmonic-hermes-9b:latest',           label: '🤖 Harmonic Hermes 9B',         provider: 'ollama' },
+  { id: 'qwen2.5-coder:0.5b-instruct',         label: '🧠 Qwen 2.5 Coder 0.5B',        provider: 'ollama' },
+  { id: 'glm-ocr:latest',                      label: '📝 GLM OCR',                    provider: 'ollama' },
+  { id: 'negentropy-claude-opus-4.7-9b',       label: '🔵 Negentropy Claude Opus 4.7',  provider: 'lmstudio' },
+  { id: 'deepseek/deepseek-r1-0528-qwen3-8b', label: '🟢 DeepSeek R1 Qwen3 8B',       provider: 'lmstudio' },
+  { id: 'qwen/qwen3.5-32b-instruct',           label: '🟡 Qwen 3.5 32B',               provider: 'lmstudio' },
+  { id: 'openai/gpt-4o-mini',                  label: '⚪ GPT-4o Mini (free)',          provider: 'openrouter' },
+  { id: 'openai/gpt-4o',                       label: '⚪ GPT-4o (free tier)',          provider: 'openrouter' },
+  { id: 'google/gemma-2-9b-it',                label: '🟢 Gemma 2 9B It (free)',       provider: 'openrouter' },
+  { id: 'meta-llama/llama-3.1-8b-instruct',    label: '🦙 Llama 3.1 8B (free)',        provider: 'openrouter' },
+  { id: 'google/gemini-2.5-flash',             label: '💎 Gemini 2.5 Flash (free)',     provider: 'openrouter' },
+  { id: 'deepseek/deepseek-r1',                label: '🟢 DeepSeek R1 (free)',          provider: 'openrouter' },
+  { id: 'inclusionai/ring-2.6-1t',             label: '🔥 Hermes Ring 2.6 1T (free)',   provider: 'openrouter' },
+  { id: 'meta-llama/llama-3.3-70b-instruct:free', label: '🦙 Llama 3.3 70B (free)',    provider: 'openrouter' },
+];
 
 // ── Historial de conversación por chat_id ─────────────────────────────────────
 const chatHistories = new Map();
@@ -46,7 +73,7 @@ const HELP_TEXT = [
   '🤖 *SynK-IA Bot* — Chicken Palace Ibiza',
   'Powered by Hermes Agent (negentropy-claude-opus-4.7-9b)',
   '',
-  '*Comandos disponibles:*',
+  '*Commands:*',
   '/start   — Menú principal con teclado',
   '/status  — Estado del sistema',
   '/health  — Health check detallado',
@@ -57,7 +84,7 @@ const HELP_TEXT = [
   '/entities  — Clientes y trabajadores',
   '/tasks   — Tareas pendientes',
   '/clear  — Borrar historial de esta conversación',
-  '/model  — Ver modelo activo',
+  '/models — Cambiar modelo activo',
   '/help    — Este mensaje',
   '',
   '*Chat conversacional:*',
@@ -73,7 +100,7 @@ function getMainKeyboard() {
       [{ text: '📦 Batch', callback_data: 'cmd_batch' }, { text: '📋 Logs', callback_data: 'cmd_logs' }],
       [{ text: '📈 Stats', callback_data: 'cmd_stats' }, { text: '🏢 Proveedores', callback_data: 'cmd_providers' }],
       [{ text: '👥 Entidades', callback_data: 'cmd_entities' }, { text: '🧠 Modelo', callback_data: 'cmd_model' }],
-      [{ text: '🗑️ Borrar historial', callback_data: 'cmd_clear' }],
+      [{ text: '🌐 Modelos', callback_data: 'cmd_models' }, { text: '🗑️ Borrar historial', callback_data: 'cmd_clear' }],
     ],
     resize_keyboard: true,
     one_time_keyboard: false,
@@ -131,6 +158,7 @@ async function registerBotCommands(token) {
     { command: 'providers', description: '🏢 Lista de proveedores' },
     { command: 'entities', description: '👥 Clientes y trabajadores' },
     { command: 'model', description: '🧠 Ver modelo activo' },
+    { command: 'models', description: '🌐 Cambiar modelo' },
     { command: 'clear', description: '🗑️ Borrar historial del chat' },
     { command: 'help', description: 'ℹ️ Mostrar esta ayuda' },
   ];
@@ -224,7 +252,7 @@ async function handleHealth() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: getModel(),
+        model: getActiveModel(),
         prompt: 'ok',
         stream: false,
         options: { num_predict: 1, num_ctx: parseInt(process.env.NUM_CTX || '8192', 10) },
@@ -339,11 +367,50 @@ const CALLBACK_HANDLERS = {
   cmd_stats:    () => handleStats(),
   cmd_providers: () => handleProviders(),
   cmd_entities: () => handleEntities(),
-  cmd_model:    (chatId) => '🧠 Modelo activo: *' + escMd(getModel()) + '*'
+  cmd_model:    (chatId) => '🧠 Modelo activo: *' + escMd(getActiveModel(chatId)) + '*'
     + '\\n🔗 Backend: ' + getBackendUrl()
     + '\\n📊 Historial: ' + getHistory(chatId).length + ' mensajes',
   cmd_clear:    (chatId) => { clearHistory(chatId); return '🧹 Historial borrado.'; },
+  cmd_models:   (chatId) => handleModels(chatId),
 };
+
+
+async function handleModels(chatId) {
+  const lines = ['🌐 *Seleccionar modelo activo*\\n'];
+  const providers = {};
+  for (const m of KNOWN_MODELS) {
+    if (!providers[m.provider]) providers[m.provider] = [];
+    providers[m.provider].push(m);
+  }
+  const emojis = { ollama: '🤖', lmstudio: '🔵', openrouter: '🌐' };
+  for (const [prov, models] of Object.entries(providers)) {
+    const icon = emojis[prov] || '📦';
+    lines.push('*' + icon + ' ' + prov.toUpperCase() + '*');
+    for (const m of models) {
+      const sel = getActiveModel(chatId) === m.id ? '✅ ' : '  ';
+      lines.push(sel + m.label + ' → /set_' + m.id.replace(/[\/:.]/g, '_'));
+    }
+    lines.push('');
+  }
+  lines.push('Escribe el comando del modelo para seleccionarlo.');
+  const kb = { inline_keyboard: KNOWN_MODELS.map(m => [{
+    text: m.label.substring(0, 22),
+    callback_data: 'set_model:' + m.id
+  }]) };
+  return { text: lines.join('\\n'), keyboard: kb };
+}
+
+// ── Handler para selección inline de modelo ────────────────────────────────────
+async function handleSetModel(chatId, modelId) {
+  // Validar que el modelo existe en KNOWN_MODELS
+  const valid = KNOWN_MODELS.find(m => m.id === modelId);
+  if (!valid) return '❌ Modelo desconocido: ' + escMd(modelId);
+  setActiveModel(chatId, modelId);
+  return '✅ Modelo cambiado a: *' + escMd(valid.label) + '*\\n'
+    + '🔗 Proveedor: ' + escMd(valid.provider) + '\\n'
+    + 'Se usará para las siguientes conversaciones en este chat.';
+}
+
 
 // ── Dispatcher ────────────────────────────────────────────────────────────────
 
@@ -363,17 +430,29 @@ async function handleTelegramUpdate(update) {
       });
     } catch {}
 
+    if (data.startsWith('set_model:')) {
+      const modelId = data.replace('set_model:', '');
+      const text = await handleSetModel(chatId, modelId);
+      await sendMessage(getToken(), chatId, text, { reply_markup: JSON.stringify(getMainKeyboard()) });
+      return { done: true };
+    }
     if (data.startsWith('cmd_')) {
       const handler = CALLBACK_HANDLERS[data];
       if (handler) {
-        let text;
+        let result;
         if (typeof handler === 'function') {
-          text = handler(chatId);
+          result = handler(chatId);
         } else {
-          text = handler;
+          result = handler;
         }
-        if (text instanceof Promise) text = await text;
-        await sendMessage(getToken(), chatId, text, { reply_markup: JSON.stringify(getMainKeyboard()) });
+        if (result instanceof Promise) result = await result;
+
+        if (result && typeof result === 'object' && result.text) {
+          const opts = { reply_markup: JSON.stringify(result.keyboard || getMainKeyboard()) };
+          await sendMessage(getToken(), chatId, result.text, opts);
+        } else {
+          await sendMessage(getToken(), chatId, result, { reply_markup: JSON.stringify(getMainKeyboard()) });
+        }
         return { done: true };
       }
     }
@@ -403,6 +482,7 @@ async function handleTelegramUpdate(update) {
     '🏢 Proveedores': 'providers',
     '👥 Entidades':    'entities',
     '🧠 Modelo':      'model',
+    '🌐 Modelos':     'models',
     '🗑️ Borrar historial': 'clear',
   };
 
@@ -420,9 +500,12 @@ async function handleTelegramUpdate(update) {
       case 'providers': response = await handleProviders(); break;
       case 'entities':  response = await handleEntities(); break;
       case 'model':
-        response = '🧠 Modelo activo: *' + escMd(getModel()) + '*'
-          + '\\n🔗 Backend: ' + getBackendUrl()
+        response = '🧠 Modelo activo: *' + escMd(getActiveModel(chatId))
+          + '*\\n🔗 Backend: ' + getBackendUrl()
           + '\\n📊 Historial: ' + getHistory(chatId).length + ' mensajes';
+        break;
+      case 'models':
+        response = await handleModels(chatId);
         break;
       case 'clear':
         clearHistory(chatId);
@@ -471,8 +554,12 @@ async function handleTelegramUpdate(update) {
         response = '🧹 Historial borrado para esta conversación.';
         break;
 
+      case text === '/models':
+        response = await handleModels(chatId);
+        break;
+
       case text === '/model':
-        response = '🧠 Modelo activo: *' + escMd(getModel()) + '*'
+        response = '🧠 Modelo activo: *' + escMd(getActiveModel(chatId)) + '*'
           + '\\n🔗 Backend: ' + getBackendUrl()
           + '\\n📊 Historial: ' + getHistory(chatId).length + ' mensajes';
         break;
@@ -588,7 +675,7 @@ export function setupTelegramRoutes(app) {
     res.json({
       bot: '@Diosa44_bot',
       name: 'Diosa44',
-      model: getModel(),
+      model: getActiveModel(''),
       backend: getBackendUrl(),
       ollama: getOllamaUrl(),
       token_configured: TOKEN.length > 0,

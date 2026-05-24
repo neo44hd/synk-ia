@@ -24,6 +24,7 @@ const LMSTUDIO_KEY  = process?.env?.LMSTUDIO_API_KEY || '';
 const LMSTUDIO_MODELS = new Set([
   'negentropy-claude-opus-4.7-9b',
   'deepseek/deepseek-r1-0528-qwen3-8b',
+  'qwen/qwen3.5-32b-instruct',
 ]);
 
 function getChatProvider(model) {

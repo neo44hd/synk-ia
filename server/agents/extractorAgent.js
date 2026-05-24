@@ -41,6 +41,8 @@ const LMSTUDIO_URL    = process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1'
 const LMSTUDIO_KEY    = process?.env?.LMSTUDIO_API_KEY || '';
 const OCR_PROVIDER    = process?.env?.OCR_PROVIDER || 'ollama';
 const OCR_MODEL       = process.env.OCR_MODEL || 'glm-ocr';
+const MARKITDOWN_EXE  = process?.env?.MARKITDOWN_EXE || '/Users/davidnows/markitdown-venv/bin/python';
+const MARKITDOWN_WRAPPER = process?.env?.MARKITDOWN_WRAPPER || '/Users/davidnows/synkia-app/server/tools/markitdown_wrapper.py';
 
 function getOcrModel() {
   return OCR_MODEL;
@@ -52,6 +54,38 @@ function isLMStudio() {
 
 function getOcrEndpoint() {
   return isLMStudio() ? LMSTUDIO_URL.replace(/\/v1\/?$/, '') : OLLAMA_URL;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  MARKITDOWN — Extracción con motor Python
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Llama al wrapper de Markitdown para extraer markdown de cualquier formato */
+async function extractViaMarkitdown(filePath, originalName = '') {
+  const t0 = Date.now();
+  try {
+    const result = await promisify(execFile)(MARKITDOWN_EXE, [MARKITDOWN_WRAPPER, filePath], {
+      timeout: 120_000,
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    const parsed = JSON.parse(result.stdout || '{}');
+    if (parsed.ok && parsed.markdown) {
+      let text = parsed.markdown;
+      if (text.length > MAX_CHARS) {
+        text = smartTruncate(text, MAX_CHARS);
+      }
+      return ok(text, `markitdown${parsed.title ? `:${parsed.title}` : ''}`, {
+        has_tables: text.includes('|') || /\\t/.test(text),
+        has_images: false,
+        elapsed_ms: Date.now() - t0,
+        original_name: originalName,
+      });
+    }
+    return fail('markitdown-empty', parsed.error || 'Resultado vacío de Markitdown');
+  } catch (err) {
+    console.error(`[EXTRACTOR] Markitdown fallback error: ${err.message}`);
+    throw err; // Propagar para que el caller decida
+  }
 }
 
 // Límite de texto extraído antes del truncado inteligente
@@ -143,7 +177,7 @@ async function dispatchExtract(filePath, mimeType, ext, originalName) {
 
   // ── DOCX / DOCM ───────────────────────────────────────────────────────
   if (ext === '.docx' || ext === '.docm' || mime.includes('wordprocessingml')) {
-    return extractDocx(filePath);
+    try { return await extractViaMarkitdown(filePath, originalName); } catch { return extractDocx(filePath); }
   }
 
   // ── DOC (Word antiguo) ────────────────────────────────────────────────
@@ -153,12 +187,12 @@ async function dispatchExtract(filePath, mimeType, ext, originalName) {
 
   // ── ODT ───────────────────────────────────────────────────────────────
   if (ext === '.odt' || mime.includes('opendocument.text')) {
-    return extractOdt(filePath);
+    try { return await extractViaMarkitdown(filePath, originalName); } catch { return extractOdt(filePath); }
   }
 
   // ── PPTX ──────────────────────────────────────────────────────────────
   if (ext === '.pptx' || ext === '.pptm' || mime.includes('presentationml')) {
-    return extractPptx(filePath);
+    try { return await extractViaMarkitdown(filePath, originalName); } catch { return extractPptx(filePath); }
   }
 
   // ── PPT (antiguo) ─────────────────────────────────────────────────────
@@ -168,7 +202,17 @@ async function dispatchExtract(filePath, mimeType, ext, originalName) {
 
   // ── ODP (Impress) ─────────────────────────────────────────────────────
   if (ext === '.odp' || mime.includes('opendocument.presentation')) {
-    return extractOdp(filePath);
+    try { return await extractViaMarkitdown(filePath, originalName); } catch { return extractOdp(filePath); }
+  }
+
+  // ── ODS (Calc) ────────────────────────────────────────────────────────
+  if (ext === '.ods' || mime.includes('opendocument.spreadsheet')) {
+    try { return await extractViaMarkitdown(filePath, originalName); } catch { return extractSpreadsheet(filePath, ext); }
+  }
+
+  // ── HTML / MHTML ──────────────────────────────────────────────────────
+  if (ext === '.html' || ext === '.htm' || ext === '.mhtml' || mime.includes('html')) {
+    try { return await extractViaMarkitdown(filePath, originalName); } catch { return extractHtml(filePath); }
   }
 
   // ── Archivos comprimidos ───────────────────────────────────────────────

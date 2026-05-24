@@ -434,6 +434,9 @@ if (existsSync(filemanagerHtml)) {
 }
 
 
+// Redirect /dashboard → /mc (Mission Control)
+app.get('/dashboard', (_req, res) => res.redirect('/mc'));
+
 // Servir mc.html en /mc y en / (Mission Control landing)
 const mcHtml = path.join(__dirnameRoot, '..', 'public', 'mc.html');
 if (existsSync(mcHtml)) {
