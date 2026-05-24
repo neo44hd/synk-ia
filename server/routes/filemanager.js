@@ -25,7 +25,7 @@ const router = express.Router();
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ADMIN_TOKEN    = process.env.ADMIN_TOKEN  || 'sinkia2026';
-const UPLOADS_DIR    = process.env.UPLOADS_DIR  || '/Users/davidnows/sinkia/uploads';
+const UPLOADS_DIR    = process.env.UPLOADS_DIR  || path.join(__dirname, '..', '..', 'uploads');
 const DATA_DIR       = process.env.DATA_DIR     || path.join(__dirname, '..', '..', 'data');
 const DOCUMENTS_FILE = path.join(DATA_DIR, 'filemanager_docs.json');
 
