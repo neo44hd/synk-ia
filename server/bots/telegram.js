@@ -47,6 +47,7 @@ const KNOWN_MODELS = [
   { id: 'deepseek/deepseek-r1',                label: '🟢 DeepSeek R1 (free)',          provider: 'openrouter' },
   { id: 'inclusionai/ring-2.6-1t',             label: '🔥 Hermes Ring 2.6 1T (free)',   provider: 'openrouter' },
   { id: 'meta-llama/llama-3.3-70b-instruct:free', label: '🦙 Llama 3.3 70B (free)',    provider: 'openrouter' },
+  { id: 'openrouter/free',                       label: '🌐 OpenRouter Free (auto)',    provider: 'openrouter' },
 ];
 
 // ── Historial de conversación por chat_id ─────────────────────────────────────

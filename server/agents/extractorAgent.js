@@ -41,8 +41,8 @@ const LMSTUDIO_URL    = process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1'
 const LMSTUDIO_KEY    = process?.env?.LMSTUDIO_API_KEY || '';
 const OCR_PROVIDER    = process?.env?.OCR_PROVIDER || 'ollama';
 const OCR_MODEL       = process.env.OCR_MODEL || 'glm-ocr';
-const MARKITDOWN_EXE  = process?.env?.MARKITDOWN_EXE || '/Users/davidnows/markitdown-venv/bin/python';
-const MARKITDOWN_WRAPPER = process?.env?.MARKITDOWN_WRAPPER || '/Users/davidnows/synkia-app/server/tools/markitdown_wrapper.py';
+const MARKITDOWN_EXE  = process?.env?.MARKITDOWN_EXE || '/opt/markitdown-venv/bin/python';
+const MARKITDOWN_WRAPPER = process?.env?.MARKITDOWN_WRAPPER || '/app/server/tools/markitdown_wrapper.py';
 
 function getOcrModel() {
   return OCR_MODEL;

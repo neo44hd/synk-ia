@@ -11,41 +11,29 @@
 :root{--bg:#0a0e1a;--s1:#111827;--s2:#1f2937;--s3:#374151;--text:#e5e7eb;--muted:#9ca3af;--accent:#3b82f6;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--pink:#ec4899;--cyan:#06b6d4;--border:#1e2d54;--card-bg:#161b26}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-
-/* ── Layout ── */
 .wrap{max-width:1600px;margin:0 auto;padding:16px}
-
-/* ── Header ── */
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--border);border-radius:16px;margin-bottom:16px}
 .hdr h1{font-size:1.5em;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hdr .sub{color:var(--muted);font-size:.8em;margin-top:2px}
 .hdr-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.chip{background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:.75em;color:var(--muted);display:flex;align-items:center;gap:5px;transition:all .2s}
+.chip{background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:.75em;color:var(--muted);display:flex;align-items:center;gap:5px;transition:all .2s;cursor:pointer}
 .chip b{color:var(--text)}
 .chip.healthy{border-color:var(--green);color:var(--green)}
 .chip.alert{border-color:var(--red);color:var(--red)}
 .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
 .status-dot.online{background:var(--green);box-shadow:0 0 8px var(--green)}
 .status-dot.offline{background:var(--red);box-shadow:0 0 8px var(--red)}
-
-/* ── Tabs ── */
 .tabs{display:flex;gap:2px;background:var(--s1);border-radius:12px;padding:4px;margin-bottom:16px;border:1px solid var(--border);position:sticky;top:0;z-index:10}
 .tab{flex:1;padding:10px 8px;text-align:center;cursor:pointer;border:none;background:none;color:var(--muted);font-weight:600;font-size:.8em;border-radius:10px;transition:all .25s;white-space:nowrap;font-family:inherit}
 .tab:hover{color:var(--text);background:var(--s2)}
 .tab.on{background:var(--s2);color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
 .page{display:none}.page.on{display:block}
-
-/* ── Alerts ── */
 .alerts{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:none}
 .alerts.show{display:block;animation:shake .3s}
 .alerts h3{color:var(--red);font-size:.9em;margin-bottom:8px}
 .alert-item{font-size:.8em;color:#fca5a5;padding:3px 0;border-bottom:1px solid rgba(239,68,68,.1)}
-
-/* ── Grid cards ── */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:20px}
-
-/* ── Card system (mejorado) ── */
-.metric-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden;transition:all .3s}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px}
+.metric-card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:18px;position:relative;overflow:hidden;transition:all .3s;cursor:pointer}
 .metric-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--purple))}
 .metric-card.highlight::before{background:linear-gradient(90deg,var(--green),var(--cyan))}
@@ -55,8 +43,6 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
 .metric-value{font-size:1.8em;font-weight:800;text-align:center;padding:12px 0}
 .metric-value.lg{font-size:2em}
 .metric-label{font-size:.7em;color:var(--muted);text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
-
-/* ── Progress bars ── */
 .progress-container{margin-top:8px;padding:0 2px}
 .progress-label{display:flex;justify-content:space-between;font-size:.7em;color:var(--muted);margin-bottom:4px}
 .progress-bar{height:8px;background:var(--s3);border-radius:4px;overflow:hidden}
@@ -66,63 +52,62 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
 .progress-fill.red{background:linear-gradient(90deg,#dc2626,var(--red))}
 .progress-fill.blue{background:linear-gradient(90deg,#2563eb,var(--accent))}
 .progress-fill.purple{background:linear-gradient(90deg,#7c3aed,var(--purple))}
-
-/* ── Stat row ── */
 .stat-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:12px 0}
-.stat-box{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.stat-box{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .2s}
+.stat-box:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .stat-box .label{font-size:.65em;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .stat-box .value{font-size:1.3em;font-weight:700;margin-top:4px}
-
-/* ── Action buttons ── */
 .ops{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:16px}
 .op{background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;text-align:center}
 .op:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
 .op h4{font-size:.8em;color:var(--text);margin-bottom:4px}
 .op p{font-size:.65em;color:var(--muted)}
 .op code{display:block;margin-top:6px;background:var(--s2);color:var(--green);padding:4px 8px;border-radius:4px;font-size:.65em;font-family:inherit}
-
-/* ── Regular cards ── */
 .card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px;transition:all .3s}
 .card:hover{border-color:var(--accent);box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
 .card-name{font-weight:700;font-size:.9em}
 .card-type{font-size:.65em;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-.badge{font-size:.6em;font-weight:600;padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.3px}
+.badge{font-size:.6em;font-weight:600;padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
 .badge.healthy{background:rgba(16,185,129,.12);color:var(--green)}
 .badge.running{background:rgba(245,158,11,.1);color:var(--yellow)}
 .badge.unhealthy{background:rgba(239,68,68,.12);color:var(--red)}
 .badge.stopped,.badge.offline{background:rgba(100,116,139,.12);color:#94a3b8}
 .badge.online{background:rgba(16,185,129,.12);color:var(--green)}
+.badge.pending{background:rgba(245,158,11,.12);color:var(--yellow)}
 .card-info{font-size:.72em;color:var(--muted);margin:4px 0;line-height:1.4}
 .card-info code{background:var(--s2);padding:2px 5px;border-radius:4px;color:var(--accent);font-size:.9em}
 .card-actions{display:flex;gap:4px;margin-top:10px;flex-wrap:wrap}
-.btn{padding:5px 12px;border:1px solid transparent;border-radius:8px;cursor:pointer;font-size:.7em;font-weight:600;transition:all .15s;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.btn{padding:5px 12px;border:1px solid transparent;border-radius:8px;cursor:pointer;font-size:.7em;font-weight:600;transition:all .15s;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:4px;position:relative}
 .btn:hover{transform:scale(1.02)}
+.btn:active{transform:scale(.98)}
 .btn-p{background:var(--accent);color:#fff;border:none}.btn-p:hover{background:#2563eb}
 .btn-s{background:var(--s2);color:var(--text);border:1px solid var(--border)}.btn-s:hover{background:var(--s3);border-color:var(--accent)}
 .btn-d{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.15)}.btn-d:hover{background:rgba(239,68,68,.18)}
 .btn-w{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.15)}.btn-w:hover{background:rgba(245,158,11,.18)}
 .btn-g{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.15)}.btn-g:hover{background:rgba(34,197,94,.18)}
-
-/* ── Section headers ── */
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.dropdown{position:relative;display:inline-block}
+.dropdown-menu{display:none;position:absolute;top:100%;left:0;background:var(--s1);border:1px solid var(--border);border-radius:10px;min-width:180px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden}
+.dropdown-menu.show{display:block}
+.dropdown-item{padding:8px 14px;font-size:.75em;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:8px;color:var(--text)}
+.dropdown-item:hover{background:var(--s2)}
+.dropdown-item.danger{color:var(--red)}
+.dropdown-item.danger:hover{background:rgba(239,68,68,.1)}
+.dropdown-divider{height:1px;background:var(--border);margin:4px 0}
 .sec{font-size:.95em;font-weight:700;color:var(--accent);margin:20px 0 12px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.5px}
 .sec::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
-
-/* ── Render helpers ── */
 .service-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;transition:all .3s}
 .service-card:hover{border-color:var(--accent);box-shadow:0 4px 12px rgba(0,0,0,.2)}
-.service-card h4{font-size:.85em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.service-card h4{font-size:.85em;margin-bottom:6px;display:flex;align-items:center;gap:6px;justify-content:space-between}
 .service-card p{font-size:.72em;color:var(--muted)}
 .service-card .ports{margin-top:6px}
 .service-card .ports code{background:var(--s2);padding:2px 6px;border-radius:3px;font-size:.65em;color:var(--cyan);margin:2px 2px 0 0}
-
 .model-card{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:14px;transition:all .3s}
 .model-card:hover{border-color:var(--accent)}
 .model-card .model-name{font-weight:700;font-size:.85em}
 .model-card .model-size{font-size:.65em;color:var(--muted);margin-top:2px}
 .model-card .model-actions{margin-top:8px;display:flex;gap:6px}
-
-/* ── Terminal ── */
 .term-wrap{background:#060a14;border:1px solid var(--border);border-radius:12px;overflow:hidden;height:400px;position:relative}
 .term-wrap .term-toolbar{background:var(--s2);padding:6px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
 .term-wrap .term-toolbar span{font-size:.65em;color:var(--muted)}
@@ -130,8 +115,6 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
 .term-wrap .dot.green{background:var(--green);box-shadow:0 0 6px var(--green)}
 .term-wrap .dot.red{background:var(--red);box-shadow:0 0 6px var(--red)}
 #terminal{width:100%;height:calc(100% - 32px)}
-
-/* ── Modal ── */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .modal-bg.on{display:flex}
 .modal{background:var(--s1);border:1px solid var(--border);border-radius:16px;width:92%;max-width:900px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 48px rgba(0,0,0,.4)}
@@ -141,8 +124,6 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
 .modal-close:hover{background:var(--s2);color:var(--text)}
 .modal-body{flex:1;overflow:auto;padding:16px 20px}
 .log-pre{background:#060a14;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:'SF Mono',SFMono-Regular,Consolas,monospace;font-size:.75em;color:var(--green);white-space:pre-wrap;word-break:break-all;max-height:55vh;overflow:auto;line-height:1.6}
-
-/* ── Hermes chat ── */
 .hermes-chat-area{height:350px;overflow-y:auto;padding:12px;background:var(--s2);border-radius:10px;margin-bottom:10px;display:none;border:1px solid var(--border)}
 .hermes-msg{padding:8px 12px;margin:4px 0;border-radius:8px;line-height:1.5}
 .hermes-msg.assistant{background:rgba(139,92,246,.08);border-left:3px solid var(--purple)}
@@ -153,44 +134,56 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
 .chat-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(59,130,246,.15)}
 .chat-send-btn{background:var(--purple);color:#fff;border:none;width:42px;height:42px;border-radius:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .chat-send-btn:hover{background:#7c3aed;transform:scale(1.05)}
-
-/* ── Config panels ── */
 .config-group{margin-bottom:12px}
 .config-group label{display:block;font-size:.72em;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
 .config-group select,.config-group input[type="range"]{width:100%;padding:8px 10px;background:var(--s2);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:.8em;font-family:inherit}
 .config-group input[type="range"]{padding:0;margin-top:4px}
 .range-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
 .range-row span{font-size:.75em;color:var(--text);min-width:35px;text-align:right}
-
-/* ── Toast ── */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#fff;padding:10px 22px;border-radius:10px;font-weight:600;font-size:.85em;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .toast.on{transform:translateX(-50%) translateY(0)}
-
-/* ── Section divider ── */
+.toast.error{background:var(--red)}
 .section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:16px 0}
-
-/* ── Responsive ── */
-@media(max-width:768px){
-  .hdr{flex-direction:column;align-items:flex-start}
-  .grid{grid-template-columns:1fr}
-  .ops{grid-template-columns:1fr 1fr}
-  .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .stat-row{grid-template-columns:1fr 1fr}
-  .term-wrap{height:300px}
-}
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:var(--s1)}
-::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--border)}
-
-/* ── Animations ── */
+.spin{display:inline-block;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .fade-in{animation:fadeIn .4s ease}
 .pulse{animation:pulse 2s infinite}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:.65em;font-weight:600;margin:2px}
+.tag-green{background:rgba(16,185,129,.12);color:var(--green)}
+.tag-blue{background:rgba(59,130,246,.12);color:var(--accent)}
+.tag-purple{background:rgba(139,92,246,.12);color:var(--purple)}
+.tag-yellow{background:rgba(245,158,11,.12);color:var(--yellow)}
+.tag-red{background:rgba(239,68,68,.12);color:var(--red)}
+.search-box{padding:8px 12px;background:var(--s1);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.8em;width:100%;font-family:inherit;margin-bottom:12px}
+.search-box:focus{outline:none;border-color:var(--accent)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.toolbar .btn{font-size:.75em}
+.blink{animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.grid-lg{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.tab-bar{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px;margin-bottom:12px;border:1px solid var(--border)}
+.tab-bar .tab-sm{flex:1;padding:7px 12px;text-align:center;cursor:pointer;border:none;background:none;color:var(--muted);font-size:.72em;font-weight:600;border-radius:8px;transition:all .2s;font-family:inherit}
+.tab-bar .tab-sm:hover{color:var(--text);background:var(--s2)}
+.tab-bar .tab-sm.on{background:var(--s2);color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.empty-state{text-align:center;padding:40px;color:var(--muted);font-size:.85em}
+.empty-state .icon{font-size:2em;margin-bottom:10px;opacity:.4}
+.ctx-badge{font-size:.6em;background:rgba(59,130,246,.1);color:var(--accent);padding:2px 6px;border-radius:4px;margin-left:8px}
+@media(max-width:768px){
+.hdr{flex-direction:column;align-items:flex-start}
+.grid{grid-template-columns:1fr}
+.ops{grid-template-columns:1fr 1fr}
+.tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.stat-row{grid-template-columns:1fr 1fr}
+.term-wrap{height:300px}
+.grid-lg{grid-template-columns:1fr}
+}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--s1)}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border)}
 </style>
 </head>
 <body>
@@ -204,30 +197,32 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
     <div class="hdr-right" id="sys-chips"></div>
   </div>
 
-  <!-- ═══════════════════════════════ ALERTS ═══════════════════════════════ -->
+  <!-- ═══════════════ ALERTS ═══════════════ -->
   <div class="alerts" id="alerts">
     <h3>🚨 Alertas del sistema</h3>
     <div id="alert-list"></div>
   </div>
 
-  <!-- ═══════════════════════════ TABS ═══════════════════════════ -->
+  <!-- ═══════════════ TABS ═══════════════ -->
   <div class="tabs">
     <button class="tab on" onclick="showTab('dash',this)">🏠 Dashboard</button>
     <button class="tab" onclick="showTab('docker',this)">🐳 Docker</button>
     <button class="tab" onclick="showTab('agents',this)">🤖 Agentes</button>
     <button class="tab" onclick="showTab('pipeline',this)">🔄 Pipeline IA</button>
+    <button class="tab" onclick="showTab('docs',this)">📄 Documentos</button>
+    <button class="tab" onclick="showTab('services',this)">🔌 Servicios</button>
     <button class="tab" onclick="showTab('terminal',this)">🖥️ Terminal</button>
     <button class="tab" onclick="showTab('ollama',this)">🦙 Ollama</button>
     <button class="tab" onclick="showTab('network',this)">🌐 Red</button>
     <button class="tab" onclick="showTab('repair',this)">🔧 Reparación</button>
   </div>
 
-  <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+  <!-- ═══════════════ DASHBOARD ═══════════════ -->
   <div id="p-dash" class="page on">
     <div class="sec">📊 Resumen del sistema</div>
     <div class="stat-row" id="system-stat-row">
-      <div class="stat-box">
-        <div class="label">🔵 RAM Uso</div>
+      <div class="stat-box" onclick="showTab('ollama',document.querySelector('[onclick*=ollama]'))" title="Click para ver modelos">
+        <div class="label">🧠 RAM Uso</div>
         <div class="value" id="ram-used" style="color:var(--cyan)">—</div>
       </div>
       <div class="stat-box">
@@ -246,15 +241,15 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
         <div class="label">🔄 Uptime</div>
         <div class="value" id="uptime-val" style="font-size:1em">—</div>
       </div>
-      <div class="stat-box">
+      <div class="stat-box" onclick="showTab('agents',document.querySelector('[onclick*=agents]'))" title="Click para ver agentes">
         <div class="label">🛡️ Estado AI</div>
         <div class="value" id="ai-status" style="font-size:1em">—</div>
       </div>
     </div>
 
     <!-- RAM bar -->
-    <div class="metric-card highlight" style="margin-bottom:16px">
-      <h3><span class="icon">🧠</span> Memoria RAM</h3>
+    <div class="metric-card highlight" style="margin-bottom:16px;cursor:default" onclick="showTab('docker',document.querySelector('[onclick*=docker]'))">
+      <h3><span class="icon">🧠</span> Memoria RAM <span class="ctx-badge" id="ram-pct-badge">0%</span></h3>
       <div class="metric-value lg" style="color:var(--cyan)" id="ram-total">—</div>
       <div class="progress-container">
         <div class="progress-label"><span>Uso actual</span><span id="ram-pct">0%</span></div>
@@ -265,7 +260,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
 
     <!-- Disk bar -->
     <div class="metric-card" style="margin-bottom:16px">
-      <h3><span class="icon">💾</span> Almacenamiento Disco</h3>
+      <h3><span class="icon">💾</span> Almacenamiento Disco <span class="ctx-badge" id="disk-pct-badge">0%</span></h3>
       <div class="metric-value lg" style="color:var(--green)" id="disk-total">—</div>
       <div class="progress-container">
         <div class="progress-label"><span>Uso actual</span><span id="disk-pct">0%</span></div>
@@ -274,8 +269,15 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
       <div class="card-info" style="margin-top:6px">En uso: <b id="disk-used-val">—</b> · Libre: <b id="disk-free-val">—</b></div>
     </div>
 
+    <div class="toolbar" style="margin:16px 0 8px">
+      <span style="font-size:.8em;color:var(--muted);display:flex;align-items:center;gap:6px">
+        <span class="status-dot online blink" id="dash-status-dot"></span>
+        <b>Acciones rápidas:</b>
+      </span>
+    </div>
+
     <!-- Quick services count -->
-    <div class="grid">
+    <div class="grid" id="dash-cards">
       <div class="metric-card" id="card-docker">
         <h3><span class="icon">🐳</span> Docker</h3>
         <div class="metric-value" style="color:var(--green)" id="docker-count">—</div>
@@ -306,32 +308,49 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
         <div class="card-info">procesos gestionados</div>
         <div class="card-actions">
           <button class="btn btn-s" onclick="runQuickRepair('pm2:status')">Ver logs ↗</button>
+          <button class="btn btn-g" onclick="restartAllPM2()" title="Reiniciar todos los procesos">🔄 Restart All</button>
         </div>
       </div>
     </div>
 
-    <!-- Agents section -->
-    <div class="sec">🤖 Asistentes IA</div>
+    <!-- Dashboard Actions Quick Grid -->
+    <div class="sec">⚡ Acciones directas</div>
+    <div class="ops" id="dash-ops">
+      <div class="op" onclick="restartAllPM2()"><h4>🔄 Reiniciar PM2</h4><p>Todos los procesos</p></div>
+      <div class="op" onclick="dockerAll('restart')"><h4>🔄 Reiniciar Docker</h4><p>Todos los contenedores</p></div>
+      <div class="op" onclick="runQuickRepair('reindex-memory')"><h4>🧠 Re-indexar Memoria</h4><p>Actualizar sinkMAIND</p></div>
+      <div class="op" onclick="runQuickRepair('restart-ollama')"><h4>🦙 Reiniciar Ollama</h4><p>Servicio de modelos</p></div>
+      <div class="op" onclick="runQuickRepair('flush-dns')"><h4>🌐 Limpiar DNS</h4><p>Flush caché DNS</p></div>
+      <div class="op" onclick="showTab('repair',document.querySelector('[onclick*=repair]'))"><h4>🔧 Ver todo</h4><p>Kit de reparación completo</p></div>
+    </div>
+
+    <!-- Agents section preview -->
+    <div class="sec">🤖 Asistentes IA — Estado rápido</div>
     <div class="grid" id="assistants-grid"><div class="loading"><span class="spin"></span> Cargando...</div></div>
   </div>
 
-  <!-- ═══════════════════ DOCKER ═══════════════════ -->
+  <!-- ═══════════════ DOCKER ═══════════════ -->
   <div id="p-docker" class="page">
     <div class="sec">🐳 Contenedores Docker</div>
-    <div class="ops" style="margin-bottom:16px">
-      <div class="op" onclick="dockerAll('restart')"><h4>🔄 Reiniciar todos</h4><code>docker restart</code></div>
-      <div class="op" onclick="dockerAll('stop')"><h4>🛑 Parar todos</h4><code>docker stop</code></div>
-      <div class="op" onclick="dockerAll('prune')"><h4>🧹 Limpiar prune</h4><code>docker system prune</code></div>
-      <div class="op" onclick="composeUp()"><h4>⬆️ Compose Up</h4><code>docker compose up</code></div>
-      <div class="op" onclick="composeDown()"><h4>⬇️ Compose Down</h4><code>docker compose down</code></div>
+    <div class="toolbar">
+      <div class="op" onclick="dockerAll('restart')" style="padding:8px 14px"><h4 style="font-size:.75em">🔄 Reiniciar todos</h4></div>
+      <div class="op" onclick="dockerAll('stop')" style="padding:8px 14px"><h4 style="font-size:.75em">🛑 Parar todos</h4></div>
+      <div class="op" onclick="dockerAll('prune')" style="padding:8px 14px"><h4 style="font-size:.75em">🧹 Limpiar prune</h4></div>
+      <div class="op" onclick="composeUp()" style="padding:8px 14px"><h4 style="font-size:.75em">⬆️ Compose Up</h4></div>
+      <div class="op" onclick="composeDown()" style="padding:8px 14px"><h4 style="font-size:.75em">⬇️ Compose Down</h4></div>
+      <input type="text" class="search-box" id="docker-search" placeholder="🔍 Filtrar contenedores..." oninput="filterDocker()">
     </div>
-    <div class="grid" id="docker-grid"><div class="loading"><span class="spin"></span></div></div>
+    <div class="grid" id="docker-grid"><div class="loading"><span class="spin"></span> Cargando contenedores...</div></div>
   </div>
 
-  <!-- ═══════════════════ AGENTES ═══════════════════ -->
+  <!-- ═══════════════ AGENTES ═══════════════ -->
   <div id="p-agents" class="page">
     <div class="sec">🤖 Agentes Especializados</div>
-    <div class="grid" id="agents-grid"><div class="loading"><span class="spin"></span></div></div>
+    <div class="toolbar">
+      <div class="op" onclick="restartAllAgents()" style="padding:8px 14px"><h4 style="font-size:.75em">🔄 Reiniciar todos</h4></div>
+      <div class="op" onclick="runQuickRepair('restart-all-pm2')" style="padding:8px 14px"><h4 style="font-size:.75em">💚 Reiniciar PM2 All</h4></div>
+    </div>
+    <div class="grid" id="agents-grid"><div class="loading"><span class="spin"></span> Cargando agentes...</div></div>
     <div class="section-divider"></div>
     <div class="sec">🛠️ Herramientas de desarrollo</div>
     <div class="ops">
@@ -352,22 +371,84 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
     </div>
   </div>
 
-  <!-- ═══════════════════ PIPELINE ═══════════════════ -->
+  <!-- ═══════════════ PIPELINE ═══════════════ -->
   <div id="p-pipeline" class="page">
     <div class="sec">🔄 Pipeline Dual Fast/Deep</div>
-    <div class="grid" id="pipeline-grid"><div class="loading"><span class="spin"></span></div></div>
+    <div class="grid" id="pipeline-grid"><div class="loading"><span class="spin"></span> Cargando...</div></div>
     <div class="section-divider"></div>
     <div class="sec">🧠 Modelos IA en uso</div>
-    <div class="grid" id="models-grid"><div class="loading"><span class="spin"></span></div></div>
+    <div class="grid" id="models-grid"><div class="loading"><span class="spin"></span> Cargando...</div></div>
     <div class="section-divider"></div>
-    <div class="sec">🔬 Test rápido</div>
-    <div class="ops" style="margin-bottom:16px">
-      <div class="op" onclick="testModel('classify')"><h4>📋 Clasificar</h4><p>Fast Path → hermes-9b</p><code>POST /classify</code></div>
-      <div class="op" onclick="testModel('chat')"><h4>💬 Chat IA</h4><p>Deep Path → 4.7b</p><code>POST /chat</code></div>
-      <div class="op" onclick="testModel('opencode')"><h4>💻 OpenCode</h4><p>Code test</p><code>POST /opencode</code></div>
-      <div class="op" onclick="testModel('lmstudio')"><h4>🧪 LM Studio</h4><p>R1 8B via proxy</p><code>POST /lmstudio</code></div>
+    <div class="sec">🔬 Test interactivo</div>
+    <div class="tab-bar" id="test-tabs">
+      <button class="tab-sm on" onclick="switchTestTab('quick',this)">⚡ Rápido</button>
+      <button class="tab-sm" onclick="switchTestTab('custom',this)">✏️ Personalizado</button>
+    </div>
+    <div id="test-quick">
+      <div class="ops" style="margin-bottom:16px">
+        <div class="op" onclick="testModel('classify')"><h4>📋 Clasificar</h4><p>Fast Path → hermes-9b</p><code>POST /classify</code></div>
+        <div class="op" onclick="testModel('chat')"><h4>💬 Chat IA</h4><p>Deep Path → 4.7b</p><code>POST /chat</code></div>
+        <div class="op" onclick="testModel('opencode')"><h4>💻 OpenCode</h4><p>Code test</p><code>POST /opencode</code></div>
+        <div class="op" onclick="testModel('lmstudio')"><h4>🧪 LM Studio</h4><p>R1 8B via proxy</p><code>POST /lmstudio</code></div>
+        <div class="op" onclick="testModel('health')"><h4>💚 Health Check</h4><p>Verificar todo</p><code>GET /health</code></div>
+        <div class="op" onclick="testModel('status')"><h4>📊 Status</h4><p>Estado AI completo</p><code>GET /api/ai/status</code></div>
+      </div>
+    </div>
+    <div id="test-custom" style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div class="config-group">
+          <label>Endpoint</label>
+          <select id="test-endpoint">
+            <option value="/api/ai/classify">/api/ai/classify</option>
+            <option value="/api/ai/generate">/api/ai/generate</option>
+            <option value="/api/hermes">/api/hermes</option>
+            <option value="/api/opencode">/api/opencode</option>
+            <option value="/lmstudio/chat/completions">/lmstudio/chat/completions</option>
+            <option value="/api/ai/status">/api/ai/status</option>
+          </select>
+        </div>
+        <div class="config-group">
+          <label>Método</label>
+          <select id="test-method">
+            <option value="POST">POST</option>
+            <option value="GET">GET</option>
+          </select>
+        </div>
+        <div class="config-group" style="grid-column:1/-1">
+          <label>Body JSON (para POST)</label>
+          <textarea id="test-body" class="chat-input" rows="3" placeholder='{"text": "Esto es una factura de compra..."}' style="resize:vertical"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-p" onclick="testCustomEndpoint()" style="margin-bottom:16px">🚀 Ejecutar test personalizado</button>
     </div>
     <div id="test-result" class="log-pre" style="display:none"></div>
+  </div>
+
+  <!-- ═══════════════ DOCUMENTOS ═══════════════ -->
+  <div id="p-docs" class="page">
+    <div class="sec">📄 Gestión de Documentos</div>
+    <div class="toolbar">
+      <input type="text" class="search-box" id="docs-search" placeholder="🔍 Buscar documentos..." oninput="filterDocs()">
+      <div class="op" onclick="refreshDocs()" style="padding:8px 14px"><h4 style="font-size:.75em">🔄 Refrescar</h4></div>
+      <div class="op" onclick="runQuickRepair('reindex-memory')" style="padding:8px 14px"><h4 style="font-size:.75em">🧠 Re-indexar</h4></div>
+      <div class="op" onclick="clearProcessedDocs()" style="padding:8px 14px"><h4 style="font-size:.75em">🧹 Limpiar procesados</h4></div>
+    </div>
+    <div class="stat-row" id="docs-stats" style="margin-bottom:16px">
+      <div class="stat-box"><div class="label">Total</div><div class="value" id="docs-total">—</div></div>
+      <div class="stat-box"><div class="label">Procesados</div><div class="value" id="docs-processed" style="color:var(--green)">—</div></div>
+      <div class="stat-box"><div class="label">Pendientes</div><div class="value" id="docs-pending" style="color:var(--yellow)">—</div></div>
+      <div class="stat-box"><div class="label">Errores</div><div class="value" id="docs-errors" style="color:var(--red)">—</div></div>
+    </div>
+    <div class="grid-lg" id="docs-grid"><div class="loading"><span class="spin"></span> Cargando documentos...</div></div>
+  </div>
+
+  <!-- ═══════════════ SERVICIOS ═══════════════ -->
+  <div id="p-services" class="page">
+    <div class="sec">🔌 Todos los servicios</div>
+    <div class="toolbar">
+      <input type="text" class="search-box" id="svc-search" placeholder="🔍 Filtrar servicios..." oninput="filterServices()">
+    </div>
+    <div class="grid-lg" id="services-grid"><div class="loading"><span class="spin"></span> Cargando servicios...</div></div>
   </div>
 
   <!-- ═══════════════ HERMES AGENT ═══════════════ -->
@@ -377,7 +458,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
       <div class="card" style="border-left:3px solid var(--purple)">
         <div class="card-top">
           <div>
-            <div class="card-name">🤖 Hermes Chat</div>
+            <div class="card-name">🤖 Hermes Chat <span class="ctx-badge" id="hermes-model-label">—</span></div>
             <div class="card-type">Conversacional — negentropy-claude-opus-4.7-9b</div>
           </div>
           <span class="badge" id="hermes-mc-badge">offline</span>
@@ -386,6 +467,14 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
           <button class="btn btn-p" id="hermes-connect" onclick="hermesToggle()">🔌 Conectar</button>
           <button class="btn btn-s" onclick="hermesReset()">↩ Reset</button>
           <button class="btn btn-w" onclick="hermesTest()">🧪 Test</button>
+          <div class="dropdown" style="display:inline-block">
+            <button class="btn btn-d dropdown-toggle" onclick="toggleDropdown('hermes-dd')">⋯ Más</button>
+            <div class="dropdown-menu" id="hermes-dd">
+              <div class="dropdown-item" onclick="hermesTest();closeAllDropdowns()">💬 Enviar test</div>
+              <div class="dropdown-item" onclick="clearChat('hermes-chat-area');closeAllDropdowns()">🗑️ Limpiar chat</div>
+              <div class="dropdown-item danger" onclick="hermesReset();closeAllDropdowns()">⏹️ Desconectar</div>
+            </div>
+          </div>
         </div>
         <div id="hermes-info" style="margin-top:10px;padding:10px;background:var(--s2);border-radius:8px;font-size:.72em;color:var(--muted);display:none"></div>
       </div>
@@ -412,13 +501,13 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
             <div class="range-row"><label style="margin:0">Top P</label><span id="hermes-topp-val">0.9</span></div>
             <input type="range" id="hermes-top-p" min="0" max="1" step="0.05" value="0.9" oninput="document.getElementById('hermes-topp-val').textContent=this.value">
           </div>
-          <button class="btn btn-p" onclick="hermesSaveConfig()" style="margin-top:4px">💾 Guardar</button>
+          <button class="btn btn-p" onclick="hermesSaveConfig()" style="margin-top:4px">💾 Guardar configuración</button>
         </div>
       </div>
       <div class="card" style="border-left:3px solid var(--purple);grid-column:1/-1">
         <div class="card-name" style="font-size:.85em;margin-bottom:8px">💬 Chat Hermes (tiempo real)</div>
         <div class="hermes-chat-area" id="hermes-chat-area">
-          <div style="text-align:center;padding:40px;color:var(--muted)"><span class="pulse">⏳</span> Conectando...</div>
+          <div style="text-align:center;padding:40px;color:var(--muted)"><span class="pulse">⏳</span> Conecta para chatear</div>
         </div>
         <div class="chat-input-row" id="hermes-input-row" style="display:none">
           <textarea id="hermes-in" class="chat-input" rows="2" placeholder="Escribe un mensaje a Hermes..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();hermesChatSend()}" oninput="autoResize(this)"></textarea>
@@ -435,7 +524,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
       <div class="card" style="border-left:3px solid var(--accent)">
         <div class="card-top">
           <div>
-            <div class="card-name">💻 OpenCode</div>
+            <div class="card-name">💻 OpenCode <span class="ctx-badge" id="opencode-model-label">—</span></div>
             <div class="card-type">Agente de código</div>
           </div>
           <span class="badge" id="opencode-mc-badge">offline</span>
@@ -444,6 +533,14 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
           <button class="btn btn-p" id="opencode-connect" onclick="opencodeToggle()">🔌 Conectar</button>
           <button class="btn btn-s" onclick="opencodeReset()">↩ Reset</button>
           <button class="btn btn-w" onclick="opencodeTest()">🧪 Test</button>
+          <div class="dropdown" style="display:inline-block">
+            <button class="btn btn-d dropdown-toggle" onclick="toggleDropdown('oc-dd')">⋯ Más</button>
+            <div class="dropdown-menu" id="oc-dd">
+              <div class="dropdown-item" onclick="opencodeTest();closeAllDropdowns()">💬 Enviar test</div>
+              <div class="dropdown-item" onclick="clearChat('opencode-chat-area');closeAllDropdowns()">🗑️ Limpiar chat</div>
+              <div class="dropdown-item danger" onclick="opencodeReset();closeAllDropdowns()">⏹️ Desconectar</div>
+            </div>
+          </div>
         </div>
         <div id="opencode-info" style="margin-top:10px;padding:10px;background:var(--s2);border-radius:8px;font-size:.72em;color:var(--muted);display:none"></div>
       </div>
@@ -466,13 +563,13 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
               <input type="range" id="opencode-max-tokens" min="256" max="8192" step="256" value="2048" oninput="document.getElementById('opencode-tokens-val').textContent=this.value">
             </div>
           </div>
-          <button class="btn btn-p" onclick="opencodeSaveConfig()" style="margin-top:4px">💾 Guardar</button>
+          <button class="btn btn-p" onclick="opencodeSaveConfig()" style="margin-top:4px">💾 Guardar configuración</button>
         </div>
       </div>
       <div class="card" style="border-left:3px solid var(--accent);grid-column:1/-1">
         <div class="card-name" style="font-size:.85em;margin-bottom:8px">💬 Chat OpenCode (tiempo real)</div>
         <div class="hermes-chat-area" id="opencode-chat-area">
-          <div style="text-align:center;padding:40px;color:var(--muted)"><span class="pulse">⏳</span> Conectando...</div>
+          <div style="text-align:center;padding:40px;color:var(--muted)"><span class="pulse">⏳</span> Conecta para chatear</div>
         </div>
         <div class="chat-input-row" id="opencode-input-row" style="display:none">
           <textarea id="opencode-in" class="chat-input" rows="2" placeholder="Escribe un mensaje a OpenCode..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();opencodeChatSend()}" oninput="autoResize(this)"></textarea>
@@ -498,45 +595,68 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
   <!-- ═══════════════ OLLAMA ═══════════════ -->
   <div id="p-ollama" class="page">
     <div class="sec">🦙 Modelos Ollama</div>
-    <div class="grid" id="ollama-grid"><div class="loading"><span class="spin"></span></div></div>
-    <div class="section-divider"></div>
-    <div class="sec">⚡ Acciones</div>
-    <div class="ops">
-      <div class="op" onclick="ollamaAction('pull','qwen2.5-coder:14b')"><h4>📥 Pull Qwen2.5 14B</h4><code>ollama pull qwen2.5-coder:14b</code></div>
-      <div class="op" onclick="ollamaAction('pull','llama3.3:70b')"><h4>📥 Pull Llama 3.3 70B</h4><code>ollama pull llama3.3:70b</code></div>
-      <div class="op" onclick="ollamaAction('rm','phi4-mini:latest')"><h4>🗑️ Eliminar Phi4-Mini</h4><code>ollama rm phi4-mini</code></div>
-      <div class="op" onclick="ollamaList()"><h4>🔄 Refrescar lista</h4><code>ollama list</code></div>
+    <div class="toolbar">
+      <div class="op" onclick="ollamaAction('pull','qwen2.5-coder:14b')" style="padding:8px 14px"><h4 style="font-size:.75em">📥 Pull Qwen2.5 14B</h4></div>
+      <div class="op" onclick="ollamaAction('pull','llama3.3:70b')" style="padding:8px 14px"><h4 style="font-size:.75em">📥 Pull Llama 3.3 70B</h4></div>
+      <div class="op" onclick="ollamaAction('pull','deepseek-r1:8b')" style="padding:8px 14px"><h4 style="font-size:.75em">📥 Pull DeepSeek R1 8B</h4></div>
+      <div class="op" onclick="ollamaAction('rm','phi4-mini:latest')" style="padding:8px 14px"><h4 style="font-size:.75em">🗑️ Eliminar Phi4</h4></div>
+      <div class="op" onclick="ollamaList()" style="padding:8px 14px"><h4 style="font-size:.75em">🔄 Refrescar</h4></div>
+      <input type="text" class="search-box" id="ollama-search" placeholder="🔍 Filtrar modelos..." oninput="filterOllama()">
     </div>
+    <div class="grid" id="ollama-grid"><div class="loading"><span class="spin"></span> Cargando modelos...</div></div>
   </div>
 
-  <!-- ═══════════════ NETWORK ═══════════════ -->
+  <!-- ═══════════════ RED ═══════════════ -->
   <div id="p-network" class="page">
-    <div class="sec">🌐 Conectividad</div>
-    <div class="grid">
-      <div class="metric-card">
-        <h3><span class="icon">🔒</span> Tailscale</h3>
-        <div id="tailscale-status" class="card-info" style="font-size:.9em;white-space:pre-wrap;max-height:150px;overflow:auto;padding:10px;background:var(--s2);border-radius:6px">Cargando...</div>
+    <div class="sec">🌐 Conectividad de red</div>
+    <div class="grid" id="network-grid">
+      <div class="card" style="border-left:3px solid var(--green)">
+        <div class="card-top">
+          <div><div class="card-name">🔒 Tailscale</div><div class="card-type">Red privada</div></div>
+          <span class="badge" id="tailscale-badge">cargando...</span>
+        </div>
+        <div class="card-info" id="tailscale-status" style="font-size:.85em;white-space:pre-wrap;max-height:150px;overflow:auto;padding:10px;background:var(--s2);border-radius:6px">Cargando...</div>
+        <div class="card-actions" style="margin-top:10px">
+          <button class="btn btn-g" onclick="tailscaleAction('up')">🟢 Up</button>
+          <button class="btn btn-d" onclick="tailscaleAction('down')">🔴 Down</button>
+          <button class="btn btn-s" onclick="tailscaleAction('status')">📊 Estado</button>
+        </div>
       </div>
-      <div class="metric-card">
-        <h3><span class="icon">☁️</span> Cloudflare Tunnel</h3>
-        <div id="cloudflare-status" class="card-info" style="font-size:.9em;white-space:pre-wrap;max-height:150px;overflow:auto;padding:10px;background:var(--s2);border-radius:6px">Cargando...</div>
+      <div class="card" style="border-left:3px solid var(--cyan)">
+        <div class="card-top">
+          <div><div class="card-name">☁️ Cloudflare Tunnel</div><div class="card-type">Túnel público</div></div>
+          <span class="badge" id="cloudflare-badge">cargando...</span>
+        </div>
+        <div class="card-info" id="cloudflare-status" style="font-size:.85em;white-space:pre-wrap;max-height:150px;overflow:auto;padding:10px;background:var(--s2);border-radius:6px">Cargando...</div>
+        <div class="card-actions" style="margin-top:10px">
+          <button class="btn btn-w" onclick="runQuickRepair('restart-openclaw')">🔄 Restart Tunnel</button>
+          <button class="btn btn-s" onclick="loadNetwork()">🔍 Ver estado</button>
+        </div>
       </div>
     </div>
-    <div class="sec">🔌 Puertos en uso</div>
-    <div class="metric-card" style="margin-bottom:16px">
-      <pre id="ports-list" style="font-size:.72em;color:var(--cyan);white-space:pre-wrap;max-height:300px;overflow:auto;margin:0;padding:14px;background:var(--s2);border-radius:8px">Cargando...</pre>
+    <div class="sec" style="margin-top:20px">🔌 Puertos en uso</div>
+    <div class="metric-card">
+      <pre id="ports-list" style="font-size:.72em;color:var(--cyan);white-space:pre-wrap;max-height:200px;overflow:auto;margin:0;padding:14px;background:var(--s2);border-radius:8px">Cargando...</pre>
     </div>
-    <div class="ops" style="margin-bottom:16px">
-      <div class="op" onclick="tailscaleAction('up')"><h4>🟢 Tailscale Up</h4></div>
-      <div class="op" onclick="tailscaleAction('down')"><h4>🔴 Tailscale Down</h4></div>
-      <div class="op" onclick="tailscaleAction('status')"><h4>📊 Ver estado</h4></div>
+    <div class="section-divider"></div>
+    <div class="sec">🚨 Acciones de red</div>
+    <div class="ops">
+      <div class="op" onclick="tailscaleAction('up')"><h4>🟢 Tailscale Up</h4><p>Activar VPN</p></div>
+      <div class="op" onclick="tailscaleAction('down')"><h4>🔴 Tailscale Down</h4><p>Desactivar VPN</p></div>
+      <div class="op" onclick="flushDNS()"><h4>🌐 Flush DNS</h4><p>Limpiar caché</p></div>
     </div>
   </div>
 
   <!-- ═══════════════ REPAIR ═══════════════ -->
   <div id="p-repair" class="page">
     <div class="sec">🔧 Botiquín de reparación</div>
-    <div class="ops" id="repair-ops"><div class="loading"><span class="spin"></span></div></div>
+    <div class="toolbar">
+      <div class="op" onclick="runQuickRepair('restart-all-docker')" style="padding:8px 14px"><h4 style="font-size:.75em">🐳 Restart Docker All</h4></div>
+      <div class="op" onclick="runQuickRepair('restart-all-pm2')" style="padding:8px 14px"><h4 style="font-size:.75em">💚 Restart PM2 All</h4></div>
+      <div class="op" onclick="runQuickRepair('docker-prune')" style="padding:8px 14px"><h4 style="font-size:.75em">🧹 Docker Prune</h4></div>
+      <div class="op" onclick="runQuickRepair('flush-dns')" style="padding:8px 14px"><h4 style="font-size:.75em">🌐 Flush DNS</h4></div>
+    </div>
+    <div id="repair-ops" class="ops"><div class="loading"><span class="spin"></span> Cargando acciones...</div></div>
     <div class="section-divider"></div>
     <div class="sec">📋 Log de acciones</div>
     <div class="log-pre" id="repair-log" style="min-height:100px;max-height:300px">Sin acciones ejecutadas aún.</div>
@@ -552,6 +672,14 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
   </div>
 </div>
 
+<!-- ═══════════ ACTION MODAL ═══════════ -->
+<div class="modal-bg" id="action-modal" onclick="if(event.target===this)closeActionModal()">
+  <div class="modal">
+    <div class="modal-head"><h3 id="action-modal-title">Confirmar acción</h3><button class="modal-close" onclick="closeActionModal()">✕</button></div>
+    <div class="modal-body" id="action-modal-body"></div>
+  </div>
+</div>
+
 <!-- ═══════════ TOAST ═══════════ -->
 <div class="toast" id="toast">✅ Copiado</div>
 
@@ -559,7 +687,8 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
 // ════════════════════════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════════════════════════
-let servicesData = null, term = null, ws = null, hermesWs = null, hermesConn = false;
+let servicesData = null, term = null, ws = null, hermesWs = null, hermesConn = false, opencodeWs = null, opencodeConn = false;
+let currentLogs = {};
 
 // ════════════════════════════════════════════════════════════════
 //  TAB NAV
@@ -572,6 +701,16 @@ function showTab(id, btn) {
   if (id === 'terminal' && !term) initTerminal();
   if (id === 'network') loadNetwork();
   if (id === 'pipeline') loadPipeline();
+  if (id === 'docs') loadDocs();
+  if (id === 'services') loadServicesFull();
+  if (id === 'ollama') loadOllamaModels();
+}
+
+function switchTestTab(tab, btn) {
+  document.querySelectorAll('#test-tabs .tab-sm').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('test-quick').style.display = tab === 'quick' ? 'block' : 'none';
+  document.getElementById('test-custom').style.display = tab === 'custom' ? 'block' : 'none';
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -583,17 +722,16 @@ function copy(t) {
     document.body.appendChild(ta); ta.value = t; ta.select();
     document.execCommand('copy'); document.body.removeChild(ta);
   });
-  const toast = document.getElementById('toast');
-  toast.classList.add('on');
-  setTimeout(() => toast.classList.remove('on'), 1800);
+  showToast('✅ Copiado: ' + t);
 }
 
 function closeModal() { document.getElementById('modal').classList.remove('on'); }
+function closeActionModal() { document.getElementById('action-modal').classList.remove('on'); }
+function closeAllDropdowns() { document.querySelectorAll('.dropdown-menu.show').forEach(d => d.classList.remove('show')); }
 
 function escapeHtml(t) {
   return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 function esc(t) { return escapeHtml(t || ''); }
 
 function autoResize(el) {
@@ -601,12 +739,50 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
-// Badge color by health
 function healthClass(h) {
-  if (h === 'healthy' || h === 'running' || h === 'passed' || h === 'online') return 'healthy';
-  if (h === 'unhealthy' || h === 'stopped' || h === 'failed') return 'unhealthy';
+  if (h === 'healthy' || h === 'running' || h === 'passed' || h === 'online' || h === 'up') return 'healthy';
+  if (h === 'unhealthy' || h === 'stopped' || h === 'failed' || h === 'down') return 'unhealthy';
   if (h === 'degraded' || h === 'starting' || h === 'restarting') return 'running';
   return 'offline';
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg || '✅ Copiado';
+  t.className = 'toast on' + (isError ? ' error' : '');
+  setTimeout(() => t.classList.remove('on'), 2500);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DROPDOWN
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.dropdown')) {
+    closeAllDropdowns();
+  }
+});
+function toggleDropdown(id) {
+  e = window.event || arguments.callee.caller.arguments[0];
+  if (e) e.stopPropagation();
+  const el = document.getElementById(id);
+  const was = el.classList.contains('show');
+  closeAllDropdowns();
+  if (!was) el.classList.add('show');
+}
+
+// ════════════════════════════════════════════════════════════════
+//  CONFIRM DIALOG
+// ════════════════════════════════════════════════════════════════
+function confirmAction(title, body, actionFn) {
+  document.getElementById('action-modal-title').textContent = title;
+  document.getElementById('action-modal-body').innerHTML = `
+    <p style="margin-bottom:16px">${body}</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-s" onclick="closeActionModal()">Cancelar</button>
+      <button class="btn btn-p" id="action-modal-confirm" style="background:var(--red);border-color:var(--red)">Confirmar</button>
+    </div>`;
+  document.getElementById('action-modal').classList.add('on');
+  document.getElementById('action-modal-confirm').onclick = () => { closeActionModal(); actionFn(); };
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -625,103 +801,70 @@ async function api(url, opts = {}) {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  DASHBOARD — SYSTEM METRICS (FIX: load from /api/admin/system)
+//  DASHBOARD — SYSTEM METRICS
 // ════════════════════════════════════════════════════════════════
 async function loadSystemMetrics() {
   try {
     const m = await adminApi('/api/admin/system');
-
-    // Hostname
     document.getElementById('hostname-val').textContent = m.hostname || '—';
-
-    // Uptime
     if (m.uptime !== undefined) {
       const secs = Math.floor(m.uptime);
       const h = Math.floor(secs / 3600);
       const min = Math.floor((secs % 3600) / 60);
       document.getElementById('uptime-val').textContent = `${h}h ${min}m`;
     }
-
-    // RAM
     if (m.memory) {
       const ram = m.memory;
       const totalGB = ram.totalGB || ram.total / 1024;
       const usedGB = ram.usedGB || ram.used / 1024;
       const freeGB = ram.freeGB || ram.free / 1024;
       const pct = ram.pct || ((usedGB / totalGB) * 100);
-
       document.getElementById('ram-total').textContent = `${totalGB.toFixed(1)} GB`;
       document.getElementById('ram-used-val').textContent = `${usedGB.toFixed(1)} GB`;
       document.getElementById('ram-free-val').textContent = `${freeGB.toFixed(1)} GB`;
       document.getElementById('ram-used').textContent = `${usedGB.toFixed(1)} / ${totalGB.toFixed(1)} GB`;
       document.getElementById('ram-pct').textContent = `${Math.round(pct)}%`;
-
+      document.getElementById('ram-pct-badge').textContent = `${Math.round(pct)}%`;
       const ramBar = document.getElementById('ram-bar');
       ramBar.style.width = Math.min(pct, 100) + '%';
-
-      // Color based on usage
-      if (pct > 85) {
-        ramBar.className = 'progress-fill red';
-        document.getElementById('ram-total').style.color = 'var(--red)';
-      } else if (pct > 60) {
-        ramBar.className = 'progress-fill yellow';
-        document.getElementById('ram-total').style.color = 'var(--yellow)';
-      } else {
-        ramBar.className = 'progress-fill green';
-        document.getElementById('ram-total').style.color = 'var(--cyan)';
-      }
+      if (pct > 85) { ramBar.className = 'progress-fill red'; document.getElementById('ram-total').style.color = 'var(--red)'; }
+      else if (pct > 60) { ramBar.className = 'progress-fill yellow'; document.getElementById('ram-total').style.color = 'var(--yellow)'; }
+      else { ramBar.className = 'progress-fill green'; document.getElementById('ram-total').style.color = 'var(--cyan)'; }
     }
-
-    // Disk
     if (m.disk) {
       const disk = m.disk;
       const totalGB = disk.totalGB || disk.total / 1024;
       const usedGB = disk.usedGB || disk.used / 1024;
       const freeGB = disk.freeGB || disk.free / 1024;
       const pct = disk.pct || ((usedGB / totalGB) * 100);
-
       document.getElementById('disk-total').textContent = `${totalGB.toFixed(0)} GB`;
       document.getElementById('disk-used-val').textContent = `${usedGB.toFixed(1)} GB`;
       document.getElementById('disk-free-val').textContent = `${freeGB.toFixed(1)} GB`;
       document.getElementById('disk-used').textContent = `${usedGB.toFixed(1)} / ${totalGB.toFixed(0)} GB`;
       document.getElementById('disk-pct').textContent = `${Math.round(pct)}%`;
-
+      document.getElementById('disk-pct-badge').textContent = `${Math.round(pct)}%`;
       const diskBar = document.getElementById('disk-bar');
       diskBar.style.width = Math.min(pct, 100) + '%';
-      if (pct > 85) {
-        diskBar.className = 'progress-fill red';
-      } else {
-        diskBar.className = 'progress-fill blue';
-      }
+      diskBar.className = pct > 85 ? 'progress-fill red' : 'progress-fill blue';
+      if (pct > 95) showToast(`⚠️ Disco casi lleno: ${Math.round(pct)}%`, true);
     }
-
-    // CPU / Load
-    if (m.load !== undefined || m.cpus) {
-      const load1 = m.load?.['1m'] || m.load1 || '—';
-      const load5 = m.load?.['5m'] || m.load5 || '—';
-      const load15 = m.load?.['15m'] || m.load15 || '—';
-      const cpus = m.cpus || m.arch || m.model || '';
-      document.getElementById('load-val').textContent = `${load1} / ${load5} / ${load15}`;
+    if (m.load !== undefined) {
+      const load1 = m.load1 || m.load?.['1m'] || '—';
+      document.getElementById('load-val').textContent = typeof load1 === 'number' ? load1.toFixed(2) : load1;
     }
-
-    // AI status
     try {
       const ai = await api('/api/ai/status');
       const el = document.getElementById('ai-status');
-      if (ai.online) {
-        el.textContent = '✅ Online';
-        el.style.color = 'var(--green)';
-      } else {
-        el.textContent = '⚠️ Degradado';
-        el.style.color = 'var(--yellow)';
-      }
+      if (ai.online) { el.textContent = '✅ Online'; el.style.color = 'var(--green)'; }
+      else { el.textContent = '⚠️ Degradado'; el.style.color = 'var(--yellow)'; }
     } catch {
       document.getElementById('ai-status').textContent = '❌ Offline';
       document.getElementById('ai-status').style.color = 'var(--red)';
     }
-
+    document.getElementById('dash-status-dot').className = 'status-dot online';
   } catch (e) {
     console.error('loadSystemMetrics error:', e);
+    document.getElementById('dash-status-dot').className = 'status-dot offline';
     document.getElementById('ram-used').textContent = 'Error';
     document.getElementById('disk-used').textContent = 'Error';
     document.getElementById('load-val').textContent = 'Error';
@@ -729,63 +872,122 @@ async function loadSystemMetrics() {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  LOAD SERVICES (Docker, PM2, custom, Ollama)
+//  LOAD SERVICES
 // ════════════════════════════════════════════════════════════════
 async function loadServices() {
   try {
     const d = await adminApi('/api/admin/services');
     servicesData = d;
-
     document.getElementById('docker-grid').innerHTML = d.docker?.length
       ? d.docker.map(renderDockerCard).join('')
-      : '<div style="color:var(--muted);padding:20px;text-align:center;font-size:.8em">Sin contenedores Docker</div>';
-
-    document.getElementById('docker-full-grid').innerHTML = d.docker?.length
-      ? d.docker.map(renderDockerCard).join('')
-      : '<div style="color:var(--muted);padding:20px;text-align:center;font-size:.8em">Sin contenedores Docker</div>';
-
-    document.getElementById('pm2-grid').innerHTML = d.pm2?.length
-      ? d.pm2.map(renderPM2Card).join('')
-      : '<div style="color:var(--muted);padding:20px;text-align:center;font-size:.8em">Sin procesos PM2</div>';
-
-    document.getElementById('services-grid').innerHTML = d.custom?.length
-      ? d.custom.map(renderServiceCard).join('')
-      : '<div style="color:var(--muted);padding:20px;font-size:.8em">Sin servicios personalizados</div>';
-
-    // Ollama models in overview
-    document.getElementById('ollama-grid').innerHTML = d.ollama?.length
-      ? d.ollama.map(renderOllamaCard).join('')
-      : '<div style="color:var(--muted);padding:20px;text-align:center;font-size:.8em">Sin modelos</div>';
-
-    // Dashboard counts
-    document.getElementById('docker-count').textContent = d.docker?.length || 0;
+      : '<div class="empty-state"><div class="icon">🐳</div>Sin contenedores Docker</div>';
     document.getElementById('pm2-count').textContent = d.pm2?.length || 0;
+    document.getElementById('docker-count').textContent = d.docker?.length || 0;
     document.getElementById('ollama-count').textContent = d.ollama?.length || 0;
-
-    // Alerts
-    const alertEl = document.getElementById('alerts');
-    const alertList = document.getElementById('alert-list');
-    if (d.alerts?.length) {
-      alertEl.classList.add('show');
-      alertList.innerHTML = d.alerts.map(a =>
-        `<div class="alert-item">⚠️ <b>${a.name}</b> — ${esc(a.health)}</div>`
-      ).join('');
-    } else {
-      alertEl.classList.remove('show');
-    }
-
-    // Header chips
     document.getElementById('sys-chips').innerHTML = `
-      <div class="chip"><span class="status-dot online"></span> <b>${d.docker?.length || 0}</b> Docker</div>
-      <div class="chip"><span class="status-dot online"></span> <b>${d.pm2?.length || 0}</b> PM2</div>
-      <div class="chip"><span class="status-dot online"></span> <b>7</b> Agentes</div>
+      <div class="chip healthy"><span class="status-dot online"></span> <b>${d.docker?.length || 0}</b> Docker</div>
+      <div class="chip healthy"><span class="status-dot online"></span> <b>${d.pm2?.length || 0}</b> PM2</div>
       <div class="chip"><span class="status-dot online"></span> <b>${d.ollama?.length || 0}</b> Modelos Ollama</div>
-      <div class="chip${d.alerts?.length ? ' alert' : ''}">⚠️ <b>${d.alerts?.length || 0}</b> alertas</div>
-    `;
-
+      ${d.alerts?.length ? `<div class="chip alert">⚠️ <b>${d.alerts.length}</b> alertas</div>` : `<div class="chip healthy"><span class="status-dot online"></span> 0 alertas</div>`}`;
+    if (d.alerts?.length) {
+      const el = document.getElementById('alerts');
+      document.getElementById('alert-list').innerHTML = d.alerts.map(a =>
+        `<div class="alert-item">⚠️ <b>${esc(a.name)}</b> — ${esc(a.health)}</div>`
+      ).join('');
+      el.classList.add('show');
+    } else {
+      document.getElementById('alerts').classList.remove('show');
+    }
   } catch (e) {
     console.error('loadServices error:', e);
+    document.getElementById('sys-chips').innerHTML = '<div class="chip alert">⚠️ Error de conexión</div>';
   }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LOAD SERVICES FULL (with custom services)
+// ════════════════════════════════════════════════════════════════
+async function loadServicesFull() {
+  try {
+    const d = await adminApi('/api/admin/services');
+    const grid = document.getElementById('services-grid');
+    if (!d.custom?.length && !d.docker?.length && !d.pm2?.length) {
+      grid.innerHTML = '<div class="empty-state"><div class="icon">🔌</div>No hay servicios detectados</div>';
+      return;
+    }
+    let html = '';
+    if (d.custom?.length) {
+      html += '<div class="sec" style="margin-top:0">🔌 Servicios detectados (' + d.custom.length + ')</div><div class="grid-lg">';
+      html += d.custom.map(s => renderServiceCardInteractive(s)).join('');
+      html += '</div>';
+    }
+    if (d.pm2?.length) {
+      html += '<div class="sec">💚 Procesos PM2 (' + d.pm2.length + ')</div><div class="grid-lg">';
+      html += d.pm2.map(p => renderPM2CardInteractive(p)).join('');
+      html += '</div>';
+    }
+    if (d.docker?.length) {
+      html += '<div class="sec">🐳 Contenedores Docker (' + d.docker.length + ')</div><div class="grid-lg">';
+      html += d.docker.map(c => renderDockerCardInteractive(c)).join('');
+      html += '</div>';
+    }
+    grid.innerHTML = html || '<div class="empty-state"><div class="icon">🔌</div>Sin servicios</div>';
+  } catch(e) {
+    document.getElementById('services-grid').innerHTML = '<div class="empty-state">Error cargando servicios</div>';
+  }
+}
+
+function renderServiceCardInteractive(s) {
+  return `<div class="card">
+    <div class="card-top">
+      <div>
+        <div class="card-name">${s.icon || '🔧'} ${esc(s.name)} <span class="ctx-badge">${esc(s.port || '—')}</span></div>
+        <div class="card-type">${s.url ? '<a href="'+esc(s.url)+'" target="_blank" style="color:var(--accent)">Abrir ↗</a>' : 'Local'}</div>
+      </div>
+      <span class="badge ${healthClass(s.health)}">${esc(s.health || '?')}</span>
+    </div>
+    <div class="card-actions">
+      <button class="btn btn-s" onclick="showLogs('${esc(s.name)}','/api/admin/logs/${esc(s.name)}?lines=80')">📋 Logs</button>
+      ${s.port === '3001' ? `<button class="btn btn-w" onclick="restartSinkiaApi()">🔄 Restart</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderPM2CardInteractive(p) {
+  const mem = p.memory ? (p.memory) + ' MB' : '—';
+  return `<div class="card">
+    <div class="card-top">
+      <div>
+        <div class="card-name">💚 ${esc(p.name)} <span class="ctx-badge">${esc(p.status || '?')}</span></div>
+        <div class="card-type">PID ${p.pid || '—'} · RAM ${mem} · CPU ${p.cpu || 0}%</div>
+      </div>
+      <span class="badge ${p.status === 'online' ? 'healthy' : healthClass(p.status)}">${esc(p.status || '?')}</span>
+    </div>
+    <div class="card-actions">
+      <button class="btn btn-s" onclick="showLogs('${esc(p.name)}','/api/admin/logs/${esc(p.name)}?lines=80')">📋 Logs</button>
+      <button class="btn btn-w" onclick="pm2Action('${esc(p.name)}','restart')">🔄 Restart</button>
+      <button class="btn btn-d" onclick="confirmAction('Parar ${esc(p.name)}','¿Parar el proceso ${esc(p.name)}?',()=>pm2Action('${esc(p.name)}','stop'))">🛑 Stop</button>
+    </div>
+  </div>`;
+}
+
+function renderDockerCardInteractive(c) {
+  const ports = c.ports?.split(',').map(p => `<code>${esc(c.name)}:${p.trim()}</code>`).join(' ') || '';
+  return `<div class="card">
+    <div class="card-top">
+      <div>
+        <div class="card-name">🐳 ${esc(c.name)} <span class="ctx-badge">${esc(c.id?.slice(0,8) || '?')}</span></div>
+        <div class="card-type">${esc(c.image || 'docker')}${c.status ? ' · ' + esc(c.status) : ''}</div>
+      </div>
+      <span class="badge ${healthClass(c.health)}">${esc(c.health || '?')}</span>
+    </div>
+    <div class="card-info">${ports}</div>
+    <div class="card-actions">
+      <button class="btn btn-s" onclick="showLogs('${esc(c.name)}','${esc(c.name)}')">📋 Logs</button>
+      <button class="btn btn-w" onclick="dockerAction('${esc(c.id)}','restart')">🔄 Restart</button>
+      <button class="btn btn-d" onclick="confirmAction('Parar ${esc(c.name)}','¿Parar el contenedor ${esc(c.name)}?',()=>dockerAction('${esc(c.id)}','stop'))">🛑 Stop</button>
+    </div>
+  </div>`;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -800,7 +1002,7 @@ function renderDockerCard(s) {
     <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">
       <button class="btn btn-s" onclick="showLogs('${esc(s.name)}','/api/admin/docker/${s.id}/logs?lines=80')">📋 Logs</button>
       <button class="btn btn-w" onclick="dockerAction('${s.id}','restart')">🔄 Restart</button>
-      <button class="btn btn-d" onclick="dockerAction('${s.id}','stop')">🛑 Stop</button>
+      <button class="btn btn-d" onclick="confirmAction('Parar ${esc(s.name)}','¿Parar el contenedor ${esc(s.name)} (${esc(s.id)})?',()=>dockerAction('${s.id}','stop'))">🛑 Stop</button>
     </div>
   </div>`;
 }
@@ -811,9 +1013,9 @@ function renderPM2Card(s) {
     <h4>💚 ${esc(s.name)} <span class="badge ${s.status === 'online' ? 'healthy' : healthClass(s.status)}">${esc(s.status || '?')}</span></h4>
     <p>PID ${s.pid || '—'} · RAM ${mem} · CPU ${s.cpu || 0}% · Restarts: ${s.restarts || 0}</p>
     <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap">
-      <button class="btn btn-s" onclick="showLogs('${esc(s.name)}','/api/admin/logs/${s.name}?lines=80')">📋 Logs</button>
-      <button class="btn btn-w" onclick="pm2Action('${s.name}','restart')">🔄 Restart</button>
-      <button class="btn btn-d" onclick="pm2Action('${s.name}','stop')">🛑 Stop</button>
+      <button class="btn btn-s" onclick="showLogs('${esc(s.name)}','/api/admin/logs/${esc(s.name)}?lines=80')">📋 Logs</button>
+      <button class="btn btn-w" onclick="pm2Action('${esc(s.name)}','restart')">🔄 Restart</button>
+      <button class="btn btn-d" onclick="confirmAction('Parar ${esc(s.name)}','¿Parar el proceso ${esc(s.name)}?',()=>pm2Action('${esc(s.name)}','stop'))">🛑 Stop</button>
     </div>
   </div>`;
 }
@@ -828,22 +1030,34 @@ function renderServiceCard(s) {
 function renderAgentCard(a) {
   return `<div class="card" style="border-left:3px solid ${a.color || 'var(--accent)'}">
     <div class="card-top">
-      <div><div class="card-name">${a.icon || '🤖'} ${a.name}</div><div class="card-type">${a.type || 'agent'}</div></div>
-      <span class="badge healthy">● activo</span>
+      <div>
+        <div class="card-name">
+          ${a.icon || '🤖'} ${a.name}
+          <span class="ctx-badge">${a.model || '—'}</span>
+          <span class="tag tag-${a.status === 'online' ? 'green' : a.status === 'degraded' ? 'yellow' : 'purple'}">${a.status || '●'}</span>
+        </div>
+        <div class="card-type">${a.type || 'agent'}</div>
+      </div>
+      <span class="badge ${a.status === 'online' || a.status === 'running' ? 'healthy' : a.status === 'degraded' ? 'running' : 'stopped'}">${a.status || '● activo'}</span>
     </div>
     <div class="card-info">${a.desc || ''}</div>
-    <div class="card-info">Modelo: <code>${a.model || '—'}</code></div>
+    <div class="card-actions">
+      <button class="btn btn-g btn-sm" onclick="restartAgent('${esc(a.name)}')">🔄 Restart</button>
+      <button class="btn btn-s btn-sm" onclick="showLogs('${esc(a.name)}','/api/admin/logs/${esc(a.name)}?lines=50')">📋 Logs</button>
+      <button class="btn btn-w btn-sm" onclick="testAgent('${esc(a.name)}')">🧪 Test</button>
+    </div>
   </div>`;
 }
 
 function renderOllamaCard(m) {
   const sizeMB = m.size ? (m.size / (1024 * 1024 * 1024)).toFixed(1) : '—';
   const modified = m.modified_at ? new Date(m.modified_at).toLocaleString('es-ES') : '—';
-  return `<div class="model-card">
+  return `<div class="model-card" data-name="${esc(m.name)}">
     <div class="model-name">🦙 ${esc(m.name)} <span class="badge healthy">loaded</span></div>
-    <div class="model-size">Tamaño: ${sizeMB} GB · Modificado: ${modified}</div>
+    <div class="model-size">Tamaño: ${sizeMB} GB · Mod: ${modified}</div>
     <div class="model-actions">
-      <button class="btn btn-d" onclick="ollamaAction('rm','${esc(m.name)}')">🗑️ Eliminar</button>
+      <button class="btn btn-w btn-sm" onclick="testOllamaModel('${esc(m.name)}')">🧪 Test</button>
+      <button class="btn btn-d btn-sm" onclick="confirmAction('Eliminar ${esc(m.name)}','¿Eliminar el modelo ${esc(m.name)} de Ollama?',()=>ollamaAction('rm','${esc(m.name)}'))">🗑️ Eliminar</button>
     </div>
   </div>`;
 }
@@ -852,27 +1066,40 @@ function renderPipelineCard() {
   return `<div class="grid" style="grid-template-columns:1fr;gap:12px">
     <div class="card" style="border-left:3px solid var(--green)">
       <h4 style="font-size:.9em;display:flex;align-items:center;gap:6px;margin-bottom:8px">⚡ Fast Path — Clasificación Rápida</h4>
-      <div class="pipeline-flow"><span>📄 Entrada</span><span class="arrow">→</span><span class="fast">hermes-9b</span><span class="arrow">→</span><span>confianza ≥ 0.6</span><span class="arrow">→</span><span class="fast">qwen2.5-coder 0.5b</span></div>
-      <div class="card-info" style="margin-top:6px"><b>Uso:</b> Clasificación de documentos, extracción rápida</div>
+      <div class="card-info" style="border-left:3px solid var(--green);padding-left:10px;margin:8px 0">
+        <div>📄 Entrada → <b>hermes-9b</b> → confianza ≥ 0.6 → <b>qwen2.5-coder 0.5b</b></div>
+        <div class="card-info" style="margin-top:4px">Uso: Clasificación de documentos, extracción rápida</div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-g btn-sm" onclick="testModel('classify')">🧪 Test Clasificar</button>
+        <button class="btn btn-s btn-sm" onclick="testModel('extract')">📋 Test Extraer</button>
+      </div>
     </div>
     <div class="card" style="border-left:3px solid var(--purple)">
       <h4 style="font-size:.9em;display:flex;align-items:center;gap:6px;margin-bottom:8px">🧠 Deep Path — Razonamiento Profundo</h4>
-      <div class="pipeline-flow"><span>📄 Entrada</span><span class="arrow">→</span><span class="deep">hermes-9b</span><span class="arrow">→</span><span>confianza < 0.6</span><span class="arrow">→</span><span class="deep">negentropy-4.7b</span></div>
-      <div class="card-info" style="margin-top:6px"><b>Uso:</b> Documentos complejos, análisis legal, contable, RRHH</div>
+      <div class="card-info" style="border-left:3px solid var(--purple);padding-left:10px;margin:8px 0">
+        <div>📄 Entrada → <b>hermes-9b</b> → confianza < 0.6 → <b>negentropy-4.7b</b></div>
+        <div class="card-info" style="margin-top:4px">Uso: Documentos complejos, análisis legal, contable, RRHH</div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-p btn-sm" onclick="testModel('chat')">💬 Test Chat</button>
+        <button class="btn btn-w btn-sm" onclick="testModel('lmstudio')">🧪 Test LM Studio</button>
+      </div>
     </div>
   </div>
   <div class="section-divider"></div>
-  <div class="sec" style="margin-top:16px">🧪 Modelos configurados</div>
+  <div class="sec" style="margin-top:16px">🧪 Modelos configurados en Pipeline</div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
     ${[
-      { label: 'CLASSIFY', value: 'harmonic-hermes-9b:latest', color: 'var(--green)' },
-      { label: 'EXTRACT', value: 'qwen2.5-coder:0.5b-instruct', color: 'var(--cyan)' },
-      { label: 'ORCHESTRATOR', value: 'gemma2:2b', color: 'var(--yellow)' },
-      { label: 'DEEP / LEGAL / ACCOUNTING', value: 'negentropy-claude-opus-4.7-9b', color: 'var(--purple)' },
-    ].map(m => `<div class="model-card">
-      <div class="model-name">${m.label}</div>
-      <div class="model-info">${m.value}</div>
-    </div>`).join('')}
+      { label: 'CLASSIFY', value: 'harmonic-hermes-9b:latest', color: 'var(--green)', type: 'fast' },
+      { label: 'EXTRACT', value: 'qwen2.5-coder:0.5b-instruct', color: 'var(--cyan)', type: 'fast' },
+      { label: 'ORCHESTRATOR', value: 'gemma2:2b', color: 'var(--yellow)', type: 'routing' },
+      { label: 'DEEP / LEGAL / ACCOUNTING', value: 'negentropy-claude-opus-4.7-9b', color: 'var(--purple)', type: 'deep' },
+    ].map(m => `<div class="model-card" style="cursor:pointer" onclick="testWithModel('${esc(m.value)}')" title="Click para test con ${esc(m.value)}">
+      <div class="model-name"><span style="color:${m.color}">●</span> ${m.label}</div>
+      <div class="model-size">${esc(m.value)}</div>
+      <div class="tag tag-${m.color === 'var(--green)' ? 'green' : m.color === 'var(--purple)' ? 'purple' : 'blue'}" style="margin-top:4px">${esc(m.type)}</div>
+    </div>`).join('')}`}
   </div>`;
 }
 
@@ -883,7 +1110,8 @@ async function dockerAction(id, action) {
   try {
     const d = await adminApi(`/api/admin/docker/${id}/${action}`, { method: 'POST' });
     addRepairLog(`Docker ${action} ${id}: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
-  } catch (e) { addRepairLog(`Docker ${action}: ❌ ${e.message}`); }
+    showToast(d.ok ? `✅ ${action} ${id}` : `❌ ${d.error}`, !d.ok);
+  } catch (e) { addRepairLog(`Docker ${action}: ❌ ${e.message}`); showToast('❌ ' + e.message, true); }
   loadServices();
 }
 
@@ -891,12 +1119,14 @@ async function dockerAll(action) {
   if (!confirm(`¿${action} todos los contenedores?`)) return;
   const d = await adminApi(`/api/admin/docker/all/${action}`, { method: 'POST' });
   addRepairLog(`Docker ${action} todos: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  showToast(d.ok ? `✅ ${action} todos` : `❌ ${d.error}`, !d.ok);
   loadServices();
 }
 
 async function composeUp() {
   const d = await adminApi('/api/admin/docker-compose/up', { method: 'POST' });
   addRepairLog(`Compose Up: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  showToast(d.ok ? '✅ Compose Up' : '❌ ' + d.error, !d.ok);
   loadServices();
 }
 
@@ -904,6 +1134,7 @@ async function composeDown() {
   if (!confirm('¿Parar todos los servicios Docker Compose?')) return;
   const d = await adminApi('/api/admin/docker-compose/down', { method: 'POST' });
   addRepairLog(`Compose Down: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  showToast(d.ok ? '✅ Compose Down' : '❌ ' + d.error, !d.ok);
   loadServices();
 }
 
@@ -911,8 +1142,31 @@ async function composeDown() {
 //  PM2 ACTIONS
 // ════════════════════════════════════════════════════════════════
 async function pm2Action(name, action) {
-  const d = await adminApi(`/api/admin/processes/${name}/${action}`, { method: 'POST' });
-  addRepairLog(`PM2 ${action} ${name}: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  try {
+    const d = await adminApi(`/api/admin/processes/${name}/${action}`, { method: 'POST' });
+    addRepairLog(`PM2 ${action} ${name}: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+    showToast(d.ok ? `✅ ${action} ${name}` : `❌ ${d.error}`, !d.ok);
+  } catch (e) { addRepairLog(`PM2 ${action} ${name}: ❌ ${e.message}`); showToast('❌ ' + e.message, true); }
+  loadServices();
+}
+
+async function restartAllPM2() {
+  if (!confirm('¿Reiniciar todos los procesos PM2?')) return;
+  try {
+    const d = await adminApi('/api/admin/processes/all/restart', { method: 'POST' });
+    addRepairLog(`PM2 restart all: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+    showToast(d.ok ? '✅ PM2 reiniciados' : '❌ ' + d.error, !d.ok);
+  } catch(e) { addRepairLog(`PM2 restart all: ❌ ${e.message}`); }
+  loadServices();
+}
+
+async function restartSinkiaApi() {
+  if (!confirm('¿Reiniciar el servidor SynK-IA (sinkia-api)?')) return;
+  try {
+    const d = await adminApi('/api/admin/processes/sinkia-api/restart', { method: 'POST' });
+    addRepairLog(`Restart sinkia-api: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+    showToast(d.ok ? '✅ sinkia-api reiniciado' : '❌ ' + d.error, !d.ok);
+  } catch(e) { addRepairLog(`Restart sinkia-api: ❌ ${e.message}`); }
   loadServices();
 }
 
@@ -920,15 +1174,18 @@ async function pm2Action(name, action) {
 //  OLLAMA ACTIONS
 // ════════════════════════════════════════════════════════════════
 async function ollamaAction(action, model) {
-  const d = await adminApi(`/api/admin/ollama/${action}/${model}`, { method: 'POST' });
-  addRepairLog(`Ollama ${action} ${model}: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+  try {
+    const d = await adminApi(`/api/admin/ollama/${action}/${model}`, { method: 'POST' });
+    addRepairLog(`Ollama ${action} ${model}: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+    showToast(d.ok ? `✅ ${action} ${model}` : `❌ ${d.error}`, !d.ok);
+  } catch (e) { addRepairLog(`Ollama ${action}: ❌ ${e.message}`); showToast('❌ ' + e.message, true); }
   loadServices();
   await loadOllamaModels();
 }
 
 async function ollamaList() {
   await loadOllamaModels();
-  addRepairLog('Ollama: lista refrescada ✅');
+  showToast('🔄 Lista refrescada');
 }
 
 async function loadOllamaModels() {
@@ -936,15 +1193,60 @@ async function loadOllamaModels() {
     const d = await adminApi('/api/admin/services');
     document.getElementById('ollama-grid').innerHTML = d.ollama?.length
       ? d.ollama.map(renderOllamaCard).join('')
-      : '<div style="color:var(--muted);padding:20px;text-align:center">Sin modelos</div>';
+      : '<div class="empty-state"><div class="icon">🦙</div>Sin modelos cargados</div>';
     document.getElementById('ollama-count').textContent = d.ollama?.length || 0;
   } catch (e) {
-    document.getElementById('ollama-grid').innerHTML = '<div style="color:var(--red);padding:10px">Error cargando modelos</div>';
+    document.getElementById('ollama-grid').innerHTML = '<div class="empty-state">Error cargando modelos</div>';
   }
 }
 
+async function testOllamaModel(modelName) {
+  const el = document.getElementById('test-result');
+  el.style.display = 'block';
+  el.textContent = `⏳ Probando ${modelName}...`;
+  try {
+    const res = await fetch('/api/ollama/generate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: modelName, prompt: 'Hola, responde brevemente en español: ¿quién eres?', stream: false })
+    });
+    const data = await res.json();
+    el.textContent = `Modelo: ${modelName}\nRespuesta: ${data.response || JSON.stringify(data, null, 2)}`;
+  } catch (e) { el.textContent = '❌ Error: ' + e.message; }
+}
+
 // ════════════════════════════════════════════════════════════════
-//  TAILSCALE
+//  FILTERS
+// ════════════════════════════════════════════════════════════════
+function filterDocker() {
+  const q = document.getElementById('docker-search').value.toLowerCase();
+  document.querySelectorAll('#docker-grid .service-card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function filterDocs() {
+  const q = document.getElementById('docs-search').value.toLowerCase();
+  document.querySelectorAll('#docs-grid .doc-card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function filterServices() {
+  const q = document.getElementById('svc-search').value.toLowerCase();
+  document.querySelectorAll('#services-grid .card, #services-grid .service-card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function filterOllama() {
+  const q = document.getElementById('ollama-search').value.toLowerCase();
+  document.querySelectorAll('#ollama-grid .model-card').forEach(card => {
+    card.style.display = card.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TAILSCALE & NETWORK
 // ════════════════════════════════════════════════════════════════
 async function loadNetwork() {
   try {
@@ -952,8 +1254,29 @@ async function loadNetwork() {
       adminApi('/api/admin/tailscale/status').catch(() => ({ status: 'No disponible' })),
       adminApi('/api/admin/cloudflare/status').catch(() => ({ status: 'No disponible' }))
     ]);
-    document.getElementById('tailscale-status').textContent = ts.status || ts.stdout || 'Error';
-    document.getElementById('cloudflare-status').textContent = cf.status || cf.stdout || 'Error';
+    const tsEl = document.getElementById('tailscale-status');
+    const cfEl = document.getElementById('cloudflare-status');
+    tsEl.textContent = ts.status || ts.stdout || 'Error';
+    cfEl.textContent = cf.status || cf.stdout || 'Error';
+
+    // Detect if Tailscale is up
+    const tsText = (ts.stdout || ts.status || '').toLowerCase();
+    const tsBadge = document.getElementById('tailscale-badge');
+    if (tsText.includes('connected') || tsText.includes('logged in')) {
+      tsBadge.className = 'badge healthy'; tsBadge.textContent = '● Conectado';
+    } else if (tsText.includes('logged out') || tsText.includes('stopped')) {
+      tsBadge.className = 'badge stopped'; tsBadge.textContent = '○ Desconectado';
+    } else {
+      tsBadge.className = 'badge running'; tsBadge.textContent = '? Estado desconocido';
+    }
+
+    const cfText = (cf.stdout || cf.status || '').toLowerCase();
+    const cfBadge = document.getElementById('cloudflare-badge');
+    if (cfText.includes('status') && !cfText.includes('error')) {
+      cfBadge.className = 'badge healthy'; cfBadge.textContent = '● Activo';
+    } else {
+      cfBadge.className = 'badge stopped'; cfBadge.textContent = '○ Inactivo';
+    }
 
     const { stdout } = await adminApi('/api/admin/exec', {
       method: 'POST',
@@ -972,6 +1295,10 @@ function tailscaleAction(action) {
     .catch(e => { addRepairLog(`Tailscale ${action}: ❌ ${e.message}`); });
 }
 
+function flushDNS() {
+  runQuickRepair('flush-dns');
+}
+
 // ════════════════════════════════════════════════════════════════
 //  PIPELINE
 // ════════════════════════════════════════════════════════════════
@@ -985,14 +1312,95 @@ async function loadPipeline() {
       ).join('');
     }
   } catch (e) {
-    document.getElementById('pipeline-grid').innerHTML = '<div style="color:var(--red);padding:10px">Error cargando pipeline: ' + esc(e.message) + '</div>';
+    document.getElementById('pipeline-grid').innerHTML = '<div class="empty-state">Error cargando pipeline: ' + esc(e.message) + '</div>';
   }
+}
+
+async function testModel(type) {
+  const el = document.getElementById('test-result');
+  el.style.display = 'block';
+  el.textContent = `⏳ Ejecutando test: ${type}...`;
+  try {
+    let res, body, url;
+    const payloads = {
+      classify: { m: '/api/ai/classify', b: { text: 'Esto es una factura de compra de materiales de construcción por valor de 1500€ del proveedor Juan Perez' }, method: 'POST' },
+      chat:     { m: '/api/ai/generate', b: { message: 'Hola, responde brevemente en español: ¿cuál es tu misión?' }, method: 'POST' },
+      opencode: { m: '/api/opencode', b: { messages: [{ role: 'user', content: 'Escribe un hola mundo en Python' }] }, method: 'POST' },
+      lmstudio: { m: '/lmstudio/chat/completions', b: { model: 'deepseek/deepseek-r1-0528-qwen3-8b', messages: [{ role: 'user', content: 'Responde brevemente en español: ¿Cómo te llamas?' }], max_tokens: 200 }, method: 'POST' },
+      health:   { m: '/api/ai/status', b: null, method: 'GET' },
+      status:   { m: '/api/ai/status', b: null, method: 'GET' },
+    };
+    const cfg = payloads[type];
+    if (!cfg) { el.textContent = '❌ Tipo de test desconocido'; return; }
+    url = cfg.m;
+    const opts = { method: cfg.method, headers: { 'Content-Type': 'application/json' } };
+    if (cfg.b) opts.body = JSON.stringify(cfg.b);
+    res = await fetch(url, opts);
+    const text = await res.text();
+    try {
+      const data = JSON.parse(text);
+      el.textContent = JSON.stringify(data, null, 2);
+    } catch {
+      el.textContent = `HTTP ${res.status}\n\n${text}`;
+    }
+  } catch (e) { el.textContent = '❌ Error: ' + e.message; }
+}
+
+async function testCustomEndpoint() {
+  const el = document.getElementById('test-result');
+  const endpoint = document.getElementById('test-endpoint').value;
+  const method = document.getElementById('test-method').value;
+  const bodyText = document.getElementById('test-body').value.trim();
+  el.style.display = 'block';
+  el.textContent = `⏳ ${method} ${endpoint}...`;
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (method === 'POST' && bodyText) opts.body = bodyText;
+    const res = await fetch(endpoint, opts);
+    const text = await res.text();
+    try {
+      el.textContent = JSON.stringify(JSON.parse(text), null, 2);
+    } catch { el.textContent = `HTTP ${res.status}\n\n${text}`; }
+  } catch (e) { el.textContent = '❌ Error: ' + e.message; }
+}
+
+function testWithModel(modelName) {
+  const el = document.getElementById('test-result');
+  el.style.display = 'block';
+  el.textContent = `⏳ Test con modelo: ${modelName}...`;
+  fetch('/api/hermes', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: 'Hola, responde brevemente: ¿qué puedes hacer por mí?' }], stream: false, model: modelName })
+  }).then(r => r.text()).then(text => {
+    try { el.textContent = JSON.stringify(JSON.parse(text), null, 2); }
+    catch { el.textContent = `Modelo: ${modelName}\n\n${text}`; }
+  }).catch(e => { el.textContent = '❌ Error: ' + e.message; });
 }
 
 // ════════════════════════════════════════════════════════════════
 //  AGENTS
 // ════════════════════════════════════════════════════════════════
+async function restartAgent(name) {
+  try {
+    const d = await adminApi(`/api/admin/processes/${name}/restart`, { method: 'POST' });
+    addRepairLog(`Agente ${name} restart: ${d.ok ? '✅' : '❌ ' + (d.error || '')}`);
+    showToast(d.ok ? `✅ ${name} reiniciado` : `❌ ${d.error}`, !d.ok);
+  } catch(e) { addRepairLog(`Agente ${name}: ❌ ${e.message}`); }
+  loadAgents();
+}
+
+async function restartAllAgents() {
+  if (!confirm('¿Reiniciar todos los agentes?')) return;
+  try {
+    const d = await adminApi('/api/admin/processes/all/restart', { method: 'POST' });
+    addRepairLog(`Agentes restart all: ${d.ok ? '✅' : '❌'}`);
+    showToast(d.ok ? '✅ Todos los agentes reiniciados' : '❌ Error', !d.ok);
+  } catch(e) { addRepairLog(`Agentes restart: ❌ ${e.message}`); }
+  loadAgents();
+}
+
 async function loadAgents() {
+  const grid = document.getElementById('agents-grid');
   const agents = [
     { icon: '📄', name: 'Clasificador', type: 'CLASSIFY_MODEL', color: '#10b981', desc: 'Fast Path — clasificación documentos' },
     { icon: '🧾', name: 'Extractor', type: 'EXTRACT_MODEL', color: '#06b6d4', desc: 'Fast Path — extracción ultra-rápida' },
@@ -1002,83 +1410,188 @@ async function loadAgents() {
     { icon: '👤', name: 'RRHH', type: 'HR_MODEL', color: '#ec4899', desc: 'Deep Path — recursos humanos' },
     { icon: '📊', name: 'Analytics', type: 'DEEP_MODEL', color: '#06b6d4', desc: 'Deep Path — análisis profundo' },
   ];
-  document.getElementById('agents-grid').innerHTML = agents.map(a => renderAgentCard(a)).join('');
+  // Fetch actual PM2 status
+  let pm2Status = {};
+  try {
+    const d = await adminApi('/api/admin/processes');
+    d.forEach(p => { pm2Status[p.name] = p.status; });
+  } catch {}
+  grid.innerHTML = agents.map(a => {
+    a.status = pm2Status[a.name] || 'online';
+    return renderAgentCard(a);
+  }).join('');
+}
+
+function testAgent(name) {
+  showToast(`🧪 Test agente: ${name}`);
+  fetch('/api/ai/status').then(r => r.json()).then(d => {
+    showToast(`Agente ${name}: ${d.online ? '✅ Online' : '⚠️ Offline'}`);
+  }).catch(() => showToast(`Error comprobando ${name}`, true));
 }
 
 // ════════════════════════════════════════════════════════════════
-//  MODEL TESTS
+//  DOCUMENTS (NEW — intervenido)
 // ════════════════════════════════════════════════════════════════
-async function testModel(type) {
-  const el = document.getElementById('test-result');
-  el.style.display = 'block';
-  el.textContent = '⏳ Enviando petición...';
+async function loadDocs() {
+  const grid = document.getElementById('docs-grid');
+  grid.innerHTML = '<div class="loading"><span class="spin"></span> Cargando documentos...</div>';
   try {
-    let res;
-    if (type === 'classify') {
-      res = await fetch('/api/ai/classify', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: 'Esto es una factura de compra de materiales de construcción por valor de 1500€ del proveedor Juan Perez' })
-      });
-    } else if (type === 'chat') {
-      res = await fetch('/api/ai/generate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'Hola, responde brevemente en español: ¿cuál es tu misión?' })
-      });
-    } else if (type === 'opencode') {
-      res = await fetch('/api/opencode', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: 'Escribe un hola mundo en Python' }] })
-      });
-    } else if (type === 'lmstudio') {
-      res = await fetch('/lmstudio/chat/completions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'deepseek/deepseek-r1-0528-qwen3-8b', messages: [{ role: 'user', content: 'Responde brevemente en español: ¿Cómo te llamas?' }], max_tokens: 200 })
-      });
+    const [docsRes, entitiesRes] = await Promise.all([
+      fetch('/api/documents/list?limit=50').then(r => r.ok ? r.json() : { documents: [] }).catch(() => ({ documents: [] })),
+      fetch('/api/entities').then(r => r.ok ? r.json() : { providers: [], workers: [] }).catch(() => ({ providers: [], workers: [] }))
+    ]);
+    const docs = docsRes.documents || [];
+    const entities = entitiesRes;
+    document.getElementById('docs-total').textContent = docs.length;
+    document.getElementById('docs-processed').textContent = docs.filter(d => d.status === 'processed').length;
+    document.getElementById('docs-pending').textContent = docs.filter(d => d.status === 'pending').length;
+    document.getElementById('docs-errors').textContent = docs.filter(d => d.status === 'error').length;
+
+    if (!docs.length) {
+      grid.innerHTML = '<div class="empty-state"><div class="icon">📄</div>No hay documentos. Sube archivos o espera la sincronización IMAP.</div>';
+      return;
     }
-    const data = await res.json();
-    el.textContent = JSON.stringify(data, null, 2);
+    grid.innerHTML = docs.map(d => {
+      const entity = entities.providers?.find(e => e.name?.toLowerCase() === (d.supplier || '').toLowerCase()) ||
+                      entities.workers?.find(e => e.name?.toLowerCase() === (d.supplier || '').toLowerCase());
+      return `<div class="card doc-card" style="border-left:3px solid ${d.status === 'processed' ? 'var(--green)' : d.status === 'error' ? 'var(--red)' : 'var(--yellow)'}">
+        <div class="card-top">
+          <div>
+            <div class="card-name">${esc(d.filename || d.name || 'Documento')} <span class="ctx-badge">${esc(d.docType || 'sin tipo')}</span></div>
+            <div class="card-type">${d.status === 'processed' ? '✅ Procesado' : d.status === 'pending' ? '⏳ Pendiente' : '❌ Error'} · ${d.subtype || '—'}</div>
+            ${entity ? `<div class="card-info" style="margin-top:4px">📍 Entidad: <b>${esc(entity.name || entity.tradeName || entity.dni || '—')}</b> (${entity.type || 'desconocida'})</div>` : ''}
+            ${d.confidence ? `<div class="card-info">Confianza: <b>${(d.confidence * 100).toFixed(0)}%</b></div>` : ''}
+          </div>
+          <span class="badge ${d.status === 'processed' ? 'healthy' : d.status === 'pending' ? 'pending' : d.status === 'error' ? 'unhealthy' : 'offline'}">${esc(d.status || '?')}</span>
+        </div>
+        ${d.entities ? `<div class="card-info" style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px">
+          ${d.entities.supplier ? `<span class="tag tag-green">📦 ${esc(d.entities.supplier)}</span>` : ''}
+          ${d.entities.total ? `<span class="tag tag-blue">💰 ${typeof d.entities.total === 'number' ? d.entities.total.toFixed(2) + '€' : esc(d.entities.total)}</span>` : ''}
+          ${d.entities.iva ? `<span class="tag tag-purple">IVA ${esc(d.entities.iva)}</span>` : ''}
+        </div>` : ''}
+        <div class="card-actions">
+          ${d.status !== 'processed' ? `<button class="btn btn-g btn-sm" onclick="reprocessDoc('${esc(d._id || d.filename)}')">🔄 Reprocesar</button>` : ''}
+          ${d.raw || d.text ? `<button class="btn btn-s btn-sm" onclick="showDocRaw('${esc(d._id || d.filename)}')">📄 Ver texto</button>` : ''}
+          ${d.filePath ? `<button class="btn btn-w btn-sm" onclick="openDocFile('${esc(d.filePath)}')">📂 Abrir archivo</button>` : ''}
+          <button class="btn btn-d btn-sm" onclick="deleteDoc('${esc(d._id || d.filename)}')">🗑️ Borrar</button>
+        </div>
+      </div>`;
+    }).join('');
   } catch (e) {
-    el.textContent = '❌ Error: ' + e.message;
+    grid.innerHTML = `<div class="empty-state">Error cargando documentos: ${esc(e.message)}</div>`;
   }
 }
 
+async function reprocessDoc(id) {
+  showToast(`🔄 Reprocesando ${id}...`);
+  try {
+    const res = await fetch('/api/documents/' + id + '/reprocess', { method: 'POST' });
+    const data = await res.json();
+    showToast(data.ok ? '✅ Reprocesado' : '❌ ' + (data.error || 'Error'));
+  } catch(e) { showToast('❌ ' + e.message, true); }
+  loadDocs();
+}
+
+async function clearProcessedDocs() {
+  if (!confirm('¿Limpiar todos los documentos procesados? Se borrarán de la vista pero no del disco.')) return;
+  try {
+    const res = await fetch('/api/documents/clear-processed', { method: 'POST' });
+    const data = await res.json();
+    showToast(data.ok ? '✅ Limpiados' : '❌ ' + (data.error || 'Error'));
+  } catch(e) { showToast('❌ ' + e.message, true); }
+  loadDocs();
+}
+
+async function showDocRaw(id) {
+  try {
+    const res = await fetch('/api/documents/' + id + '/raw');
+    const data = await res.json();
+    document.getElementById('modal-title').textContent = '📄 ' + id;
+    document.getElementById('modal-log').textContent = data.text || data.raw || 'Sin contenido';
+    document.getElementById('modal').classList.add('on');
+  } catch(e) { showToast('❌ Error: ' + e.message, true); }
+}
+
+async function openDocFile(filePath) {
+  try {
+    await fetch('/api/documents/open?path=' + encodeURIComponent(filePath), { method: 'POST' });
+    showToast('📂 Abriendo archivo...');
+  } catch(e) { showToast('❌ ' + e.message, true); }
+}
+
+async function deleteDoc(id) {
+  confirmAction('Borrar documento', '¿Borrar el documento ' + id + '?', async () => {
+    try {
+      const res = await fetch('/api/documents/' + id, { method: 'DELETE' });
+      const data = await res.json();
+      showToast(data.ok ? '✅ Borrado' : '❌ ' + (data.error || 'Error'));
+    } catch(e) { showToast('❌ ' + e.message, true); }
+    loadDocs();
+  });
+}
+
+function refreshDocs() { loadDocs(); showToast('🔄 Refrescando documentos...'); }
+
 // ════════════════════════════════════════════════════════════════
-//  LOGS MODAL
+//  QUICK REPAIR
+// ════════════════════════════════════════════════════════════════
+async function runQuickRepair(action) {
+  addRepairLog(`▶ Ejecutando: ${action}`);
+  try {
+    const d = await adminApi('/api/admin/exec', {
+      method: 'POST',
+      body: JSON.stringify({ command: action })
+    });
+    addRepairLog(`${action}: ${d.ok ? '✅' : '❌'} ${d.output || d.error || d.stdout || ''}`);
+    showToast(d.ok ? `✅ ${action}` : `❌ ${d.error || d.stdout}`, !d.ok);
+  } catch (e) { addRepairLog(`${action}: ❌ ${e.message}`); showToast('❌ ' + e.message, true); }
+}
+
+async function runRepair(action) {
+  addRepairLog(`▶ Reparación: ${action}`);
+  try {
+    const d = await adminApi('/api/admin/repair/' + action, { method: 'POST' });
+    addRepairLog(`${action}: ${d.ok ? '✅ OK' : '❌ ' + (d.error || 'Error')}`);
+    showToast(d.ok ? `✅ ${action}` : `❌ ${d.error}`, !d.ok);
+    loadServices();
+  } catch(e) { addRepairLog(`${action}: ❌ ${e.message}`); }
+}
+
+let repairLogCount = 0;
+function addRepairLog(msg) {
+  const el = document.getElementById('repair-log');
+  if (repairLogCount > 200) { el.textContent = ''; repairLogCount = 0; }
+  const time = new Date().toLocaleTimeString('es-ES');
+  el.textContent = `[${time}] ${msg}\n` + el.textContent;
+  repairLogCount++;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  LOGS
 // ════════════════════════════════════════════════════════════════
 async function showLogs(title, url) {
   document.getElementById('modal').classList.add('on');
   document.getElementById('modal-title').textContent = '📋 ' + title;
   document.getElementById('modal-log').textContent = 'Cargando...';
   try {
-    const r = await fetch(url);
+    // Support both direct URLs and container-id based paths
+    let fetchUrl = url;
+    if (!url.startsWith('/')) fetchUrl = '/api/admin/docker/' + url + '/logs?lines=100';
+    const r = await fetch(fetchUrl.startsWith('http') ? fetchUrl : fetchUrl);
     const d = await r.json();
-    document.getElementById('modal-log').textContent = d.logs || d.output || JSON.stringify(d, null, 2);
+    document.getElementById('modal-log').textContent = d.logs || d.output || d.stdout || JSON.stringify(d, null, 2);
   } catch (e) { document.getElementById('modal-log').textContent = 'Error: ' + e.message; }
 }
 
 // ════════════════════════════════════════════════════════════════
-//  QUICK REPAIR
-// ════════════════════════════════════════════════════════════════
-async function runQuickRepair(action) {
-  try {
-    const d = await adminApi('/api/admin/exec', {
-      method: 'POST',
-      body: JSON.stringify({ command: action })
-    });
-    addRepairLog(`${action}: ${d.stdout || d.error || 'OK'}`);
-  } catch (e) { addRepairLog(`${action}: ❌ ${e.message}`); }
-}
-
-// ════════════════════════════════════════════════════════════════
-//  HERMES AGENT
+//  HERMES WS
 // ════════════════════════════════════════════════════════════════
 function hermesToggle() {
   const btn = document.getElementById('hermes-connect');
   if (hermesConn) {
     if (hermesWs) { hermesWs.close(); hermesWs = null; }
     hermesConn = false;
-    btn.textContent = '🔌 Conectar';
-    btn.className = 'btn btn-p';
+    btn.textContent = '🔌 Conectar'; btn.className = 'btn btn-p';
     document.getElementById('hermes-mc-badge').textContent = 'offline';
     document.getElementById('hermes-mc-badge').className = 'badge stopped';
     document.getElementById('hermes-chat-area').style.display = 'none';
@@ -1089,20 +1602,21 @@ function hermesToggle() {
   const temp = parseFloat(document.getElementById('hermes-temperature').value);
   const maxTokens = parseInt(document.getElementById('hermes-max-tokens').value);
   const topP = parseFloat(document.getElementById('hermes-top-p').value);
+  if (!model) { alert('Selecciona un modelo primero'); return; }
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${proto}//${location.host}/ws/hermes?model=${encodeURIComponent(model)}&temperature=${temp}&max_tokens=${maxTokens}&top_p=${topP}&token=sinkia2026`;
   hermesWs = new WebSocket(wsUrl);
   btn.textContent = '⏳ Conectando…';
   hermesWs.onopen = () => {
     hermesConn = true;
-    btn.textContent = '🔌 Desconectar';
-    btn.className = 'btn btn-w';
+    btn.textContent = '🔌 Desconectar'; btn.className = 'btn btn-w';
     document.getElementById('hermes-mc-badge').textContent = 'online';
     document.getElementById('hermes-mc-badge').className = 'badge healthy';
     document.getElementById('hermes-chat-area').style.display = 'block';
     document.getElementById('hermes-input-row').style.display = 'flex';
     document.getElementById('hermes-info').style.display = 'block';
     document.getElementById('hermes-info').textContent = `Modelo: ${model} · temp: ${temp} · max_tokens: ${maxTokens} · top_p: ${topP}`;
+    document.getElementById('hermes-model-label').textContent = model.split(':')[0];
     document.getElementById('hermes-chat-area').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.8em">✓ Conectado a Hermes Agent</div>';
   };
   hermesWs.onmessage = (e) => {
@@ -1111,22 +1625,16 @@ function hermesToggle() {
       const d = JSON.parse(e.data);
       const text = d.text || d.content || d.response || JSON.stringify(d);
       area.innerHTML += `<div class="hermes-msg assistant"><b>🤖 Hermes:</b><br>${text.replace(/\n/g, '<br>')}</div>`;
-    } catch {
-      area.innerHTML += `<div class="hermes-msg error"><i>${esc(e.data)}</i></div>`;
-    }
+    } catch { area.innerHTML += `<div class="hermes-msg error"><i>${esc(e.data)}</i></div>`; }
     area.scrollTop = area.scrollHeight;
   };
   hermesWs.onerror = () => {
-    hermesConn = false;
-    btn.textContent = '🔌 Conectar';
-    btn.className = 'btn btn-p';
+    hermesConn = false; btn.textContent = '🔌 Conectar'; btn.className = 'btn btn-p';
     document.getElementById('hermes-mc-badge').textContent = 'error';
     document.getElementById('hermes-mc-badge').className = 'badge unhealthy';
   };
   hermesWs.onclose = () => {
-    hermesConn = false;
-    btn.textContent = '🔌 Conectar';
-    btn.className = 'btn btn-p';
+    hermesConn = false; btn.textContent = '🔌 Conectar'; btn.className = 'btn btn-p';
     document.getElementById('hermes-mc-badge').textContent = 'offline';
     document.getElementById('hermes-mc-badge').className = 'badge stopped';
   };
@@ -1135,12 +1643,10 @@ function hermesToggle() {
 function hermesChatSend() {
   if (!hermesConn || !hermesWs) return;
   const inp = document.getElementById('hermes-in');
-  const text = inp.value.trim();
-  if (!text) return;
+  const text = inp.value.trim(); if (!text) return;
   hermesWs.send(JSON.stringify({ message: text }));
   document.getElementById('hermes-chat-area').innerHTML += `<div class="hermes-msg user"><b>👤 Tú:</b><br>${esc(text).replace(/\n/g, '<br>')}</div>`;
-  inp.value = '';
-  inp.style.height = 'auto';
+  inp.value = ''; inp.style.height = 'auto';
   document.getElementById('hermes-chat-area').scrollTop = document.getElementById('hermes-chat-area').scrollHeight;
 }
 
@@ -1153,14 +1659,14 @@ function hermesReset() {
   document.getElementById('hermes-connect').className = 'btn btn-p';
   document.getElementById('hermes-mc-badge').textContent = 'offline';
   document.getElementById('hermes-mc-badge').className = 'badge stopped';
+  document.getElementById('hermes-model-label').textContent = '—';
 }
 
 function hermesTest() {
   const model = document.getElementById('hermes-model-select').value;
   if (!model) { alert('Selecciona un modelo primero'); return; }
   fetch('/api/hermes', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages: [{ role: 'user', content: 'Hola, responde brevemente: ¿qué hora es?' }], stream: false, model })
   }).then(r => r.json()).then(d => {
     const area = document.getElementById('hermes-chat-area');
@@ -1180,7 +1686,12 @@ function hermesSaveConfig() {
     top_p: parseFloat(document.getElementById('hermes-top-p').value)
   };
   localStorage.setItem('hermes-config', JSON.stringify(cfg));
-  showToast('Configuración guardada ✅');
+  showToast('💾 Configuración guardada');
+  document.getElementById('hermes-model-label').textContent = cfg.model.split(':')[0];
+}
+
+function clearChat(areaId) {
+  document.getElementById(areaId).innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)"><span class="pulse">⏳</span> Conecta para chatear</div>';
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1191,8 +1702,7 @@ function opencodeToggle() {
   if (opencodeConn) {
     if (opencodeWs) { opencodeWs.close(); opencodeWs = null; }
     opencodeConn = false;
-    btn.textContent = '🔌 Conectar';
-    btn.className = 'btn btn-p';
+    btn.textContent = '🔌 Conectar'; btn.className = 'btn btn-p';
     document.getElementById('opencode-mc-badge').textContent = 'offline';
     document.getElementById('opencode-mc-badge').className = 'badge stopped';
     document.getElementById('opencode-chat-area').style.display = 'none';
@@ -1203,19 +1713,20 @@ function opencodeToggle() {
   const temp = parseFloat(document.getElementById('opencode-temperature').value);
   const maxTokens = parseInt(document.getElementById('opencode-max-tokens').value);
   const topP = parseFloat(document.getElementById('opencode-top-p')?.value || '0.9');
+  if (!model) { alert('Selecciona un modelo primero'); return; }
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${proto}//${location.host}/ws/opencode?model=${encodeURIComponent(model)}&temperature=${temp}&max_tokens=${maxTokens}&top_p=${topP}&token=sinkia2026`;
   opencodeWs = new WebSocket(wsUrl);
   btn.textContent = '⏳ Conectando…';
   opencodeWs.onopen = () => {
     opencodeConn = true;
-    btn.textContent = '🔌 Desconectar';
-    btn.className = 'btn btn-w';
+    btn.textContent = '🔌 Desconectar'; btn.className = 'btn btn-w';
     document.getElementById('opencode-mc-badge').textContent = 'online';
     document.getElementById('opencode-mc-badge').className = 'badge healthy';
     document.getElementById('opencode-chat-area').style.display = 'block';
     document.getElementById('opencode-input-row').style.display = 'flex';
     document.getElementById('opencode-chat-area').innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:.8em">✓ Conectado a OpenCode Agent</div>';
+    document.getElementById('opencode-model-label').textContent = model.split(':')[0];
   };
   opencodeWs.onmessage = (e) => {
     const area = document.getElementById('opencode-chat-area');
@@ -1223,28 +1734,31 @@ function opencodeToggle() {
       const d = JSON.parse(e.data);
       const text = d.text || d.content || d.response || JSON.stringify(d);
       area.innerHTML += `<div class="hermes-msg assistant"><b>💻 OpenCode:</b><br>${text.replace(/\n/g, '<br>')}</div>`;
-    } catch {
-      area.innerHTML += `<div class="hermes-msg error"><i>${esc(e.data)}</i></div>`;
-    }
+    } catch { area.innerHTML += `<div class="hermes-msg error"><i>${esc(e.data)}</i></div>`; }
     area.scrollTop = area.scrollHeight;
   };
   opencodeWs.onerror = () => {
-    opencodeConn = false;
-    btn.textContent = '🔌 Conectar';
-    btn.className = 'btn btn-p';
+    opencodeConn = false; btn.textContent = '🔌 Conectar'; btn.className = 'btn btn-p';
     document.getElementById('opencode-mc-badge').textContent = 'error';
     document.getElementById('opencode-mc-badge').className = 'badge unhealthy';
   };
   opencodeWs.onclose = () => {
-    opencodeConn = false;
-    btn.textContent = '🔌 Conectar';
-    btn.className = 'btn btn-p';
+    opencodeConn = false; btn.textContent = '🔌 Conectar'; btn.className = 'btn btn-p';
     document.getElementById('opencode-mc-badge').textContent = 'offline';
     document.getElementById('opencode-mc-badge').className = 'badge stopped';
+    document.getElementById('opencode-model-label').textContent = '—';
   };
 }
 
-var opencodeConn = false, opencodeWs = null;
+function opencodeChatSend() {
+  if (!opencodeConn || !opencodeWs) return;
+  const inp = document.getElementById('opencode-in');
+  const text = inp.value.trim(); if (!text) return;
+  opencodeWs.send(JSON.stringify({ message: text }));
+  document.getElementById('opencode-chat-area').innerHTML += `<div class="hermes-msg user"><b>👤 Tú:</b><br>${esc(text).replace(/\n/g, '<br>')}</div>`;
+  inp.value = ''; inp.style.height = 'auto';
+  document.getElementById('opencode-chat-area').scrollTop = document.getElementById('opencode-chat-area').scrollHeight;
+}
 
 function opencodeReset() {
   opencodeConn = false;
@@ -1255,26 +1769,14 @@ function opencodeReset() {
   document.getElementById('opencode-connect').className = 'btn btn-p';
   document.getElementById('opencode-mc-badge').textContent = 'offline';
   document.getElementById('opencode-mc-badge').className = 'badge stopped';
-}
-
-function opencodeChatSend() {
-  if (!opencodeConn || !opencodeWs) return;
-  const inp = document.getElementById('opencode-in');
-  const text = inp.value.trim();
-  if (!text) return;
-  opencodeWs.send(JSON.stringify({ message: text }));
-  document.getElementById('opencode-chat-area').innerHTML += `<div class="hermes-msg user"><b>👤 Tú:</b><br>${esc(text).replace(/\n/g, '<br>')}</div>`;
-  inp.value = '';
-  inp.style.height = 'auto';
-  document.getElementById('opencode-chat-area').scrollTop = document.getElementById('opencode-chat-area').scrollHeight;
+  document.getElementById('opencode-model-label').textContent = '—';
 }
 
 function opencodeTest() {
   const model = document.getElementById('opencode-model-select').value;
   if (!model) { alert('Selecciona un modelo primero'); return; }
   fetch('/api/opencode', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages: [{ role: 'user', content: 'Escribe un hola mundo en Python' }] })
   }).then(r => r.json()).then(d => {
     const area = document.getElementById('opencode-chat-area');
@@ -1293,92 +1795,8 @@ function opencodeSaveConfig() {
     max_tokens: parseInt(document.getElementById('opencode-max-tokens').value)
   };
   localStorage.setItem('opencode-config', JSON.stringify(cfg));
-  showToast('Configuración guardada ✅');
-}
-
-// ════════════════════════════════════════════════════════════════
-//  TERMINAL
-// ════════════════════════════════════════════════════════════════
-function initTerminal() {
-  if (term) return;
-  try {
-    term = new Terminal({
-      cursorBlink: true,
-      fontSize: 13,
-      fontFamily: "'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace",
-      theme: { background: '#060a14', foreground: '#e5e7eb', cursor: '#3b82f6', cursorAccent: '#060a14', selectionBackground: '#1e2d54' },
-      allowProposedApi: true,
-      scrollback: 10000
-    });
-    const fitAddon = new FitAddon.FitAddon();
-    term.loadAddon(fitAddon);
-    term.open(document.getElementById('terminal'));
-    fitAddon.fit();
-
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${proto}//${location.host}/ws/terminal`);
-
-    document.getElementById('term-dot').className = 'dot green';
-    document.getElementById('term-status').textContent = 'Conectado';
-
-    ws.onopen = () => {
-      term.writeln('\r\n\x1b[32m✓ Conectado a terminal SynK-IA\x1b[0m\r\n');
-      term.writeln('\x1b[33mTip: Ctrl+C para copiar · Ctrl+V para pegar\x1b[0m\r\n');
-    };
-    ws.onmessage = (e) => {
-      try {
-        const d = JSON.parse(e.data);
-        if (d.type === 'output') term.write(d.data);
-        if (d.type === 'exit') term.writeln('\r\n\x1b[31m✗ Sesión terminada\x1b[0m');
-      } catch {
-        // Raw data, write directly
-        term.write(e.data);
-      }
-    };
-    ws.onclose = () => {
-      term.writeln('\r\n\x1b[33m⚠ Conexión cerrada — recarga la página\x1b[0m');
-      document.getElementById('term-dot').className = 'dot red';
-      document.getElementById('term-status').textContent = 'Desconectado';
-    };
-    term.onData(data => {
-      if (ws?.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'input', data }));
-      }
-    });
-    window.addEventListener('resize', () => { try { fitAddon.fit(); } catch {} });
-  } catch (e) {
-    console.error('Terminal init error:', e);
-    document.getElementById('term-status').textContent = 'Error: ' + e.message;
-    document.getElementById('term-dot').className = 'dot red';
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-//  REPAIR
-// ════════════════════════════════════════════════════════════════
-async function loadRepairActions() {
-  try {
-    const d = await api('/api/admin/repair/actions');
-    document.getElementById('repair-ops').innerHTML = d.actions.map(a => `
-      <div class="op" onclick="runRepair('${a.id}')">
-        <h4>${a.icon || '🔧'} ${esc(a.name)}</h4><code>${esc(a.id)}</code>
-      </div>
-    `).join('');
-  } catch (e) {
-    document.getElementById('repair-ops').innerHTML = '<div style="color:var(--muted);padding:10px;font-size:.8em">Error cargando acciones</div>';
-  }
-}
-
-function addRepairLog(msg) {
-  const el = document.getElementById('repair-log');
-  const time = new Date().toLocaleTimeString('es-ES');
-  el.textContent = `[${time}] ${msg}\n` + el.textContent;
-}
-
-async function runRepair(action) {
-  const d = await adminApi('/api/admin/repair/' + action, { method: 'POST' });
-  addRepairLog(`${action}: ${d.ok ? '✅ OK' : '❌ ' + (d.error || 'Error')}`);
-  loadServices();
+  showToast('💾 Configuración guardada');
+  document.getElementById('opencode-model-label').textContent = cfg.model.split(':')[0];
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1391,12 +1809,10 @@ async function loadModels() {
     const res = await api('/api/ai/models');
     if (!res.success) return;
     availableModels = res.providers || { ollama: [], lmstudio: [], openrouter: [] };
-
     ['hermes-model-select', 'opencode-model-select'].forEach(selId => {
       const sel = document.getElementById(selId);
       if (!sel) return;
       sel.innerHTML = '';
-
       const groups = [
         { key: 'ollama', label: '🦙 Ollama' },
         { key: 'lmstudio', label: '🧪 LM Studio' },
@@ -1414,30 +1830,12 @@ async function loadModels() {
           sel.appendChild(grp);
         }
       }
-
-      // Restore saved selection
       try {
         const cfg = JSON.parse(localStorage.getItem(selId === 'hermes-model-select' ? 'hermes-config' : 'opencode-config'));
         if (cfg?.model && sel.querySelector(`option[value="${cfg.model}"]`)) sel.value = cfg.model;
       } catch {}
     });
-  } catch (e) {
-    console.error('loadModels error:', e);
-  }
-}
-
-function getSelectedModel(selId) {
-  return document.getElementById(selId)?.value || null;
-}
-
-// ════════════════════════════════════════════════════════════════
-//  TOAST
-// ════════════════════════════════════════════════════════════════
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg || '✅ Copiado';
-  t.classList.add('on');
-  setTimeout(() => t.classList.remove('on'), 2000);
+  } catch (e) { console.error('loadModels error:', e); }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1445,17 +1843,25 @@ function showToast(msg) {
 // ════════════════════════════════════════════════════════════════
 loadServices();
 loadSystemMetrics();
-loadRepairActions();
 loadPipeline();
 loadModels();
 loadAgents();
+loadRepairActions();
 
 // Refresh intervals
-setInterval(loadServices, 60000);
-setInterval(loadSystemMetrics, 30000);
-setInterval(loadPipeline, 120000);
-setInterval(loadModels, 60000);
+const REFRESH = { services: 30000, system: 15000, agents: 60000, pipeline: 120000 };
+setInterval(loadServices, REFRESH.services);
+setInterval(loadSystemMetrics, REFRESH.system);
+setInterval(loadAgents, REFRESH.agents);
+setInterval(loadPipeline, REFRESH.pipeline);
 
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeModal(); closeActionModal(); closeAllDropdowns(); }
+});
+
+// Close dropdowns on tab switch
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => closeAllDropdowns()));
 </script>
 </body>
 </html>

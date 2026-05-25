@@ -58,6 +58,7 @@ const OPENROUTER_MODELS = new Set([
   'deepseek/deepseek-v3',
   'nousresearch/hermes-3-mixtral-8x7b',
   'nousresearch/hermes-3-llama-3.1-8b',
+  'openrouter/free',
 ]);
 
 const FALLBACK_MODEL = 'qwen2.5-coder:0.5b-instruct';

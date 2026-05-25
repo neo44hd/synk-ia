@@ -2,10 +2,10 @@ module.exports = {
   apps: [
     {
       name: 'sinkia-api',
-      script: '/Users/davidnows/synkia-app/server/index.js',
-      cwd: '/Users/davidnows/synkia-app',
+      script: '/Users/davidnows/sinkia-next/server/index.js',
+      cwd: '/Users/davidnows/sinkia-next',
       interpreter: '/opt/homebrew/bin/node',
-      interpreter_args: '--experimental-vm-modules --require /Users/davidnows/synkia-app/node-startup.cjs',
+      interpreter_args: '--experimental-vm-modules --require /Users/davidnows/sinkia-next/server/env-loader.mjs',
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
@@ -19,8 +19,8 @@ module.exports = {
     },
     {
       name: 'sinkia-ollama-proxy',
-      script: '/Users/davidnows/synkia-app/server/ollama-proxy.mjs',
-      cwd: '/Users/davidnows/synkia-app',
+      script: '/Users/davidnows/sinkia-next/server/ollama-proxy.mjs',
+      cwd: '/Users/davidnows/sinkia-next',
       interpreter: '/opt/homebrew/bin/node',
       autorestart: true,
       watch: false,

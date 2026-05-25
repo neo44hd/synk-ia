@@ -105,7 +105,16 @@ router.post('/processes/:name/stop', (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════════
+router.post('/processes/:name/start', (req, res) => {
+  try {
+    execSync(`pm2 start ${req.params.name} --update-env`, { timeout: 15000, env: execEnv() });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
 // SYSTEM METRICS
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -199,7 +208,7 @@ router.post('/exec', (req, res) => {
   if (!command || typeof command !== 'string') return res.status(400).json({ error: 'Campo "command" requerido' });
   if (command.length > 500) return res.status(400).json({ error: 'Comando demasiado largo (máx 500 chars)' });
   try {
-    const output = execSync(command, { timeout: 30_000, cwd: '/Users/davidnows/sinkia', env: execEnv() }).toString();
+    const output = execSync(command, { timeout: 30_000, cwd: '/Users/davidnows/sinkia-next', env: execEnv() }).toString();
     res.json({ ok: true, output });
   } catch (err) {
     res.json({ ok: false, error: err.message, output: err.stdout?.toString() || '', stderr: err.stderr?.toString() || '' });
@@ -252,7 +261,7 @@ router.post('/docker/all/:action', async (req, res) => {
 });
 
 router.post('/docker-compose/:action', async (req, res) => {
-  const actions = { up: 'cd ~/synkia-app/docker && docker compose up -d', down: 'cd ~/synkia-app/docker && docker compose down' };
+  const actions = { up: 'cd ~/sinkia-next/docker && docker compose up -d', down: 'cd ~/sinkia-next/docker && docker compose down' };
   const cmd = actions[req.params.action];
   if (!cmd) return res.json({ ok: false, error: 'Acción desconocida' });
   try { const { stdout, stderr } = await execAsync(cmd); res.json({ ok: true, output: stdout || stderr }); }
