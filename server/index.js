@@ -302,7 +302,14 @@ app.use('/api/biloop', biloopPortalRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/files',  filesRouter);
 app.use('/api/admin',     adminRouter);
-app.use('/api/documents',    documentsRouter);
+// ── Entities (top-level alias) ───────────────────────────────────────────────
+import { getEntities } from './services/documentProcessor.js';
+app.get('/api/entities', async (_req, res) => {
+  try { res.json(await getEntities()); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.use('/api/documents', documentsRouter);
 app.use('/api/trabajadores', trabajadoresRouter);
 app.use('/api/filemanager',  filemanagerRouter);
 app.use('/api/orchestrator', upload.single('file'), orchestratorRouter);

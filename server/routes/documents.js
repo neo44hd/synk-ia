@@ -16,7 +16,10 @@ const router = express.Router();
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'sinkia2026';
+const DEV_MODE = process.env.DISABLE_TAILSCALE_AUTH === 'true';
 const auth = (req, res, next) => {
+  if (DEV_MODE) return next();
+  if (req.fromTailscale) return next();
   const t = req.headers['x-admin-token'] || req.query.token;
   if (t !== ADMIN_TOKEN) return res.status(401).json({ error: 'No autorizado' });
   next();
@@ -52,8 +55,7 @@ router.post('/upload', auth, upload.single('file'), async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     let docs = await getDocuments();
-    // Filtros opcionales
-    if (req.query.tipo)  docs = docs.filter(d => d.analisis?.tipo === req.query.tipo);
+    if (req.query.tipo) docs = docs.filter(d => d.analisis?.tipo === req.query.tipo);
     if (req.query.q) {
       const q = req.query.q.toLowerCase();
       docs = docs.filter(d =>
@@ -64,9 +66,21 @@ router.get('/', auth, async (req, res) => {
       );
     }
     res.json(docs);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Alias /api/documents/list
+router.get('/list', auth, async (req, res) => {
+  try {
+    const docs = await getDocuments();
+    res.json(docs);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── GET /api/documents/status ─────────────────────────────────────────────
+router.get('/status', auth, async (req, res) => {
+  try { res.json(await getStats()); }
+  catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ── GET /api/documents/stats ───────────────────────────────────────────────

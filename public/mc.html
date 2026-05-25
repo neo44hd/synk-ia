@@ -1324,7 +1324,7 @@ async function testModel(type) {
     let res, body, url;
     const payloads = {
       classify: { m: '/api/ai/classify', b: { text: 'Esto es una factura de compra de materiales de construcción por valor de 1500€ del proveedor Juan Perez' }, method: 'POST' },
-      chat:     { m: '/api/ai/generate', b: { message: 'Hola, responde brevemente en español: ¿cuál es tu misión?' }, method: 'POST' },
+chat:     { m: '/api/ai/generate', b: { prompt: 'Hola, responde brevemente en español: ¿cuál es tu misión?' }, method: 'POST' },
       opencode: { m: '/api/opencode', b: { messages: [{ role: 'user', content: 'Escribe un hola mundo en Python' }] }, method: 'POST' },
       lmstudio: { m: '/lmstudio/chat/completions', b: { model: 'deepseek/deepseek-r1-0528-qwen3-8b', messages: [{ role: 'user', content: 'Responde brevemente en español: ¿Cómo te llamas?' }], max_tokens: 200 }, method: 'POST' },
       health:   { m: '/api/ai/status', b: null, method: 'GET' },
