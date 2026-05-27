@@ -6,7 +6,7 @@ import { writeFile, readFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
-const DATA_DIR = process.env.DATA_DIR || '/Users/davidnows/sinkia/data';
+const DATA_DIR = process.env.DATA_DIR || '/app/data';
 const REVO_DIR = path.join(DATA_DIR, 'revo');
 
 // ── API Configuration ────────────────────────────────────────────────────

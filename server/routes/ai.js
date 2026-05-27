@@ -248,7 +248,7 @@ async function generate(prompt, system, format, temperature, maxTokens, model) {
   }
 }
 
-// ─── Log helpers ─────────────────────────────────────────────────────────────
+// ── Log helpers ─────────────────────────────────────────────────────────────
 const FALLBACK_MODEL = 'qwen2.5-coder:0.5b-instruct';
 
 function safeParseJSON(raw) {
@@ -256,7 +256,7 @@ function safeParseJSON(raw) {
   try {
     return JSON.parse(raw);
   } catch {
-    const match = raw.match(/\{[\s\S]*\}/);
+const match = raw.match(/\{[\s\S]*\}/);
     if (match) {
       try { return JSON.parse(match[0]); } catch { /* noop */ }
     }

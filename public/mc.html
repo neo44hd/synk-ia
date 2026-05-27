@@ -468,7 +468,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
           <button class="btn btn-s" onclick="hermesReset()">↩ Reset</button>
           <button class="btn btn-w" onclick="hermesTest()">🧪 Test</button>
           <div class="dropdown" style="display:inline-block">
-            <button class="btn btn-d dropdown-toggle" onclick="toggleDropdown('hermes-dd')">⋯ Más</button>
+            <button class="btn btn-d dropdown-toggle" onclick="toggleDropdown('hermes-dd', event)">⋯ Más</button>
             <div class="dropdown-menu" id="hermes-dd">
               <div class="dropdown-item" onclick="hermesTest();closeAllDropdowns()">💬 Enviar test</div>
               <div class="dropdown-item" onclick="clearChat('hermes-chat-area');closeAllDropdowns()">🗑️ Limpiar chat</div>
@@ -534,7 +534,7 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
           <button class="btn btn-s" onclick="opencodeReset()">↩ Reset</button>
           <button class="btn btn-w" onclick="opencodeTest()">🧪 Test</button>
           <div class="dropdown" style="display:inline-block">
-            <button class="btn btn-d dropdown-toggle" onclick="toggleDropdown('oc-dd')">⋯ Más</button>
+            <button class="btn btn-d dropdown-toggle" onclick="toggleDropdown('oc-dd', event)">⋯ Más</button>
             <div class="dropdown-menu" id="oc-dd">
               <div class="dropdown-item" onclick="opencodeTest();closeAllDropdowns()">💬 Enviar test</div>
               <div class="dropdown-item" onclick="clearChat('opencode-chat-area');closeAllDropdowns()">🗑️ Limpiar chat</div>
@@ -761,10 +761,10 @@ document.addEventListener('click', (e) => {
     closeAllDropdowns();
   }
 });
-function toggleDropdown(id) {
-  e = window.event || arguments.callee.caller.arguments[0];
-  if (e) e.stopPropagation();
+function toggleDropdown(id, event) {
+  if (event) { event.stopPropagation(); }
   const el = document.getElementById(id);
+  if (!el) return;
   const was = el.classList.contains('show');
   closeAllDropdowns();
   if (!was) el.classList.add('show');
@@ -1564,6 +1564,28 @@ function addRepairLog(msg) {
   const time = new Date().toLocaleTimeString('es-ES');
   el.textContent = `[${time}] ${msg}\n` + el.textContent;
   repairLogCount++;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  REPAIR ACTIONS LOADER
+// ════════════════════════════════════════════════════════════════
+async function loadRepairActions() {
+  try {
+    const d = await adminApi('/api/admin/repair/actions');
+    const grid = document.getElementById('repair-ops');
+    if (!grid) return;
+    if (!d.actions?.length) {
+      grid.innerHTML = '<div class="empty-state">Sin acciones disponibles</div>';
+      return;
+    }
+    grid.innerHTML = d.actions.map(r =>
+      `<div class="op" onclick="runRepair('${r.id}')" style="padding:10px 14px"><h4 style="font-size:.78em">${r.icon} ${r.name}</h4><p style="font-size:.65em;margin-top:2px;color:var(--muted)">${r.category || 'general'}</p></div>`
+    ).join('');
+  } catch(e) {
+    const el = document.getElementById('repair-ops');
+    if (el) el.innerHTML = '<div class="empty-state">Error cargando acciones</div>';
+    console.error('loadRepairActions error:', e);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════

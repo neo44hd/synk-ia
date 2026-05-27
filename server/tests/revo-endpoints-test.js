@@ -21,7 +21,7 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const REVO_BASE = 'https://integrations.revoxef.works/api/v1';
 const TIMEOUT_MS = 10000;
-const DATA_DIR = process.env.DATA_DIR || '/Users/davidnows/sinkia/data';
+const DATA_DIR = process.env.DATA_DIR || '/app/data';
 const CACHE_FILE = path.join(DATA_DIR, 'revo', 'endpoints-cache.json');
 
 const ENDPOINTS = {

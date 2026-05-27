@@ -1,0 +1,48 @@
+# Sync internal
+node_modules
+npm-debug.log*
+
+# Build output (rebuilt inside container)
+dist
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+.claude
+
+# OS
+.DS_Store
+*.swp
+*.swo
+
+# Docker (avoid recursion)
+Dockerfile*
+docker-compose*.yml
+
+# Docs (not needed in container)
+docs/
+*.md
+
+# Backups & temp
+uploads_backup/
+*.bak
+.env.bak*
+
+# Python cache
+__pycache__
+*.pyc
+
+# Test files (not needed in production)
+server/tests/
+server/tools/
+
+# Secrets — provided via docker-compose environment or bind mount
+.env
+.env.local
+*.key
+
+# NOTE: scripts/ is NOT excluded — container-startup.sh is the ENTRYPOINT

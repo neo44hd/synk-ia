@@ -3,14 +3,7 @@ import express from 'express';
 import multer  from 'multer';
 import path    from 'path';
 import { unlink } from 'fs/promises';
-import {
-  processDocument,
-  getDocuments,
-  getDocument,
-  deleteDocument,
-  getEntities,
-  getStats,
-} from '../services/documentProcessor.js';
+import { processDocument, getDocuments, getDocument, getDocumentById, saveDocument, deleteDocument, clearProcessed, getEntities, saveEntities, getStats } from '../services/documentProcessor.js';
 
 const router = express.Router();
 
@@ -26,7 +19,9 @@ const auth = (req, res, next) => {
 };
 
 // ── Multer ─────────────────────────────────────────────────────────────────
-const UPLOADS_DIR = process.env.UPLOADS_DIR || '/Users/davidnows/sinkia/uploads';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, '..', '..', 'uploads');
 const upload = multer({
   dest:   UPLOADS_DIR,
   limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB
@@ -73,7 +68,7 @@ router.get('/', auth, async (req, res) => {
 router.get('/list', auth, async (req, res) => {
   try {
     const docs = await getDocuments();
-    res.json(docs);
+    res.json({ documents: docs });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -97,9 +92,27 @@ router.get('/entities', auth, async (req, res) => {
 
 // ── GET /api/documents/:id ─────────────────────────────────────────────────
 router.get('/:id', auth, async (req, res) => {
-  const doc = await getDocument(req.params.id);
+  const doc = await getDocumentById(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Documento no encontrado' });
   res.json(doc);
+});
+
+// ── GET /api/documents/:id/raw ────────────────────────────────────────────────
+router.get('/:id/raw', auth, async (req, res) => {
+  const doc = await getDocumentById(req.params.id);
+  if (!doc) return res.status(404).json({ error: 'Documento no encontrado' });
+  res.json({ text: doc.texto_preview || doc.raw || '', raw: doc.texto_preview || null });
+});
+
+// ── POST /api/documents/:id/open ────────────────────────────────────────────
+router.post('/:id/open', auth, async (req, res) => {
+  const doc = await getDocumentById(req.params.id);
+  if (!doc || !doc.filePath) return res.status(404).json({ error: 'Documento o archivo no encontrado' });
+  try {
+    const { execSync } = await import('child_process');
+    execSync(`open "${doc.filePath}"`);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ── DELETE /api/documents/:id ──────────────────────────────────────────────
@@ -107,6 +120,33 @@ router.delete('/:id', auth, async (req, res) => {
   const ok = await deleteDocument(req.params.id);
   if (!ok) return res.status(404).json({ error: 'Documento no encontrado' });
   res.json({ ok: true });
+});
+
+// ── POST /api/documents/:id/reprocess ─────────────────────────────────────
+router.post('/:id/reprocess', auth, async (req, res) => {
+  try {
+    const doc = await getDocumentById(req.params.id);
+    if (!doc) return res.status(404).json({ error: 'Documento no encontrado' });
+    if (!doc.filePath) return res.status(400).json({ error: 'No hay archivo en disco' });
+    const { existsSync } = await import('fs');
+    if (!existsSync(doc.filePath)) return res.status(400).json({ error: 'Archivo no encontrado en disco' });
+    const { processDocument } = await import('../services/documentProcessor.js');
+    const result = await processDocument(doc.filePath, doc.mime_type || 'application/pdf', doc.nombre_archivo);
+    res.json({ ok: true, documento: result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/documents/clear-processed ───────────────────────────────────
+router.post('/clear-processed', auth, async (req, res) => {
+  try {
+    const { clearProcessed } = await import('../services/documentProcessor.js');
+    const result = await clearProcessed();
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;

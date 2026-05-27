@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Batch reprocess los 3 doc IDs procesados con código viejo (OLLAMA_URL roto)
-import { reprocessFile } from '/Users/davidnows/synkia-app/server/agents/pipeline.js';
+import { reprocessFile } from '/app/server/agents/pipeline.js';
 
 const docIds = [
   'doc_1779288551478_ppccix',   // PORTAL_EMPLEADO_PWA.pdf

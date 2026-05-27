@@ -48,7 +48,7 @@ const router    = Router();
 // PATH ampliado para encontrar binarios de Homebrew (docker, pm2, ollama, etc.)
 const EXTRA_PATH = '/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin';
 function execEnv(env = {}) {
-  return { ...process.env, HOME: '/Users/davidnows', PATH: EXTRA_PATH + (process.env.PATH ? ':' + process.env.PATH : ''), ...env };
+  return { ...process.env, HOME: process.env.HOME || '/app', PATH: EXTRA_PATH + (process.env.PATH ? ':' + process.env.PATH : ''), ...env };
 }
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
@@ -208,7 +208,7 @@ router.post('/exec', (req, res) => {
   if (!command || typeof command !== 'string') return res.status(400).json({ error: 'Campo "command" requerido' });
   if (command.length > 500) return res.status(400).json({ error: 'Comando demasiado largo (máx 500 chars)' });
   try {
-    const output = execSync(command, { timeout: 30_000, cwd: '/Users/davidnows/sinkia-next', env: execEnv() }).toString();
+    const output = execSync(command, { timeout: 30_000, cwd: process.cwd(), env: execEnv() }).toString();
     res.json({ ok: true, output });
   } catch (err) {
     res.json({ ok: false, error: err.message, output: err.stdout?.toString() || '', stderr: err.stderr?.toString() || '' });
@@ -280,6 +280,10 @@ async function getOllamaModels() {
 }
 
 router.get('/ollama/models', async (req, res) => {
+  try { res.json({ models: await getOllamaModels() }); } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/ollama/list', async (req, res) => {
   try { res.json({ models: await getOllamaModels() }); } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

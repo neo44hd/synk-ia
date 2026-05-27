@@ -19,8 +19,8 @@ import path             from 'path';
 import { processDocument, getDocuments, getEntities } from '../services/documentProcessor.js';
 import { syncAfterEmails } from '../services/dataSync.js';
 
-const DATA_DIR    = process.env.DATA_DIR    || '/Users/davidnows/sinkia/data';
-const UPLOADS_DIR = process.env.UPLOADS_DIR || '/Users/davidnows/sinkia/uploads';
+const DATA_DIR    = process.env.DATA_DIR    || '/app/data';
+const UPLOADS_DIR = process.env.UPLOADS_DIR || '/app/uploads';
 const EMAILS_FILE = path.join(DATA_DIR, 'emails.json');
 const STATE_FILE  = path.join(DATA_DIR, 'email_state.json');
 

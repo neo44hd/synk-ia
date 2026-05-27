@@ -1,89 +1,274 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# docker-compose.yml — Sinkia Next + Ollama
-#
-# Despliegue completo con:
-#   docker compose up -d
+# docker-compose.yml — SynK-IA Stack Completo
+# ═══════════════════════════════════════════════════════════════════════════════
 #
 # Requisitos:
-#   - Ollama con modelo harmonic-hermes-9b:latest ya descargado
-#   - O iniciarlo con: docker compose up ollama
+#   - Ollama instalado en macOS (brew install ollama)
+#   - Descargar modelo: ollama pull qwen2.5:7b
+#   - OrbStack o Docker Desktop con ARM64
+#
+# Uso:
+#   docker compose build
+#   docker compose up -d
 # ═══════════════════════════════════════════════════════════════════════════════
 
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: sinkia-ollama
+
+  # ── SEARXNG — Motor de búsqueda web privado ──────────────────────────────
+  searxng:
+    image: searxng/searxng:latest
+    container_name: sinkia-searxng
     restart: unless-stopped
     ports:
-      - "11434:11434"
+      - "8888:8080"
     volumes:
-      - ollama_data:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+      - ./docker/config/searxng:/etc/searxng:rw
+    networks:
+      - sinkia-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── QDRANT — Base de datos vectorial (memoria semántica) ─────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: sinkia-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - sinkia-net
+    healthcheck:
+      test: ["CMD-SHELL", "echo > /dev/tcp/localhost/6333"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
 
+  # ── OPEN WEBUI — Interfaz principal del asistente IA ─────────────────────
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: sinkia-openwebui
+    restart: unless-stopped
+    ports:
+      - "3030:8080"
+    volumes:
+      - openwebui_data:/app/backend/data
+    environment:
+      - OPENAI_API_BASE_URL=http://host.docker.internal:11434/v1
+      - OPENAI_API_KEY=ollama
+      - ENABLE_RAG_WEB_SEARCH=true
+      - RAG_WEB_SEARCH_ENGINE=searxng
+      - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>&format=json&language=es
+      - VECTOR_DB=qdrant
+      - QDRANT_URI=http://qdrant:6333
+      - RAG_EMBEDDING_ENGINE=openai
+      - RAG_EMBEDDING_MODEL=text-embedding-3-small
+      - CHUNK_SIZE=1500
+      - CHUNK_OVERLAP=150
+      - WEBUI_SECRET_KEY=sinkia-openwebui-2026
+      - ENABLE_SIGNUP=true
+      - DEFAULT_USER_ROLE=admin
+      - WEBUI_NAME=Sinkia AI
+      - DEFAULT_LOCALE=es
+      - ENABLE_COMMUNITY_SHARING=false
+      - ENABLE_MODEL_FILTER=false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      searxng:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    networks:
+      - sinkia-net
+
+  # ── N8N — Automatizaciones y workflows ───────────────────────────────────
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: sinkia-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./docker/n8n/workflows:/home/node/workflows:ro
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678
+      - N8N_ENCRYPTION_KEY=sinkia-n8n-key-2026
+      - GENERIC_TIMEZONE=Europe/Madrid
+      - N8N_LOG_LEVEL=warn
+      - N8N_AI_ENABLED=true
+      - N8N_AI_PROVIDER=openai
+      - N8N_AI_OPENAI_API_KEY=local
+      - N8N_AI_OPENAI_BASE_URL=http://host.docker.internal:8082/v1
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      sinkia:
+        condition: service_healthy
+    networks:
+      - sinkia-net
+
+  # ── SYNKIA — API + Frontend Mission Control ──────────────────────────────
   sinkia:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runtime
     container_name: sinkia-api
     restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
-      - ADMIN_TOKEN=sinkia2026
-      - JWT_SECRET=sinkia-secret-key-produccion
-      - OLLAMA_URL=http://sinkia-ollama:11434
+      # ── Auth ──
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-sinkia2026}
+      - JWT_SECRET=${JWT_SECRET:-sinkia-secret-key-produccion}
+      # ── Ollama (host macOS via host.docker.internal) ──
+      - OLLAMA_URL=http://host.docker.internal:11434
       - OLLAMA_HOST=0.0.0.0
       - OLLAMA_PORT=11434
-      - OLLAMA_MODEL=harmonic-hermes-9b:latest
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      # ── LM Studio (accesible desde host) ──
       - LMSTUDIO_URL=http://host.docker.internal:1234/v1
-      - LMSTUDIO_MODEL=negentropy-claude-opus-4.7-9b
+      - LMSTUDIO_MODEL=${LMSTUDIO_MODEL:-deepseek/deepseek-r1-0528-qwen3-8b}
+      # ── OpenRouter (cloud fallback) ──
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENROUTER_URL=https://openrouter.ai/api/v1
-      - OPENROUTER_MODEL=google/gemini-2.5-flash
-      - MARKITDOWN_EXE=/opt/markitdown-venv/bin/python
-      - MARKITDOWN_WRAPPER=/app/server/tools/markitdown_wrapper.py
-      - CLASSIFY_MODEL=harmonic-hermes-9b:latest
-      - EXTRACT_MODEL=harmonic-hermes-9b:latest
-      - DEEP_MODEL=harmonic-hermes-9b:latest
-      - CHAT_MODEL=harmonic-hermes-9b:latest
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      # ── Google Gemini ──
+      - GOOGLE_GEMINI_API_KEY=${GOOGLE_GEMINI_API_KEY:-}
+      - GOOGLE_GEMINI_MODEL=gemini-flash-latest
+      # ── NVIDIA NIM ──
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY:-}
+      # ── Modelos por servicio (pipeline) ──
+      - CLASSIFY_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      - EXTRACT_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      - DEEP_MODEL=${DEEP_MODEL:-qwen2.5:7b}
+      - CHAT_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      - HERMES_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      - OPCODE_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      # ── Providers ──
       - CLASSIFY_PROVIDER=ollama
       - EXTRACT_PROVIDER=ollama
       - DEEP_PROVIDER=ollama
+      - CHAT_PROVIDER=ollama
+      - HERMES_PROVIDER=ollama
+      - OPCODE_PROVIDER=ollama
+      - ACCOUNTING_PROVIDER=ollama
+      - HR_PROVIDER=ollama
+      - ANALYZER_PROVIDER=ollama
+      - DOC_AGENT_PROVIDER=ollama
+      # ── Contexto / generación ──
+      - NUM_CTX=8192
+      - NUM_PREDICT=2048
+      - TEMPERATURE=0.1
+      - CONFIDENCE_THRESHOLD=0.6
+      # ── Telegram ──
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
-      - TELEGRAM_MODEL=harmonic-hermes-9b:latest
-      - PORT=3001
+      - TELEGRAM_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      - ORCHESTRATOR_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
+      - TELEGRAM_PROVIDER=ollama
+      # ── Comercio ──
+      - COMMERCE_URL=http://sinkia-commerce:4400
+      # ── Email ──
+      - EMAIL_ACCOUNT_ENABLED=false
+      - EMAIL_IMAP_HOST=${EMAIL_IMAP_HOST:-}
+      - EMAIL_IMAP_PORT=993
+      - EMAIL_IMAP_USERNAME=${EMAIL_IMAP_USERNAME:-}
+      - EMAIL_IMAP_PASSWORD=${EMAIL_IMAP_PASSWORD:-}
+      - EMAIL_SMTP_HOST=${EMAIL_SMTP_HOST:-}
+      - EMAIL_SMTP_PORT=587
+      - EMAIL_SMTP_USERNAME=${EMAIL_SMTP_USERNAME:-}
+      - EMAIL_SMTP_PASSWORD=${EMAIL_SMTP_PASSWORD:-}
+      # ── Directorios (dentro del contenedor) ──
+      - UPLOADS_DIR=/app/uploads
+      - DATA_DIR=/app/data
+      - MARKITDOWN_EXE=/opt/markitdown-venv/bin/python
+      - MARKITDOWN_WRAPPER=/app/server/tools/markitdown_wrapper.py
+      # ── Otros ──
       - NODE_ENV=production
-      - NUM_CTX=8192
-      - TEMPERATURE=0.1
-      - DISABLE_TAILSCALE_AUTH=true
+      - PORT=3001
+      - SINKIA_API_URL=http://sinkia:3001
+      - BACKEND_URL=http://sinkia:3001
     volumes:
       - sinkia_uploads:/app/uploads
       - sinkia_data:/app/data
       - ./server/.env:/app/server/.env:ro
+      # Montar los modelos de Ollama del host para acceso rápido
+      - ollama_host_models:/root/.ollama/models
     depends_on:
-      ollama:
-        condition: service_healthy
+      - open-webui
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:3001/api/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 120s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - sinkia-net
 
+  # ── COMMERCE TPV (opcional) ─────────────────────────────────────────────
+  commerce:
+    image: docker-app:latest
+    container_name: sinkia-commerce
+    restart: unless-stopped
+    ports:
+      - "4400:4400"
+    networks:
+      - sinkia-net
+
+  commerce-db:
+    image: postgres:16-alpine
+    container_name: sinkia-commerce-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=sinkia
+      - POSTGRES_PASSWORD=sinkia
+      - POSTGRES_DB=commerce
+    volumes:
+      - commerce_db_data:/var/lib/postgresql/data
+    networks:
+      - sinkia-net
+
+  commerce-redis:
+    image: redis:7-alpine
+    container_name: sinkia-commerce-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - commerce_redis_data:/data
+    networks:
+      - sinkia-net
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Volúmenes persistentes
+# ═══════════════════════════════════════════════════════════════════════════════
 volumes:
-  ollama_data:
+  ollama_host_models:       # Comparte los modelos de Ollama del host
   sinkia_uploads:
   sinkia_data:
+  openwebui_data:
+  n8n_data:
+  qdrant_data:
+  commerce_db_data:
+  commerce_redis_data:
+
+networks:
+  sinkia-net:
+    driver: bridge

@@ -15,7 +15,7 @@ import path from 'path';
 
 const router = Router();
 
-const HOME_DIR     = process.env.HOME || '/Users/davidnows';
+const HOME_DIR     = process.env.HOME || process.env.USERPROFILE || '/app';
 const AIDER_BIN    = process.env.AIDER_BIN || `${HOME_DIR}/.local/bin/aider`;
 const OLLAMA_URL   = process.env.OLLAMA_URL || 'http://localhost:11434';
 const AIDER_MODEL  = process.env.AIDER_MODEL || 'ollama/harmonic-hermes-9b:latest';

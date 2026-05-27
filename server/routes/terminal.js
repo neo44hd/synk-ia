@@ -11,7 +11,7 @@ import { spawn, execFileSync, execSync } from 'child_process';
 import { createRequire }                 from 'module';
 
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'sinkia2026';
-const HOME_DIR    = '/Users/davidnows';
+const HOME_DIR    = process.env.HOME || process.env.USERPROFILE || '/app';
 
 const EXTRA_PATH = [
   `${HOME_DIR}/.npm-global/bin`,

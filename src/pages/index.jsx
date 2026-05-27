@@ -19,6 +19,7 @@ import ConnectionDiagnostics from "./ConnectionDiagnostics";
 import Contracts from "./Contracts";
 import CronSetup from "./CronSetup";
 import Dashboard from "./Dashboard";
+import DataExtraction from "./DataExtraction";
 import DocumentArchive from "./DocumentArchive";
 import EmailProcessor from "./EmailProcessor";
 import EmailSetup from "./EmailSetup";
@@ -49,7 +50,7 @@ import RevoManual from "./RevoManual";
 import RevoSync from "./RevoSync";
 import SecurityCameras from "./SecurityCameras";
 import Showcase from "./Showcase";
-import SmartMailbox from "./SmartMailbox";
+import SmartMailbox from "./SmartMailboxFixed";
 import Staff from "./Staff";
 import SystemOverview from "./SystemOverview";
 import Timesheets from "./Timesheets";
@@ -59,6 +60,9 @@ import VoiceCommands from "./VoiceCommands";
 import WebSync from "./WebSync";
 import WorkerInterface from "./WorkerInterface";
 import WorkerMobile from "./WorkerMobile";
+import SynkiaApp from "./SynkiaApp";
+import SynkiaMain from "./SynkiaMain";
+import ControlPanelPro from "./ControlPanelPro";
 
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
@@ -100,6 +104,7 @@ function PagesContent() {
         <Route path="/contracts" element={<Protected><Contracts /></Protected>} />
         <Route path="/cronsetup" element={<Protected><CronSetup /></Protected>} />
         <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+        <Route path="/dataextraction" element={<Protected><DataExtraction /></Protected>} />
         <Route path="/documentarchive" element={<Protected><DocumentArchive /></Protected>} />
         <Route path="/emailprocessor" element={<Protected><EmailProcessor /></Protected>} />
         <Route path="/emailsetup" element={<Protected><EmailSetup /></Protected>} />
@@ -138,6 +143,9 @@ function PagesContent() {
         <Route path="/websync" element={<Protected><WebSync /></Protected>} />
         <Route path="/workerinterface" element={<Protected><WorkerInterface /></Protected>} />
         <Route path="/workermobile" element={<Protected><WorkerMobile /></Protected>} />
+        <Route path="/synkiaapp" element={<Protected><SynkiaApp /></Protected>} />
+        <Route path="/synkiamain" element={<Protected><SynkiaMain /></Protected>} />
+        <Route path="/controlpanel" element={<Protected><ControlPanelPro /></Protected>} />
 
         <Route path="*" element={<Navigate to="/ceodashboard" replace />} />
       </Routes>

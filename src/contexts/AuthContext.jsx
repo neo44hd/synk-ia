@@ -23,24 +23,39 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        // Intentar cargar usuario desde backend
         const user = await User.me();
         if (user) {
           setCurrentUser(user);
           setUserRole(getUserRole(user));
           setIsAuthenticated(true);
-        } else {
-          setCurrentUser(null);
-          setUserRole(null);
-          setIsAuthenticated(false);
+          return;
         }
       } catch (error) {
-        console.log('Usuario no autenticado o error al cargar:', error);
+        console.log('Usuario no autenticado:', error);
+      }
+
+      // Modo desarrollo: crear usuario CEO por defecto si no hay autenticación
+      // (eliminar en producción)
+      if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost') {
+        const devUser = {
+          id: 'dev-user-001',
+          email: 'dev@sinkia.local',
+          name: 'Developer',
+          role: ROLES.CEO,
+          organization: 'SynK-IA Dev',
+          avatar: null
+        };
+        setCurrentUser(devUser);
+        setUserRole(ROLES.CEO);
+        setIsAuthenticated(true);
+      } else {
         setCurrentUser(null);
         setUserRole(null);
         setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
       }
+
+      setIsLoading(false);
     };
 
     loadUser();

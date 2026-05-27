@@ -34,17 +34,19 @@ import NotificationBell from "@/components/NotificationBell";
 import { BackgroundTasksProvider, BackgroundTasksIndicator } from "@/components/BackgroundTasksManager";
 import { synkia } from '@/api/synkiaClient';
 
-// Navegación Minimalista "Zen"
+// Navegación Completa "Zen" con todas las secciones
 const navItems = [
   { 
     id: "dashboard",
     label: "Control", 
     icon: LayoutDashboard, 
     items: [
-            { label: "Panel CEO", url: createPageUrl("CEODashboard") },
-      { label: "Resumen General", url: createPageUrl("Dashboard") },
-      { label: "CEO Brain (IA)", url: createPageUrl("CEOBrain") },
-      { label: "Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
+      { label: "🎯 Panel CEO", url: createPageUrl("CEODashboard") },
+      { label: "📊 Resumen General", url: createPageUrl("Dashboard") },
+      { label: "🧠 CEO Brain (IA)", url: createPageUrl("CEOBrain") },
+      { label: "📹 Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
+      { label: "🏥 Sistema Overview", url: createPageUrl("SystemOverview") },
+      { label: "⚙️ Control Panel", url: createPageUrl("ControlPanel") },
     ]
   },
   { 
@@ -52,11 +54,13 @@ const navItems = [
     label: "Negocio", 
     icon: Briefcase,
     items: [
-      { label: "Finanzas & KPIs", url: createPageUrl("FinanceDashboard") },
-      { label: "Ventas (Revo)", url: createPageUrl("RevoDashboard") },
-      { label: "Facturación", url: createPageUrl("Billing") },
-      { label: "Proveedores", url: createPageUrl("Providers") },
-      { label: "Inventario", url: createPageUrl("ProductInventory") },
+      { label: "💰 Finanzas & KPIs", url: createPageUrl("FinanceDashboard") },
+      { label: "📈 Ventas (Revo)", url: createPageUrl("RevoDashboard") },
+      { label: "💳 Facturación", url: createPageUrl("Billing") },
+      { label: "🏢 Proveedores", url: createPageUrl("Providers") },
+      { label: "📦 Inventario", url: createPageUrl("ProductInventory") },
+      { label: "🛒 Pedidos", url: createPageUrl("OrdersDashboard") },
+      { label: "🧾 Albaranes", url: createPageUrl("Albaranes") },
     ]
   },
   { 
@@ -64,9 +68,12 @@ const navItems = [
     label: "Equipo", 
     icon: Users,
     items: [
-      { label: "Portal Empleado", url: createPageUrl("Staff") },
-      { label: "Control Horario", url: createPageUrl("AttendanceControl") },
-      { label: "Portal Empleado", url: createPageUrl("WorkerInterface") },
+      { label: "👥 Personal", url: createPageUrl("Staff") },
+      { label: "⏱️ Control Horario", url: createPageUrl("AttendanceControl") },
+      { label: "🔐 Portal Empleado", url: createPageUrl("WorkerInterface") },
+      { label: "💼 RRHH", url: createPageUrl("HRAgent") },
+      { label: "📋 Nóminas", url: createPageUrl("Payrolls") },
+      { label: "📅 Vacaciones", url: createPageUrl("VacationRequests") },
     ]
   },
   { 
@@ -74,9 +81,33 @@ const navItems = [
     label: "Archivo", 
     icon: FileText,
     items: [
-      { label: "Archivo Inteligente", url: createPageUrl("DocumentArchive") },
-      { label: "Legal & Empresa", url: createPageUrl("CompanyDocs") },
-      { label: "Buzón Email", url: createPageUrl("SmartMailbox") },
+      { label: "🧠 Archivo Inteligente", url: createPageUrl("DocumentArchive") },
+      { label: "⚖️ Legal & Empresa", url: createPageUrl("CompanyDocs") },
+      { label: "📧 Buzón Email", url: createPageUrl("SmartMailbox") },
+      { label: "📄 Documentos Biloop", url: createPageUrl("BiloopDocuments") },
+    ]
+  },
+  { 
+    id: "integrations",
+    label: "Integraciones", 
+    icon: Brain,
+    items: [
+      { label: "🤖 Agente Central", url: createPageUrl("CentralAgent") },
+      { label: "📊 Biloop (Contable)", url: createPageUrl("BiloopAgent") },
+      { label: "🚀 Orquestador IA", url: createPageUrl("AutomationHub") },
+      { label: "🔗 Conexiones", url: createPageUrl("ConnectionDiagnostics") },
+      { label: "🩺 Diagnósticos", url: createPageUrl("ApiDiagnostics") },
+    ]
+  },
+  { 
+    id: "apps",
+    label: "Apps", 
+    icon: ShoppingCart,
+    items: [
+      { label: "🎯 SynK-IA App", url: createPageUrl("SynkiaApp") },
+      { label: "🏠 SynK-IA Main", url: createPageUrl("SynkiaMain") },
+      { label: "🍕 Kitchen Display", url: createPageUrl("KitchenDisplay") },
+      { label: "📱 App Trabajadores", url: createPageUrl("WorkerMobile") },
     ]
   }
 ];
