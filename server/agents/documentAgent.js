@@ -20,24 +20,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(path.dirname(__dirname), '..', '..', 'data');
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(path.dirname(__dirname), '..', '..', 'uploads');
 
-// ── Configuración LLM ───────────────────────────────────────────────────────
-const OLLAMA_URL    = process?.env?.OLLAMA_URL || 'http://localhost:11434';
-const LMSTUDIO_URL  = process?.env?.LMSTUDIO_URL || 'http://localhost:1234';
-// Normalizar: quitar /v1 del final si existe (documentAgent añade /v1/chat/completions)
-const LMSTUDIO_BASE = LMSTUDIO_URL.replace(/\/v1\/?$/, '');
-const LMSTUDIO_MODELS = new Set([
-  'negentropy-claude-opus-4.7-9b',
-  'deepseek/deepseek-r1-0528-qwen3-8b',
-]);
-const getModel = () => {
-  const provider = process?.env?.DOC_AGENT_PROVIDER || 'ollama';
-  if (provider === 'lmstudio') {
-    return process?.env?.DOC_AGENT_MODEL || process?.env?.LMSTUDIO_MODEL || 'harmonic-hermes-9b:latest';
-  }
-  return process?.env?.DOC_AGENT_MODEL || 'harmonic-hermes-9b:latest';
-};
-const isLMStudio = (model) => LMSTUDIO_MODELS.has(model);
-const getEndpoint = (model) => isLMStudio(model) ? LMSTUDIO_URL : OLLAMA_URL;
+// ── Configuración — delegada al gateway centralizado ─────────────────────────
+import { gatewayChat, runTask } from '../services/agentCore.js';
+
+const GATEWAY_MODEL = process?.env?.DOC_AGENT_MODEL || 'local-reason';
 
 // ── Prompt canónico para extracción de documentos ───────────────────────────
 
@@ -234,59 +220,23 @@ async function extractGenericFields(text, confidence) {
   return extractGenericViaRegex(text, 'other');
 }
 
-// ── Extracción vía LLM ───────────────────────────────────────────────────────
+// ── Extracción vía LLM (gateway centralizado) ────────────────────────────────
 
 async function extractViaLLM(text, schema, docType) {
   const schemaStr = JSON.stringify(schema, null, 2);
   const truncatedText = text.substring(0, 6000);
-  const model = getModel();
-  const endpoint = getEndpoint(model);
-  const isLs = isLMStudio(model);
-
   const prompt = `${EXTRACTION_PROMPT}\n${schemaStr}\n\n---\nDOCUMENTO:\n${truncatedText}`;
 
-  let response;
-  if (isLs) {
-    // LM Studio: OpenAI-compatible API (v1/chat/completions)
-    const body = {
-      model,
-      messages: [
-        { role: 'system', content: `Eres un extractor de datos empresariales preciso. Devuelve SOLO JSON válido sin texto adicional.` },
-        { role: 'user',   content: prompt },
-      ],
-      temperature: 0.1,
-      max_tokens: 2048,
-      num_ctx: parseInt(process.env.NUM_CTX || '8192', 10),
-    };
-    response = await fetch(`${LMSTUDIO_BASE}/v1/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(120_000),
-    });
-    if (!response.ok) throw new Error(`LMStudio ${response.status}`);
-    const data = await response.json();
-    const rawContent = data.choices?.[0]?.message?.content || '';
-    return JSON.parse(rawContent);
-  } else {
-    // Ollama: /api/generate
-    response = await fetch(`${endpoint}/api/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        prompt,
-        system: `Eres un extractor de datos empresariales preciso. Devuelve SOLO JSON válido sin texto adicional.`,
-        stream: false,
-        options: { temperature: 0.1, num_predict: 2048, num_ctx: parseInt(process.env.NUM_CTX || '8192', 10) },
-      }),
-      signal: AbortSignal.timeout(90_000),
-    });
-    if (!response.ok) throw new Error(`Ollama ${response.status}`);
-    const data = await response.json();
-    const rawContent = (data.message || data).content || '';
-    return JSON.parse(rawContent);
-  }
+  const { content } = await gatewayChat({
+    system: `Eres un extractor de datos empresariales preciso. Devuelve SOLO JSON válido sin texto adicional.`,
+    prompt,
+    model: GATEWAY_MODEL,
+    temperature: 0.1,
+    maxTokens: 2048,
+    json: true,
+  });
+
+  return JSON.parse(content);
 }
 
 // ── Schemas ──────────────────────────────────────────────────────────────────

@@ -10,22 +10,10 @@
  */
 
 import { Router } from 'express';
+import { gatewayChat } from '../services/agentCore.js';
 
-const OLLAMA_URL = process?.env?.OLLAMA_URL || 'http://localhost:11434';
-const LMSTUDIO_URL = process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1';
-const LMSTUDIO_KEY = process?.env?.LMSTUDIO_API_KEY || '';
-
-function getProvider() {
-  return process?.env?.CLASSIFY_PROVIDER || 'ollama';
-}
-
-function getModel() {
-  const provider = getProvider();
-  if (provider === 'lmstudio') {
-    return process?.env?.CLASSIFY_MODEL || 'harmonic-hermes-9b:latest';
-  }
-  return process?.env?.OLLAMA_CLASSIFY_MODEL || 'harmonic-hermes-9b:latest';
-}
+const GATEWAY_URL = process?.env?.LMSTUDIO_URL || 'http://127.0.0.1:4000/v1';
+const GATEWAY_MODEL = process?.env?.CLASSIFY_MODEL || 'local-fast';
 
 // ── Tipos y mapeos ────────────────────────────────────────────────────────────
 
@@ -347,71 +335,17 @@ function generateSummary(obj) {
 
 // ── Clasificación por LLM ─────────────────────────────────────────────────────
 
-function llmClassify(prompt) {
-  const provider = getProvider();
-
-  if (provider === 'lmstudio') {
-    return lmstudioClassify(prompt);
-  }
-  return ollamaClassify(prompt);
-}
-
-async function ollamaClassify(prompt) {
-  const response = await fetch(`${OLLAMA_URL}/api/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model:   getModel(),
-      prompt,
-      system:  SYSTEM_CLASSIFY,
-      stream:  false,
-      options: {
-        temperature: 0.1,
-        num_predict: 512,
-      },
-    }),
-    signal: AbortSignal.timeout(60_000),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Ollama ${response.status}: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  return (data.message || data).content || '';
-}
-
-async function lmstudioClassify(prompt) {
-  const body = {
-    model:     getModel(),
-    messages:  [
-      { role: 'system', content: SYSTEM_CLASSIFY },
-      { role: 'user',    content: prompt },
-    ],
-    stream:     false,
-    max_tokens: 2048,
+async function llmClassify(prompt) {
+  // Delega en el servicio central (gateway). El modelo se resuelve por env CLASSIFY_MODEL.
+  const { content } = await gatewayChat({
+    system: SYSTEM_CLASSIFY,
+    prompt,
+    model: process?.env?.CLASSIFY_MODEL || 'local-fast',
     temperature: 0.1,
-    num_ctx: parseInt(process.env.NUM_CTX || '8192', 10),
-    response_format: { type: 'json_object' },
-  };
-
-  const headers = { 'Content-Type': 'application/json' };
-  if (LMSTUDIO_KEY) headers['Authorization'] = `Bearer ${LMSTUDIO_KEY}`;
-
-  const response = await fetch(`${LMSTUDIO_URL}/chat/completions`, {
-    method:  'POST',
-    headers,
-    body:    JSON.stringify(body),
-    signal:  AbortSignal.timeout(60_000),
+    maxTokens: 512,
+    json: true,
   });
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`LM Studio ${response.status}: ${errText}`);
-  }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || '';
+  return content;
 }
 
 // ── Clasificación directa por LLM ─────────────────────────────────────────────
@@ -485,23 +419,12 @@ classifierRouter.post('/classify', async (req, res) => {
 
 classifierRouter.get('/test', async (_req, res) => {
   try {
-    const provider = getProvider();
-    let models;
-
-    if (provider === 'lmstudio') {
-      const r = await fetch(`${LMSTUDIO_URL}/models`, { signal: AbortSignal.timeout(5000) });
-      if (!r.ok) throw new Error(`LM Studio ${r.status}`);
-      const data = await r.json();
-      models = (data.data || []).map(m => m.id || m.model);
-    } else {
-      const r = await fetch(`${OLLAMA_URL}/api/tags`, { signal: AbortSignal.timeout(5000) });
-      if (!r.ok) throw new Error(`Ollama ${r.status}`);
-      const data = await r.json();
-      models = (data.models || []).map(m => m.name);
-    }
-
-    res.json({ success: true, models, engine: provider, active_model: getModel() });
+    const r = await fetch(`${GATEWAY_URL}/models`, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error(`Gateway ${r.status}`);
+    const data = await r.json();
+    const models = (data.data || []).map(m => m.id || m);
+    res.json({ success: true, models, engine: 'gateway', active_model: GATEWAY_MODEL });
   } catch (err) {
-    res.json({ success: false, error: err.message, engine: getProvider() });
+    res.json({ success: false, error: err.message, engine: 'gateway' });
   }
 });

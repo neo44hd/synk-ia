@@ -6,37 +6,10 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { runTask } from '../services/agentCore.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(path.dirname(__dirname), '..', '..', 'data');
-
-const OLLAMA_URL = process?.env?.OLLAMA_URL || 'http://localhost:11434';
-const LMSTUDIO_URL = process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1';
-const LMSTUDIO_KEY = process?.env?.LMSTUDIO_API_KEY || '';
-
-function getProvider() {
-  return process?.env?.ACCOUNTING_PROVIDER || 'ollama';
-}
-
-function getModel() {
-  const provider = getProvider();
-  if (provider === 'lmstudio') {
-    return process?.env?.ACCOUNTING_MODEL || 'harmonic-hermes-9b:latest';
-  }
-  return process?.env?.ACCOUNTING_MODEL || 'harmonic-hermes-9b:latest';
-}
-
-function safeParseJSON(str) {
-  if (!str) return null;
-  let cleaned;
-  try {
-    cleaned = str.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-    return JSON.parse(cleaned);
-  } catch {
-    if (cleaned) { const m = cleaned.match(/\{[\s\S]*\}/); if (m) try { return JSON.parse(m[0]); } catch {} }
-    return null;
-  }
-}
 
 function extractFallbackFields(text) {
   const t = text || '';
@@ -76,55 +49,12 @@ async function extractAccountingFields(text, classification) {
   ].join('\n');
 
   try {
-    const provider = getProvider();
-    let url, body, headers;
-
-    if (provider === 'lmstudio') {
-      url = LMSTUDIO_URL + '/chat/completions';
-      const model = getModel();
-      body = {
-        model,
-        messages: [
-          { role: 'system', content: 'Responde SOLO con JSON valido.' },
-          { role: 'user', content: prompt }
-        ],
-        stream: false,
-        max_tokens: 2048,
-        temperature: 0.1,
-        num_ctx: parseInt(process.env.NUM_CTX || '8192', 10),
-      };
-      headers = { 'Content-Type': 'application/json' };
-      if (LMSTUDIO_KEY) headers['Authorization'] = `Bearer ${LMSTUDIO_KEY}`;
-    } else {
-      url = OLLAMA_URL + '/api/generate';
-      body = {
-        model: getModel(),
-        prompt,
-        system: 'Responde SOLO con JSON valido.',
-        stream: false,
-        options: { temperature: 0.1, num_predict: 2048, num_ctx: parseInt(process.env.NUM_CTX || '8192', 10) },
-      };
-      headers = { 'Content-Type': 'application/json' };
-    }
-
-    const r = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(120_000),
+    const { parsed } = await runTask('accounting', {
+      system: 'Responde SOLO con JSON valido.',
+      prompt,
+      json: true,
     });
-    if (!r.ok) throw new Error(`${provider} ${r.status}`);
-    const data = await r.json();
-
-    let content;
-    if (provider === 'lmstudio') {
-      content = data.choices?.[0]?.message?.content || '';
-    } else {
-      content = (data.message || data).content || '';
-    }
-    const parsed = safeParseJSON(content);
-    if (parsed) return parsed;
-    return extractFallbackFields(text);
+    return parsed || extractFallbackFields(text);
   } catch (err) {
     console.error('[ACCOUNTING-AGENT] Error LLM: ' + err.message);
     return extractFallbackFields(text);
@@ -135,7 +65,7 @@ export async function process(params) {
   const { text, classification, filename } = params || {};
   const fName = filename || 'desconocido';
   const docType = (classification || {}).docType || '?';
-  console.log('[ACCOUNTING-AGENT] Procesando: ' + fName + ' (tipo: ' + docType + ') provider=' + getProvider());
+  console.log('[ACCOUNTING-AGENT] Procesando: ' + fName + ' (tipo: ' + docType + ') via gateway');
 
   const accounting = await extractAccountingFields(text || '', classification || {});
 

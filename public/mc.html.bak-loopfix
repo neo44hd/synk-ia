@@ -690,16 +690,6 @@ body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Ne
 let servicesData = null, term = null, ws = null, hermesWs = null, hermesConn = false, opencodeWs = null, opencodeConn = false;
 let currentLogs = {};
 
-// Anti-loop guards: avoid overlapping refreshes when an endpoint is slow.
-const loadingStates = {
-  services: false,
-  systemMetrics: false,
-  pipeline: false,
-  models: false,
-  agents: false,
-  repairActions: false
-};
-
 // ════════════════════════════════════════════════════════════════
 //  TAB NAV
 // ════════════════════════════════════════════════════════════════
@@ -814,8 +804,6 @@ async function api(url, opts = {}) {
 //  DASHBOARD — SYSTEM METRICS
 // ════════════════════════════════════════════════════════════════
 async function loadSystemMetrics() {
-  if (loadingStates.systemMetrics) return;
-  loadingStates.systemMetrics = true;
   try {
     const m = await adminApi('/api/admin/system');
     document.getElementById('hostname-val').textContent = m.hostname || '—';
@@ -880,8 +868,6 @@ async function loadSystemMetrics() {
     document.getElementById('ram-used').textContent = 'Error';
     document.getElementById('disk-used').textContent = 'Error';
     document.getElementById('load-val').textContent = 'Error';
-  } finally {
-    loadingStates.systemMetrics = false;
   }
 }
 
@@ -889,8 +875,6 @@ async function loadSystemMetrics() {
 //  LOAD SERVICES
 // ════════════════════════════════════════════════════════════════
 async function loadServices() {
-  if (loadingStates.services) return;
-  loadingStates.services = true;
   try {
     const d = await adminApi('/api/admin/services');
     servicesData = d;
@@ -917,8 +901,6 @@ async function loadServices() {
   } catch (e) {
     console.error('loadServices error:', e);
     document.getElementById('sys-chips').innerHTML = '<div class="chip alert">⚠️ Error de conexión</div>';
-  } finally {
-    loadingStates.services = false;
   }
 }
 
@@ -1321,8 +1303,6 @@ function flushDNS() {
 //  PIPELINE
 // ════════════════════════════════════════════════════════════════
 async function loadPipeline() {
-  if (loadingStates.pipeline) return;
-  loadingStates.pipeline = true;
   try {
     const d = await api('/api/ai/status');
     document.getElementById('pipeline-grid').innerHTML = renderPipelineCard();
@@ -1333,8 +1313,6 @@ async function loadPipeline() {
     }
   } catch (e) {
     document.getElementById('pipeline-grid').innerHTML = '<div class="empty-state">Error cargando pipeline: ' + esc(e.message) + '</div>';
-  } finally {
-    loadingStates.pipeline = false;
   }
 }
 
@@ -1422,8 +1400,6 @@ async function restartAllAgents() {
 }
 
 async function loadAgents() {
-  if (loadingStates.agents) return;
-  loadingStates.agents = true;
   const grid = document.getElementById('agents-grid');
   const agents = [
     { icon: '📄', name: 'Clasificador', type: 'CLASSIFY_MODEL', color: '#10b981', desc: 'Fast Path — clasificación documentos' },
@@ -1444,7 +1420,6 @@ async function loadAgents() {
     a.status = pm2Status[a.name] || 'online';
     return renderAgentCard(a);
   }).join('');
-  loadingStates.agents = false;
 }
 
 function testAgent(name) {
@@ -1595,8 +1570,6 @@ function addRepairLog(msg) {
 //  REPAIR ACTIONS LOADER
 // ════════════════════════════════════════════════════════════════
 async function loadRepairActions() {
-  if (loadingStates.repairActions) return;
-  loadingStates.repairActions = true;
   try {
     const d = await adminApi('/api/admin/repair/actions');
     const grid = document.getElementById('repair-ops');
@@ -1612,8 +1585,6 @@ async function loadRepairActions() {
     const el = document.getElementById('repair-ops');
     if (el) el.innerHTML = '<div class="empty-state">Error cargando acciones</div>';
     console.error('loadRepairActions error:', e);
-  } finally {
-    loadingStates.repairActions = false;
   }
 }
 
@@ -1658,20 +1629,7 @@ function hermesToggle() {
   const wsUrl = `${proto}//${location.host}/ws/hermes?model=${encodeURIComponent(model)}&temperature=${temp}&max_tokens=${maxTokens}&top_p=${topP}&token=sinkia2026`;
   hermesWs = new WebSocket(wsUrl);
   btn.textContent = '⏳ Conectando…';
-  
-  // Timeout: if no connection in 5s, cancel
-  const hermesTimeout = setTimeout(() => {
-    if (!hermesConn && hermesWs && hermesWs.readyState !== WebSocket.OPEN) {
-      hermesWs.close();
-      hermesWs = null;
-      btn.textContent = '🔌 Conectar';
-      btn.className = 'btn btn-p';
-      showToast('⏱️ Timeout Hermes (5s)', true);
-    }
-  }, 5000);
-  
   hermesWs.onopen = () => {
-    clearTimeout(hermesTimeout);
     hermesConn = true;
     btn.textContent = '🔌 Desconectar'; btn.className = 'btn btn-w';
     document.getElementById('hermes-mc-badge').textContent = 'online';
@@ -1869,8 +1827,6 @@ function opencodeSaveConfig() {
 let availableModels = { ollama: [], lmstudio: [], openrouter: [] };
 
 async function loadModels() {
-  if (loadingStates.models) return;
-  loadingStates.models = true;
   try {
     const res = await api('/api/ai/models');
     if (!res.success) return;
@@ -1901,24 +1857,21 @@ async function loadModels() {
         if (cfg?.model && sel.querySelector(`option[value="${cfg.model}"]`)) sel.value = cfg.model;
       } catch {}
     });
-  } catch (e) { console.error('loadModels error:', e); } finally {
-    loadingStates.models = false;
-  }
+  } catch (e) { console.error('loadModels error:', e); }
 }
 
 // ════════════════════════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════════════════════════
-// Stagger startup to avoid request storms and loading loops.
 loadServices();
-setTimeout(loadSystemMetrics, 500);
-setTimeout(loadPipeline, 1000);
-setTimeout(loadModels, 1500);
-setTimeout(loadAgents, 2000);
-setTimeout(loadRepairActions, 2500);
+loadSystemMetrics();
+loadPipeline();
+loadModels();
+loadAgents();
+loadRepairActions();
 
 // Refresh intervals
-const REFRESH = { services: 45000, system: 30000, agents: 90000, pipeline: 180000 };
+const REFRESH = { services: 30000, system: 15000, agents: 60000, pipeline: 120000 };
 setInterval(loadServices, REFRESH.services);
 setInterval(loadSystemMetrics, REFRESH.system);
 setInterval(loadAgents, REFRESH.agents);

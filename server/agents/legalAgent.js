@@ -5,31 +5,9 @@
 
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { runTask } from '../services/agentCore.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const OLLAMA_URL = process?.env?.OLLAMA_URL || 'http://localhost:11434';
-const LMSTUDIO_URL = process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1';
-const LMSTUDIO_KEY = process?.env?.LMSTUDIO_API_KEY || '';
-
-function getProvider() {
-  return process?.env?.LEGAL_PROVIDER || 'ollama';
-}
-
-function getModel() {
-  const provider = getProvider();
-  if (provider === 'lmstudio') {
-    return process?.env?.LEGAL_MODEL || 'negentropy-claude-opus-4.7-9b';
-  }
-  return process?.env?.LEGAL_MODEL || 'harmonic-hermes-9b:latest';
-}
-
-function safeParseJSON(str) {
-  if (!str) return null;
-  try { return JSON.parse(str.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()); }
-  catch { const m = (str || '').match(/\{[\s\S]*\}/); if (m) try { return JSON.parse(m[0]); } catch {} }
-  return null;
-}
 
 function extractBasicLegalFields(text) {
   const t = text || '';
@@ -61,52 +39,12 @@ async function analyzeLegalDocument(text) {
   ].join('\n');
 
   try {
-    const provider = getProvider();
-    let url, body, headers;
-
-    if (provider === 'lmstudio') {
-      url = LMSTUDIO_URL + '/chat/completions';
-      body = {
-        model: getModel(),
-        messages: [
-          { role: 'system', content: 'Responde SOLO con JSON valido.' },
-          { role: 'user', content: prompt }
-        ],
-        stream: false,
-        max_tokens: 2048,
-        temperature: 0.1,
-        num_ctx: parseInt(process.env.NUM_CTX || '8192', 10),
-      };
-      headers = { 'Content-Type': 'application/json' };
-      if (LMSTUDIO_KEY) headers['Authorization'] = `Bearer ${LMSTUDIO_KEY}`;
-    } else {
-      url = OLLAMA_URL + '/api/generate';
-      body = {
-        model: getModel(),
-        prompt,
-        system: 'Responde SOLO con JSON valido.',
-        stream: false,
-        options: { temperature: 0.1, num_predict: 1536, num_ctx: parseInt(process.env.NUM_CTX || '8192', 10) },
-      };
-      headers = { 'Content-Type': 'application/json' };
-    }
-
-    const r = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(120_000),
+    const { parsed } = await runTask('legal', {
+      system: 'Responde SOLO con JSON valido.',
+      prompt,
+      json: true,
     });
-    if (!r.ok) throw new Error(`${provider} ${r.status}`);
-    const data = await r.json();
-
-    let content;
-    if (provider === 'lmstudio') {
-      content = data.choices?.[0]?.message?.content || '';
-    } else {
-      content = (data.message || data).content || '';
-    }
-    return safeParseJSON(content) || extractBasicLegalFields(text);
+    return parsed || extractBasicLegalFields(text);
   } catch (err) {
     console.error('[LEGAL-AGENT] Error: ' + err.message);
     return extractBasicLegalFields(text);
@@ -115,7 +53,7 @@ async function analyzeLegalDocument(text) {
 
 export async function process(params) {
   const { text, classification, filename } = params || {};
-  console.log('[LEGAL-AGENT] Procesando: ' + (filename || '?') + ' provider=' + getProvider());
+  console.log('[LEGAL-AGENT] Procesando: ' + (filename || '?') + ' via gateway');
   const analysis = await analyzeLegalDocument(text || '');
   return { type: 'legal', analysis, confidence: (classification || {}).confidence || 0,
            filename: filename || '?', processed_at: new Date().toISOString() };

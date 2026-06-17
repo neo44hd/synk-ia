@@ -34,26 +34,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  CONFIGURACIÓN DUAL — Ollama + LM Studio
+//  CONFIGURACIÓN — Gateway centralizado
 // ═══════════════════════════════════════════════════════════════════════════
-const OLLAMA_URL      = process?.env?.OLLAMA_URL || 'http://localhost:11434';
-const LMSTUDIO_URL    = process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1';
-const LMSTUDIO_KEY    = process?.env?.LMSTUDIO_API_KEY || '';
-const OCR_PROVIDER    = process?.env?.OCR_PROVIDER || 'ollama';
+const GATEWAY_URL     = process?.env?.LMSTUDIO_URL || 'http://127.0.0.1:4000/v1';
+const GATEWAY_KEY     = process?.env?.LMSTUDIO_API_KEY || 'gateway-local';
 const OCR_MODEL       = process.env.OCR_MODEL || 'glm-ocr';
 const MARKITDOWN_EXE  = process?.env?.MARKITDOWN_EXE || '/opt/markitdown-venv/bin/python';
 const MARKITDOWN_WRAPPER = process?.env?.MARKITDOWN_WRAPPER || '/app/server/tools/markitdown_wrapper.py';
 
 function getOcrModel() {
   return OCR_MODEL;
-}
-
-function isLMStudio() {
-  return OCR_PROVIDER === 'lmstudio';
-}
-
-function getOcrEndpoint() {
-  return isLMStudio() ? LMSTUDIO_URL.replace(/\/v1\/?$/, '') : OLLAMA_URL;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1180,7 +1170,7 @@ async function ocrPdfViaImages(filePath) {
 //  Protocolo: /api/chat con imagen base64 y prompt "Text recognition:"
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** OCR de una sola imagen con glm-ocr vía Ollama o LM Studio */
+/** OCR de una sola imagen con glm-ocr vía Gateway (LiteLLM :4000) */
 async function glmOcrImage(filePath) {
   try {
     const buf    = await readFile(filePath);
@@ -1191,67 +1181,37 @@ async function glmOcrImage(filePath) {
     const timer      = setTimeout(() => controller.abort(), 300_000);
 
     try {
-      let text;
-
-      if (isLMStudio()) {
-        // LM Studio — API OpenAI-compatible
-        const response = await fetch(`${getOcrEndpoint()}/v1/chat/completions`, {
-          method:  'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(LMSTUDIO_KEY ? { 'Authorization': `Bearer ${LMSTUDIO_KEY}` } : {}),
-          },
-          signal:  controller.signal,
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: 'user', content: [
-                { type: 'text', text: 'Text recognition:' },
-                { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}` } },
-              ]},
-            ],
-            stream: false,
-            temperature: 0,
-            max_tokens: 2048,
-            num_ctx: parseInt(process.env.NUM_CTX || '16384', 10),
-          }),
-        });
-        if (!response.ok) {
-          const errBody = await response.text().catch(() => '');
-          throw new Error(`LMStudio ${response.status}: ${errBody.slice(0, 200)}`);
-        }
-        const data = await response.json();
-        text = cleanText(data.choices?.[0]?.message?.content || '');
-      } else {
-        // Ollama — API nativa
-        const response = await fetch(`${OLLAMA_URL}/api/chat`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal:  controller.signal,
-          body:    JSON.stringify({
-            model,
-            stream: false,
-            messages: [{
-              role: 'user',
-              content:  'Text recognition:',
-              images:   [base64],
-            }],
-            options: {
-              num_ctx: 16384,
-              temperature: 0,
-            },
-          }),
-        });
-        if (!response.ok) {
-          const errBody = await response.text().catch(() => '');
-          throw new Error(`Ollama ${response.status}: ${errBody.slice(0, 200)}`);
-        }
-        const data = await response.json();
-        text = cleanText(data?.message?.content || '');
+      // Gateway (OpenAI-compatible) — vision messages via image_url
+      const response = await fetch(`${GATEWAY_URL}/chat/completions`, {
+        method:  'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(GATEWAY_KEY ? { 'Authorization': `Bearer ${GATEWAY_KEY}` } : {}),
+        },
+        signal:  controller.signal,
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'user', content: [
+              { type: 'text', text: 'Text recognition:' },
+              { type: 'image_url', image_url: { url: `data:image/png;base64,${base64}` } },
+            ]},
+          ],
+          stream: false,
+          temperature: 0,
+          max_tokens: 2048,
+          num_ctx: parseInt(process.env.NUM_CTX || '16384', 10),
+        }),
+      });
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => '');
+        throw new Error(`Gateway ${response.status}: ${errBody.slice(0, 200)}`);
       }
+      const data = await response.json();
+      const text = cleanText(data.choices?.[0]?.message?.content || '');
 
       if (text.length > 10) {
-        return ok(text, isLMStudio() ? 'glm-ocr-lmstudio' : 'glm-ocr', { ocr_model: model, provider: isLMStudio() ? 'lmstudio' : 'ollama' });
+        return ok(text, 'glm-ocr-gateway', { ocr_model: model, provider: 'gateway' });
       }
       return null;
 
@@ -1259,7 +1219,7 @@ async function glmOcrImage(filePath) {
       clearTimeout(timer);
     }
   } catch (err) {
-    console.warn(`[EXTRACTOR] glm-ocr falló (${isLMStudio() ? 'lmstudio' : 'ollama'}): ${err.message}`);
+    console.warn(`[EXTRACTOR] glm-ocr falló (gateway): ${err.message}`);
     return null;
   }
 }
@@ -1315,7 +1275,7 @@ async function ocrPdfViaGlm(filePath) {
 //  VISIÓN — OCR VIA VISIÓN (Ollama VL o LM Studio)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Envía una imagen al modelo VL y devuelve el texto extraído */
+/** Envía una imagen al modelo VL vía Gateway y devuelve el texto extraído */
 async function visionExtract(filePath, mime) {
   const buf    = await readFile(filePath);
   const base64 = buf.toString('base64');
@@ -1326,58 +1286,31 @@ async function visionExtract(filePath, mime) {
   const timer      = setTimeout(() => controller.abort(), 240_000);
 
   try {
-    let content;
-
-    if (isLMStudio()) {
-      // LM Studio — OpenAI-compatible API
-      const response = await fetch(`${getOcrEndpoint()}/v1/chat/completions`, {
-        method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(LMSTUDIO_KEY ? { 'Authorization': `Bearer ${LMSTUDIO_KEY}` } : {}),
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model,
-          stream: false,
-          temperature: 0.05,
-          max_tokens: 3000,
-          messages: [
-            { role: 'system', content: 'Extrae todo el texto visible en esta imagen. Si es un documento, mantén la estructura. Responde solo con el texto, sin explicaciones.' },
-            { role: 'user', content: [
-              { type: 'text', text: 'Transcribe todo el texto de esta imagen:' },
-              { type: 'image_url', image_url: { url } },
-            ]},
-          ],
-        }),
-      });
-      if (!response.ok) throw new Error(`LMStudio VL ${response.status}`);
-      const data = await response.json();
-      content = data.choices?.[0]?.message?.content || '';
-    } else {
-      // Ollama — API nativa
-      const response = await fetch(`${OLLAMA_URL}/v1/chat/completions`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal:  controller.signal,
-        body:    JSON.stringify({
-          model,
-          stream:      false,
-          temperature: 0.05,
-          max_tokens:  3000,
-          messages: [
-            { role: 'system', content: 'Extrae todo el texto visible en esta imagen. Si es un documento, mantén la estructura. Responde solo con el texto, sin explicaciones.' },
-            { role: 'user', content: [
-              { type: 'text', text: 'Transcribe todo el texto de esta imagen:' },
-              { type: 'image_url', image_url: { url } },
-            ]},
-          ],
-        }),
-      });
-      if (!response.ok) throw new Error(`Ollama VL ${response.status}`);
-      const data = await response.json();
-      content = data.choices?.[0]?.message?.content || '';
-    }
+    // Gateway (OpenAI-compatible) — vision messages via image_url
+    const response = await fetch(`${GATEWAY_URL}/chat/completions`, {
+      method:  'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(GATEWAY_KEY ? { 'Authorization': `Bearer ${GATEWAY_KEY}` } : {}),
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        stream: false,
+        temperature: 0.05,
+        max_tokens: 3000,
+        messages: [
+          { role: 'system', content: 'Extrae todo el texto visible en esta imagen. Si es un documento, mantén la estructura. Responde solo con el texto, sin explicaciones.' },
+          { role: 'user', content: [
+            { type: 'text', text: 'Transcribe todo el texto de esta imagen:' },
+            { type: 'image_url', image_url: { url } },
+          ]},
+        ],
+      }),
+    });
+    if (!response.ok) throw new Error(`Gateway VL ${response.status}`);
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
 
     return content.trim();
 
@@ -1406,9 +1339,9 @@ async function extractPdfViaVision(filePath, totalPages) {
 
     const fullText = pageTexts.join('\n\n--- Página ---\n\n');
     if (fullText.length > 10) {
-      return ok(fullText, isLMStudio() ? 'vision-vl-pdf-lmstudio' : 'vision-vl-pdf', {
+      return ok(fullText, 'vision-vl-pdf-gateway', {
         pages: totalPages,
-        provider: isLMStudio() ? 'lmstudio' : 'ollama',
+        provider: 'gateway',
       });
     }
     return fail('pdf-vision-sin-texto', 'Visión VL no extrajo texto del PDF');

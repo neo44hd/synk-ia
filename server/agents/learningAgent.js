@@ -14,34 +14,25 @@
  */
 
 import learningEngine from '../services/learningEngine.js';
+import { gatewayChatMessages } from '../services/agentCore.js';
 
-const OLLAMA_URL = () => process?.env?.OLLAMA_URL || 'http://localhost:11434';
-const getModel = () => process?.env?.CHAT_MODEL || 'harmonic-hermes-9b:latest';
+const GATEWAY_MODEL = process?.env?.CHAT_MODEL || 'local-fast';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LLM HELPER
+// LLM HELPER — delega al gateway centralizado
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function llm(messages, { maxTokens = 1000, temp = 0.5 } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 60_000);
   try {
-    const res = await fetch(`${OLLAMA_URL()}/v1/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: getModel(),
-        messages,
-        temperature: temp,
-        max_tokens: maxTokens,
-        stream: false,
-        options: { num_ctx: parseInt(process.env.NUM_CTX || '8192', 10) },
-      }),
+    const { content } = await gatewayChatMessages({
+      messages,
+      model: GATEWAY_MODEL,
+      temperature: temp,
+      maxTokens,
     });
-    if (!res.ok) throw new Error(`Ollama ${res.status}`);
-    const d = await res.json();
-    return d.choices?.[0]?.message?.content?.trim() || '';
+    return content?.trim() || '';
   } catch (err) {
     console.error('[LEARNING AGENT] LLM error:', err.message);
     return null;

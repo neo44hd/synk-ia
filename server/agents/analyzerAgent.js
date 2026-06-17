@@ -14,20 +14,17 @@
 //    const result = await analyze({ text, method, metadata, originalName, mimeType });
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ── Configuración ──────────────────────────────────────────────────────────
-const OLLAMA_URL  = process?.env?.OLLAMA_URL || 'http://localhost:11434';
-const LMSTUDIO_URL = process?.env?.LMSTUDIO_URL || 'http://localhost:1234/v1';
-const LMSTUDIO_KEY = process?.env?.LMSTUDIO_API_KEY || '';
-const ANALYZER_MODEL = process?.env?.ANALYZER_MODEL || 'negentropy-claude-opus-4.7-9b';
-const OLLAMA_MODEL   = process?.env?.OLLAMA_MODEL   || 'harmonic-hermes-9b:latest';
-const ANALYZER_PROVIDER = process?.env?.ANALYZER_PROVIDER || 'ollama';
+// ── Configuración — delegada al gateway centralizado ──────────────────────
+import { gatewayChatMessages, safeParseJSON } from '../services/agentCore.js';
+
+const GATEWAY_MODEL = process?.env?.ANALYZER_MODEL || 'local-reason';
 const TIMEOUT_MS  = 600_000;   // 10 minutos — PDFs largos necesitan más tiempo
 const MAX_TOKENS  = 2000;      // tokens de salida (reducido de 4000)
 const TEMPERATURE = 0.05;      // Casi determinista para clasificación
 const MAX_TEXT    = 5000;      // 5K chars — límite para JSON estructurado
 
 function getLlmModel() {
-  return ANALYZER_PROVIDER === 'lmstudio' ? ANALYZER_MODEL : OLLAMA_MODEL;
+  return GATEWAY_MODEL;
 }
 
 // Datos fijos de MI EMPRESA (receptor en casi todos los documentos)
@@ -37,8 +34,7 @@ const MI_EMPRESA = {
   email:  process?.env?.EMAIL_USER     || 'info@chickenpalace.es',
 };
 
-// Detectar automáticamente si el modelo tiene capacidad visual
-const IS_VL_MODEL = /vl|vision|visual/i.test(getLlmModel());
+// El gateway delega al modelo subyacente; si el modelo es VL soportará vision
 
 // ── Tipos de documentos válidos ────────────────────────────────────────────
 const TIPOS_VALIDOS = [
@@ -673,61 +669,21 @@ function normalizeAnalysis(raw) {
 // ══════════════════════════════════════════════════════════════════════════
 
 /**
- * Llamada estándar al endpoint OpenAI-compatible de Ollama.
- * Soporta AbortSignal con timeout de 180 segundos.
+ * Llamada al gateway centralizado (OpenAI chat-completions).
+ * Soporta AbortSignal con timeout de 10 minutos.
  */
 async function llmCall(messages) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  const model = getLlmModel();
-
   try {
-    if (ANALYZER_PROVIDER === 'lmstudio') {
-      // LM Studio — API OpenAI-compatible
-      const response = await fetch(`${LMSTUDIO_URL}/chat/completions`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal:  controller.signal,
-        body: JSON.stringify({
-          model,
-          messages,
-          stream: false,
-          temperature: TEMPERATURE,
-          max_tokens: MAX_TOKENS,
-          num_ctx: parseInt(process.env.NUM_CTX || '8192', 10),
-          response_format: { type: 'json_object' },
-        }),
-      });
-      if (!response.ok) {
-        const body = await response.text().catch(() => '');
-        throw new Error(`LM Studio ${response.status}: ${body.slice(0, 300)}`);
-      }
-      const data = await response.json();
-      const rawContent = data.choices?.[0]?.message?.content || '';
-      return stripThinking(rawContent.trim());
-    } else {
-      // Ollama — API nativa
-      const response = await fetch(`${OLLAMA_URL}/api/chat`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal:  controller.signal,
-        body: JSON.stringify({
-          model,
-          messages,
-          stream: false,
-          think:   false,
-          format:  'json',
-          options: { temperature: TEMPERATURE, num_predict: MAX_TOKENS, num_ctx: parseInt(process.env.NUM_CTX || '8192', 10) },
-        }),
-      });
-      if (!response.ok) {
-        const body = await response.text().catch(() => '');
-        throw new Error(`Ollama ${response.status}: ${body.slice(0, 300)}`);
-      }
-      const data = await response.json();
-      const rawContent = data.message?.content || '';
-      return stripThinking(rawContent.trim());
-    }
+    const { content } = await gatewayChatMessages({
+      messages,
+      model: getLlmModel(),
+      temperature: TEMPERATURE,
+      maxTokens: MAX_TOKENS,
+      json: true,
+    });
+    return stripThinking(content.trim());
   } finally {
     clearTimeout(timer);
   }
@@ -737,16 +693,16 @@ async function llmCall(messages) {
  * Llamada con imagen (modelos VL) — envía la imagen como image_url en el contenido.
  */
 async function llmCallVision(imageBase64, mimeType) {
-  // Usar API nativa de Ollama con campo "images" para visión
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
     {
-      role:    'user',
-      content: 'Analiza este documento y devuelve el JSON solicitado:',
-      images:  [imageBase64],
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Analiza este documento y devuelve el JSON solicitado:' },
+        { type: 'image_url', image_url: { url: `data:${mimeType || 'image/jpeg'};base64,${imageBase64}` } },
+      ],
     },
   ];
-
   return llmCall(messages);
 }
 
@@ -782,7 +738,7 @@ export async function analyze(extractedData) {
   console.log(`[ANALIZADOR] Iniciando análisis — archivo: "${originalName}" | método: ${method} | modelo: ${getLlmModel()}`);
 
   // ── Validar que hay algo que analizar ───────────────────────────────────
-  const esVision = method === 'vision-vl' && IS_VL_MODEL && imageBase64;
+  const esVision = method === 'vision-vl' && imageBase64;
   if (!text && !esVision) {
     const msg = 'No hay texto ni imagen para analizar';
     console.warn(`[ANALIZADOR] ⚠ ${msg}`);
@@ -895,9 +851,8 @@ function buildDocumentContext(originalName, mimeType, metadata) {
  */
 export function getConfig() {
   return {
-    ollamaUrl:   OLLAMA_URL,
+    gatewayUrl:  'http://127.0.0.1:4000/v1',
     model:       getLlmModel(),
-    isVlModel:   IS_VL_MODEL,
     timeoutMs:   TIMEOUT_MS,
     maxTokens:   MAX_TOKENS,
     temperature: TEMPERATURE,
@@ -939,7 +894,7 @@ export async function analyzeBatch(items, concurrency = 1) {
 }
 
 /**
- * Verificar que Ollama está disponible y el modelo cargado.
+ * Verificar que el gateway está disponible y responde.
  * Útil para health-checks del servidor.
  *
  * @returns {Promise<{available: boolean, model: string, error?: string}>}
@@ -949,29 +904,23 @@ export async function checkHealth() {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 10_000);
 
-    const res = await fetch(`${OLLAMA_URL}/api/tags`, {
+    const res = await fetch('http://127.0.0.1:4000/health', {
       signal: controller.signal,
     }).finally(() => clearTimeout(timer));
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const data   = await res.json();
-    const models = (data?.models || []).map(m => m.name || m.model || '');
-    const found  = models.some(m => m.includes(getLlmModel().split(':')[0]));
-
-    console.log(`[ANALIZADOR] Health: Ollama OK | modelo "${getLlmModel()}" ${found ? 'encontrado' : 'NO encontrado'}`);
+    console.log(`[ANALIZADOR] Health: Gateway OK | modelo "${getLlmModel()}"`);
 
     return {
       available:     true,
       model:         getLlmModel(),
-      model_loaded:  found,
-      models_available: models,
     };
   } catch (err) {
-    console.warn(`[ANALIZADOR] Health: Ollama NO disponible — ${err.message}`);
+    console.warn(`[ANALIZADOR] Health: Gateway NO disponible — ${err.message}`);
     return {
       available: false,
-      model:     MODEL,
+      model:     getLlmModel(),
       error:     err.message,
     };
   }

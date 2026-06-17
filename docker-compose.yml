@@ -44,7 +44,7 @@ services:
     networks:
       - sinkia-net
     healthcheck:
-      test: ["CMD-SHELL", "echo > /dev/tcp/localhost/6333"]
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/127.0.0.1/6333 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -179,8 +179,6 @@ services:
       - TELEGRAM_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
       - ORCHESTRATOR_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
       - TELEGRAM_PROVIDER=ollama
-      # ── Comercio ──
-      - COMMERCE_URL=http://sinkia-commerce:4400
       # ── Email ──
       - EMAIL_ACCOUNT_ENABLED=false
       - EMAIL_IMAP_HOST=${EMAIL_IMAP_HOST:-}
@@ -220,42 +218,6 @@ services:
     networks:
       - sinkia-net
 
-  # ── COMMERCE TPV (opcional) ─────────────────────────────────────────────
-  commerce:
-    image: docker-app:latest
-    container_name: sinkia-commerce
-    restart: unless-stopped
-    ports:
-      - "4400:4400"
-    networks:
-      - sinkia-net
-
-  commerce-db:
-    image: postgres:16-alpine
-    container_name: sinkia-commerce-db
-    restart: unless-stopped
-    ports:
-      - "5433:5432"
-    environment:
-      - POSTGRES_USER=sinkia
-      - POSTGRES_PASSWORD=sinkia
-      - POSTGRES_DB=commerce
-    volumes:
-      - commerce_db_data:/var/lib/postgresql/data
-    networks:
-      - sinkia-net
-
-  commerce-redis:
-    image: redis:7-alpine
-    container_name: sinkia-commerce-redis
-    restart: unless-stopped
-    ports:
-      - "6380:6379"
-    volumes:
-      - commerce_redis_data:/data
-    networks:
-      - sinkia-net
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # Volúmenes persistentes
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -266,8 +228,6 @@ volumes:
   openwebui_data:
   n8n_data:
   qdrant_data:
-  commerce_db_data:
-  commerce_redis_data:
 
 networks:
   sinkia-net:
