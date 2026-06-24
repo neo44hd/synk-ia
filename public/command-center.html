@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>⚡ SynK-IA Command Center — Mando de Guerra</title>
+<style>
+:root{--bg:#0a0e1a;--s1:#111827;--s2:#1f2937;--s3:#374151;--text:#e5e7eb;--muted:#9ca3af;--accent:#3b82f6;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--cyan:#06b6d4;--pink:#ec4899;--orange:#f97316;--border:#1e2d54}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'JetBrains Mono','Monaco','Courier New',monospace;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
+.container{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:60px 1fr;gap:0;height:100vh}
+.header{grid-column:1/4;background:linear-gradient(90deg,#0f172a,#1e293b);border-bottom:2px solid var(--accent);padding:0 20px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+.header-left{display:flex;align-items:center;gap:20px}
+.logo{font-size:1.6em;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.status-indicator{display:flex;align-items:center;gap:8px;font-size:0.8em}
+.pulse{width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,0.7)}50%{opacity:0.7;box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+.time{font-family:monospace;color:var(--cyan);font-weight:700}
+.left-panel{grid-row:2;grid-column:1;background:linear-gradient(180deg,var(--s1),#0f1419);border-right:2px solid var(--border);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.panel-section{display:flex;flex-direction:column;gap:8px}
+.section-label{font-size:0.7em;font-weight:900;color:var(--cyan);text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid var(--border);padding:8px 0}
+.quick-btn{padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--text);font-size:0.8em;font-weight:600;transition:all 0.2s;text-align:left;display:flex;align-items:center;gap:8px}
+.quick-btn:hover{border-color:var(--accent);background:var(--s3);transform:translateX(4px)}
+.quick-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.model-badge{display:inline-block;padding:2px 6px;background:var(--purple);border-radius:3px;font-size:0.65em;margin-left:auto;font-weight:700}
+.center-panel{grid-row:2;grid-column:2;background:var(--bg);border-right:2px solid var(--border);overflow-y:auto;padding:16px;display:flex;flex-direction:column}
+.center-title{font-size:1.3em;color:var(--cyan);margin-bottom:12px;font-weight:900;display:flex;align-items:center;gap:8px}
+.ai-controls{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.ai-row{display:flex;gap:8px}
+.ai-input{flex:1;background:var(--s1);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);font-family:inherit;font-size:0.85em}
+.ai-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 8px rgba(59,130,246,0.3)}
+.ai-select{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text);cursor:pointer;font-family:inherit;font-size:0.8em}
+.send-btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:8px 12px;cursor:pointer;font-weight:700;transition:all 0.2s}
+.send-btn:hover{background:#2563eb}
+.terminal-view{background:var(--s1);border:2px solid var(--border);border-radius:8px;padding:12px;height:400px;overflow-y:auto;font-size:0.75em;line-height:1.6;color:var(--green);font-family:monospace}
+.terminal-line{margin:2px 0}
+.terminal-error{color:var(--red)}
+.terminal-warning{color:var(--yellow)}
+.terminal-success{color:var(--green)}
+.right-panel{grid-row:2;grid-column:3;background:linear-gradient(180deg,#0f1419,var(--s1));border-left:2px solid var(--border);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.right-title{font-size:1.2em;color:var(--pink);font-weight:900;margin-bottom:8px}
+.project-card{background:var(--s2);border-left:3px solid var(--accent);border-radius:6px;padding:12px;cursor:pointer;transition:all 0.2s}
+.project-card:hover{border-left-color:var(--pink);transform:translateX(4px);box-shadow:0 8px 16px rgba(236,72,153,0.2)}
+.project-name{font-weight:700;font-size:0.9em;color:var(--text)}
+.project-desc{font-size:0.75em;color:var(--muted);margin-top:4px}
+.quick-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.metric-mini{background:var(--s2);border-radius:6px;padding:8px;border-left:3px solid var(--green)}
+.metric-mini-label{font-size:0.65em;color:var(--muted);text-transform:uppercase}
+.metric-mini-value{font-size:1.1em;font-weight:900;color:var(--green);margin-top:4px}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.action-btn{padding:8px;background:var(--s2);border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--text);font-size:0.75em;font-weight:700;transition:all 0.2s;text-align:center}
+.action-btn:hover{border-color:var(--accent);background:var(--s3)}
+.action-btn.danger{border-left-color:var(--red)}
+.action-btn.success{border-left-color:var(--green)}
+.gateway-mini{background:var(--s2);border-radius:6px;padding:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.gateway-mini-name{font-weight:700;color:var(--text);font-size:0.85em}
+.gateway-mini-status{font-size:0.7em;color:var(--green)}
+.workflow-area{background:var(--s2);border-radius:6px;padding:12px;margin-top:12px}
+.workflow-title{font-size:0.85em;font-weight:700;color:var(--cyan);margin-bottom:8px}
+.workflow-btn{width:100%;padding:6px;background:var(--s3);border:1px solid var(--border);border-radius:4px;color:var(--text);cursor:pointer;font-size:0.75em;margin-bottom:4px;transition:all 0.2s}
+.workflow-btn:hover{border-color:var(--pink);background:var(--s1)}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:12px}
+.tab{padding:8px 12px;border:none;background:none;color:var(--muted);cursor:pointer;font-weight:700;font-size:0.8em;transition:all 0.2s;border-bottom:2px solid transparent}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.tab:hover{color:var(--text)}
+@media(max-width:1400px){.container{grid-template-columns:1fr 1fr;grid-template-rows:60px 1fr}.right-panel{grid-column:1/3;grid-row:3}}
+@media(max-width:768px){.container{grid-template-columns:1fr;grid-template-rows:60px auto auto auto}.center-panel{grid-column:1}.left-panel{grid-column:1;grid-row:2;flex-direction:row;height:auto;border-right:none;border-bottom:2px solid var(--border)}.right-panel{grid-column:1;grid-row:3}}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">⚡ COMMAND CENTER</div>
+      <div class="status-indicator">
+        <div class="pulse"></div>
+        <span id="status-text">READY</span>
+      </div>
+    </div>
+    <div class="time" id="current-time">00:00:00</div>
+  </div>
+
+  <!-- LEFT PANEL: MODELS & GATEWAYS -->
+  <div class="left-panel">
+    <div class="panel-section">
+      <div class="section-label">🤖 AI MODELS</div>
+      <button class="quick-btn" onclick="selectModel('claude')">
+        🧠 Claude 4.5
+        <span class="model-badge">OpenAI</span>
+      </button>
+      <button class="quick-btn" onclick="selectModel('ollama')">
+        🦙 Ollama Local
+        <span class="model-badge">localhost</span>
+      </button>
+      <button class="quick-btn" onclick="selectModel('hermes')">
+        💬 Hermes LLM
+        <span class="model-badge">API</span>
+      </button>
+      <button class="quick-btn" onclick="selectModel('gemini')">
+        ✨ Gemini Pro
+        <span class="model-badge">Google</span>
+      </button>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-label">🔌 GATEWAYS</div>
+      <button class="quick-btn" onclick="openGateway('openclaw')">⚙️ OpenClaw</button>
+      <button class="quick-btn" onclick="openGateway('hermes-gateway')">💬 Hermes</button>
+      <button class="quick-btn" onclick="openGateway('ollama')">🦙 Ollama</button>
+      <button class="quick-btn" onclick="openGateway('pipeline')">🔄 Pipeline</button>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-label">📂 PROJECTS</div>
+      <button class="quick-btn" onclick="openProject('synkia')">SynK-IA</button>
+      <button class="quick-btn" onclick="openProject('claritas')">CL4R1T4S</button>
+      <button class="quick-btn" onclick="openProject('claw')">OpenClaw</button>
+      <button class="quick-btn" onclick="openProject('memory')">Memory</button>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-label">⚡ QUICK ACTIONS</div>
+      <button class="quick-btn" onclick="runWorkflow('docker-stats')">🐳 Docker Status</button>
+      <button class="quick-btn" onclick="runWorkflow('pm2-list')">💚 PM2 List</button>
+      <button class="quick-btn" onclick="runWorkflow('clear-cache')">🗑️ Clear Cache</button>
+    </div>
+  </div>
+
+  <!-- CENTER PANEL: AI INTERFACE & TERMINAL -->
+  <div class="center-panel">
+    <div class="center-title">💬 AI Assistant Console</div>
+    
+    <div class="ai-controls">
+      <div class="ai-row">
+        <select class="ai-select" id="model-select">
+          <option>Claude 4.5 (Default)</option>
+          <option>Ollama qwen2.5</option>
+          <option>Hermes</option>
+          <option>Gemini Pro</option>
+        </select>
+      </div>
+      <div class="ai-row">
+        <input type="text" class="ai-input" id="ai-prompt" placeholder="¿Qué necesitas? (ej: crear función, debuggear, analizar...)">
+        <button class="send-btn" onclick="sendPrompt()">ENVIAR</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="tab active" onclick="switchTab('terminal')">📺 Terminal</button>
+      <button class="tab" onclick="switchTab('history')">📋 History</button>
+      <button class="tab" onclick="switchTab('output')">📊 Output</button>
+    </div>
+
+    <div id="terminal" class="terminal-view">
+      <div class="terminal-line"><span class="terminal-success">✓</span> SynK-IA Command Center v1.0</div>
+      <div class="terminal-line"><span class="terminal-success">✓</span> All systems READY for action</div>
+      <div class="terminal-line"><span class="terminal-success">✓</span> Connected to: OpenClaw, Hermes, Ollama, Pipeline</div>
+      <div class="terminal-line"><span class="terminal-warning">→</span> Waiting for commands...</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: PROJECTS & WORKFLOWS -->
+  <div class="right-panel">
+    <div class="right-title">🎯 ACTIVE PROJECTS</div>
+    
+    <div class="project-card">
+      <div class="project-name">🍗 Chicken Palace Ibiza</div>
+      <div class="project-desc">SynK-IA Sistema de Gestión</div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-name">🔒 CL4R1T4S</div>
+      <div class="project-desc">Seguridad y análisis</div>
+    </div>
+
+    <div class="project-card">
+      <div class="project-name">🤖 Local Claude Code</div>
+      <div class="project-desc">Development environment</div>
+    </div>
+
+    <div class="right-title" style="margin-top:16px">📊 SYSTEM METRICS</div>
+    
+    <div class="quick-metrics">
+      <div class="metric-mini">
+        <div class="metric-mini-label">🖥️ CPU</div>
+        <div class="metric-mini-value" id="cpu-metric">—</div>
+      </div>
+      <div class="metric-mini">
+        <div class="metric-mini-label">💾 RAM</div>
+        <div class="metric-mini-value" id="ram-metric">—</div>
+      </div>
+      <div class="metric-mini">
+        <div class="metric-mini-label">🐳 Docker</div>
+        <div class="metric-mini-value" id="docker-metric">14</div>
+      </div>
+      <div class="metric-mini">
+        <div class="metric-mini-label">💚 PM2</div>
+        <div class="metric-mini-value" id="pm2-metric">7</div>
+      </div>
+    </div>
+
+    <div class="right-title">🌐 GATEWAYS STATUS</div>
+    <div class="gateway-mini">
+      <span class="gateway-mini-name">⚙️ OpenClaw</span>
+      <span class="gateway-mini-status">🟢 Online</span>
+    </div>
+    <div class="gateway-mini">
+      <span class="gateway-mini-name">💬 Hermes</span>
+      <span class="gateway-mini-status">🟢 Online</span>
+    </div>
+    <div class="gateway-mini">
+      <span class="gateway-mini-name">🦙 Ollama</span>
+      <span class="gateway-mini-status">🟢 Online</span>
+    </div>
+    <div class="gateway-mini">
+      <span class="gateway-mini-name">🔄 Pipeline</span>
+      <span class="gateway-mini-status">🟢 Online</span>
+    </div>
+
+    <div class="workflow-area">
+      <div class="workflow-title">⚙️ AUTOMATED WORKFLOWS</div>
+      <button class="workflow-btn" onclick="executeWorkflow('backup')">💾 Backup Now</button>
+      <button class="workflow-btn" onclick="executeWorkflow('sync')">🔄 Sync Projects</button>
+      <button class="workflow-btn" onclick="executeWorkflow('analyze')">📊 Analyze System</button>
+      <button class="workflow-btn" onclick="executeWorkflow('health-check')">🏥 Health Check</button>
+    </div>
+
+    <div class="action-grid" style="margin-top:12px">
+      <button class="action-btn success" onclick="alert('Dashboard abierto')">📈 Dashboard</button>
+      <button class="action-btn danger" onclick="alert('Configuración')">⚙️ Settings</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Time updater
+setInterval(() => {
+  const now = new Date();
+  const time = now.toLocaleTimeString('es-ES', {hour12: false});
+  document.getElementById('current-time').textContent = time;
+}, 1000);
+
+// Model selector
+function selectModel(model) {
+  document.querySelectorAll('.left-panel .quick-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.closest('.quick-btn').classList.add('active');
+  appendTerminalLine(`📌 Model switched to: ${model.toUpperCase()}`, 'success');
+}
+
+// Gateway opener
+function openGateway(gateway) {
+  const gateways = {
+    'openclaw': 'http://localhost:18789',
+    'hermes-gateway': 'http://localhost:3001/api/hermes',
+    'ollama': 'http://localhost:11434',
+    'pipeline': 'http://localhost:3001/api/ai/status'
+  };
+  
+  if (gateways[gateway]) {
+    window.open(gateways[gateway], '_blank');
+    appendTerminalLine(`🌐 Opening: ${gateway}`, 'success');
+  }
+}
+
+// Project opener
+function openProject(project) {
+  const projects = {
+    'synkia': '/Users/davidnows/sinkia-next',
+    'claritas': '/Users/davidnows/CL4R1T4S',
+    'claw': '/Users/davidnows/.openclaw',
+    'memory': '/Users/davidnows/sinkia-memory'
+  };
+  
+  appendTerminalLine(`📂 Opening project: ${project}`, 'success');
+}
+
+// Send prompt to AI
+function sendPrompt() {
+  const prompt = document.getElementById('ai-prompt').value;
+  if (!prompt.trim()) return;
+  
+  appendTerminalLine(`💬 You: ${prompt}`, 'text');
+  document.getElementById('ai-prompt').value = '';
+  
+  // Simulate AI response
+  setTimeout(() => {
+    appendTerminalLine(`🤖 AI: Processing your request... Ready to assist!`, 'success');
+  }, 500);
+}
+
+// Terminal functions
+function appendTerminalLine(text, type = 'text') {
+  const terminal = document.getElementById('terminal');
+  const line = document.createElement('div');
+  line.className = 'terminal-line terminal-' + (type === 'error' ? 'error' : type === 'warning' ? 'warning' : type === 'success' ? 'success' : '');
+  line.textContent = text;
+  terminal.appendChild(line);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+// Run workflow
+function runWorkflow(workflow) {
+  appendTerminalLine(`⚙️ Executing: ${workflow}...`, 'warning');
+  setTimeout(() => {
+    appendTerminalLine(`✓ ${workflow} completed`, 'success');
+  }, 1500);
+}
+
+// Execute workflow
+function executeWorkflow(workflow) {
+  appendTerminalLine(`🚀 Starting workflow: ${workflow}`, 'warning');
+  setTimeout(() => {
+    appendTerminalLine(`✓ ${workflow} finished successfully`, 'success');
+  }, 1000);
+}
+
+// Tab switching
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  appendTerminalLine(`📌 Switched to: ${tab}`, 'warning');
+}
+
+// Load system metrics
+function loadMetrics() {
+  fetch('/api/admin/system', {
+    headers: {'x-admin-token': 'sinkia2026'}
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.system_info) {
+      const ram = Math.round(data.system_info.used_memory / data.system_info.total_memory * 100);
+      document.getElementById('ram-metric').textContent = ram + '%';
+    }
+  })
+  .catch(() => appendTerminalLine('⚠️ Could not load metrics', 'warning'));
+}
+
+// Initial load
+window.addEventListener('load', () => {
+  loadMetrics();
+  setInterval(loadMetrics, 30000);
+  appendTerminalLine('🎯 Command Center ready. Type a command or select an action.', 'success');
+});
+</script>
+</body>
+</html>

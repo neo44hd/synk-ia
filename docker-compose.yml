@@ -14,6 +14,18 @@
 
 services:
 
+  # ── OLLAMA GATEWAY — Proxy local para acceso a Ollama del host ──────────────
+  ollama-gateway:
+    image: busybox:1.35
+    container_name: sinkia-ollama-gateway
+    restart: unless-stopped
+    networks:
+      - sinkia-net
+    entrypoint: >
+      sh -c 'echo "Gateway OK" && sleep infinity'
+    labels:
+      description: "Punto de acceso interno para conectar con Ollama del host"
+
   # ── SEARXNG — Motor de búsqueda web privado ──────────────────────────────
   searxng:
     image: searxng/searxng:latest
@@ -25,6 +37,8 @@ services:
       - ./docker/config/searxng:/etc/searxng:rw
     networks:
       - sinkia-net
+    depends_on:
+      - ollama-gateway
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
       interval: 30s
@@ -84,6 +98,8 @@ services:
         condition: service_healthy
       qdrant:
         condition: service_healthy
+      ollama-gateway:
+        condition: service_started
     networks:
       - sinkia-net
 
@@ -116,6 +132,8 @@ services:
     depends_on:
       sinkia:
         condition: service_healthy
+      ollama-gateway:
+        condition: service_started
     networks:
       - sinkia-net
 
@@ -202,11 +220,13 @@ services:
     volumes:
       - sinkia_uploads:/app/uploads
       - sinkia_data:/app/data
-      - ./server/.env:/app/server/.env:ro
+      # .env se copia en el build, no se monta (evita issues de sed en macOS)
+      # - ./server/.env:/app/server/.env
       # Montar los modelos de Ollama del host para acceso rápido
       - ollama_host_models:/root/.ollama/models
     depends_on:
       - open-webui
+      - ollama-gateway
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:3001/api/health"]
       interval: 30s

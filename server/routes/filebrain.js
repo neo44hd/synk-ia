@@ -10,9 +10,15 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
+import multer from 'multer';
+import { v4 as uuid } from 'uuid';
+import matter from 'gray-matter';
+import fsExtra from 'fs-extra';
+import pdfParse from 'pdf-parse';
 import { DATA_DIR } from './data.js';
 
 export const filebrainRouter = Router();
+const upload = multer();
 
 // ── Lectura de la fuente única ───────────────────────────────────────────────
 function readJSON(entity) {
@@ -106,6 +112,86 @@ function sanitizeName(str) {
     .replace(/\s+/g, '_')
     .substring(0, 50);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  POST /api/filebrain/upload — Ingesta de nuevos documentos
+//  Procesa archivos (PDF, TXT, JSON, MD) y los guarda con metadatos
+// ═══════════════════════════════════════════════════════════════════════════════
+async function textFromPdf(buffer) {
+  try {
+    const data = await pdfParse(buffer);
+    return data.text;
+  } catch (error) {
+    console.error('Error parsing PDF:', error.message);
+    return '';
+  }
+}
+
+async function extractMetadata(rawText, type) {
+  // Placeholder for actual metadata extraction
+  return {
+    pages: 1,
+    language: 'en',
+    summary: rawText.substring(0, 200)
+  };
+}
+
+filebrainRouter.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    let rawText = '';
+
+    if (ext === '.pdf') {
+      rawText = await textFromPdf(req.file.buffer);
+    } else {
+      rawText = req.file.buffer.toString('utf8');
+    }
+
+    // Placeholder: document classification (replace with actual AgentCore)
+    const classification = { type: 'document', confidence: 0.5 };
+
+    // Extract metadata
+    const metadataPayload = await extractMetadata(rawText, classification.type);
+
+    // Build metadata
+    const meta = {
+      type: classification.type,
+      confidence: classification.confidence,
+      fileName: req.file.originalname,
+      uploadedAt: new Date().toISOString(),
+      ...metadataPayload
+    };
+
+    // Create markdown with frontmatter
+    const markdownDir = path.join(process.cwd(), 'data', 'markdown');
+    await fsExtra.ensureDir(markdownDir);
+
+    const id = uuid();
+    const filePath = path.join(markdownDir, `${id}.md`);
+
+    // Build markdown content with YAML frontmatter
+    const finalContent = `---
+${Object.entries(meta).map(([k, v]) => `${k}: ${v}`).join('\n')}
+---
+
+${rawText}`;
+
+    await fsExtra.writeFile(filePath, finalContent, 'utf8');
+
+    res.json({
+      id,
+      meta,
+      filePath
+    });
+  } catch (err) {
+    console.error('[FILEBRAIN/UPLOAD]', err.message);
+    res.status(500).json({ error: 'Ingest failed' });
+  }
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  POST /api/filebrain/classify-all

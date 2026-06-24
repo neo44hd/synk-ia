@@ -34,6 +34,10 @@ WORKDIR /build/server
 COPY server/package.json server/package-lock.json ./
 RUN npm ci --omit=dev
 
+# ── Copy server source (index.js, routes/, services/, etc.) ───────────────
+# node_modules is excluded via .dockerignore so the install above is preserved.
+COPY server/ ./
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # STAGE 2: Runtime — imagen ligera con solo lo necesario
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -72,6 +76,10 @@ COPY --from=builder /build/public      /app/public
 COPY --from=builder /build/server       /app/server
 COPY --from=builder /build/node_modules /app/node_modules
 COPY --from=builder /build/package.json /app/package.json
+
+# ── Copiar .env (configuración del servidor) ──────────────────────────────────
+COPY server/.env    /app/server/.env
+COPY node-startup.cjs /app/server/node-startup.cjs
 
 # ── Copiar código del servidor y fuentes React (para dev si se necesita) ───
 COPY src/       /app/src/

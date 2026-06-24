@@ -52,7 +52,7 @@ function execEnv(env = {}) {
 }
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
-const TOKEN = process.env.ADMIN_TOKEN || 'sinkia2026';
+const TOKEN = process.env.ADMIN_TOKEN;
 const DEV_MODE = process.env.DISABLE_TAILSCALE_AUTH === 'true';
 
 router.use((req, res, next) => {
@@ -203,17 +203,6 @@ router.post('/deploy', (req, res) => {
   });
 });
 
-router.post('/exec', (req, res) => {
-  const { command } = req.body;
-  if (!command || typeof command !== 'string') return res.status(400).json({ error: 'Campo "command" requerido' });
-  if (command.length > 500) return res.status(400).json({ error: 'Comando demasiado largo (máx 500 chars)' });
-  try {
-    const output = execSync(command, { timeout: 30_000, cwd: process.cwd(), env: execEnv() }).toString();
-    res.json({ ok: true, output });
-  } catch (err) {
-    res.json({ ok: false, error: err.message, output: err.stdout?.toString() || '', stderr: err.stderr?.toString() || '' });
-  }
-});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DOCKER

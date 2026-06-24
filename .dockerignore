@@ -1,5 +1,7 @@
 # Sync internal
-node_modules
+# Match node_modules at any depth (root AND server/) so host-built (macOS)
+# modules never overwrite the Linux modules installed inside the image.
+**/node_modules
 npm-debug.log*
 
 # Build output (rebuilt inside container)

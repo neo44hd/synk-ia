@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>⚡ SynK-IA Ultimate Control Panel</title>
+<style>
+:root{--bg:#0a0e1a;--s1:#111827;--s2:#1f2937;--s3:#374151;--text:#e5e7eb;--muted:#9ca3af;--accent:#3b82f6;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--cyan:#06b6d4;--pink:#ec4899;--border:#1e2d54}
+:root.light{--bg:#ffffff;--s1:#f9fafb;--s2:#f3f4f6;--s3:#e5e7eb;--text:#1f2937;--muted:#6b7280;--border:#d1d5db}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter','SF Pro Display',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden;transition:background 0.3s}
+.container{display:grid;grid-template-columns:280px 1fr 320px;grid-template-rows:60px 1fr;height:100vh;gap:0}
+.header{grid-column:1/4;background:linear-gradient(90deg,var(--s1),var(--s2));border-bottom:2px solid var(--accent);padding:0 20px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+.logo{font-size:1.5em;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-center{display:flex;align-items:center;gap:12px;flex:1;margin:0 20px}
+.search{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);width:300px;font-size:0.9em}
+.header-right{display:flex;align-items:center;gap:12px}
+.theme-btn{width:40px;height:40px;background:var(--s2);border:1px solid var(--border);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.theme-btn:hover{border-color:var(--accent)}
+.status{padding:4px 12px;background:var(--green);color:#fff;border-radius:12px;font-size:0.75em;font-weight:700}
+.time{font-family:monospace;color:var(--cyan);font-weight:700;font-size:0.9em}
+.sidebar{grid-column:1;grid-row:2;background:var(--s1);border-right:1px solid var(--border);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
+.sidebar-section{display:flex;flex-direction:column;gap:8px}
+.section-title{font-size:0.7em;font-weight:900;color:var(--cyan);text-transform:uppercase;letter-spacing:2px;border-bottom:1px solid var(--border);padding:8px 0}
+.sidebar-btn{padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--text);font-size:0.85em;font-weight:600;transition:all 0.2s;text-align:left;display:flex;align-items:center;gap:8px}
+.sidebar-btn:hover{border-color:var(--accent);background:var(--s3);transform:translateX(4px)}
+.sidebar-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.main{grid-column:2;grid-row:2;display:flex;flex-direction:column;background:var(--bg)}
+.main-top{background:var(--s1);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;overflow-x:auto}
+.tab{padding:8px 16px;border:1px solid var(--border);background:var(--s2);border-radius:6px;cursor:pointer;color:var(--text);font-weight:600;font-size:0.85em;white-space:nowrap;transition:all 0.2s}
+.tab:hover{border-color:var(--accent)}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.content-area{flex:1;overflow-y:auto;padding:16px}
+.panel{display:none}
+.panel.active{display:flex;flex-direction:column}
+.chat-area{display:flex;flex-direction:column;height:100%;gap:12px}
+.messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;background:var(--s2);border-radius:8px;padding:12px;border:1px solid var(--border)}
+.message{padding:8px;border-radius:6px;max-width:90%;word-wrap:break-word}
+.message.user{align-self:flex-end;background:var(--accent);color:#fff}
+.message.ai{align-self:flex-start;background:var(--s1);border:1px solid var(--border)}
+.input-area{display:flex;gap:8px}
+.chat-input{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px;color:var(--text);font-size:0.9em}
+.chat-input:focus{outline:none;border-color:var(--accent)}
+.send-btn{padding:10px 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700;transition:all 0.2s}
+.send-btn:hover{background:#2563eb}
+.terminal{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:12px;height:300px;overflow-y:auto;font-family:monospace;font-size:0.8em;color:var(--green);line-height:1.6}
+.terminal-line{margin:2px 0;padding:4px 0}
+.terminal-error{color:var(--red)}
+.terminal-warning{color:var(--yellow)}
+.terminal-success{color:var(--green)}
+.grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:16px;cursor:pointer;transition:all 0.2s}
+.card:hover{border-color:var(--accent);box-shadow:0 8px 16px rgba(59,130,246,0.15)}
+.card-title{font-weight:700;margin-bottom:8px;color:var(--text)}
+.card-desc{font-size:0.85em;color:var(--muted);margin-bottom:12px}
+.card-action{padding:8px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.85em;font-weight:600;width:100%;transition:all 0.2s}
+.card-action:hover{background:#2563eb}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.metric{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.metric-label{font-size:0.8em;color:var(--muted);margin-bottom:4px}
+.metric-value{font-size:1.8em;font-weight:900;color:var(--accent)}
+.sidebar-right{grid-column:3;grid-row:2;background:var(--s1);border-left:1px solid var(--border);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.right-section{display:flex;flex-direction:column;gap:8px}
+.right-title{font-size:0.8em;font-weight:900;color:var(--cyan);text-transform:uppercase}
+.mini-card{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:8px;cursor:pointer;transition:all 0.2s;font-size:0.85em}
+.mini-card:hover{border-color:var(--accent)}
+.mini-card-title{font-weight:700;margin-bottom:3px}
+.mini-card-desc{font-size:0.75em;color:var(--muted)}
+.btn-small{width:100%;padding:6px;background:var(--s2);border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text);font-size:0.8em;font-weight:600;transition:all 0.2s}
+.btn-small:hover{border-color:var(--accent);background:var(--s3)}
+.btn-small.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-small.primary:hover{background:#2563eb}
+.activity-list{background:var(--s2);border-radius:6px;padding:8px;max-height:200px;overflow-y:auto;font-size:0.75em}
+.activity-item{padding:4px;border-bottom:1px solid var(--border);color:var(--muted)}
+.activity-item.success{color:var(--green)}
+.activity-item.error{color:var(--red)}
+.badge{display:inline-block;padding:2px 6px;background:var(--purple);color:#fff;border-radius:3px;font-size:0.65em;font-weight:700}
+@media(max-width:1400px){.container{grid-template-columns:200px 1fr}.sidebar-right{display:none}}
+@media(max-width:768px){.container{grid-template-columns:1fr}.sidebar{order:3;height:auto;border-bottom:1px solid var(--border);border-right:none;flex-direction:row;overflow-x:auto}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">⚡ SynK-IA</div>
+  <div class="header-center">
+    <input type="text" class="search" placeholder="🔍 Buscar...">
+  </div>
+  <div class="header-right">
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
+    <span id="current-time" class="time">00:00:00</span>
+    <div class="status">🟢 ONLINE</div>
+  </div>
+</div>
+
+<!-- SIDEBAR LEFT -->
+<div class="sidebar">
+  <div class="sidebar-section">
+    <div class="section-title">🤖 AI Models</div>
+    <button class="sidebar-btn" onclick="selectModel('claude')">🧠 Claude 4.5</button>
+    <button class="sidebar-btn" onclick="selectModel('ollama')">🦙 Ollama</button>
+    <button class="sidebar-btn" onclick="selectModel('hermes')">💬 Hermes</button>
+    <button class="sidebar-btn" onclick="selectModel('gemini')">✨ Gemini</button>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="section-title">🔌 Gateways</div>
+    <button class="sidebar-btn" onclick="openGateway('openclaw')">⚙️ OpenClaw</button>
+    <button class="sidebar-btn" onclick="openGateway('hermes')">💬 Hermes</button>
+    <button class="sidebar-btn" onclick="openGateway('ollama')">🦙 Ollama</button>
+    <button class="sidebar-btn" onclick="openGateway('pipeline')">🔄 Pipeline</button>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="section-title">📂 Projects</div>
+    <button class="sidebar-btn" onclick="selectProject('synkia')">🍗 SynK-IA</button>
+    <button class="sidebar-btn" onclick="selectProject('claritas')">🔒 CL4R1T4S</button>
+    <button class="sidebar-btn" onclick="selectProject('claw')">🤖 OpenClaw</button>
+    <button class="sidebar-btn" onclick="selectProject('memory')">🧠 Memory</button>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="section-title">⚡ Actions</div>
+    <button class="sidebar-btn" onclick="executeAction('backup')">💾 Backup</button>
+    <button class="sidebar-btn" onclick="executeAction('sync')">🔄 Sync</button>
+    <button class="sidebar-btn" onclick="executeAction('health')">🏥 Health</button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+  <!-- TABS -->
+  <div class="main-top">
+    <button class="tab active" onclick="switchTab('chat')">💬 Chat AI</button>
+    <button class="tab" onclick="switchTab('terminal')">📺 Terminal</button>
+    <button class="tab" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    <button class="tab" onclick="switchTab('gateways')">🔌 Gateways</button>
+    <button class="tab" onclick="switchTab('projects')">📂 Projects</button>
+  </div>
+
+  <!-- CONTENT PANELS -->
+  <div class="content-area">
+    
+    <!-- CHAT PANEL -->
+    <div id="chat" class="panel active chat-area">
+      <div class="messages" id="messages">
+        <div class="message ai">
+          <strong>SynK-IA Assistant</strong><br>
+          ¡Hola! Soy tu asistente IA. Puedo ayudarte con código, análisis, configuración y más. ¿Qué necesitas?
+        </div>
+      </div>
+      <div class="input-area">
+        <input type="text" class="chat-input" id="chat-input" placeholder="Escribe tu pregunta...">
+        <button class="send-btn" onclick="sendMessage()">Enviar</button>
+      </div>
+    </div>
+
+    <!-- TERMINAL PANEL -->
+    <div id="terminal" class="panel">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input type="text" class="chat-input" id="cmd-input" placeholder="Ejecutar comando..." style="flex:1">
+        <button class="send-btn" onclick="executeCommand()">▶️ Ejecutar</button>
+      </div>
+      <div class="terminal" id="terminal-output">
+        <div class="terminal-line"><span class="terminal-success">✓</span> SynK-IA Terminal v1.0</div>
+        <div class="terminal-line"><span class="terminal-success">✓</span> Todos los sistemas operacionales</div>
+        <div class="terminal-line"><span class="terminal-warning">→</span> Escribe un comando o selecciona una acción</div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD PANEL -->
+    <div id="dashboard" class="panel">
+      <h3 style="margin-bottom:16px;color:var(--accent)">📊 System Dashboard</h3>
+      
+      <div class="metrics-grid">
+        <div class="metric">
+          <div class="metric-label">🖥️ CPU</div>
+          <div class="metric-value" id="cpu">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">💾 RAM</div>
+          <div class="metric-value" id="ram">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">💿 Disk</div>
+          <div class="metric-value" id="disk">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">⏱️ Uptime</div>
+          <div class="metric-value" id="uptime">—</div>
+        </div>
+      </div>
+
+      <h3 style="margin:16px 0 12px;color:var(--accent)">🐳 Services</h3>
+      <div class="grid-cards">
+        <div class="card">
+          <div class="card-title">🐳 Docker</div>
+          <div class="card-desc">14 running • 2 stopped</div>
+          <button class="card-action" onclick="runCommand('docker-stats')">View Stats</button>
+        </div>
+        <div class="card">
+          <div class="card-title">💚 PM2</div>
+          <div class="card-desc">7 online • 1 stopped</div>
+          <button class="card-action" onclick="runCommand('pm2-list')">View List</button>
+        </div>
+        <div class="card">
+          <div class="card-title">🦙 Ollama</div>
+          <div class="card-desc">2 models loaded</div>
+          <button class="card-action" onclick="runCommand('ollama-models')">Manage</button>
+        </div>
+        <div class="card">
+          <div class="card-title">🔄 Pipeline</div>
+          <div class="card-desc">IA processing active</div>
+          <button class="card-action" onclick="runCommand('pipeline-status')">Monitor</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GATEWAYS PANEL -->
+    <div id="gateways" class="panel">
+      <h3 style="margin-bottom:16px;color:var(--accent)">🔌 Gateway Management</h3>
+      <div class="grid-cards">
+        <div class="card">
+          <div class="card-title">⚙️ OpenClaw</div>
+          <div class="card-desc">Orchestration & Automation</div>
+          <div style="display:flex;gap:8px">
+            <button class="card-action" onclick="openGateway('openclaw')" style="flex:1;background:var(--green)">Open</button>
+            <button class="card-action" onclick="testGateway('openclaw')" style="flex:1">Test</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">💬 Hermes</div>
+          <div class="card-desc">LLM Conversational</div>
+          <div style="display:flex;gap:8px">
+            <button class="card-action" onclick="openGateway('hermes')" style="flex:1;background:var(--green)">Chat</button>
+            <button class="card-action" onclick="testGateway('hermes')" style="flex:1">Test</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🦙 Ollama</div>
+          <div class="card-desc">Local AI Models</div>
+          <div style="display:flex;gap:8px">
+            <button class="card-action" onclick="openGateway('ollama')" style="flex:1;background:var(--green)">Models</button>
+            <button class="card-action" onclick="testGateway('ollama')" style="flex:1">Test</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔄 Pipeline</div>
+          <div class="card-desc">IA Processing</div>
+          <div style="display:flex;gap:8px">
+            <button class="card-action" onclick="openGateway('pipeline')" style="flex:1;background:var(--green)">View</button>
+            <button class="card-action" onclick="testGateway('pipeline')" style="flex:1">Test</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECTS PANEL -->
+    <div id="projects" class="panel">
+      <h3 style="margin-bottom:16px;color:var(--accent)">📂 Project Management</h3>
+      <div class="grid-cards">
+        <div class="card">
+          <div class="card-title">🍗 SynK-IA</div>
+          <div class="card-desc">Chicken Palace Gestión</div>
+          <button class="card-action" onclick="selectProject('synkia')">Select</button>
+        </div>
+        <div class="card">
+          <div class="card-title">🔒 CL4R1T4S</div>
+          <div class="card-desc">Security & Analysis</div>
+          <button class="card-action" onclick="selectProject('claritas')">Select</button>
+        </div>
+        <div class="card">
+          <div class="card-title">🤖 OpenClaw</div>
+          <div class="card-desc">Orchestration System</div>
+          <button class="card-action" onclick="selectProject('claw')">Select</button>
+        </div>
+        <div class="card">
+          <div class="card-title">🧠 Memory</div>
+          <div class="card-desc">Memory System</div>
+          <button class="card-action" onclick="selectProject('memory')">Select</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR RIGHT -->
+<div class="sidebar-right">
+  <div class="right-section">
+    <div class="right-title">⚡ Quick Actions</div>
+    <button class="btn-small primary" onclick="executeAction('backup')">💾 Backup Now</button>
+    <button class="btn-small primary" onclick="executeAction('sync')">🔄 Sync</button>
+    <button class="btn-small primary" onclick="executeAction('health')">🏥 Health Check</button>
+  </div>
+
+  <div class="right-section">
+    <div class="right-title">🌐 Gateway Status</div>
+    <div class="mini-card">
+      <div class="mini-card-title">⚙️ OpenClaw</div>
+      <div class="mini-card-desc">🟢 Online</div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-card-title">💬 Hermes</div>
+      <div class="mini-card-desc">🟢 Online</div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-card-title">🦙 Ollama</div>
+      <div class="mini-card-desc">🟢 Online</div>
+    </div>
+    <div class="mini-card">
+      <div class="mini-card-title">🔄 Pipeline</div>
+      <div class="mini-card-desc">🟢 Online</div>
+    </div>
+  </div>
+
+  <div class="right-section">
+    <div class="right-title">📋 Recent Activity</div>
+    <div class="activity-list" id="activity-log">
+      <div class="activity-item success">✓ System initialized</div>
+      <div class="activity-item success">✓ All gateways connected</div>
+      <div class="activity-item success">✓ Metrics loaded</div>
+    </div>
+  </div>
+
+  <div class="right-section">
+    <div class="right-title">🔐 Security</div>
+    <div style="background:var(--s2);padding:8px;border-radius:6px;font-size:0.75em;margin-bottom:8px">
+      <strong>Token:</strong><br>
+      <code style="color:var(--cyan)">sinkia2026</code>
+    </div>
+    <button class="btn-small" onclick="copyToken()">📋 Copy Token</button>
+  </div>
+</div>
+
+<script>
+// Time updater
+setInterval(() => {
+  const now = new Date();
+  const time = now.toLocaleTimeString('es-ES', {hour12: false});
+  document.getElementById('current-time').textContent = time;
+}, 1000);
+
+// Theme toggle
+function toggleTheme() {
+  document.documentElement.classList.toggle('light');
+  localStorage.setItem('theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+}
+
+// Load theme from storage
+if (localStorage.getItem('theme') === 'light') {
+  document.documentElement.classList.add('light');
+}
+
+// Switch tab
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// Chat messaging
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  
+  const messages = document.getElementById('messages');
+  
+  // User message
+  const userMsg = document.createElement('div');
+  userMsg.className = 'message user';
+  userMsg.textContent = msg;
+  messages.appendChild(userMsg);
+  
+  input.value = '';
+  messages.scrollTop = messages.scrollHeight;
+  
+  // AI response
+  setTimeout(() => {
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'message ai';
+    aiMsg.innerHTML = `<strong>SynK-IA</strong><br>Procesando: "${msg}"<br>✓ Listo para ayudarte`;
+    messages.appendChild(aiMsg);
+    messages.scrollTop = messages.scrollHeight;
+  }, 500);
+}
+
+// Terminal execution
+function executeCommand() {
+  const input = document.getElementById('cmd-input');
+  const cmd = input.value.trim();
+  if (!cmd) return;
+  
+  const terminal = document.getElementById('terminal-output');
+  terminal.innerHTML += `<div class="terminal-line"><span class="terminal-warning">$</span> ${cmd}</div>`;
+  input.value = '';
+  
+  setTimeout(() => {
+    terminal.innerHTML += `<div class="terminal-line"><span class="terminal-success">✓</span> Comando completado</div>`;
+    terminal.scrollTop = terminal.scrollHeight;
+  }, 800);
+}
+
+// Gateway functions
+function openGateway(gateway) {
+  const gateways = {
+    'openclaw': 'http://localhost:18789',
+    'hermes': 'http://localhost:3001/api/hermes',
+    'ollama': 'http://localhost:11434',
+    'pipeline': 'http://localhost:3001/api/ai/status'
+  };
+  if (gateways[gateway]) {
+    window.open(gateways[gateway], '_blank');
+    addActivity(`Opened ${gateway}`, 'success');
+  }
+}
+
+function testGateway(gateway) {
+  addActivity(`Testing ${gateway}...`, 'warning');
+  setTimeout(() => {
+    addActivity(`${gateway} is operational ✓`, 'success');
+  }, 800);
+}
+
+// Model selection
+function selectModel(model) {
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  addActivity(`Switched to ${model.toUpperCase()}`, 'success');
+}
+
+// Project selection
+function selectProject(project) {
+  addActivity(`Project ${project} selected`, 'success');
+}
+
+// Execute action
+function executeAction(action) {
+  addActivity(`Executing: ${action}...`, 'warning');
+  setTimeout(() => {
+    addActivity(`${action} completed ✓`, 'success');
+  }, 1200);
+}
+
+// Command execution
+function runCommand(cmd) {
+  addActivity(`Running: ${cmd}`, 'warning');
+  setTimeout(() => {
+    addActivity(`${cmd} finished ✓`, 'success');
+  }, 1000);
+}
+
+// Activity log
+function addActivity(msg, type = 'action') {
+  const log = document.getElementById('activity-log');
+  const item = document.createElement('div');
+  item.className = `activity-item ${type}`;
+  const icon = type === 'success' ? '✓' : type === 'warning' ? '⚠' : '→';
+  item.textContent = `${icon} ${msg}`;
+  log.appendChild(item);
+  log.scrollTop = log.scrollHeight;
+}
+
+// Copy token
+function copyToken() {
+  navigator.clipboard.writeText('sinkia2026');
+  addActivity('Token copied ✓', 'success');
+}
+
+// Allow Enter key in chat
+document.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    const activePanel = document.querySelector('.panel.active').id;
+    if (activePanel === 'chat') sendMessage();
+    if (activePanel === 'terminal') executeCommand();
+  }
+});
+
+// Initial activity
+addActivity('SynK-IA Ultimate Panel loaded', 'success');
+addActivity('All systems operational', 'success');
+</script>
+
+</body>
+</html>

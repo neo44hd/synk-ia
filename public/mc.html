@@ -1931,6 +1931,39 @@ document.addEventListener('keydown', (e) => {
 
 // Close dropdowns on tab switch
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => closeAllDropdowns()));
+// ════════════════════════════════════════════════════════════════
+//  INICIALIZACIÓN AL CARGAR LA PÁGINA
+// ════════════════════════════════════════════════════════════════
+
+// Inicializar cuando el DOM está listo
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+async function init() {
+  console.log('🚀 Inicializando Mission Control...');
+  try {
+    // Cargar datos iniciales del dashboard
+    await loadSystemMetrics();
+    await loadServices();
+    
+    // Mostrar primera pestaña (dashboard)
+    showTab('dash');
+    
+    // Actualizar cada 10 segundos
+    setInterval(() => {
+      loadSystemMetrics().catch(console.error);
+      loadServices().catch(console.error);
+    }, 10000);
+    
+    console.log('✅ Mission Control iniciado correctamente');
+  } catch (e) {
+    console.error('❌ Error inicializando:', e);
+  }
+}
+
 </script>
 </body>
 </html>

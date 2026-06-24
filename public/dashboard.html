@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🚀 SynK-IA Dashboard — Control Total</title>
+<style>
+:root{--bg:#0a0e1a;--s1:#111827;--s2:#1f2937;--s3:#374151;--text:#e5e7eb;--muted:#9ca3af;--accent:#3b82f6;--green:#10b981;--yellow:#f59e0b;--red:#ef4444;--purple:#8b5cf6;--cyan:#06b6d4;--border:#1e2d54}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{display:flex;height:100vh}
+.sidebar{width:280px;background:linear-gradient(180deg,var(--s1),var(--s2));border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px;overflow-y:auto}
+.sidebar-header{font-size:1.4em;font-weight:800;margin-bottom:20px;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sidebar-section{margin-bottom:20px}
+.sidebar-title{font-size:0.7em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 10px}
+.nav-item{padding:10px 12px;margin:4px 0;border-radius:8px;cursor:pointer;transition:all 0.2s;color:var(--text);border:1px solid transparent;display:flex;align-items:center;gap:8px;font-size:0.9em}
+.nav-item:hover{background:var(--s3);border-color:var(--accent)}
+.nav-item.active{background:var(--accent);color:#fff}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.header{background:linear-gradient(135deg,var(--s1),var(--s2));border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:1.3em;font-weight:700}
+.token-badge{background:var(--s2);border:1px solid var(--border);padding:6px 12px;border-radius:6px;font-size:0.75em;font-family:monospace;color:var(--cyan)}
+.content{flex:1;overflow:auto;padding:20px;display:none}
+.content.active{display:block}
+.gateway-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:20px}
+.gateway-card{background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--border);border-radius:12px;padding:20px;transition:all 0.3s;cursor:pointer;position:relative;overflow:hidden}
+.gateway-card:hover{border-color:var(--accent);box-shadow:0 12px 32px rgba(59,130,246,0.2);transform:translateY(-4px)}
+.gateway-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--cyan))}
+.gateway-icon{font-size:2.5em;margin-bottom:12px}
+.gateway-name{font-size:1.1em;font-weight:700;margin-bottom:8px}
+.gateway-desc{font-size:0.85em;color:var(--muted);margin-bottom:16px;line-height:1.5}
+.gateway-status{display:flex;align-items:center;gap:6px;font-size:0.8em;margin-bottom:12px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.gateway-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:8px 14px;border:1px solid var(--border);border-radius:6px;background:var(--s2);color:var(--text);cursor:pointer;font-size:0.8em;font-weight:600;transition:all 0.2s;text-decoration:none}
+.btn:hover{border-color:var(--accent);background:var(--s3)}
+.btn-primary{background:var(--accent);color:#fff;border:none}
+.btn-primary:hover{background:#2563eb}
+.btn-icon{flex:1;min-height:36px;display:flex;align-items:center;justify-content:center}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:20px}
+.metric-card{background:var(--s2);border-radius:8px;padding:16px;border-left:3px solid var(--accent)}
+.metric-label{font-size:0.75em;color:var(--muted);text-transform:uppercase}
+.metric-value{font-size:1.8em;font-weight:800;color:var(--accent);margin-top:8px}
+.section-title{font-size:1.1em;font-weight:700;margin:24px 0 16px;color:var(--accent);display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+.alert{background:rgba(16,185,129,0.1);border-left:3px solid var(--green);border-radius:6px;padding:12px;margin-bottom:12px;font-size:0.85em}
+.desktop-shortcut{text-align:center;padding:24px;margin-top:20px;background:var(--s2);border-radius:12px;border:2px dashed var(--border)}
+.desktop-shortcut h3{margin-bottom:12px;color:var(--accent)}
+.desktop-shortcut code{background:var(--s1);padding:8px 12px;border-radius:6px;display:block;margin:12px 0;font-size:0.8em;color:var(--cyan)}
+.token-display{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:12px;margin:12px 0;font-family:monospace;font-size:0.8em;color:var(--green);word-break:break-all;position:relative}
+.copy-btn{position:absolute;top:10px;right:10px;padding:4px 8px;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:0.7em}
+@media(max-width:1024px){.container{flex-direction:column}.sidebar{width:100%;height:auto;border-bottom:1px solid var(--border);border-right:none;overflow-x:auto;display:flex;flex-direction:row;padding:12px}.sidebar-section{margin:0 20px 0 0}.content{padding:12px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">🚀 SynK-IA</div>
+    
+    <div class="sidebar-section">
+      <div class="sidebar-title">GATEWAYS</div>
+      <div class="nav-item active" onclick="showSection('gateways')">🔌 Todos los Gateways</div>
+      <div class="nav-item" onclick="showSection('openclaw')">⚙️ OpenClaw</div>
+      <div class="nav-item" onclick="showSection('hermes')">💬 Hermes</div>
+      <div class="nav-item" onclick="showSection('ollama')">🦙 Ollama</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">CONTROL</div>
+      <div class="nav-item" onclick="showSection('dashboard')">📊 Dashboard</div>
+      <div class="nav-item" onclick="showSection('brain')">🧠 Brain</div>
+      <div class="nav-item" onclick="showSection('system')">🔧 Sistema</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">INFO</div>
+      <div class="nav-item" onclick="showSection('token')">🔐 Token</div>
+      <div class="nav-item" onclick="showSection('docs')">📖 Documentación</div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <!-- HEADER -->
+    <div class="header">
+      <h1 id="page-title">🔌 Todos los Gateways</h1>
+      <div class="token-badge" id="status">🟢 Online</div>
+    </div>
+
+    <!-- GATEWAYS -->
+    <div id="gateways" class="content active">
+      <div class="section-title">🌐 Todos los Gateways Disponibles</div>
+      <div class="gateway-grid" id="gateways-grid"></div>
+    </div>
+
+    <!-- OPENCLAW -->
+    <div id="openclaw" class="content">
+      <div class="section-title">⚙️ Gateway OpenClaw</div>
+      <div class="gateway-grid">
+        <div class="gateway-card">
+          <div class="gateway-icon">⚙️</div>
+          <div class="gateway-name">OpenClaw Gateway</div>
+          <div class="gateway-desc">Sistema de orquestación automática y ejecución de tareas complejas</div>
+          <div class="gateway-status"><span class="status-dot"></span> Online</div>
+          <div class="gateway-actions">
+            <button class="btn btn-primary btn-icon" onclick="openURL('http://localhost:18789')">🌐 Abrir</button>
+            <button class="btn btn-icon" onclick="testGateway('openclaw')">🧪 Test</button>
+            <button class="btn btn-icon" onclick="copyToClipboard('http://localhost:18789')">📋 URL</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERMES -->
+    <div id="hermes" class="content">
+      <div class="section-title">💬 Gateway Hermes</div>
+      <div class="gateway-grid">
+        <div class="gateway-card">
+          <div class="gateway-icon">💬</div>
+          <div class="gateway-name">Hermes Gateway</div>
+          <div class="gateway-desc">LLM conversacional con capacidades de razonamiento avanzado</div>
+          <div class="gateway-status"><span class="status-dot"></span> Online</div>
+          <div class="gateway-actions">
+            <button class="btn btn-primary btn-icon" onclick="openURL('http://localhost:3001/api/hermes')">💬 Chat</button>
+            <button class="btn btn-icon" onclick="testGateway('hermes')">🧪 Test</button>
+            <button class="btn btn-icon" onclick="copyToClipboard('http://localhost:3001/api/hermes')">📋 URL</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OLLAMA -->
+    <div id="ollama" class="content">
+      <div class="section-title">🦙 Gateway Ollama</div>
+      <div class="gateway-grid">
+        <div class="gateway-card">
+          <div class="gateway-icon">🦙</div>
+          <div class="gateway-name">Ollama Gateway</div>
+          <div class="gateway-desc">Modelos de IA locales: qwen2.5-coder:7b, llama3.2:3b y más</div>
+          <div class="gateway-status"><span class="status-dot"></span> Online</div>
+          <div class="gateway-actions">
+            <button class="btn btn-primary btn-icon" onclick="openURL('http://localhost:11434')">🎯 Modelos</button>
+            <button class="btn btn-icon" onclick="testGateway('ollama')">🧪 Test</button>
+            <button class="btn btn-icon" onclick="copyToClipboard('http://localhost:11434')">📋 URL</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="content">
+      <div class="section-title">📊 Dashboard del Sistema</div>
+      <div class="metrics" id="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">🖥️ Hostname</div>
+          <div class="metric-value" id="hostname">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">⏱️ Uptime</div>
+          <div class="metric-value" id="uptime">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">🧠 RAM</div>
+          <div class="metric-value" id="ram">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">💾 Disco</div>
+          <div class="metric-value" id="disk">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">🐳 Docker</div>
+          <div class="metric-value" id="docker">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">💚 PM2</div>
+          <div class="metric-value" id="pm2">—</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="loadDashboard()">🔄 Actualizar</button>
+    </div>
+
+    <!-- BRAIN -->
+    <div id="brain" class="content">
+      <div class="section-title">🧠 Control Brain</div>
+      <div class="alert">Brain está integrado en el sistema. Usa los gateways para interactuar.</div>
+      <button class="btn btn-primary" onclick="openURL('http://localhost:3001/synkia-unified.html')">🧠 Ir al Panel Brain</button>
+    </div>
+
+    <!-- SISTEMA -->
+    <div id="system" class="content">
+      <div class="section-title">🔧 Control del Sistema</div>
+      <div class="gateway-grid">
+        <div class="gateway-card">
+          <div class="gateway-icon">🔄</div>
+          <div class="gateway-name">Mission Control</div>
+          <div class="gateway-desc">Panel completo de operaciones y monitoreo</div>
+          <div class="gateway-actions">
+            <button class="btn btn-primary btn-icon" onclick="openURL('http://localhost:3001/mc.html')">🚀 Abrir</button>
+          </div>
+        </div>
+        <div class="gateway-card">
+          <div class="gateway-icon">🎯</div>
+          <div class="gateway-name">Panel Unificado</div>
+          <div class="gateway-desc">Control integrado + Brain + Gateways</div>
+          <div class="gateway-actions">
+            <button class="btn btn-primary btn-icon" onclick="openURL('http://localhost:3001/synkia-unified.html')">🌐 Abrir</button>
+          </div>
+        </div>
+        <div class="gateway-card">
+          <div class="gateway-icon">⚡</div>
+          <div class="gateway-name">Launcher Rápido</div>
+          <div class="gateway-desc">Accesos directos a todos los servicios</div>
+          <div class="gateway-actions">
+            <button class="btn btn-primary btn-icon" onclick="openURL('http://localhost:3001/launcher.html')">🚀 Abrir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOKEN -->
+    <div id="token" class="content">
+      <div class="section-title">🔐 Token de Acceso Único</div>
+      <div class="alert">✅ Token válido para TODOS los endpoints</div>
+      <div style="margin-top:20px">
+        <div style="font-weight:600;margin-bottom:8px">Token Unificado:</div>
+        <div class="token-display" id="token-display">
+          sinkia2026
+          <button class="copy-btn" onclick="copyToken()">Copiar</button>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding:12px;background:var(--s2);border-radius:8px;font-size:0.85em;line-height:1.6">
+        <strong>Uso:</strong><br>
+        Agregá este header a todas tus solicitudes:
+        <code style="display:block;margin-top:8px">x-admin-token: sinkia2026</code>
+        <br>
+        <strong>Válido para:</strong><br>
+        • OpenClaw Gateway<br>
+        • Hermes LLM<br>
+        • Ollama<br>
+        • Mission Control<br>
+        • Brain<br>
+        • Todos los endpoints /api/admin/*
+      </div>
+    </div>
+
+    <!-- DOCS -->
+    <div id="docs" class="content">
+      <div class="section-title">📖 Documentación y Accesos</div>
+      
+      <div style="margin-bottom:24px">
+        <h3 style="color:var(--accent);margin-bottom:12px">🌐 URLs Principales</h3>
+        <div style="background:var(--s2);border-radius:8px;padding:12px;font-size:0.85em;line-height:1.8">
+          <div><strong>Este Dashboard:</strong> http://localhost:3001/dashboard.html</div>
+          <div><strong>Panel Unificado:</strong> http://localhost:3001/synkia-unified.html</div>
+          <div><strong>Mission Control:</strong> http://localhost:3001/mc.html</div>
+          <div><strong>Launcher:</strong> http://localhost:3001/launcher.html</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px">
+        <h3 style="color:var(--accent);margin-bottom:12px">🔌 Gateways</h3>
+        <div style="background:var(--s2);border-radius:8px;padding:12px;font-size:0.85em;line-height:1.8">
+          <div><strong>OpenClaw:</strong> http://localhost:18789</div>
+          <div><strong>Hermes:</strong> http://localhost:3001/api/hermes</div>
+          <div><strong>Ollama:</strong> http://localhost:11434</div>
+          <div><strong>LLM Gateway:</strong> http://localhost:3001/api/ai/status</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px">
+        <h3 style="color:var(--accent);margin-bottom:12px">🔐 Autenticación</h3>
+        <div style="background:var(--s2);border-radius:8px;padding:12px;font-size:0.85em;line-height:1.8">
+          <div><strong>Token Global:</strong> sinkia2026</div>
+          <div><strong>Header:</strong> x-admin-token: sinkia2026</div>
+          <div><strong>Scope:</strong> Admin (todos los endpoints)</div>
+        </div>
+      </div>
+
+      <div class="desktop-shortcut">
+        <h3>🖥️ Crear Acceso en Escritorio</h3>
+        <p style="margin:12px 0;font-size:0.9em;color:var(--muted)">Ejecuta en terminal:</p>
+        <code>ln -s /Users/davidnows/sinkia-next/public/dashboard.html ~/Desktop/SynKIA.html</code>
+        <p style="margin-top:12px;font-size:0.85em;color:var(--muted)">Luego abre en navegador: http://localhost:3001/dashboard.html</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN = 'sinkia2026';
+const BASE = 'http://localhost:3001';
+const GATEWAYS = [
+  { name: 'OpenClaw', icon: '⚙️', desc: 'Sistema de orquestación automática', url: 'http://localhost:18789', api: '/api/admin/system' },
+  { name: 'Hermes LLM', icon: '💬', desc: 'LLM conversacional avanzado', url: 'http://localhost:3001/api/hermes', api: '/api/ai/status' },
+  { name: 'Ollama', icon: '🦙', desc: 'Modelos de IA locales', url: 'http://localhost:11434', api: '/api/admin/services' },
+  { name: 'LLM Gateway', icon: '🤖', desc: 'Gateway unificado de LLMs', url: 'http://localhost:3001/api/ai/status', api: '/api/ai/status' },
+];
+
+function showSection(id) {
+  document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  const titles = {
+    gateways: '🔌 Todos los Gateways',
+    openclaw: '⚙️ Gateway OpenClaw',
+    hermes: '💬 Gateway Hermes',
+    ollama: '🦙 Gateway Ollama',
+    dashboard: '📊 Dashboard del Sistema',
+    brain: '🧠 Control Brain',
+    system: '🔧 Control del Sistema',
+    token: '🔐 Token de Acceso',
+    docs: '📖 Documentación'
+  };
+  document.getElementById('page-title').textContent = titles[id] || id;
+  
+  if (id === 'gateways') renderGateways();
+  if (id === 'dashboard') loadDashboard();
+}
+
+function renderGateways() {
+  const html = GATEWAYS.map(g => `
+    <div class="gateway-card">
+      <div class="gateway-icon">${g.icon}</div>
+      <div class="gateway-name">${g.name}</div>
+      <div class="gateway-desc">${g.desc}</div>
+      <div class="gateway-status"><span class="status-dot"></span> Online</div>
+      <div class="gateway-actions">
+        <button class="btn btn-primary btn-icon" onclick="openURL('${g.url}')">🌐 Abrir</button>
+        <button class="btn btn-icon" onclick="testGateway('${g.name}')">🧪 Test</button>
+        <button class="btn btn-icon" onclick="copyToClipboard('${g.url}')">📋 URL</button>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('gateways-grid').innerHTML = html;
+}
+
+async function loadDashboard() {
+  try {
+    const sys = await fetch(`${BASE}/api/admin/system`, {
+      headers: { 'x-admin-token': TOKEN }
+    }).then(r => r.json());
+    
+    const svc = await fetch(`${BASE}/api/admin/services`, {
+      headers: { 'x-admin-token': TOKEN }
+    }).then(r => r.json());
+    
+    document.getElementById('hostname').textContent = sys.hostname || '—';
+    const upHours = Math.floor(sys.uptime / 3600);
+    const upMins = Math.floor((sys.uptime % 3600) / 60);
+    document.getElementById('uptime').textContent = `${upHours}h ${upMins}m`;
+    document.getElementById('ram').textContent = sys.memory?.pct ? Math.round(sys.memory.pct) + '%' : '—';
+    document.getElementById('disk').textContent = sys.disk?.pct ? Math.round(sys.disk.pct) + '%' : '—';
+    document.getElementById('docker').textContent = svc.docker?.length || 0;
+    document.getElementById('pm2').textContent = svc.pm2?.length || 0;
+  } catch(e) {
+    console.error('Error cargando dashboard:', e);
+  }
+}
+
+function openURL(url) {
+  window.open(url, '_blank');
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text);
+  alert('Copiado: ' + text);
+}
+
+function copyToken() {
+  navigator.clipboard.writeText(TOKEN);
+  alert('Token copiado: ' + TOKEN);
+}
+
+async function testGateway(name) {
+  try {
+    const res = await fetch(`${BASE}/api/admin/system`, {
+      headers: { 'x-admin-token': TOKEN }
+    });
+    if (res.ok) {
+      alert(`✅ ${name} respondiendo correctamente`);
+    } else {
+      alert(`⚠️ ${name} respondió con estado ${res.status}`);
+    }
+  } catch(e) {
+    alert(`❌ Error probando ${name}: ${e.message}`);
+  }
+}
+
+// Init
+renderGateways();
+loadDashboard();
+setInterval(loadDashboard, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "Test Invoice",
+  "amount": 1250.5,
+  "date": "2026-06-24",
+  "vendor": "Test Supplier Inc."
+}

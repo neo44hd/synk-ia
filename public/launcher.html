@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🚀 SynK-IA Launcher — Mando a Distancia</title>
+<style>
+:root{--bg:#0a0e1a;--s1:#111827;--s2:#1f2937;--text:#e5e7eb;--accent:#3b82f6;--green:#10b981;--cyan:#06b6d4;--purple:#8b5cf6;--border:#1e2d54}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;background:linear-gradient(135deg,var(--bg),#1a2f4a);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.container{max-width:1200px;width:100%;animation:fadeIn 0.6s ease}
+.header{text-align:center;margin-bottom:50px}
+.header h1{font-size:3em;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:10px}
+.header p{color:#9ca3af;font-size:1.1em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-bottom:30px}
+.card{background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--border);border-radius:14px;padding:24px;cursor:pointer;transition:all 0.3s;text-decoration:none;display:flex;flex-direction:column;color:inherit}
+.card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 12px 40px rgba(59,130,246,0.2)}
+.card.primary:hover{box-shadow:0 12px 40px rgba(59,130,246,0.3)}
+.card-icon{font-size:2.5em;margin-bottom:12px}
+.card-title{font-size:1.2em;font-weight:700;margin-bottom:8px}
+.card-desc{font-size:0.9em;color:#9ca3af;margin-bottom:16px;flex-grow:1}
+.card-status{font-size:0.75em;padding:4px 8px;border-radius:6px;display:inline-block;width:fit-content}
+.status-online{background:rgba(16,185,129,0.15);color:var(--green)}
+.status-offline{background:rgba(239,68,68,0.15);color:#ef4444}
+.btn{padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--s2);color:var(--text);cursor:pointer;font-size:0.85em;font-weight:600;transition:all 0.2s;text-decoration:none;display:inline-block;text-align:center}
+.btn:hover{border-color:var(--accent);background:var(--s1)}
+.btn-primary{background:var(--accent);color:#fff;border:none}
+.btn-primary:hover{background:#2563eb}
+.footer{text-align:center;color:#6b7280;font-size:0.85em;margin-top:40px;padding-top:20px;border-top:1px solid var(--border)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:768px){.header h1{font-size:2em}.grid{grid-template-columns:1fr}.card{padding:16px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🚀 SynK-IA Control</h1>
+    <p>Centro de mando — Acceso a todos tus servicios</p>
+  </div>
+
+  <div class="grid">
+    <!-- MISSION CONTROL -->
+    <a href="/mc.html" class="card primary" style="grid-column:1/-1">
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Mission Control — Panel Completo</div>
+      <div class="card-desc">Dashboard integral con control total de Docker, PM2, Ollama, Agentes IA, Pipeline, red y herramientas de reparación.</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:auto">
+        <span class="card-status status-online">🟢 Online</span>
+        <button class="btn btn-primary" onclick="window.location.href='/mc.html'; return false" style="margin-left:auto">Acceder →</button>
+      </div>
+    </a>
+
+    <!-- DASHBOARD -->
+    <a href="/" class="card">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Dashboard Principal</div>
+      <div class="card-desc">Página principal de SynK-IA con estado general del sistema.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/'; return false">Ir →</button>
+    </a>
+
+    <!-- DOCKER -->
+    <a href="/mc.html#docker" class="card">
+      <div class="card-icon">🐳</div>
+      <div class="card-title">Docker</div>
+      <div class="card-desc">Gestiona contenedores, reinicia servicios, visualiza logs en tiempo real.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; setTimeout(() => {document.querySelector('[onclick*=docker]').click()}, 500); return false">Ir →</button>
+    </a>
+
+    <!-- PM2 / PROCESOS -->
+    <a href="/mc.html#repair" class="card">
+      <div class="card-icon">💚</div>
+      <div class="card-title">Procesos PM2</div>
+      <div class="card-desc">Controla procesos, reinicia servicios, monitorea CPU y memoria.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; return false">Ir →</button>
+    </a>
+
+    <!-- OLLAMA / MODELOS -->
+    <a href="/mc.html#ollama" class="card">
+      <div class="card-icon">🦙</div>
+      <div class="card-title">Modelos Ollama</div>
+      <div class="card-desc">Descarga, gestiona y prueba modelos de IA locales.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; return false">Ir →</button>
+    </a>
+
+    <!-- AGENTES IA -->
+    <a href="/mc.html#agents" class="card">
+      <div class="card-icon">🤖</div>
+      <div class="card-title">Agentes IA</div>
+      <div class="card-desc">Hermes, OpenCode y otros agentes especializados. Tests interactivos.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; return false">Ir →</button>
+    </a>
+
+    <!-- PIPELINE IA -->
+    <a href="/mc.html#pipeline" class="card">
+      <div class="card-icon">🔄</div>
+      <div class="card-title">Pipeline IA</div>
+      <div class="card-desc">Fast Path/Deep Path, modelos en pipeline, tests personalizados.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; return false">Ir →</button>
+    </a>
+
+    <!-- RED / NETWORKING -->
+    <a href="/mc.html#network" class="card">
+      <div class="card-icon">🌐</div>
+      <div class="card-title">Red</div>
+      <div class="card-desc">Tailscale, Cloudflare Tunnel, puertos, DNS y estado de conectividad.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; return false">Ir →</button>
+    </a>
+
+    <!-- REPARACIÓN -->
+    <a href="/mc.html#repair" class="card">
+      <div class="card-icon">🔧</div>
+      <div class="card-title">Kit de Reparación</div>
+      <div class="card-desc">Herramientas rápidas: reinicio Docker, PM2, flush DNS, limpiar caché.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; return false">Ir →</button>
+    </a>
+
+    <!-- SERVICIOS -->
+    <a href="/mc.html#services" class="card">
+      <div class="card-icon">🔌</div>
+      <div class="card-title">Servicios</div>
+      <div class="card-desc">Lista completa de servicios, puertos, estado y acciones rápidas.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; return false">Ir →</button>
+    </a>
+
+    <!-- TERMINAL WEB -->
+    <a href="/mc.html#terminal" class="card">
+      <div class="card-icon">🖥️</div>
+      <div class="card-title">Terminal Web</div>
+      <div class="card-desc">Terminal integrada para ejecutar comandos directamente.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; return false">Ir →</button>
+    </a>
+
+    <!-- DOCUMENTOS -->
+    <a href="/mc.html#docs" class="card">
+      <div class="card-icon">📄</div>
+      <div class="card-title">Documentos</div>
+      <div class="card-desc">Gestión de documentos, re-indexación de memoria, estado de procesamiento.</div>
+      <button class="btn" onclick="event.preventDefault(); window.location.href='/mc.html'; return false">Ir →</button>
+    </a>
+  </div>
+
+  <div class="footer">
+    <p>🔒 SynK-IA Ecosystem Control — Chicken Palace Ibiza S.L.</p>
+    <p style="margin-top:8px;color:#4b5563">Último actualizado: {{DATE}} — Token: sinkia2026</p>
+  </div>
+</div>
+
+<script>
+// Test API connection and show status
+document.addEventListener('DOMContentLoaded', () => {
+  fetch('/api/admin/system', {
+    headers: { 'x-admin-token': 'sinkia2026' }
+  })
+  .then(r => r.ok ? 'online' : 'offline')
+  .catch(() => 'offline')
+  .then(status => {
+    const statusEl = document.querySelector('.status-online');
+    if(statusEl && status !== 'online') {
+      statusEl.className = 'card-status status-offline';
+      statusEl.textContent = '🔴 Offline';
+    }
+  });
+});
+</script>
+</body>
+</html>
