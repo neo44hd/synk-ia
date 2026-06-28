@@ -134,8 +134,18 @@ class AssemblyLineOrchestrator extends EventEmitter {
 
       console.log(`✅ Enrutados: ${routed.count} items a destinos\n`);
 
+      // ETAPA 5: FICHAS Y ANÁLISIS ECONÓMICO (MÁGICO)
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('ETAPA 5️⃣  FICHAS Y ANÁLISIS ECONÓMICO');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      const cards = await this._generateCards(routed.items);
+      const economicAnalysis = await this._generateEconomicAnalysis(routed.items);
+      console.log(`✅ ${cards.count} fichas generadas`);
+      console.log(`✅ Análisis económico completado\n`);
+
       // RESUMEN
-      this._printSummary();
+      this._printSummary(routed, cards, economicAnalysis);
       this.emit('cycle-complete', this.stats);
 
     } catch (error) {
@@ -324,21 +334,105 @@ class AssemblyLineOrchestrator extends EventEmitter {
     return emojis[dest] || '📦';
   }
 
-  _printSummary() {
+  /**
+   * ETAPA 5: Genera fichas estructuradas para cada item
+   */
+  async _generateCards(items) {
+    try {
+      const cards = items.map(item => ({
+        id: `CARD-${item.id}`,
+        type: item.type,
+        destination: item.routed_to,
+        timestamp: new Date().toISOString(),
+        data: item.extracted_data || {},
+        category: item.category,
+        priority: item.priority || 'NORMAL'
+      }));
+      return { count: cards.length, items: cards };
+    } catch (error) {
+      console.error('Error generando fichas:', error.message);
+      return { count: 0, items: [] };
+    }
+  }
+
+  /**
+   * ETAPA 5: Genera análisis económico automático
+   */
+  async _generateEconomicAnalysis(items) {
+    try {
+      // Filtrar solo facturas
+      const invoices = items.filter(i => i.type === 'invoice');
+      
+      let totalValue = 0;
+      let paidValue = 0;
+      let pendingValue = 0;
+      let overdueValue = 0;
+      const byProvider = {};
+      const byStatus = {};
+
+      for (const item of invoices) {
+        const amount = item.extracted_data?.amount || 0;
+        totalValue += amount;
+
+        const status = item.extracted_data?.status || 'unknown';
+        byStatus[status] = (byStatus[status] || 0) + amount;
+
+        if (status === 'pagada' || status === 'paid') paidValue += amount;
+        if (status === 'pendiente' || status === 'pending') pendingValue += amount;
+        if (status === 'vencida' || status === 'overdue') overdueValue += amount;
+
+        const provider = item.extracted_data?.provider || 'unknown';
+        byProvider[provider] = (byProvider[provider] || 0) + amount;
+      }
+
+      const analysis = {
+        generatedAt: new Date().toISOString(),
+        totalValue: totalValue.toFixed(2),
+        totalInvoices: invoices.length,
+        paidValue: paidValue.toFixed(2),
+        pendingValue: pendingValue.toFixed(2),
+        overdueValue: overdueValue.toFixed(2),
+        paymentRate: invoices.length > 0 ? ((paidValue / totalValue) * 100).toFixed(1) : 0,
+        topProviders: Object.entries(byProvider)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([provider, amount]) => ({ provider, amount: amount.toFixed(2) }))
+      };
+
+      return analysis;
+    } catch (error) {
+      console.error('Error en análisis económico:', error.message);
+      return { totalValue: 0 };
+    }
+  }
+
+  _printSummary(routed, cards, economicAnalysis) {
     console.log('\n═══════════════════════════════════════════════════════════');
-    console.log('📊 RESUMEN DE CICLO');
+    console.log('✨ RESUMEN MÁGICO DE LA CADENA');
     console.log('═══════════════════════════════════════════════════════════');
-    console.log(`✅ Reprocessados:  ${this.stats.reprocessed}`);
-    console.log(`📂 Clasificados:   ${this.stats.classified}`);
-    console.log(`🔍 Extraídos:      ${this.stats.extracted}`);
-    console.log(`🎯 Enrutados:      ${this.stats.routed}`);
-    console.log(`\n📍 Distribución por destino:`);
-    console.log(`   💼 Contabilidad (Accounting): ${this.stats.destinations.accounting}`);
-    console.log(`   👥 RRHH (HR): ${this.stats.destinations.hr}`);
+    console.log(`✅ Items procesados: ${routed.count}`);
+    console.log(`💳 Fichas generadas: ${cards.count}`);
+    
+    console.log(`\n💰 ANÁLISIS ECONÓMICO:`);
+    console.log(`   Total: ${economicAnalysis.totalValue}€`);
+    console.log(`   Facturas: ${economicAnalysis.totalInvoices}`);
+    console.log(`   Pagado: ${economicAnalysis.paidValue}€ (${economicAnalysis.paymentRate}%)`);
+    console.log(`   Pendiente: ${economicAnalysis.pendingValue}€`);
+    console.log(`   Vencido: ${economicAnalysis.overdueValue}€`);
+    
+    if (economicAnalysis.topProviders?.length > 0) {
+      console.log(`\n🏢 Top Proveedores:`);
+      economicAnalysis.topProviders.forEach((p, i) => {
+        console.log(`   ${i+1}. ${p.provider}: ${p.amount}€`);
+      });
+    }
+    
+    console.log('\n📍 Distribución por destino:');
+    console.log(`   💼 Contabilidad: ${this.stats.destinations.accounting}`);
+    console.log(`   👥 RRHH: ${this.stats.destinations.hr}`);
     console.log(`   📞 CRM: ${this.stats.destinations.crm}`);
     console.log(`   📁 Archivo: ${this.stats.destinations.archive}`);
     console.log(`   ⚖️  Compliance: ${this.stats.destinations.compliance}`);
-    console.log(`   📦 Otros: ${this.stats.destinations.other}`);
     console.log('═══════════════════════════════════════════════════════════\n');
   }
 
