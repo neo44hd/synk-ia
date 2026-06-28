@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Building2,
   Search,
@@ -22,6 +23,13 @@ import {
   Mail,
   Phone,
   MapPin,
+  Zap,
+  TrendingDown,
+  DollarSign,
+  Calendar,
+  Lock,
+  Eye,
+  Link as LinkIcon,
 } from 'lucide-react';
 
 const eur = (n) =>
@@ -31,6 +39,86 @@ const fmtDate = (s) => {
   if (!s) return '—';
   const d = new Date(s);
   return isNaN(d) ? s : d.toLocaleDateString('es-ES');
+};
+
+const normalizeText = (v) =>
+  String(v || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+const blockedProviderTokens = [
+  'chicken palace ibiza',
+  'b56908486',
+  'josep riquer llobet 7 local 3',
+  'david roldan hueso',
+  'david roldan',
+];
+
+const isBlockedOwnIdentity = (prov) => {
+  const haystack = normalizeText([
+    prov?.nombre,
+    prov?.name,
+    prov?.cif_nif,
+    prov?.cif,
+    prov?.direccion,
+    prov?.address,
+    prov?.email,
+    prov?.deduplication_key,
+  ].filter(Boolean).join(' '));
+  return blockedProviderTokens.some((token) => haystack.includes(normalizeText(token)));
+};
+
+const monthKey = (dateValue) => {
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return 'Sin fecha';
+  return d.toISOString().slice(0, 7);
+};
+
+const productKey = (value) => normalizeText(value || 'otros');
+
+const getProviderNames = (prov) => [
+  prov?.nombre,
+  prov?.name,
+  prov?.legal_name,
+  prov?.commercial_name,
+].filter(Boolean).map(normalizeText);
+
+const invoiceMatchesProvider = (inv, prov) => {
+  const providerNames = getProviderNames(prov);
+  const invName = normalizeText(inv.provider_name || inv.emisor || inv.supplier_name);
+  const invCif = normalizeText(inv.provider_cif || inv.cif || inv.tax_id);
+  const provCif = normalizeText(prov.cif_nif || prov.cif || prov.tax_id);
+  return (
+    (provCif && invCif && invCif === provCif) ||
+    (inv.provider_id && (inv.provider_id === prov.id || inv.provider_id === prov.source_id)) ||
+    (invName && providerNames.some((name) => name && (invName === name || invName.includes(name) || name.includes(invName))))
+  );
+};
+
+const buildProductMarket = (invoices) => {
+  const market = {};
+  invoices.forEach((inv) => {
+    const provider = inv.provider_name || 'Proveedor desconocido';
+    (inv.items || []).forEach((item) => {
+      const key = productKey(item.description || item.name || item.concepto);
+      const unitPrice = Number(item.unit_price || item.price || 0);
+      const quantity = Number(item.quantity || 0);
+      if (!key || !unitPrice) return;
+      if (!market[key]) market[key] = [];
+      market[key].push({
+        provider,
+        description: item.description || item.name || item.concepto || 'Producto',
+        unitPrice,
+        quantity,
+        total: Number(item.total || unitPrice * quantity || 0),
+        invoiceDate: inv.invoice_date,
+      });
+    });
+  });
+  return market;
 };
 
 export default function ProvidersNew() {
@@ -69,67 +157,136 @@ export default function ProvidersNew() {
     load();
   }, []);
 
+  const productMarket = useMemo(() => buildProductMarket(invoices), [invoices]);
+
   const enrichedProviders = useMemo(() => {
     return providers.map((prov) => {
-      // Facturas de este proveedor
-      const provInvoices = invoices.filter(
-        (inv) =>
-          (inv.provider_name && prov.nombre && inv.provider_name.toLowerCase() === prov.nombre.toLowerCase()) ||
-          (inv.provider_cif && prov.cif_nif && inv.provider_cif === prov.cif_nif)
-      );
-
+      const isBlocked = isBlockedOwnIdentity(prov);
+      
+      // Facturas de este proveedor usando match mejorado
+      const provInvoices = invoices.filter((inv) => invoiceMatchesProvider(inv, prov));
+      
       // Análisis de gastos por mes
       const monthlySpend = {};
+      const monthlyItems = {};
       provInvoices.forEach((inv) => {
-        const date = new Date(inv.invoice_date);
-        const month = date.toISOString().slice(0, 7); // YYYY-MM
-        monthlySpend[month] = (monthlySpend[month] || 0) + (Number(inv.total) || 0);
+        const month = monthKey(inv.invoice_date);
+        const total = Number(inv.total) || 0;
+        monthlySpend[month] = (monthlySpend[month] || 0) + total;
+        if (!monthlyItems[month]) monthlyItems[month] = [];
+        monthlyItems[month].push(inv);
       });
-
-      // Análisis de productos/conceptos
+      
+      // Productos desde líneas de factura
+      const productsByKey = {};
       const products = {};
       provInvoices.forEach((inv) => {
-        const desc = inv.description || inv.concepto || 'Otros';
-        if (!products[desc]) {
-          products[desc] = { count: 0, total: 0 };
-        }
-        products[desc].count += 1;
-        products[desc].total += Number(inv.total) || 0;
+        (inv.items || []).forEach((item) => {
+          const pKey = productKey(item.description || item.concepto);
+          const desc = item.description || item.concepto || 'Otros';
+          const qty = Number(item.quantity) || 0;
+          const unitPrice = Number(item.unit_price) || Number(item.price) || 0;
+          const total = Number(item.total) || (qty * unitPrice) || 0;
+          
+          if (!productsByKey[pKey]) productsByKey[pKey] = { key: pKey, desc, items: [] };
+          productsByKey[pKey].items.push({ qty, unitPrice, total, invoiceDate: inv.invoice_date });
+          
+          if (!products[desc]) products[desc] = { count: 0, total: 0, qty: 0 };
+          products[desc].count += 1;
+          products[desc].total += total;
+          products[desc].qty += qty;
+        });
       });
-
+      
+      // Consolidar productos con estadísticas
+      const productsAnalysis = Object.entries(productsByKey).map(([key, data]) => {
+        const prices = data.items.filter(i => i.unitPrice > 0).map(i => i.unitPrice);
+        const avgPrice = prices.length > 0 ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
+        const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+        const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+        const totalQty = data.items.reduce((s, i) => s + (i.qty || 0), 0);
+        const totalValue = data.items.reduce((s, i) => s + (i.total || 0), 0);
+        
+        // Comparativa: buscar en mercado
+        const marketData = productMarket[key] || [];
+        const bestAlternative = marketData
+          .filter(m => normalizeText(m.provider) !== normalizeText(prov.nombre))
+          .sort((a, b) => a.unitPrice - b.unitPrice)[0];
+        
+        return {
+          key,
+          description: data.desc,
+          frequency: data.items.length,
+          totalQuantity: totalQty,
+          avgPrice: Math.round(avgPrice * 100) / 100,
+          minPrice,
+          maxPrice,
+          totalValue: Math.round(totalValue * 100) / 100,
+          lastPurchase: Math.max(...data.items.map(i => new Date(i.invoiceDate).getTime())),
+          priceChange: prices.length > 1 ? prices[prices.length - 1] - prices[0] : 0,
+          bestAlternative: bestAlternative ? {
+            provider: bestAlternative.provider,
+            unitPrice: bestAlternative.unitPrice,
+            saving: (avgPrice - bestAlternative.unitPrice) * (totalQty / data.items.length),
+            savingPercent: avgPrice > 0 ? Math.round((1 - bestAlternative.unitPrice / avgPrice) * 100) : 0,
+          } : null,
+        };
+      });
+      
       const totalSpend = provInvoices.reduce((s, inv) => s + (Number(inv.total) || 0), 0);
       const avgInvoice = provInvoices.length > 0 ? totalSpend / provInvoices.length : 0;
-      const lastInvoice = provInvoices.length > 0 ? new Date(Math.max(...provInvoices.map((inv) => new Date(inv.invoice_date)))) : null;
-
+      const currentMonth = monthKey(new Date());
+      const prevMonth = monthKey(new Date(new Date().setMonth(new Date().getMonth() - 1)));
+      const spendTrend = (monthlySpend[currentMonth] || 0) - (monthlySpend[prevMonth] || 0);
+      
       // IVA desglosado
       const ivaBreakdown = {};
       provInvoices.forEach((inv) => {
-        const ivaRate = inv.iva_rate || '21';
+        const ivaRate = inv.iva_rate || (inv.iva && inv.subtotal ? Math.round((Number(inv.iva) / Number(inv.subtotal)) * 100) : 21);
         if (!ivaBreakdown[ivaRate]) {
           ivaBreakdown[ivaRate] = { base: 0, iva: 0, count: 0 };
         }
-        const base = Number(inv.base) || Number(inv.total) / (1 + Number(ivaRate) / 100);
+        const base = Number(inv.base) || Number(inv.subtotal) || (Number(inv.total) / (1 + Number(ivaRate) / 100));
+        const iva = Number(inv.iva) || (base * Number(ivaRate) / 100);
         ivaBreakdown[ivaRate].base += base;
-        ivaBreakdown[ivaRate].iva += Number(inv.iva) || 0;
+        ivaBreakdown[ivaRate].iva += iva;
         ivaBreakdown[ivaRate].count += 1;
       });
-
+      const totalIva = Object.values(ivaBreakdown).reduce((s, d) => s + d.iva, 0);
+      
+      // Alertas inteligentes
+      const alerts = [];
+      if (isBlocked) alerts.push({ type: 'blocked', message: '🔒 Entidad bloqueada como propia. No puede aprobarse como proveedor.' });
+      if (prov.status === 'pending_review') alerts.push({ type: 'pending', message: '⏳ Pendiente de aprobación' });
+      if (!prov.cif_nif) alerts.push({ type: 'warning', message: '⚠️ Falta CIF/NIF' });
+      if (provInvoices.length === 0) alerts.push({ type: 'info', message: 'ℹ️ Sin facturas asociadas' });
+      if (spendTrend > totalSpend * 0.3) alerts.push({ type: 'warning', message: `📈 Gasto subió ${Math.round((spendTrend / (monthlySpend[prevMonth] || 1)) * 100)}% este mes` });
+      if (productsAnalysis.some(p => p.bestAlternative && p.bestAlternative.savingPercent > 10)) {
+        alerts.push({ type: 'opportunity', message: `💰 Hay oportunidades de ahorro en ${productsAnalysis.filter(p => p.bestAlternative?.savingPercent > 10).length} producto(s)` });
+      }
+      
       return {
         ...prov,
+        isBlocked,
         invoices: provInvoices,
         totalSpend: Math.round(totalSpend * 100) / 100,
         invoiceCount: provInvoices.length,
         avgInvoice: Math.round(avgInvoice * 100) / 100,
-        lastInvoice,
+        lastInvoice: provInvoices.length > 0 ? new Date(Math.max(...provInvoices.map(inv => new Date(inv.invoice_date).getTime()))) : null,
         monthlySpend,
+        monthlyItems,
         products,
+        productsAnalysis,
         ivaBreakdown,
+        totalIva: Math.round(totalIva * 100) / 100,
+        spendTrend: Math.round(spendTrend * 100) / 100,
         status: prov.status || 'pending_review',
         approved: prov.approved_by_user || false,
         dedupKey: prov.deduplication_key,
+        alerts,
       };
     });
-  }, [providers, invoices]);
+  }, [providers, invoices, productMarket]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -197,29 +354,57 @@ export default function ProvidersNew() {
 
   const pending = filtered.filter((p) => p.status === 'pending_review');
   const approved = filtered.filter((p) => p.status === 'approved');
-  const rejected = filtered.filter((p) => p.status === 'rejected');
+  const blocked = filtered.filter((p) => p.isBlocked);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Building2 className="text-purple-500" size={28} />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/50">
+              <Building2 className="text-white" size={24} />
+            </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Gestión de Proveedores</h1>
-              <p className="text-sm text-slate-500">Fichas completas, análisis y aprobación</p>
+              <h1 className="text-3xl font-black text-white">Fichas de Proveedores</h1>
+              <p className="text-sm text-slate-400 mt-1">Análisis completo, comparativas y recomendaciones</p>
             </div>
           </div>
           <button
             onClick={load}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500 text-white hover:bg-purple-600 transition"
+            className="flex items-center gap-2 px-5 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-semibold transition shadow-lg"
           >
             <RefreshCw size={16} /> Actualizar
           </button>
         </div>
 
-        {error && <div className="mb-4 p-3 rounded-lg bg-red-100 text-red-700 text-sm">{error}</div>}
+        {/* Estadísticas */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+            <p className="text-slate-400 text-xs uppercase mb-1">Total Proveedores</p>
+            <p className="text-2xl font-bold text-white">{filtered.length}</p>
+          </div>
+          {pending.length > 0 && (
+            <div className="bg-yellow-950/40 border border-yellow-700/50 rounded-lg p-4">
+              <p className="text-yellow-300 text-xs uppercase mb-1">Pendientes</p>
+              <p className="text-2xl font-bold text-yellow-400">{pending.length}</p>
+            </div>
+          )}
+          {approved.length > 0 && (
+            <div className="bg-green-950/40 border border-green-700/50 rounded-lg p-4">
+              <p className="text-green-300 text-xs uppercase mb-1">Aprobados</p>
+              <p className="text-2xl font-bold text-green-400">{approved.length}</p>
+            </div>
+          )}
+          {blocked.length > 0 && (
+            <div className="bg-red-950/40 border border-red-700/50 rounded-lg p-4">
+              <p className="text-red-300 text-xs uppercase mb-1">Bloqueados</p>
+              <p className="text-2xl font-bold text-red-400">{blocked.length}</p>
+            </div>
+          )}
+        </div>
+
+        {error && <div className="mb-4 p-4 rounded-lg bg-red-900/30 border border-red-700 text-red-300 text-sm">{error}</div>}
 
         {/* Search */}
         <div className="relative mb-6">
@@ -371,6 +556,61 @@ export default function ProvidersNew() {
                           </div>
                         </div>
 
+                        {/* Alertas inteligentes */}
+                        {prov.alerts.length > 0 && (
+                          <div className="border-t pt-4">
+                            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                              <Zap size={16} /> Alertas & Recomendaciones
+                            </h3>
+                            <div className="space-y-2">
+                              {prov.alerts.map((alert, idx) => {
+                                const colors = {
+                                  blocked: 'bg-red-50 border-red-200 text-red-700',
+                                  pending: 'bg-yellow-50 border-yellow-200 text-yellow-700',
+                                  warning: 'bg-orange-50 border-orange-200 text-orange-700',
+                                  opportunity: 'bg-green-50 border-green-200 text-green-700',
+                                  info: 'bg-blue-50 border-blue-200 text-blue-700',
+                                }[alert.type] || 'bg-slate-50 border-slate-200 text-slate-700';
+                                return (
+                                  <div key={idx} className={`p-3 rounded-lg border ${colors} text-sm`}>
+                                    {alert.message}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Comparativa de productos */}
+                        {prov.productsAnalysis.length > 0 && prov.productsAnalysis.some(p => p.bestAlternative) && (
+                          <div className="border-t pt-4">
+                            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                              <DollarSign size={16} /> Oportunidades de Ahorro
+                            </h3>
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {prov.productsAnalysis
+                                .filter(p => p.bestAlternative && p.bestAlternative.savingPercent > 5)
+                                .sort((a, b) => (b.bestAlternative?.savingPercent || 0) - (a.bestAlternative?.savingPercent || 0))
+                                .map((prod) => (
+                                  <div key={prod.key} className="p-3 rounded-lg border border-slate-200 bg-white text-sm">
+                                    <div className="flex items-start justify-between mb-1">
+                                      <span className="font-semibold text-slate-900">{prod.description}</span>
+                                      <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold">
+                                        {prod.bestAlternative.savingPercent}% ahorro
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 mb-2">
+                                      Actual: {eur(prod.avgPrice)}/u | Mejor: {eur(prod.bestAlternative.unitPrice)}/u ({prod.bestAlternative.provider})
+                                    </p>
+                                    <p className="text-xs text-green-700 font-semibold">
+                                      Potencial: {eur(prod.bestAlternative.saving)}/compra
+                                    </p>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* IVA desglosado */}
                         {Object.keys(prov.ivaBreakdown).length > 0 && (
                           <div className="border-t pt-4">
@@ -461,7 +701,15 @@ export default function ProvidersNew() {
                         )}
 
                         {/* Aprobación */}
-                        {prov.status === 'pending_review' && (
+                        {prov.isBlocked ? (
+                          <div className="border-t pt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Lock size={18} className="text-red-600" />
+                              <span className="font-semibold text-red-700">Entidad Bloqueada</span>
+                            </div>
+                            <p className="text-sm text-red-600">No se puede aprobar como proveedor porque coincide con tu empresa o datos personales.</p>
+                          </div>
+                        ) : prov.status === 'pending_review' ? (
                           <div className="border-t pt-4 flex gap-3">
                             <button
                               onClick={() => handleApprove(prov.id)}
@@ -481,7 +729,7 @@ export default function ProvidersNew() {
                               <ThumbsDown size={16} /> Rechazar
                             </button>
                           </div>
-                        )}
+                        ) : null}
 
                         {prov.status === 'approved' && (
                           <div className="border-t pt-4 p-3 bg-green-50 rounded-lg flex items-center gap-2 text-green-700">
