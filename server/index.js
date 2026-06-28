@@ -402,6 +402,24 @@ try {
   console.error('[SERVER] ✗ Data Extraction API fallo:', e.message);
 }
 
+// ── Invoice Analysis Pipeline (cadena de montaje: JSON → Markdown → Analyze) ────────
+try {
+  const invoiceAnalysisRouter = (await import('./routes/invoice-analysis.js')).default;
+  app.use('/api/invoice', invoiceAnalysisRouter);
+  console.log('[SERVER] ✓ Invoice Analysis Pipeline: /api/invoice/{analyze,provider/analyze,batch-analyze}');
+} catch (e) {
+  console.error('[SERVER] ✗ Invoice Analysis Pipeline fallo:', e.message);
+}
+
+// ── Invoice Reprocessor (detecta y reprocessa archivos antiguos en background) ────────
+try {
+  const invoiceReprocessorRouter = (await import('./routes/invoice-reprocessor.js')).default;
+  app.use('/api/invoice/reprocessor', invoiceReprocessorRouter);
+  console.log('[SERVER] ✓ Invoice Reprocessor: /api/invoice/reprocessor/{start,stop,stats,status,reprocess-now,update-guidelines}');
+} catch (e) {
+  console.error('[SERVER] ✗ Invoice Reprocessor fallo:', e.message);
+}
+
 // ── AI Engine (Ollama) ────────────────────────────────────────────────────────
 // /api/ollama → backward compat (el frontend no necesita cambios)
 try {
