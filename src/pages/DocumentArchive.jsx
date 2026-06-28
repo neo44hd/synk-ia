@@ -984,7 +984,10 @@ export default function DocumentArchive() {
                             <Button 
                               size="icon"
                               variant="ghost"
-                              onClick={() => setPreviewFile(file)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewFile(file);
+                              }}
                               className="w-9 h-9 hover:bg-zinc-800 text-zinc-400 hover:text-cyan-400 transition-colors"
                               title="Previsualizar archivo"
                             >
