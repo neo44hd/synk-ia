@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
+    "worker": "node workers/fileProcessor.js",
     "download-model": "node ../scripts/download-model.js"
   },
   "dependencies": {

@@ -8,6 +8,9 @@
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { extract as extractContent } from '../agents/extractorAgent.js';
+import { analyze as analyzeDoc } from '../agents/analyzerAgent.js';
+import { organize as organizeDoc } from '../agents/organizerAgent.js';
 
 const __dirname  = dirname(fileURLToPath(import.meta.url));
 const ROOT       = join(__dirname, '..', '..');
@@ -191,29 +194,11 @@ export async function getStats() {
 // ── Core processing pipeline ─────────────────────────────────────────────────
 
 export async function processDocument(filePath, mimeType, originalName) {
-  const { readFile } = await import('fs/promises');
-  const buffer = await readFile(filePath);
-
-  let text = '';
-  let method = 'local';
-
-  // Try OCR first for images, use pdftotext for PDFs
-  if (mimeType === 'application/pdf') {
-    try {
-      const { execSync } = await import('child_process');
-      text = execSync(`pdftotext '${filePath}' - 2>/dev/null || echo ""`, { encoding: 'utf-8' });
-      method = 'pdftotext';
-    } catch {
-      // Fallback: try text extraction from buffer
-      text = buffer.toString('utf-8').slice(0, 50000);
-    }
-  } else if (mimeType.startsWith('image/')) {
-    // Placeholder: Tesseract would go here
-    text = buffer.toString('utf-8').slice(0, 50000);
-    method = 'raw-buffer';
-  } else {
-    text = buffer.toString('utf-8').slice(0, 50000);
-  }
+  // Extracción markdown-first / OCR vía extractorAgent (un solo motor para todo:
+  // PDF, imágenes (OCR), Office (markitdown), email, etc.)
+  const extracted = await extractContent(filePath, mimeType, originalName);
+  let text = extracted.text || '';
+  let method = extracted.method || 'desconocido';
 
   if (!text || text.trim().length < 10) {
     const doc = {
@@ -237,39 +222,17 @@ export async function processDocument(filePath, mimeType, originalName) {
     return doc;
   }
 
-  // Classify
-  let classification;
-  try {
-    const { classify } = await import('../agents/classifier.js');
-    classification = await classify({
-      text: text.substring(0, 30000), // limit for classification
-      filename: originalName,
-      mimeType,
-      source: 'upload',
-    });
-  } catch (err) {
-    console.error('[CLASSIFIER] Error:', err.message);
-    classification = { docType: 'otro', subType: null, confidence: 0, summary: 'Clasificación fallida' };
-  }
+  // Análisis estructurado (modelo) + organización (carpeta/destino + entidades)
+  const analysisResult = await analyzeDoc({ text, method, originalName, mimeType, metadata: extracted.metadata });
+  const A = analysisResult.analysis || {};
 
-  // Extract with DocumentAgent
-  let result;
+  // El organizador asigna carpeta/destino, normaliza nombre y CREA entidades
+  // (proveedor/trabajador/cliente) en entities.json.
+  let organization = null;
   try {
-    const { process: docProcess } = await import('../agents/documentAgent.js');
-    result = await docProcess({
-      text,
-      classification,
-      filename: originalName,
-      mimeType,
-    });
+    organization = await organizeDoc(A, extracted, originalName);
   } catch (err) {
-    console.error('[DOC-AGENT] Error:', err.message);
-    result = {
-      success: false,
-      classification: {},
-      durationMs: 0,
-      error: err.message || 'Error en extracción',
-    };
+    console.error('[ORGANIZER] Error:', err.message);
   }
 
   const doc = {
@@ -278,35 +241,41 @@ export async function processDocument(filePath, mimeType, originalName) {
     mime_type: mimeType,
     filePath,
     procesado: new Date().toISOString(),
-    estado: result.success ? 'procesado' : 'error',
+    estado: analysisResult.ok ? 'procesado' : 'error',
     metodo_extraccion: method,
     chars_extraidos: text.length,
     texto_preview: text.substring(0, 800),
     analisis: {
-      tipo: result.classification?.docType || classification?.docType || 'otro',
-      subtipo: result.classification?.subType || null,
-      fecha: result.fecha || null,
-      fecha_vencimiento: result.fecha_vencimiento || null,
-      numero_documento: result.numero_documento || null,
-      emisor: result.emisor || null,
-      receptor: result.receptor || null,
-      conceptos: result.conceptos || [],
-      base_imponible: result.base_imponible || null,
-      iva_total: result.iva_total || null,
-      total: result.total || null,
-      moneda: result.moneda || 'EUR',
-      forma_pago: result.forma_pago || null,
-      resumen: result.classification?.summary || classification?.summary || '',
-      confianza: result.classification?.confidence || classification?.confidence || 0,
+      tipo: A.tipo || 'otro',
+      subtipo: A.subtipo || null,
+      fecha: A.fechas?.documento || null,
+      fecha_vencimiento: A.fechas?.vencimiento || null,
+      numero_documento: A.referencias?.numero_documento || null,
+      emisor: A.emisor || null,
+      receptor: A.receptor || null,
+      trabajador: A.trabajador || null,
+      conceptos: A.conceptos || [],
+      base_imponible: A.importes?.base_imponible ?? null,
+      iva_total: A.importes?.iva_total ?? null,
+      total: A.importes?.total ?? null,
+      moneda: A.importes?.moneda || 'EUR',
+      forma_pago: A.forma_pago || null,
+      resumen: A.resumen || '',
+      confianza: A.confianza || 0,
+      tags: A.tags || [],
     },
-    ...(result.subAgentResult || {}),
+    // Resultado del organizador (carpeta destino, nombre normalizado, acciones)
+    organizacion: organization ? {
+      folder_path:     organization.folder_path,
+      normalized_name: organization.normalized_name,
+      full_path:       organization.full_path,
+      destination:     organization.destination || null,
+      pending_actions: organization.pending_actions || [],
+      tags:            organization.tags || [],
+    } : null,
   };
 
   await saveDocument(doc);
-
-  // Update entities from analyzed data
-  await _updateEntitiesFromDoc(doc);
-
   return doc;
 }
 

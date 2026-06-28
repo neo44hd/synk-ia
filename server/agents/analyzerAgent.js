@@ -27,6 +27,33 @@ function getLlmModel() {
   return GATEWAY_MODEL;
 }
 
+// ── Modelo potente (cloud) para extracción difícil — B3 híbrido ───────────
+// La clasificación y otros agentes siguen en local; el ANÁLISIS (extracción
+// estructurada) usa un modelo grande vía NVIDIA NIM (OpenAI-compatible), con
+// fallback automático al gateway local si el cloud falla o no hay clave.
+const CLOUD_BASE  = process?.env?.STRONG_LLM_BASE_URL || 'https://integrate.api.nvidia.com/v1';
+const CLOUD_KEY   = process?.env?.STRONG_LLM_API_KEY  || process?.env?.NVIDIA_API_KEY || '';
+const CLOUD_MODEL = process?.env?.STRONG_LLM_MODEL    || 'meta/llama-3.3-70b-instruct';
+const USE_CLOUD   = (process?.env?.ANALYZER_USE_CLOUD ?? 'true') !== 'false' && !!CLOUD_KEY;
+
+/** ¿Los mensajes contienen imagen (visión)? El cloud de texto no hace visión. */
+function isVisionMessages(messages) {
+  return messages.some(m => Array.isArray(m.content));
+}
+
+/** Llamada directa al modelo potente cloud (OpenAI-compatible). */
+async function cloudChat(messages) {
+  const res = await fetch(`${CLOUD_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${CLOUD_KEY}` },
+    body: JSON.stringify({ model: CLOUD_MODEL, messages, temperature: TEMPERATURE, max_tokens: MAX_TOKENS }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`cloud ${res.status}: ${(await res.text().catch(() => '')).slice(0, 150)}`);
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || '';
+}
+
 // Datos fijos de MI EMPRESA (receptor en casi todos los documentos)
 const MI_EMPRESA = {
   nombre: process?.env?.EMPRESA_NOMBRE || 'CHICKEN PALACE IBIZA, S.L.',
@@ -676,6 +703,19 @@ async function llmCall(messages) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
+    // Híbrido: modelo potente cloud para texto; gateway local para visión
+    // o como fallback si el cloud falla.
+    if (USE_CLOUD && !isVisionMessages(messages)) {
+      try {
+        const content = await cloudChat(messages);
+        if (content && content.trim()) {
+          console.log(`[ANALIZADOR] (modelo cloud: ${CLOUD_MODEL})`);
+          return stripThinking(content.trim());
+        }
+      } catch (e) {
+        console.warn(`[ANALIZADOR] Cloud falló (${e.message}) → usando gateway local`);
+      }
+    }
     const { content } = await gatewayChatMessages({
       messages,
       model: getLlmModel(),

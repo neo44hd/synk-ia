@@ -19,6 +19,32 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // ¿El host actual es de confianza para el modo desarrollo?
+  // (localhost, loopback, Tailscale 100.64.0.0/10 y redes LAN privadas)
+  const isTrustedDevHost = useCallback(() => {
+    if (process.env.NODE_ENV === 'development') return true;
+
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return true;
+
+    // Tailscale CGNAT: 100.64.0.0/10 → 100.64.x.x a 100.127.x.x
+    const tailscaleMatch = host.match(/^100\.(\d+)\./);
+    if (tailscaleMatch) {
+      const second = parseInt(tailscaleMatch[1], 10);
+      if (second >= 64 && second <= 127) return true;
+    }
+
+    // Redes LAN privadas
+    if (host.startsWith('192.168.') || host.startsWith('10.')) return true;
+    const lanMatch = host.match(/^172\.(\d+)\./);
+    if (lanMatch) {
+      const second = parseInt(lanMatch[1], 10);
+      if (second >= 16 && second <= 31) return true;
+    }
+
+    return false;
+  }, []);
+
   // Cargar usuario al montar
   useEffect(() => {
     const loadUser = async () => {
@@ -29,6 +55,7 @@ export function AuthProvider({ children }) {
           setCurrentUser(user);
           setUserRole(getUserRole(user));
           setIsAuthenticated(true);
+          setIsLoading(false);
           return;
         }
       } catch (error) {
@@ -37,7 +64,7 @@ export function AuthProvider({ children }) {
 
       // Modo desarrollo: crear usuario CEO por defecto si no hay autenticación
       // (eliminar en producción)
-      if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost') {
+      if (isTrustedDevHost()) {
         const devUser = {
           id: 'dev-user-001',
           email: 'dev@sinkia.local',
@@ -59,7 +86,7 @@ export function AuthProvider({ children }) {
     };
 
     loadUser();
-  }, []);
+  }, [isTrustedDevHost]);
 
   // Verificar si tiene un permiso específico
   const checkPermission = useCallback((permission) => {

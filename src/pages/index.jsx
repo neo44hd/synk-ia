@@ -43,7 +43,7 @@ import PortalGestoria from "./PortalGestoria";
 import PortalLogin from "./PortalLogin";
 import ProductInventory from "./ProductInventory";
 import ProductionControl from "./ProductionControl";
-import Providers from "./Providers";
+import ProvidersNew from "./ProvidersNew";
 import RGPDManager from "./RGPDManager";
 import RevoDashboard from "./RevoDashboard";
 import RevoManual from "./RevoManual";
@@ -126,7 +126,7 @@ function PagesContent() {
         <Route path="/portalgestoria" element={<Protected><PortalGestoria /></Protected>} />
         <Route path="/productinventory" element={<Protected><ProductInventory /></Protected>} />
         <Route path="/productioncontrol" element={<Protected><ProductionControl /></Protected>} />
-        <Route path="/providers" element={<Protected><Providers /></Protected>} />
+        <Route path="/providers" element={<Protected><ProvidersNew /></Protected>} />
         <Route path="/rgpdmanager" element={<Protected><RGPDManager /></Protected>} />
         <Route path="/revodashboard" element={<Protected><RevoDashboard /></Protected>} />
         <Route path="/revomanual" element={<Protected><RevoManual /></Protected>} />

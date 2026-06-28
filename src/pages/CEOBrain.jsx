@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { synkia } from '@/api/synkiaClient';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -36,6 +37,7 @@ const CEO_EMAILS = ["ruben@loffresco.com", "ruben@lofrfresco.com"]; // Emails de
 
 export default function CEOBrain() {
   const navigate = useNavigate();
+  const { currentUser, isCEO, isAdmin } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -110,28 +112,17 @@ export default function CEOBrain() {
     }
   };
 
-  // Verificar si el usuario es el CEO
+  // Verificar acceso usando el contexto de autenticación de la app
+  // (consistente con ProtectedRoute / roles.js). CEO y Admin pueden entrar.
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const user = await synkia.auth.me();
-        // Permitir acceso solo al CEO
-        if (CEO_EMAILS.includes(user.email) || user.role === 'admin') {
-          setIsAuthorized(true);
-          loadConversations();
-          loadMetrics(); // Cargar métricas al iniciar
-        } else {
-          setIsAuthorized(false);
-        }
-      } catch (error) {
-        console.error("Error checking auth:", error);
-        setIsAuthorized(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    checkAuth();
-  }, []);
+    const authorized = !!currentUser && (isCEO() || isAdmin());
+    setIsAuthorized(authorized);
+    if (authorized) {
+      loadConversations();
+      loadMetrics(); // Cargar métricas al iniciar
+    }
+    setIsLoading(false);
+  }, [currentUser]);
 
   // Cargar métricas empresariales
   const loadMetrics = async () => {

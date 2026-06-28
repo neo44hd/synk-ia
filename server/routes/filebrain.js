@@ -16,9 +16,31 @@ import matter from 'gray-matter';
 import fsExtra from 'fs-extra';
 import pdfParse from 'pdf-parse';
 import { DATA_DIR } from './data.js';
+import {
+  addJob,
+  checkDuplicate,
+  computeFileHash,
+  getJob,
+  getQueueStats,
+} from '../queue/fileQueue.js';
 
 export const filebrainRouter = Router();
-const upload = multer();
+const upload = multer({
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'text/plain',
+      'application/json',
+      'text/markdown',
+      'image/tiff',
+      'image/png',
+      'image/jpeg',
+    ];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}`));
+  },
+});
 
 // ── Lectura de la fuente única ───────────────────────────────────────────────
 function readJSON(entity) {
@@ -113,6 +135,20 @@ function sanitizeName(str) {
     .substring(0, 50);
 }
 
+function sanitizeProviderId(providerId) {
+  if (!providerId || typeof providerId !== 'string') {
+    throw new Error('providerId es requerido');
+  }
+  const sanitized = providerId.replace(/[^a-z0-9-_]/gi, '').toLowerCase();
+  if (sanitized.length === 0 || sanitized.length > 100) {
+    throw new Error('providerId inválido');
+  }
+  if (sanitized.includes('..') || sanitized.includes('/') || sanitized.includes('\\')) {
+    throw new Error('providerId contiene caracteres prohibidos');
+  }
+  return sanitized;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 //  POST /api/filebrain/upload — Ingesta de nuevos documentos
 //  Procesa archivos (PDF, TXT, JSON, MD) y los guarda con metadatos
@@ -138,59 +174,73 @@ async function extractMetadata(rawText, type) {
 
 filebrainRouter.post('/upload', upload.single('file'), async (req, res) => {
   try {
+    let providerId;
+    try {
+      providerId = sanitizeProviderId(req.body.providerId || 'unknown');
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
     if (!req.file) {
       return res.status(400).json({ error: 'No file provided' });
     }
+    const documentId = uuid();
+    const fileHash = computeFileHash(req.file.buffer);
+    const existingDocumentId = checkDuplicate(fileHash);
 
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    let rawText = '';
-
-    if (ext === '.pdf') {
-      rawText = await textFromPdf(req.file.buffer);
-    } else {
-      rawText = req.file.buffer.toString('utf8');
+    if (existingDocumentId) {
+      return res.status(409).json({
+        error: 'Este archivo ya fue subido previamente',
+        existingDocumentId,
+        providerId,
+      });
     }
 
-    // Placeholder: document classification (replace with actual AgentCore)
-    const classification = { type: 'document', confidence: 0.5 };
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const rawDir = path.join(process.cwd(), 'data', 'raw', providerId);
+    await fsExtra.ensureDir(rawDir);
+    const rawPath = path.join(rawDir, `${documentId}${ext}`);
+    await fsExtra.writeFile(rawPath, req.file.buffer);
 
-    // Extract metadata
-    const metadataPayload = await extractMetadata(rawText, classification.type);
+    addJob(documentId, fileHash, providerId, req.file.originalname, rawPath);
 
-    // Build metadata
-    const meta = {
-      type: classification.type,
-      confidence: classification.confidence,
-      fileName: req.file.originalname,
-      uploadedAt: new Date().toISOString(),
-      ...metadataPayload
-    };
-
-    // Create markdown with frontmatter
-    const markdownDir = path.join(process.cwd(), 'data', 'markdown');
-    await fsExtra.ensureDir(markdownDir);
-
-    const id = uuid();
-    const filePath = path.join(markdownDir, `${id}.md`);
-
-    // Build markdown content with YAML frontmatter
-    const finalContent = `---
-${Object.entries(meta).map(([k, v]) => `${k}: ${v}`).join('\n')}
----
-
-${rawText}`;
-
-    await fsExtra.writeFile(filePath, finalContent, 'utf8');
-
-    res.json({
-      id,
-      meta,
-      filePath
+    return res.status(202).json({
+      success: true,
+      documentId,
+      providerId,
+      status: 'pending',
+      message: 'Archivo recibido. Se procesará en segundo plano.',
     });
   } catch (err) {
     console.error('[FILEBRAIN/UPLOAD]', err.message);
-    res.status(500).json({ error: 'Ingest failed' });
+    res.status(500).json({ error: 'Upload failed', details: err.message });
   }
+});
+
+filebrainRouter.get('/status/:documentId', (req, res) => {
+  try {
+    const job = getJob(req.params.documentId);
+    if (!job) {
+      return res.status(404).json({ error: 'Documento no encontrado' });
+    }
+    return res.json({
+      documentId: job.id,
+      providerId: job.providerId,
+      fileName: job.fileName,
+      status: job.status,
+      attempts: job.attempts,
+      maxAttempts: job.maxAttempts,
+      createdAt: job.createdAt,
+      startedAt: job.startedAt,
+      completedAt: job.completedAt,
+      error: job.error,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+filebrainRouter.get('/queue/stats', (_req, res) => {
+  res.json({ success: true, stats: getQueueStats() });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

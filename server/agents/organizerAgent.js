@@ -41,16 +41,158 @@ const ENTITIES_FILE = path.join(DATA_DIR, 'entities.json');
 const RULES_FILE = path.join(DATA_DIR, 'organizer_rules.json');
 
 // ── Identidad del negocio ───────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  LISTA NEGRO — Emitores que NUNCA deben crearse como proveedores
+//  (direcciones locales, empleados, empresas vinculadas)
+// ════════════════════════════════════════════════════════════
+const LOCAL_ENTITY_BLACKLIST = [
+  // Direcciones de la calle donde está el negocio
+  'cl josep riquer', 'josep riquer', 'josep riquer 7', 'josel ricuer',
+  'carrer josep riquer', 'c. josep riquer', 'josep riquer llobet',
+  'josep riquer llobet 7', 'josep riquer llobet 7 local 3',
+  'local 3', 'chicken palace',
+  
+  // Personas/identidades propias que nunca deben convertirse en proveedor
+  'david roldan', 'david roldan hueso',
+];
+
 const MI_EMPRESA = {
   nombre: process?.env?.EMPRESA_NOMBRE || 'CHICKEN PALACE IBIZA, S.L.',
   cif:    process?.env?.EMPRESA_CIF    || 'B56908486',
   email:  process?.env?.EMAIL_USER     || 'info@chickenpalace.es',
+  direccion: 'JOSEP RIQUER LLOBET 7 LOCAL 3',
   aliases: [
     'chicken palace', 'chicken palace ibiza', 'chickenpalace',
     'chicken palace ibiza s.l.', 'chicken palace ibiza sl',
     'b56908486',
   ],
+  emails: [
+    'info@chickenpalace.es',
+    process?.env?.EMAIL_USER,
+  ].filter(Boolean),
 };
+
+const MI_PERSONA = {
+  nombre: 'DAVID ROLDAN HUESO',
+  aliases: [
+    'david roldan',
+    'david roldan hueso',
+    'roldan hueso',
+  ],
+};
+
+/** Comprueba si una entidad es de la calle/negocio local */
+function esEntidadLocal(emisor) {
+  if (!emisor || !emisor.nombre) return false;
+  const nombre = norm([
+    emisor.nombre,
+    emisor.nombre_completo,
+    emisor.direccion,
+  ].filter(Boolean).join(' '));
+  
+  // Verificar en lista negra directa
+  return LOCAL_ENTITY_BLACKLIST.some(pattern => 
+    nombre.includes(norm(pattern))
+  );
+}
+
+/** Comprueba si una entidad es MI empresa (para no crear duplicados) */
+function esMiEmpresa(entity) {
+  if (!entity) return false;
+  const nombre = norm([
+    entity.nombre,
+    entity.nombre_completo,
+    entity.razon_social,
+    entity.direccion,
+  ].filter(Boolean).join(' '));
+  const cif = (entity.cif_nif || '').replace(/[\s\-]/g, '').toUpperCase();
+  const email = (entity.email || '').trim().toLowerCase();
+
+  // Por CIF
+  if (cif === MI_EMPRESA.cif) return true;
+  // Por email propio
+  if (email && MI_EMPRESA.emails.some(e => e.toLowerCase() === email)) return true;
+
+  // Por alias
+  if (MI_EMPRESA.aliases.some(alias => nombre.includes(norm(alias)))) return true;
+
+  // Por dirección fiscal propia
+  if (nombre.includes(norm(MI_EMPRESA.direccion))) return true;
+
+  return false;
+}
+
+/** Comprueba si una entidad es la persona propietaria y no debe ser proveedor */
+function esMiPersona(entity) {
+  if (!entity) return false;
+  const nombre = norm([
+    entity.nombre,
+    entity.nombre_completo,
+    entity.razon_social,
+  ].filter(Boolean).join(' '));
+  return MI_PERSONA.aliases.some(alias => nombre.includes(norm(alias)));
+}
+
+function normalizeIdentifier(value) {
+  return (value || '').replace(/[\s\-]/g, '').toUpperCase();
+}
+
+function normalizeEmail(value) {
+  return (value || '').trim().toLowerCase();
+}
+
+function buildDeduplicationKey(entity) {
+  const cif = normalizeIdentifier(entity?.cif_nif);
+  if (cif) return `tax:${cif}`;
+
+  const email = normalizeEmail(entity?.email);
+  if (email) return `email:${email}`;
+
+  const nombre = norm(entity?.nombre || entity?.nombre_completo || '');
+  if (nombre) return `name:${nombre}`;
+
+  return null;
+}
+
+/** Comprueba si es un emisor válido de proveedor */
+function isValidProvider(emisor) {
+  if (!emisor || !emisor.nombre) return false;
+  const nombre = norm(emisor.nombre);
+
+  // Filtrar emisores locales, empresa propia y persona propietaria
+  if (esEntidadLocal(emisor)) return false;
+  if (esMiEmpresa(emisor)) return false;
+  if (esMiPersona(emisor)) return false;
+
+  // Mínimo de caracteres para ser considerado proveedor (evita errores por OCR)
+  if (emisor.nombre.length < 2) return false;
+
+  const mail = normalizeEmail(emisor.email);
+  if (mail && (mail.includes('chickenpalace') || mail.endsWith('@localhost'))) return false;
+
+  // ❌ REGLA: Evitar que la dirección aparezca como nombre del proveedor
+  const direccionPattern = /^(cl|carrer|ronda|avinguda|plaça|passeig|carretera|moll)[\s,]+[a-zéíóúàèìòùâêîôûäëïüÿçñ]?[\s]*[0-9]?[^,]{2,}$/i;
+  if (direccionPattern.test(nombre)) return false;
+
+  // ❌ REGLA: Evitar nombres que parecen apellidos sin nombre (ej: "ROLDAN HUESO", "GALLEGOS ORDOÑEZ")
+  if (/^[a-zéíóúàèìòùâêîôûäëïüÿçñ]{2,15}\s*[a-zéíóúàèìòùâêîôûäëïüÿçñ]{2,15}$/i.test(nombre)) return false;
+
+  // ❌ REGLA: Evitar nombres que parecen documentos internos
+  if (/^(port|sist|app|control|horario|tarjeta|nomina|finiquito)/i.test(nombre)) return false;
+
+  // ❌ REGLA: Mínimo de caracteres alfanuméricos (evita OCR basura)
+  const letras = nombre.replace(/[^a-zéíóúàèìòùâêîôûäëïüÿçñ]/gi, '');
+  if (letras.length < 2) return false;
+
+  // ❌ REGLA: Si hay CIF o NIF válido, es más probable que sea una empresa real
+  const cif = (emisor.cif_nif || '').replace(/[^a-z0-9]/gi, '');
+  if (/^[abghkmswyz][0-9]{7}[aeghmnpqrstuvwxyz]$/i.test(cif)) return true;
+
+  // ❌ REGLA: Si hay email corporativo, es más probable que sea una empresa real
+  if (/^[\w.-]+@[\w-]+\.\w{2,}$/i.test(mail)) return true;
+
+  return true;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  ÁRBOL DE CARPETAS — Estructura predefinida para negocio de restauración
@@ -306,47 +448,38 @@ function norm(s) {
 
 function sameEntity(a, b) {
   if (!a || !b) return false;
+
+  // Por clave de deduplicación explícita
+  if (a.deduplication_key && b.deduplication_key && a.deduplication_key === b.deduplication_key) return true;
+
   // Por CIF/NIF
-  if (a.cif_nif && b.cif_nif) {
-    const ca = (a.cif_nif || '').replace(/[\s\-]/g, '').toUpperCase();
-    const cb = (b.cif_nif || '').replace(/[\s\-]/g, '').toUpperCase();
-    if (ca && cb && ca === cb) return true;
-  }
+  const ca = normalizeIdentifier(a.cif_nif);
+  const cb = normalizeIdentifier(b.cif_nif);
+  if (ca && cb && ca === cb) return true;
   // Por DNI (trabajadores)
-  if (a.dni && b.dni) {
-    const da = (a.dni || '').replace(/[\s\-]/g, '').toUpperCase();
-    const db = (b.dni || '').replace(/[\s\-]/g, '').toUpperCase();
-    if (da && db && da === db) return true;
-  }
+  const da = normalizeIdentifier(a.dni);
+  const db = normalizeIdentifier(b.dni);
+  if (da && db && da === db) return true;
   // Por NSS (trabajadores)
-  if (a.nss && b.nss) {
-    const na = (a.nss || '').replace(/[\s\-\/]/g, '');
-    const nb = (b.nss || '').replace(/[\s\-\/]/g, '');
-    if (na && nb && na === nb) return true;
-  }
+  const nsa = normalizeIdentifier(a.nss);
+  const nsb = normalizeIdentifier(b.nss);
+  if (nsa && nsb && nsa === nsb) return true;
+
+  // Por email
+  const emailA = normalizeEmail(a.email);
+  const emailB = normalizeEmail(b.email);
+  if (emailA && emailB && emailA === emailB) return true;
   // Por nombre
   const na = norm(a.nombre || a.nombre_completo || '');
   const nb = norm(b.nombre || b.nombre_completo || '');
-  if (na.length > 4 && nb.length > 4) {
+  if (na.length > 2 && nb.length > 2) {
     if (na === nb) return true;
-    if (na.length > 8 && nb.includes(na.slice(0, 8))) return true;
-    if (nb.length > 8 && na.includes(nb.slice(0, 8))) return true;
+    if (na.length > 8 && nb.length > 8 && nb.includes(na.slice(0, 8))) return true;
+    if (na.length > 8 && nb.length > 8 && na.includes(nb.slice(0, 8))) return true;
   }
   return false;
 }
 
-/** Comprueba si una entidad es MI empresa (para no crear duplicados) */
-function esMiEmpresa(entity) {
-  if (!entity) return false;
-  const nombre = norm(entity.nombre || entity.nombre_completo || '');
-  const cif = (entity.cif_nif || '').replace(/[\s\-]/g, '').toUpperCase();
-
-  // Por CIF
-  if (cif === MI_EMPRESA.cif) return true;
-
-  // Por alias
-  return MI_EMPRESA.aliases.some(alias => nombre.includes(alias));
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  CLASIFICADOR DE SUBCARPETAS PARA FACTURAS
@@ -442,7 +575,7 @@ async function resolveEntities(analysis) {
   const esDocProveedor = ['factura_recibida', 'albaran', 'ticket', 'recibo_autonomo'].includes(tipo)
     || emisorRol === 'proveedor';
 
-  if (esDocProveedor && analysis.emisor?.nombre && !esMiEmpresa(analysis.emisor)) {
+  if (esDocProveedor && analysis.emisor?.nombre && !esMiEmpresa(analysis.emisor) && !esMiPersona(analysis.emisor) && isValidProvider(analysis.emisor)) {
     let prov = ents.proveedores.find(p => sameEntity(p, analysis.emisor));
 
     if (prov) {
@@ -452,6 +585,9 @@ async function resolveEntities(analysis) {
       if (analysis.emisor.cif_nif && !prov.cif_nif) { prov.cif_nif = analysis.emisor.cif_nif; changed = true; }
       if (analysis.emisor.telefono && !prov.telefono) { prov.telefono = analysis.emisor.telefono; changed = true; }
       if (analysis.emisor.direccion && !prov.direccion) { prov.direccion = analysis.emisor.direccion; changed = true; }
+      if (!prov.deduplication_key) { prov.deduplication_key = buildDeduplicationKey(prov); changed = true; }
+      if (!prov.status) { prov.status = 'pending_review'; changed = true; }
+      if (typeof prov.approved_by_user !== 'boolean') { prov.approved_by_user = false; changed = true; }
       prov.facturas = (prov.facturas || 0) + 1;
       prov.ultima_factura = analysis.fechas?.documento || new Date().toISOString().slice(0, 10);
       if (analysis.importes?.total) {
@@ -461,24 +597,28 @@ async function resolveEntities(analysis) {
       result.proveedor_nuevo = false;
       if (changed) updated.push({ tipo: 'proveedor', nombre: prov.nombre, id: prov.id });
     } else {
+      const dedupKey = buildDeduplicationKey(analysis.emisor);
       prov = {
-        id:              `prov_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        nombre:          analysis.emisor.nombre,
-        cif_nif:         analysis.emisor.cif_nif || null,
-        direccion:       analysis.emisor.direccion || null,
-        email:           analysis.emisor.email || null,
-        telefono:        analysis.emisor.telefono || null,
-        tipo_entidad:    analysis.emisor.tipo_entidad || 'empresa',
-        facturas:        1,
-        total_acumulado: analysis.importes?.total || 0,
-        ultima_factura:  analysis.fechas?.documento || new Date().toISOString().slice(0, 10),
-        creado:          new Date().toISOString(),
+        id:                `prov_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        nombre:            analysis.emisor.nombre,
+        cif_nif:           analysis.emisor.cif_nif || null,
+        direccion:         analysis.emisor.direccion || null,
+        email:             analysis.emisor.email || null,
+        telefono:          analysis.emisor.telefono || null,
+        tipo_entidad:      analysis.emisor.tipo_entidad || 'empresa',
+        deduplication_key: dedupKey,
+        status:            'pending_review',
+        approved_by_user:  false,
+        facturas:          1,
+        total_acumulado:   analysis.importes?.total || 0,
+        ultima_factura:    analysis.fechas?.documento || new Date().toISOString().slice(0, 10),
+        creado:            new Date().toISOString(),
       };
       ents.proveedores.push(prov);
       result.proveedor_id = prov.id;
       result.proveedor_nuevo = true;
       created.push({ tipo: 'proveedor', nombre: prov.nombre, id: prov.id });
-      console.log(`[ORGANIZADOR] + Proveedor: ${prov.nombre} (${prov.cif_nif || 'sin CIF'})`);
+      console.log(`[ORGANIZADOR] + Proveedor (PENDIENTE APROBACIÓN): ${prov.nombre} (${prov.cif_nif || 'sin CIF'})`);
     }
   }
 
@@ -596,13 +736,15 @@ function determinePendingActions(analysis) {
     });
   }
 
-  // Facturas por pagar
-  if (['factura_recibida', 'recibo_autonomo', 'ticket'].includes(tipo) && accion === 'pagar') {
+  // Facturas → por defecto ya registradas/pagadas
+  // Si llegan a la app, asumimos que ya han sido procesadas/pagadas
+  if (['factura_recibida', 'recibo_autonomo', 'ticket', 'albaran'].includes(tipo)) {
     actions.push({
-      tipo: 'pagar',
-      descripcion: `Pagar ${analysis.importes?.total || '?'}€ a ${analysis.emisor?.nombre || 'proveedor'}`,
+      tipo: 'registrado',
+      descripcion: `Factura registrada: ${analysis.importes?.total || '?'}€ de ${analysis.emisor?.nombre || 'proveedor'}`,
       plazo: analysis.fechas?.vencimiento || null,
-      completada: false,
+      completada: true,  // ✓ Ya pagada/registrada
+      fecha_completada: new Date().toISOString(),
     });
   }
 

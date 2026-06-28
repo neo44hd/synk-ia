@@ -61,6 +61,13 @@ function normalizeFilemanagerDoc(doc) {
     paginas: doc.extraction?.metadata?.total_pages || null,
     metodo_extraccion: doc.extraction?.method || null,
     procesado: doc.created_at || doc.extraction?.metadata?.processed_at || null,
+    estado: doc.status === 'processed' ? 'procesado' : (doc.status || null),
+    filePath: doc.file_path || null,
+    organizacion: doc.organization ? {
+      folder_path: doc.organization.folder_path || null,
+      normalized_name: doc.organization.normalized_name || null,
+      destination: doc.organization.destination || null,
+    } : null,
     analisis: {
       tipo: a.tipo || 'otro',
       subtipo: a.subtipo || '',
@@ -89,10 +96,70 @@ function normalizeFilemanagerDoc(doc) {
   };
 }
 
-// ─── Obtener todos los documentos de filemanager_docs.json ────────────────
+// ─── Normalizar un documento del store nativo (documents.json) ────────────
+// documents.json es la fuente real del pipeline de email/upload (processDocument).
+// Su shape ya es casi el normalizado; solo aseguramos números con toNum().
+function normalizeNativeDoc(doc) {
+  const a = doc.analisis || {};
+  return {
+    id: doc.id || doc._id,
+    nombre_archivo: doc.nombre_archivo || 'Sin título',
+    mime_type: doc.mime_type,
+    paginas: doc.paginas || null,
+    metodo_extraccion: doc.metodo_extraccion || null,
+    procesado: doc.procesado || null,
+    estado: doc.estado || null,
+    filePath: doc.filePath || null,
+    organizacion: doc.organizacion || null,
+    analisis: {
+      tipo: a.tipo || 'otro',
+      subtipo: a.subtipo || '',
+      fecha: a.fecha || null,
+      fecha_vencimiento: a.fecha_vencimiento || null,
+      emisor: a.emisor || {},
+      receptor: a.receptor || {},
+      trabajador: a.trabajador || null,
+      numero_documento: a.numero_documento || '',
+      base_imponible: toNum(a.base_imponible),
+      iva_total: toNum(a.iva_total),
+      total: toNum(a.total),
+      moneda: a.moneda || 'EUR',
+      forma_pago: a.forma_pago || '',
+      conceptos: (a.conceptos || []).map(c => ({
+        descripcion: c.descripcion,
+        cantidad: c.cantidad,
+        precio_unitario: c.precio_unitario,
+        iva_porcentaje: c.iva_porcentaje,
+        total: toNum(c.total)
+      })),
+      resumen: a.resumen || '',
+      confianza: a.confianza || 0,
+      tags: a.tags || []
+    }
+  };
+}
+
+// ─── Obtener todos los documentos (store nativo documents.json + legacy) ──
+// El pipeline de email/upload escribe en documents.json ({ documents: [...] }).
+// Mantenemos compatibilidad con filemanager_docs.json (legacy) por si quedan
+// documentos antiguos solo allí. Dedup por id.
 function getAllDocs() {
-  const raw = readJSON('filemanager_docs.json');
-  return raw.filter(doc => doc.id).map(normalizeFilemanagerDoc);
+  const byId = new Map();
+
+  const native = readJSONObj('documents.json', { documents: [] });
+  for (const doc of (native.documents || [])) {
+    if (!doc.id && !doc._id) continue;
+    const n = normalizeNativeDoc(doc);
+    byId.set(n.id, n);
+  }
+
+  const fm = readJSON('filemanager_docs.json');
+  for (const doc of fm) {
+    if (!doc.id || byId.has(doc.id)) continue;
+    byId.set(doc.id, normalizeFilemanagerDoc(doc));
+  }
+
+  return [...byId.values()];
 }
 
 // ─── Sync documents → document.json ─────────────────────────────────────
@@ -137,7 +204,9 @@ function syncDocuments() {
 // ─── Sync providers: entities.json + emisores → provider.json ───────────
 function syncProviders() {
   const entities = readJSONObj('entities.json', { proveedores: [], clientes: [] });
-  const rawProviders = entities.proveedores || [];
+  // entities.json del pipeline usa claves en inglés (providers/clients);
+  // mantenemos compatibilidad con las antiguas en español.
+  const rawProviders = entities.providers || entities.proveedores || [];
   const existing = readJSON('provider.json');
   const existingNames = new Set(existing.map(p => (p.name || '').toLowerCase().trim()));
   const existingCifs = new Set(existing.map(p => p.cif).filter(Boolean));
@@ -300,6 +369,15 @@ function syncEmails() {
   const existing = readJSON('emailmessage.json');
   const existingMsgIds = new Set(existing.map(e => e.message_id || e.source_id));
 
+  // Backfill: sin 'folder' la bandeja (SmartMailbox filtra folder='inbox')
+  // no muestra el correo. Garantizamos campos mínimos en registros antiguos.
+  let migrated = 0;
+  for (const e of existing) {
+    if (!e.folder) { e.folder = 'inbox'; migrated++; }
+    if (e.is_read === undefined) e.is_read = false;
+    if (e.is_starred === undefined) e.is_starred = false;
+  }
+
   let added = 0;
   for (const email of rawEmails) {
     if (existingMsgIds.has(email.message_id)) continue;
@@ -317,15 +395,18 @@ function syncEmails() {
       attachment_names: email.attachment_names || [],
       attachment_count: email.attachment_count || 0,
       status: email.estado || 'nuevo',
+      folder: 'inbox',
+      is_read: false,
+      is_starred: false,
       created_date: email.synced_at || new Date().toISOString(),
       updated_date: new Date().toISOString()
     });
     added++;
   }
 
-  if (added > 0) {
+  if (added > 0 || migrated > 0) {
     writeJSON('emailmessage.json', existing);
-    console.log(`[SYNC] Emails: +${added} (${existing.length} total)`);
+    console.log(`[SYNC] Emails: +${added} nuevos, ${migrated} migrados (${existing.length} total)`);
   }
   return added;
 }
@@ -333,7 +414,7 @@ function syncEmails() {
 // ─── Sync entities.json → client.json ───────────────────────────────────
 function syncClients() {
   const entities = readJSONObj('entities.json', { clientes: [] });
-  const rawClients = entities.clientes || [];
+  const rawClients = entities.clients || entities.clientes || [];
   const existing = readJSON('client.json');
   const existingSourceIds = new Set(existing.map(c => c.source_id));
 
@@ -364,81 +445,101 @@ function syncClients() {
 }
 
 // ─── Sync documentos procesados → uploadedfile.json ──────────────────────
-function syncUploadedFiles() {
-  const allDocs = getAllDocs();
-  const existing = readJSON('uploadedfile.json');
-  const existingSourceIds = new Set(existing.map(f => f.source_id));
+// Produce registros en el shape que espera la página DocumentArchive:
+//   { filename, size, processing_status, detected_type,
+//     metadata: { provider, employee_name, destination:{section,type,name}, amount } }
+const TIPO_LABEL = {
+  factura_recibida: 'Factura', factura_emitida: 'Factura', albaran: 'Albarán',
+  nomina: 'Nómina', finiquito: 'Finiquito', contrato: 'Contrato', recibo: 'Recibo',
+  ticket: 'Ticket', escritura: 'Escritura', pdf_multi_factura: 'Múltiples', otro: 'Otros',
+};
 
-  const tipoMap = {
-    'factura_recibida': 'Factura',
-    'factura_emitida': 'Factura',
-    'albaran': 'Albarán',
-    'nomina': 'Nómina',
-    'contrato': 'Contrato',
-    'recibo': 'Recibo',
-    'escritura': 'Escritura',
-    'pdf_multi_factura': 'Múltiples',
-    'otro': 'Otros'
-  };
+function buildUploadedRecord(doc, existingId) {
+  const a = doc.analisis || {};
+  const org = doc.organizacion || {};
+  const tipoLabel = TIPO_LABEL[a.tipo] || 'Otros';
 
-  let added = 0;
-  for (const doc of allDocs) {
-    if (existingSourceIds.has(doc.id)) continue;
+  const isChickenEmisor = /chicken\s*palace/i.test(a.emisor?.nombre || '');
+  const emisorNombre = (a.emisor?.nombre || '').trim();
+  const receptorNombre = (a.receptor?.nombre || '').trim();
+  const employeeName = (a.trabajador?.nombre_completo || a.trabajador?.nombre || '').trim();
+  const amount = a.total ?? a.base_imponible ?? null;
 
-    const a = doc.analisis || {};
-    const tipoLabel = tipoMap[a.tipo] || 'Otros';
+  let providerName = '';
+  if (['nomina', 'finiquito'].includes(a.tipo)) providerName = '';
+  else if (isChickenEmisor) providerName = receptorNombre || emisorNombre;
+  else providerName = emisorNombre || receptorNombre;
 
-    const isChickenEmisor = /chicken\s*palace/i.test(a.emisor?.nombre || '');
-    const emisorNombre = (a.emisor?.nombre || '').trim();
-    const receptorNombre = (a.receptor?.nombre || '').trim();
-    const trabajadorNombre = (a.trabajador?.nombre_completo || a.trabajador?.nombre || '').trim();
-
-    let providerName = '';
-    if (a.tipo === 'nomina') {
-      providerName = '';
-    } else if (isChickenEmisor) {
-      providerName = receptorNombre || emisorNombre;
-    } else {
-      providerName = emisorNombre || receptorNombre;
-    }
-    const employeeName =
-      a.trabajador?.nombre_completo ||
-      a.trabajador?.nombre ||
-      '';
-    const employeeDni =
-      a.trabajador?.dni ||
-      a.trabajador?.nif ||
-      '';
-    const amount = a.total ?? a.base_imponible ?? null;
-
-    let destination = null;
-    if (a.tipo === 'nomina' && employeeName) {
+  // Destino: preferir el del organizador; si no, derivar del tipo
+  let destination = org.destination || null;
+  if (!destination) {
+    if (['nomina', 'finiquito'].includes(a.tipo) && employeeName) {
       destination = { type: 'Employee', id: doc.id, name: employeeName, section: 'Equipo' };
     } else if ((a.tipo || '').startsWith('factura') && providerName) {
       destination = { type: 'Invoice', id: doc.id, name: providerName + (amount ? ' - ' + amount + '€' : ''), section: 'Facturas' };
     } else if (a.tipo === 'recibo' && providerName) {
       destination = { type: 'Invoice', id: doc.id, name: providerName + (amount ? ' - ' + amount + '€' : ''), section: 'Recibos' };
+    } else if (org.folder_path) {
+      destination = { type: 'Document', id: doc.id, name: org.folder_path, section: org.folder_path.split('/')[0] };
     }
+  }
 
-    existing.push({
-      id: generateId(),
-      source_id: doc.id,
-      provider_name: providerName,
-      provider_cif: a.emisor?.cif_nif || '',
+  let size = 0;
+  try { if (doc.filePath && fs.existsSync(doc.filePath)) size = fs.statSync(doc.filePath).size; } catch { /* sin tamaño */ }
+
+  const processing_status = doc.estado === 'procesado' ? 'completed'
+    : doc.estado === 'error' ? 'error' : 'pending';
+
+  return {
+    id: existingId || generateId(),
+    source_id: doc.id,
+    filename: doc.nombre_archivo || 'documento',
+    detected_type: tipoLabel,
+    document_type: tipoLabel,
+    size,
+    content_type: doc.mime_type || null,
+    file_url: null,
+    upload_date: doc.procesado || new Date().toISOString(),
+    source: 'Email/Pipeline',
+    processing_status,
+    metadata: {
+      provider: providerName || null,
+      employee_name: employeeName || null,
+      doc_number: a.numero_documento || null,
       destination,
-      tipo: tipoLabel,
       amount,
-      currency: a.moneda || 'EUR',
-      synced_at: new Date().toISOString(),
-    });
-    added++;
+      tipo: a.tipo || null,
+      folder_path: org.folder_path || null,
+    },
+    synced_at: new Date().toISOString(),
+  };
+}
+
+function syncUploadedFiles() {
+  const allDocs = getAllDocs();
+  const existing = readJSON('uploadedfile.json');
+  const bySource = new Map(existing.filter(f => f.source_id).map(f => [f.source_id, f]));
+
+  let added = 0, updated = 0;
+  for (const doc of allDocs) {
+    const prev = bySource.get(doc.id);
+    if (prev) {
+      // Solo re-escribir si al registro previo le falta destino o no está completo
+      const needsUpgrade = prev.processing_status !== 'completed' || !prev.metadata?.destination;
+      if (!needsUpgrade) continue;
+      Object.assign(prev, buildUploadedRecord(doc, prev.id));
+      updated++;
+    } else {
+      existing.push(buildUploadedRecord(doc));
+      added++;
+    }
   }
 
-  if (added > 0) {
+  if (added > 0 || updated > 0) {
     writeJSON('uploadedfile.json', existing);
-    console.log(`[SYNC] Uploaded files: +${added} (${existing.length} total)`);
+    console.log(`[SYNC] Uploaded files: +${added} nuevos, ${updated} actualizados (${existing.length} total)`);
   }
-  return added;
+  return added + updated;
 }
 
 // ─── Sync completa ──────────────────────────────────────────────────────

@@ -30,6 +30,12 @@ import { fileURLToPath } from 'url';
 import { execFile }    from 'child_process';
 import { promisify }   from 'util';
 
+// Promisified execFile usado por pdftotext y todas las rutas OCR
+// (pdftoppm, tesseract). Antes NO estaba definido: cualquier llamada a
+// execAsync lanzaba ReferenceError (silenciado por los try/catch), por lo
+// que OCR de PDFs escaneados e imágenes estaba completamente roto.
+const execAsync = promisify(execFile);
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
@@ -39,8 +45,11 @@ const __dirname  = path.dirname(__filename);
 const GATEWAY_URL     = process?.env?.LMSTUDIO_URL || 'http://127.0.0.1:4000/v1';
 const GATEWAY_KEY     = process?.env?.LMSTUDIO_API_KEY || 'gateway-local';
 const OCR_MODEL       = process.env.OCR_MODEL || 'glm-ocr';
-const MARKITDOWN_EXE  = process?.env?.MARKITDOWN_EXE || '/opt/markitdown-venv/bin/python';
-const MARKITDOWN_WRAPPER = process?.env?.MARKITDOWN_WRAPPER || '/app/server/tools/markitdown_wrapper.py';
+// Local-first: usa python3 del sistema (que ya tiene markitdown) y el wrapper
+// del propio repo. Antes apuntaba a /opt/markitdown-venv y /app (rutas Docker)
+// que no existen en local y rompían la extracción markdown-first.
+const MARKITDOWN_EXE  = process?.env?.MARKITDOWN_EXE || 'python3';
+const MARKITDOWN_WRAPPER = process?.env?.MARKITDOWN_WRAPPER || path.join(__dirname, '..', 'tools', 'markitdown_wrapper.py');
 
 function getOcrModel() {
   return OCR_MODEL;
@@ -266,6 +275,24 @@ async function dispatchExtract(filePath, mimeType, ext, originalName) {
 // ── PDF ────────────────────────────────────────────────────────────────────
 
 async function extractPdf(filePath) {
+  // 0) pdftotext (poppler) PRIMERO — robusto y rápido. pdf-parse lanza
+  //    "bad XRef entry" de forma intermitente en PDFs válidos, así que se
+  //    relega a fallback. Si poppler no está o el PDF es escaneado, seguimos.
+  try {
+    const { stdout } = await execAsync(
+      'pdftotext',
+      ['-q', '-enc', 'UTF-8', filePath, '-'],
+      { timeout: 60_000, maxBuffer: 20 * 1024 * 1024 }
+    );
+    const t = cleanText(stdout || '');
+    if (t.length > 80) {
+      return ok(t, 'pdf-text', {
+        has_tables: t.includes('|') || /\t/.test(t),
+        has_images: false,
+      });
+    }
+  } catch { /* poppler no disponible o PDF sin capa de texto → continuar */ }
+
   try {
     const { default: pdfParse } = await import('pdf-parse');
     const buf    = await readFile(filePath);

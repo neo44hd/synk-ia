@@ -186,3 +186,48 @@ dataRouter.delete('/:entity/:id', (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 });
+
+// APPROVE provider
+dataRouter.post('/provider/:id/approve', (req, res) => {
+  try {
+    const providers = readEntity('provider');
+    const idx = providers.findIndex(p => p.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ success: false, error: 'Provider not found' });
+
+    providers[idx] = {
+      ...providers[idx],
+      status: 'approved',
+      approved_by_user: true,
+      approved_at: new Date().toISOString(),
+      updated_date: new Date().toISOString(),
+    };
+
+    writeEntity('provider', providers);
+    res.json({ success: true, data: providers[idx] });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// REJECT provider
+dataRouter.post('/provider/:id/reject', (req, res) => {
+  try {
+    const providers = readEntity('provider');
+    const idx = providers.findIndex(p => p.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ success: false, error: 'Provider not found' });
+
+    providers[idx] = {
+      ...providers[idx],
+      status: 'rejected',
+      approved_by_user: false,
+      rejected_reason: req.body?.reason || 'Rechazado por el usuario',
+      rejected_at: new Date().toISOString(),
+      updated_date: new Date().toISOString(),
+    };
+
+    writeEntity('provider', providers);
+    res.json({ success: true, data: providers[idx] });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});

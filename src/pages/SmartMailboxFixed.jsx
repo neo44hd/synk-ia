@@ -48,19 +48,18 @@ export default function SmartMailboxFixed() {
 
   // Cargar datos reales del API
   useEffect(() => {
-    const loadEmailStats = async () => {
+    const loadEmails = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/email/stats');
-        const data = await response.json();
-        
-        if (data.success) {
-          setEmailStats(data);
-          
-          // Generar emails mock basados en estadísticas
-          const fakeEmails = generateMockEmails(data);
-          setMockEmails(fakeEmails);
-        }
+        const [statsRes, emailsRes] = await Promise.all([
+          fetch('/api/email/stats'),
+          fetch('/api/data/emailmessage?sort=-received_date&limit=500'),
+        ]);
+        const statsData = await statsRes.json();
+        const emailsData = await emailsRes.json();
+
+        if (statsData.success) setEmailStats(statsData);
+        if (emailsData.success) setMockEmails(mapEmails(emailsData.data || []));
       } catch (error) {
         console.error('Error loading emails:', error);
         toast.error('Error cargando correos');
@@ -69,57 +68,24 @@ export default function SmartMailboxFixed() {
       }
     };
 
-    loadEmailStats();
+    loadEmails();
   }, []);
 
-  // Generar emails mock para demostración
-  const generateMockEmails = (stats) => {
-    const senders = [
-      { name: 'Google Workspace', email: 'noreply@google.com' },
-      { name: 'Microsoft 365', email: 'noreply@microsoft.com' },
-      { name: 'Amazon Web Services', email: 'account@amazon.com' },
-      { name: 'GitHub', email: 'noreply@github.com' },
-      { name: 'Stripe', email: 'notifications@stripe.com' },
-      { name: 'Facturación', email: 'facturacion@empresa.es' },
-      { name: 'Sistemas', email: 'admin@empresa.es' },
-    ];
-
-    const subjects = [
-      'Factura de pago pendiente',
-      'Confirmación de pedido',
-      'Resumen mensual',
-      'Notificación de sistema',
-      'Nuevo documento adjunto',
-      'Requiere firma electrónica',
-      'Actualización importante',
-      'Reporte de actividad',
-    ];
-
-    const emails = [];
-    const now = new Date();
-
-    for (let i = 0; i < Math.min(stats.total_emails, 20); i++) {
-      const sender = senders[i % senders.length];
-      const date = new Date(now.getTime() - Math.random() * 30 * 24 * 60 * 60 * 1000);
-      
-      emails.push({
-        id: `email_${i}`,
-        subject: `${subjects[i % subjects.length]} #${i + 1}`,
-        sender_name: sender.name,
-        sender_email: sender.email,
-        received_date: date.toISOString(),
-        is_read: Math.random() > 0.3,
-        is_starred: Math.random() > 0.8,
-        has_attachments: Math.random() > 0.6,
-        folder: i < 10 ? 'inbox' : (i < 15 ? 'facturas' : 'proveedores'),
-        preview: `Contenido del email ${i + 1}...`,
-        body: `Este es el cuerpo completo del email ${i + 1}. Contiene información importante.`,
-        has_documents: i < stats.emails_con_docs,
-      });
-    }
-
-    return emails;
-  };
+  // Mapear correos reales del API (entidad EmailMessage) al formato de la UI
+  const mapEmails = (records) => (records || []).map((e) => ({
+    id: e.id,
+    subject: e.subject || '(Sin asunto)',
+    sender_name: e.sender_name || e.sender_email || 'Desconocido',
+    sender_email: e.sender_email || '',
+    received_date: e.received_date || e.created_date,
+    is_read: !!e.is_read,
+    is_starred: !!e.is_starred,
+    has_attachments: !!e.has_attachments,
+    folder: e.folder || 'inbox',
+    preview: e.body_preview || '',
+    body: e.body_preview || '',
+    has_documents: (e.attachment_count || 0) > 0,
+  }));
 
   // Sincronizar emails
   const handleSync = async () => {

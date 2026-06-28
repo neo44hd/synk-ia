@@ -1,3 +1,8 @@
+// IMPORTANTE: cargar .env ANTES que cualquier otro módulo.
+// Los imports ES se evalúan en orden; si DATA_DIR/UPLOADS_DIR no están
+// definidos al evaluar agentes (emailAgent, documentAgent…), caen al
+// fallback '/app/...' y fallan con ENOENT en local/macOS.
+import './env-loader.mjs';
 import express            from 'express';
 import dotenv             from 'dotenv';
 import path               from 'path';
@@ -24,6 +29,8 @@ import processingRouter        from './routes/processing.js';
 import trabajadoresRouter     from './routes/trabajadores.js';
 import { authRouter }         from './routes/auth.js';
 import { filebrainRouter }    from './routes/filebrain.js';
+import { emailAttachmentsRouter } from './routes/emailAttachments.js';
+import emailFileBrainRouter from './routes/emailFileBrainIntegration.js';
 import { syncAll }            from './services/dataSync.js';
 import filemanagerRouter      from './routes/filemanager.js';
 import { orchestratorRouter } from './agents/orchestrator.js';
@@ -113,6 +120,8 @@ if (process.env.NODE_ENV !== 'production') {
 // ── Auth (JWT) ────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRouter);
 app.use('/api/filebrain', filebrainRouter);
+app.use('/api/email-attachments', emailAttachmentsRouter);
+app.use('/api/integration', emailFileBrainRouter);
 
 
 // ── Proxy: SINKIA Commerce (Mac Mini) ─────────────────────────────────────

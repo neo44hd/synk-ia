@@ -235,7 +235,7 @@ aiRouter.post('/generate', async (req, res) => {
       success:        true,
       response:       result.response,
       model:          result.model,
-      provider:       getProvider(result.model),
+      provider:       'gateway',
       eval_duration:  result.eval_duration,
       total_duration: result.total_duration,
     });
