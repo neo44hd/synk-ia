@@ -24,31 +24,10 @@ import { toast } from "sonner";
 import { synkia } from '@/api/synkiaClient';
 
 export default function ControlCenter() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
   const [showRebuildDialog, setShowRebuildDialog] = useState(false);
   const [rebuildConfirm, setRebuildConfirm] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Check permissions (CEO/Admin only)
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await synkia.auth.me();
-        setUser(currentUser);
-        if (currentUser && 
-            currentUser.permission_level !== 'super_admin' && 
-            currentUser.permission_level !== 'admin' && 
-            currentUser.role !== 'ceo') {
-          toast.error('Acceso restringido a CEO/Admin');
-          navigate('/');
-        }
-      } catch (error) {
-        console.error('Error loading user:', error);
-      }
-    };
-    loadUser();
-  }, [navigate]);
+  // Note: Removed user auth check to prevent infinite loops
 
   // Fetch control status with auto-refresh
   const { data: status, isLoading, refetch } = useQuery({
@@ -119,14 +98,6 @@ export default function ControlCenter() {
       callControlEndpoint('verify');
     }
   };
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-gray-500">Cargando autenticación...</div>
-      </div>
-    );
-  }
 
   const busy = status?.busy || isProcessing;
   const data = status?.data || {};

@@ -105,7 +105,7 @@ const navItems = [
     label: "Apps", 
     icon: ShoppingCart,
     items: [
-      { label: "🏠 SynK-IA Main", url: createPageUrl("SynkiaMain") },
+      { label: "🏠 SynK-IA Main", url: "/" },
       { label: "🛒 Tienda Online", url: "/commerce.html" },
       { label: "🍕 Kitchen Display", url: createPageUrl("KitchenDisplay") },
       { label: "📱 App Trabajadores", url: createPageUrl("WorkerMobile") },
@@ -201,10 +201,18 @@ export default function Layout({ children }) {
                       >
                         {nav.items.map((item) => {
                           const isItemActive = location.pathname === item.url;
+                          const isExternal = item.url.startsWith('http') || item.url.includes('.html') || item.url === '/';
+                          
                           return (
                             <DropdownMenuItem 
                               key={item.url}
-                              onClick={() => navigate(item.url)}
+                              onClick={() => {
+                                if (isExternal) {
+                                  window.location.href = item.url;
+                                } else {
+                                  navigate(item.url);
+                                }
+                              }}
                               className={`cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-colors ${
                                 isItemActive 
                                   ? "bg-zinc-800 text-white font-medium" 
