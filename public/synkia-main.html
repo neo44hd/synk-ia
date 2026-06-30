@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 SynK-IA — Main Control</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg: linear-gradient(135deg, #0a0e1a 0%, #1a1f3a 100%);
+    --surface: #111827;
+    --surface2: #1f2937;
+    --text: #e5e7eb;
+    --accent: #06b6d4;
+    --accent2: #3b82f6;
+    --green: #10b981;
+    --border: #1e2d54;
+  }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+    animation: slideDown 0.6s ease-out;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .logo-icon {
+    font-size: 4em;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .logo h1 {
+    font-size: 3.5em;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tagline {
+    font-size: 1.2em;
+    color: #9ca3af;
+    margin-top: 12px;
+    font-weight: 500;
+  }
+
+  /* Status Bar */
+  .status-bar {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95em;
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  /* Card */
+  .card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    animation: fadeIn 0.6s ease-out;
+    animation-fill-mode: both;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .card:nth-child(1) { animation-delay: 0.1s; }
+  .card:nth-child(2) { animation-delay: 0.2s; }
+  .card:nth-child(3) { animation-delay: 0.3s; }
+  .card:nth-child(4) { animation-delay: 0.4s; }
+  .card:nth-child(5) { animation-delay: 0.5s; }
+  .card:nth-child(6) { animation-delay: 0.6s; }
+  .card:nth-child(7) { animation-delay: 0.7s; }
+  .card:nth-child(8) { animation-delay: 0.8s; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .card:hover::before {
+    left: 100%;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(6, 182, 212, 0.2);
+    background: rgba(6, 182, 212, 0.05);
+  }
+
+  .card-icon {
+    font-size: 3em;
+    display: block;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 1.3em;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .card-description {
+    font-size: 0.95em;
+    color: #9ca3af;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .card-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+  }
+
+  .card-link:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(6, 182, 212, 0.3);
+  }
+
+  /* Stats Section */
+  .stats-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 40px;
+  }
+
+  .stats-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-bottom: 24px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .stat-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 2em;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-size: 0.85em;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 40px 20px;
+    border-top: 1px solid var(--border);
+    color: #6b7280;
+    font-size: 0.9em;
+  }
+
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .footer-links a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .footer-links a:hover {
+    color: var(--accent2);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .logo h1 {
+      font-size: 2.5em;
+    }
+
+    .logo-icon {
+      font-size: 2.5em;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .header {
+      margin-bottom: 40px;
+    }
+
+    .grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      padding: 24px;
+    }
+
+    .stats-section {
+      padding: 24px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">
+      <span class="logo-icon">🚀</span>
+      <h1>SynK-IA</h1>
+    </div>
+    <p class="tagline">Control Central — Inteligencia Integrada</p>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-dot"></span>
+      <span id="api-status">Sistema Online</span>
+    </div>
+    <div class="status-item">
+      <span>⏱️</span>
+      <span id="uptime">Obteniendo estado...</span>
+    </div>
+    <div class="status-item">
+      <span>🧠</span>
+      <span id="ai-status">IA Lista</span>
+    </div>
+  </div>
+
+  <!-- MAIN FEATURES -->
+  <div class="grid">
+    <!-- CEO Dashboard -->
+    <div class="card">
+      <span class="card-icon">📊</span>
+      <h2 class="card-title">CEO Dashboard</h2>
+      <p class="card-description">Vista ejecutiva con KPIs, ventas, operaciones y proyecciones.</p>
+      <a href="/ceodashboard" class="card-link">Acceder →</a>
+    </div>
+
+    <!-- Commerce -->
+    <div class="card">
+      <span class="card-icon">🛒</span>
+      <h2 class="card-title">Tienda Online</h2>
+      <p class="card-description">Sistema de e-commerce con catálogo, pedidos y gestión de inventario.</p>
+      <a href="/store" class="card-link">Acceder →</a>
+    </div>
+
+    <!-- Financial -->
+    <div class="card">
+      <span class="card-icon">💰</span>
+      <h2 class="card-title">Finanzas</h2>
+      <p class="card-description">Facturación, contabilidad, reportes e integración con BiLoop.</p>
+      <a href="/billing" class="card-link">Acceder →</a>
+    </div>
+
+    <!-- HR & Team -->
+    <div class="card">
+      <span class="card-icon">👥</span>
+      <h2 class="card-title">Recursos Humanos</h2>
+      <p class="card-description">Personal, nóminas, horarios, vacaciones y gestión de equipos.</p>
+      <a href="/staff" class="card-link">Acceder →</a>
+    </div>
+
+    <!-- Email & Documents -->
+    <div class="card">
+      <span class="card-icon">📧</span>
+      <h2 class="card-title">Buzón Inteligente</h2>
+      <p class="card-description">Buzón de correo con IA, documentos y archivo inteligente.</p>
+      <a href="/smartmailbox" class="card-link">Acceder →</a>
+    </div>
+
+    <!-- Kitchen Display -->
+    <div class="card">
+      <span class="card-icon">🍽️</span>
+      <h2 class="card-title">Cocina</h2>
+      <p class="card-description">Sistema de visualización de pedidos y gestión de cocina.</p>
+      <a href="/kitchendisplay" class="card-link">Acceder →</a>
+    </div>
+
+    <!-- AI Brain -->
+    <div class="card">
+      <span class="card-icon">🧠</span>
+      <h2 class="card-title">CEO Brain</h2>
+      <p class="card-description">Asistente IA para análisis, predicciones y recomendaciones.</p>
+      <a href="/ceobrain" class="card-link">Acceder →</a>
+    </div>
+
+    <!-- Control Center -->
+    <div class="card">
+      <span class="card-icon">⚙️</span>
+      <h2 class="card-title">Centro de Control</h2>
+      <p class="card-description">Sistema, infraestructura, configuración y mantenimiento.</p>
+      <a href="/controlcenter" class="card-link">Acceder →</a>
+    </div>
+  </div>
+
+  <!-- STATS SECTION -->
+  <div class="stats-section">
+    <h2 class="stats-title">📈 Estado del Sistema</h2>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-orders">—</div>
+        <div class="stat-label">Pedidos Hoy</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-revenue">—</div>
+        <div class="stat-label">Ingresos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-users">—</div>
+        <div class="stat-label">Usuarios Activos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-uptime">—</div>
+        <div class="stat-label">Disponibilidad</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/ceodashboard">Dashboard</a>
+      <a href="/store">Tienda</a>
+      <a href="/smartmailbox">Email</a>
+      <a href="/controlcenter">Sistema</a>
+    </div>
+    <p>© 2026 SynK-IA — Control Central Integrado</p>
+    <p>Version 2.1.0 | Todos los sistemas operativos</p>
+  </div>
+</div>
+
+<script>
+  // Load system status
+  async function loadStatus() {
+    try {
+      const res = await fetch('/api/commerce/health');
+      if (res.ok) {
+        const data = await res.json();
+        document.getElementById('api-status').textContent = '✓ Sistema Online';
+        
+        // Load stats
+        const statsRes = await fetch('/api/commerce/dashboard/stats');
+        if (statsRes.ok) {
+          const stats = await statsRes.json();
+          document.getElementById('stat-orders').textContent = stats.data?.dashboard?.orders_today || '0';
+          document.getElementById('stat-revenue').textContent = '€' + (stats.data?.sales?.today || '0');
+          document.getElementById('stat-uptime').textContent = stats.data?.system?.uptimeHuman || '—';
+        }
+      }
+    } catch (e) {
+      console.error('Status check failed:', e);
+    }
+  }
+
+  // Initialize
+  loadStatus();
+  setInterval(loadStatus, 30000);
+</script>
+</body>
+</html>

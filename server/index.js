@@ -125,44 +125,12 @@ app.use('/api/email-attachments', emailAttachmentsRouter);
 app.use('/api/integration', emailFileBrainRouter);
 
 
-// ── Proxy: SINKIA Commerce (Mac Mini) ─────────────────────────────────────
-const COMMERCE_URL = process?.env?.COMMERCE_URL || 'http://100.78.4.14:4400';
+// ── SINKIA Commerce (Local Routes) ────────────────────────────────────────
+// Import the local commerce router
+import commerceRouter from './routes/commerce.js';
 
-// Proxy imágenes de Commerce
-app.use('/api/commerce/images', async (req, res) => {
-  try {
-    const targetUrl = COMMERCE_URL + '/images' + req.url;
-    const upstream = await fetch(targetUrl, { signal: AbortSignal.timeout(8000) });
-    if (!upstream.ok) return res.status(upstream.status).end();
-    const contentType = upstream.headers.get('content-type');
-    if (contentType) res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=604800');
-    const buffer = Buffer.from(await upstream.arrayBuffer());
-    res.send(buffer);
-  } catch {
-    res.status(502).end();
-  }
-});
-
-// Proxy API Commerce
-app.use('/api/commerce', async (req, res) => {
-  try {
-    const targetUrl = COMMERCE_URL + '/api' + req.url;
-    const opts = {
-      method: req.method,
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(8000),
-    };
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-      opts.body = JSON.stringify(req.body);
-    }
-    const upstream = await fetch(targetUrl, opts);
-    const data = await upstream.json();
-    res.status(upstream.status).json(data);
-  } catch (err) {
-    res.status(502).json({ success: false, error: 'Commerce service unavailable' });
-  }
-});
+// Use the commerce routes
+app.use('/api/commerce', commerceRouter);
 
 // ── Proxies: Stack IA local (Docker) ─────────────────────────────────────────
 // Permiten acceder a los servicios local desde fuera del Mac (via tunnel o red)
