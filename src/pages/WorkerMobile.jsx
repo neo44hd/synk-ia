@@ -25,8 +25,18 @@ export default function WorkerMobile() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("home");
 
+  // Fetch user once on component mount
   useEffect(() => {
-    synkia.auth.me().then(setUser).catch(() => {});
+    let mounted = true;
+    synkia.auth.me()
+      .then(userData => {
+        if (mounted) setUser(userData);
+      })
+      .catch(err => {
+        console.error('[WorkerMobile] Auth error:', err);
+        if (mounted) setUser(null);
+      });
+    return () => { mounted = false; };
   }, []);
 
   const { data: todayTimesheet } = useQuery({
