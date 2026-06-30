@@ -336,13 +336,29 @@ export default function SmartMailboxFixed() {
             </ScrollArea>
 
             <div className="p-4 border-t border-slate-200 space-y-2">
-              <Button className="w-full bg-blue-500 hover:bg-blue-600">
+              <Button 
+                onClick={() => {
+                  if (selectedEmail?.sender_email) {
+                    // Open Gmail with sender email
+                    window.location.href = `https://mail.google.com/mail/u/0/#search/${selectedEmail.sender_email}`;
+                  }
+                }}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+              >
                 <MailOpen size={16} className="mr-2" />
                 Abrir en Gmail
               </Button>
-              <Button variant="outline" className="w-full">
-                <Star size={16} className="mr-2" />
-                Marcar como importante
+              <Button 
+                onClick={() => {
+                  // Toggle star status
+                  setSelectedEmail(prev => prev ? { ...prev, is_starred: !prev.is_starred } : null);
+                  toast.success(selectedEmail?.is_starred ? 'Desmarcado de importante' : 'Marcado como importante');
+                }}
+                variant="outline" 
+                className="w-full"
+              >
+                <Star size={16} className={`mr-2 ${selectedEmail?.is_starred ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                {selectedEmail?.is_starred ? 'Desmarcar de importante' : 'Marcar como importante'}
               </Button>
             </div>
           </div>

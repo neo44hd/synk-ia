@@ -1,0 +1,22 @@
+{
+  "clientes": [],
+  "proveedores": [
+    {
+      "id": "prov_1782648302397_4lak",
+      "nombre": "DISTRIBUCIONES PINEDAS MONTIEL, S.L.",
+      "cif_nif": "84504064A",
+      "direccion": "POU DE NACIANA, 14-16",
+      "email": "info@distribucionesmontiel.com",
+      "telefono": null,
+      "tipo_entidad": "empresa",
+      "deduplication_key": "tax:84504064A",
+      "status": "pending_review",
+      "approved_by_user": false,
+      "facturas": 2,
+      "total_acumulado": 2100.5,
+      "ultima_factura": "2026-06-29",
+      "creado": "2026-06-28T12:05:02.397Z"
+    }
+  ],
+  "trabajadores": []
+}

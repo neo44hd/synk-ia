@@ -1,0 +1,47 @@
+{
+  "timestamp": "2026-06-28T12:47:51.114Z",
+  "stats": {
+    "emails": {
+      "total": 671,
+      "processed": 671,
+      "failed": 0,
+      "retried": 0,
+      "finalFailed": 0,
+      "errors": {}
+    },
+    "documents": {
+      "total": 0,
+      "processed": 0,
+      "failed": 0,
+      "retried": 0,
+      "finalFailed": 0,
+      "errors": {}
+    },
+    "files": {
+      "total": 250,
+      "processed": 250,
+      "failed": 0,
+      "retried": 0,
+      "finalFailed": 0,
+      "errors": {}
+    },
+    "invoices": {
+      "total": 158,
+      "processed": 158,
+      "failed": 0,
+      "retried": 0,
+      "finalFailed": 0,
+      "errors": {}
+    },
+    "startTime": "2026-06-28T12:47:50.602Z",
+    "endTime": "2026-06-28T12:47:51.114Z",
+    "totalRetries": 0,
+    "totalRecovered": 0
+  },
+  "failedItems": {
+    "emails": [],
+    "documents": [],
+    "files": [],
+    "invoices": []
+  }
+}

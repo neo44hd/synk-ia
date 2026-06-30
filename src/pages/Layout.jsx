@@ -47,6 +47,7 @@ const navItems = [
       { label: "📹 Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
       { label: "🏥 Sistema Overview", url: createPageUrl("SystemOverview") },
       { label: "⚙️ Control Panel", url: createPageUrl("ControlPanel") },
+      { label: "🛠️ Centro de Control", url: createPageUrl("ControlCenter") },
     ]
   },
   { 
@@ -104,8 +105,8 @@ const navItems = [
     label: "Apps", 
     icon: ShoppingCart,
     items: [
-      { label: "🎯 SynK-IA App", url: createPageUrl("SynkiaApp") },
-      { label: "🏠 SynK-IA Main", url: createPageUrl("SynkiaMain") },
+      { label: "🏠 SynK-IA Main", url: "/" },
+      { label: "🛒 Tienda Online", url: createPageUrl("Store") },
       { label: "🍕 Kitchen Display", url: createPageUrl("KitchenDisplay") },
       { label: "📱 App Trabajadores", url: createPageUrl("WorkerMobile") },
     ]
@@ -200,10 +201,18 @@ export default function Layout({ children }) {
                       >
                         {nav.items.map((item) => {
                           const isItemActive = location.pathname === item.url;
+                          const isExternal = item.url.startsWith('http') || item.url.includes('.html') || item.url === '/';
+                          
                           return (
                             <DropdownMenuItem 
                               key={item.url}
-                              onClick={() => navigate(item.url)}
+                              onClick={() => {
+                                if (isExternal) {
+                                  window.location.href = item.url;
+                                } else {
+                                  navigate(item.url);
+                                }
+                              }}
                               className={`cursor-pointer rounded-lg px-3 py-2.5 text-sm transition-colors ${
                                 isItemActive 
                                   ? "bg-zinc-800 text-white font-medium" 
@@ -270,19 +279,29 @@ export default function Layout({ children }) {
                       <div className="space-y-1 pl-2 border-l border-zinc-800">
                         {nav.items.map((item) => {
                           const isItemActive = location.pathname === item.url;
+                          const isExternal = item.url.startsWith('http') || item.url.includes('.html') || item.url === '/';
+                          
+                          const handleClick = () => {
+                            setMobileMenuOpen(false);
+                            if (isExternal) {
+                              window.location.href = item.url;
+                            } else {
+                              navigate(item.url);
+                            }
+                          };
+                          
                           return (
-                            <Link
+                            <button
                               key={item.url}
-                              to={item.url}
-                              onClick={() => setMobileMenuOpen(false)}
-                              className={`block py-2.5 px-4 rounded-r-lg text-base ${
+                              onClick={handleClick}
+                              className={`w-full text-left block py-2.5 px-4 rounded-r-lg text-base ${
                                 isItemActive
                                   ? "bg-zinc-900 text-white font-medium"
                                   : "text-zinc-500 hover:text-zinc-300"
                               }`}
                             >
                               {item.label}
-                            </Link>
+                            </button>
                           );
                         })}
                       </div>

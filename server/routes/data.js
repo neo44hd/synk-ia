@@ -42,7 +42,7 @@ function getEntityFile(entity) {
   return path.join(DATA_DIR, `${name}.json`);
 }
 
-function readEntity(entity) {
+export function readEntity(entity) {
   const file = getEntityFile(entity);
   if (!fs.existsSync(file)) return [];
   try {

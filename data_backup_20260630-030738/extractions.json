@@ -1,0 +1,148 @@
+{
+  "extractions": [
+    {
+      "id": "ext_1_mpnls83u",
+      "documentPath": null,
+      "type": "factura",
+      "typeConfidence": 0.9,
+      "timestamp": "2026-05-27T05:07:59.370Z",
+      "textLength": 53,
+      "extraction": {
+        "type": "factura",
+        "fields": {
+          "numero": {
+            "value": "INV-2024-001",
+            "confidence": 0.85,
+            "method": "regex"
+          },
+          "fecha": {
+            "value": "15/05/2024",
+            "confidence": 0.85,
+            "method": "regex"
+          },
+          "total": {
+            "value": "1500",
+            "confidence": 0.85,
+            "method": "regex"
+          },
+          "proveedor": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          },
+          "nif": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          },
+          "items": {
+            "value": [
+              "-",
+              "/",
+              ". Total:"
+            ],
+            "confidence": 0.75,
+            "method": "regex"
+          },
+          "precios": {
+            "value": [
+              "001.",
+              "05",
+              "1500"
+            ],
+            "confidence": 0.75,
+            "method": "regex"
+          },
+          "cantidades": {
+            "value": [
+              "2024",
+              "15",
+              "2024"
+            ],
+            "confidence": 0.75,
+            "method": "regex"
+          },
+          "iva": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          },
+          "base_imponible": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          }
+        }
+      }
+    },
+    {
+      "id": "ext_2_mpnlsgje",
+      "documentPath": null,
+      "type": "factura",
+      "typeConfidence": 0.9,
+      "timestamp": "2026-05-27T05:08:10.298Z",
+      "textLength": 20,
+      "extraction": {
+        "type": "factura",
+        "fields": {
+          "numero": {
+            "value": "INV-2024-001",
+            "confidence": 0.85,
+            "method": "regex"
+          },
+          "fecha": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          },
+          "total": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          },
+          "proveedor": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          },
+          "nif": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          },
+          "items": {
+            "value": [
+              "-"
+            ],
+            "confidence": 0.75,
+            "method": "regex"
+          },
+          "precios": {
+            "value": [
+              "001"
+            ],
+            "confidence": 0.75,
+            "method": "regex"
+          },
+          "cantidades": {
+            "value": [
+              "2024"
+            ],
+            "confidence": 0.75,
+            "method": "regex"
+          },
+          "iva": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          },
+          "base_imponible": {
+            "value": null,
+            "confidence": 0,
+            "method": "none"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+[
+  {
+    "id": "admin-001",
+    "email": "david@sinkialabs.com",
+    "full_name": "David Roldan",
+    "role": "admin",
+    "permission_level": "admin",
+    "department": "Dirección",
+    "avatar_url": null,
+    "passwordHash": "0e8941ed51f0a75a4cf554de4bdefbce6ba1c3fa53aeafa6709b6d7df441f381",
+    "passwordSalt": "fe967bceeb030dc47a4ea99ba8ef814f",
+    "created_at": "2026-04-15T01:06:28.819Z"
+  },
+  {
+    "id": "user-1776218799561",
+    "email": "demo@hermetic.app",
+    "full_name": "Demo User",
+    "role": "admin",
+    "department": "",
+    "avatar_url": null,
+    "passwordHash": "c0aefbf74e67fb97c607960ee4670fc4b60bfc357ccb8136514829965ceb8d18",
+    "passwordSalt": "9458a380f3ee3bfe19262fdaf70daf2c",
+    "created_at": "2026-04-15T02:06:39.561Z"
+  }
+]

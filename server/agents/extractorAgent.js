@@ -55,6 +55,35 @@ function getOcrModel() {
   return OCR_MODEL;
 }
 
+// ── Visión cloud (NVIDIA NIM) para OCR de escaneados/imágenes ───────────
+// glm-ocr NO existe en el gateway local (devuelve 400). Usamos un modelo de
+// visión de NVIDIA (OpenAI-compatible) para leer documentos escaneados.
+const VISION_BASE  = process?.env?.VISION_OCR_BASE_URL || process?.env?.STRONG_LLM_BASE_URL || 'https://integrate.api.nvidia.com/v1';
+const VISION_KEY   = process?.env?.VISION_OCR_API_KEY || process?.env?.STRONG_LLM_API_KEY || process?.env?.NVIDIA_API_KEY || '';
+const VISION_MODEL = process?.env?.VISION_OCR_MODEL || 'meta/llama-3.2-11b-vision-instruct';
+const USE_CLOUD_VISION = (process?.env?.USE_CLOUD_VISION ?? 'true') !== 'false' && !!VISION_KEY;
+
+/** OCR de una imagen (base64) con un modelo de visión cloud (NVIDIA). */
+async function cloudVisionOCR(base64, mime = 'image/png') {
+  const res = await fetch(`${VISION_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${VISION_KEY}` },
+    body: JSON.stringify({
+      model: VISION_MODEL,
+      temperature: 0,
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: 'Transcribe TODO el texto visible de esta imagen (documento), conservando la estructura. Devuelve solo el texto, sin explicaciones.' },
+        { type: 'image_url', image_url: { url: `data:${mime};base64,${base64}` } },
+      ] }],
+    }),
+    signal: AbortSignal.timeout(180_000),
+  });
+  if (!res.ok) throw new Error(`vision ${res.status}: ${(await res.text().catch(() => '')).slice(0, 150)}`);
+  const data = await res.json();
+  return (data.choices?.[0]?.message?.content || '').trim();
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  MARKITDOWN — Extracción con motor Python
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1202,6 +1231,19 @@ async function glmOcrImage(filePath) {
   try {
     const buf    = await readFile(filePath);
     const base64 = buf.toString('base64');
+
+    // Preferir visión cloud (NVIDIA): glm-ocr no existe en el gateway local.
+    if (USE_CLOUD_VISION) {
+      try {
+        const text = cleanText(await cloudVisionOCR(base64, 'image/png'));
+        if (text.length > 10) return ok(text, 'nvidia-vision', { ocr_model: VISION_MODEL, provider: 'nvidia' });
+        return null;
+      } catch (err) {
+        console.warn(`[EXTRACTOR] visión cloud OCR falló: ${err.message}`);
+        return null;
+      }
+    }
+
     const model  = getOcrModel();
 
     const controller = new AbortController();
@@ -1306,6 +1348,17 @@ async function ocrPdfViaGlm(filePath) {
 async function visionExtract(filePath, mime) {
   const buf    = await readFile(filePath);
   const base64 = buf.toString('base64');
+
+  // Preferir visión cloud (NVIDIA) si está configurada.
+  if (USE_CLOUD_VISION) {
+    try {
+      const text = await cloudVisionOCR(base64, mime || 'image/png');
+      if (text && text.length > 5) return text;
+    } catch (err) {
+      console.warn(`[EXTRACTOR] visión cloud (VL) falló: ${err.message}`);
+    }
+  }
+
   const url    = `data:${mime};base64,${base64}`;
   const model  = getOcrModel();
 
