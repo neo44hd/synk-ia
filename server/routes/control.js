@@ -4,14 +4,10 @@
  */
 
 import { Router } from 'express';
-import { 
-  isJobBusy, 
-  getJobStatus, 
-  getJob, 
-  getJobLogs,
-  launchJob,
-  backupData
-} from '../services/jobManager.js';
+import {
+  enqueueJob,
+  getQueueStatus,
+} from '../services/persistentJobQueue.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -41,7 +37,7 @@ export const controlRouter = Router();
  */
 controlRouter.get('/status', async (_req, res) => {
   try {
-    const jobStatus = getJobStatus();
+    const queueStatus = getQueueStatus();
     
     // Count documents by state
     const documents = readEntity('document') || [];
@@ -56,8 +52,12 @@ controlRouter.get('/status', async (_req, res) => {
 
     res.json({
       success: true,
-      busy: jobStatus.busy,
-      currentJob: jobStatus.currentJob,
+      busy: !!queueStatus.currentJob,
+      currentJob: queueStatus.currentJob,
+      queue: {
+        pending: queueStatus.pending,
+        completed: queueStatus.completed,
+      },
       data: {
         documents: documents.length,
         processed,
@@ -67,7 +67,6 @@ controlRouter.get('/status', async (_req, res) => {
         emails: emails.length,
         uploads: uploads.length,
       },
-      lastIntegrityCheck: null, // Could be stored/tracked
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -80,21 +79,12 @@ controlRouter.get('/status', async (_req, res) => {
  */
 controlRouter.post('/sync-emails', async (req, res) => {
   try {
-    if (isJobBusy()) {
-      return res.status(409).json({
-        success: false,
-        error: 'Another job is already running. Please wait for it to complete.',
-      });
-    }
-
-    // Quick sync without spawning separate process
-    // (the sync worker already runs periodically, this is manual trigger)
-    try {
-      await syncAll();
-      res.json({ success: true, message: 'Email sync completed' });
-    } catch (err) {
-      res.status(500).json({ success: false, error: err.message });
-    }
+    const job = enqueueJob('sync-emails');
+    res.json({
+      success: true,
+      message: 'Email sync job enqueued',
+      jobId: job.id,
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -106,11 +96,12 @@ controlRouter.post('/sync-emails', async (req, res) => {
  */
 controlRouter.post('/reprocess-failed', async (req, res) => {
   try {
-    const result = await launchJob('reprocess-failed');
-    if (!result.success) {
-      return res.status(409).json(result);
-    }
-    res.json(result);
+    const job = enqueueJob('reprocess-failed');
+    res.json({
+      success: true,
+      message: 'Reprocess failed job enqueued',
+      jobId: job.id,
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -122,11 +113,12 @@ controlRouter.post('/reprocess-failed', async (req, res) => {
  */
 controlRouter.post('/reprocess-all', async (req, res) => {
   try {
-    const result = await launchJob('reprocess-all');
-    if (!result.success) {
-      return res.status(409).json(result);
-    }
-    res.json(result);
+    const job = enqueueJob('reprocess-all');
+    res.json({
+      success: true,
+      message: 'Reprocess all job enqueued',
+      jobId: job.id,
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -147,35 +139,11 @@ controlRouter.post('/rebuild', async (req, res) => {
       });
     }
 
-    if (isJobBusy()) {
-      return res.status(409).json({
-        success: false,
-        error: 'Another job is already running. Please wait for it to complete.',
-      });
-    }
-
-    // Backup data first
-    const backup = await backupData();
-    if (!backup.success) {
-      return res.status(500).json({
-        success: false,
-        error: `Backup failed: ${backup.error}`,
-      });
-    }
-
-    // Launch reprocess-fresh
-    const result = await launchJob('rebuild');
-    if (!result.success) {
-      return res.status(500).json({
-        ...result,
-        backup,
-      });
-    }
-
+    const job = enqueueJob('rebuild');
     res.json({
-      ...result,
-      backup,
-      message: `Rebuild complete. Backup saved to ${backup.backupDir}`,
+      success: true,
+      message: 'Rebuild job enqueued. Data will be backed up automatically.',
+      jobId: job.id,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -188,41 +156,28 @@ controlRouter.post('/rebuild', async (req, res) => {
  */
 controlRouter.post('/verify', async (req, res) => {
   try {
-    const result = await launchJob('verify');
-    if (!result.success) {
-      return res.status(500).json(result);
-    }
-    res.json(result);
+    const job = enqueueJob('verify');
+    res.json({
+      success: true,
+      message: 'Integrity verification job enqueued',
+      jobId: job.id,
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 /**
- * GET /api/control/jobs/:jobId
- * Get detailed status of a specific job
+ * GET /api/control/queue
+ * Get queue status including all jobs and history
  */
-controlRouter.get('/jobs/:jobId', (req, res) => {
+controlRouter.get('/queue', (req, res) => {
   try {
-    const job = getJob(req.params.jobId);
-    if (!job) {
-      return res.status(404).json({ success: false, error: 'Job not found' });
-    }
-    res.json({ success: true, data: job });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/**
- * GET /api/control/logs/:jobName
- * Get logs for a job (streaming tail)
- */
-controlRouter.get('/logs/:jobName', (req, res) => {
-  try {
-    const { lines = 50 } = req.query;
-    const logs = getJobLogs(req.params.jobName, parseInt(lines));
-    res.json({ success: true, logs });
+    const status = getQueueStatus();
+    res.json({
+      success: true,
+      ...status,
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

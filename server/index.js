@@ -548,6 +548,7 @@ app.use((err, _req, res, _next) => {
 
 // ── Arranque ──────────────────────────────────────────────────────────────────
 import { createServer as createNetServer } from 'net';
+import { startQueueProcessor } from './services/persistentJobQueue.js';
 
 /**
  * Espera a que el puerto esté libre y arranca el servidor con retry.
@@ -621,6 +622,14 @@ async function startServer(app, port, maxRetries = 15) {
           socket.destroy();
         }
       });
+
+      // Start persistent job queue processor
+      try {
+        await startQueueProcessor();
+        console.log('[QUEUE-PROCESSOR] ✓ Iniciado');
+      } catch (err) {
+        console.error('[QUEUE-PROCESSOR] ✗', err.message);
+      }
 
       import('./syncWorker.js').then(({ startSyncWorker }) => {
         try {
