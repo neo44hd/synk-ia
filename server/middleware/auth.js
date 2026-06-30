@@ -12,6 +12,7 @@ const TAILSCALE_ALLOWED_CIDRS = [
 ];
 
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'sinkia2026';
+const TUNNEL_TOKEN = process.env.TUNNEL_TOKEN || '72cf96a04b991f146c0faba5edb1afed2a82bb547f33b498a993ddf01c6f502b';
 const ALLOW_LOCAL = process.env.TAILSCALE_ALLOW_LOCAL !== 'false';
 
 // ── Paths que NO requieren Tailscale (webhooks, health) ────────────────────
@@ -61,14 +62,15 @@ function pathBypassesAuth(pathname) {
   return BYPASS_PATHS.some(prefix => pathname.startsWith(prefix));
 }
 
-// ── Tailscale-only middleware ────────────────────────────────────────────────
+// ── Tailscale + Tunnel authentication middleware ─────────────────────────────
 export function tailscaleAuth(req, res, next) {
   // Skip auth for webhook/health paths
   if (pathBypassesAuth(req.path)) {
     return next();
   }
 
-  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim().replace(/^::ffff:/, '');
+  const remoteIP = (req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+  const forwardedIP = (req.headers['x-forwarded-for'] || '').split(',')[0].trim();
 
   // DEVELOPMENT: Disable Tailscale check
   if (process.env.DISABLE_TAILSCALE_AUTH === 'true') {
@@ -77,6 +79,25 @@ export function tailscaleAuth(req, res, next) {
     return next();
   }
 
+  // METHOD 1: Cloudflare Tunnel (localhost + token)
+  // Si la conexión TCP viene de localhost, verificar token del túnel
+  if (remoteIP === '127.0.0.1' || remoteIP === '::1' || remoteIP === 'localhost') {
+    const tunnelToken = req.headers['x-tunnel-token'];
+    if (tunnelToken === TUNNEL_TOKEN) {
+      console.log(`[AUTH] ✅ Túnel Cloudflare autorizado desde ${remoteIP} → ${req.method} ${req.path}`);
+      req.fromTailscale = true;
+      req.fromTunnel = true;
+      return next();
+    } else {
+      console.warn(`[AUTH] 🚫 Túnel sin token válido desde ${remoteIP} → ${req.method} ${req.path}`);
+      return res.status(403).json({ error: 'Acceso denegado. Token de túnel inválido.' });
+    }
+  }
+
+  // METHOD 2: Tailscale direct access (red privada)
+  // Para conexiones directas (no por túnel), solo IPs de Tailscale
+  const ip = (forwardedIP || remoteIP).replace(/^::ffff:/, '');
+  
   if (!isTailscaleIP(ip)) {
     console.warn(`[AUTH] 🚫 Denegado desde ${ip} → ${req.method} ${req.path}`);
     return res.status(403).json({ error: 'Acceso denegado. Solo desde Tailscale.' });
