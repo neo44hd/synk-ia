@@ -107,6 +107,7 @@ const navItems = [
     items: [
       { label: "🎯 SynK-IA App", url: createPageUrl("SynkiaApp") },
       { label: "🏠 SynK-IA Main", url: createPageUrl("SynkiaMain") },
+      { label: "🛒 Tienda Online", url: createPageUrl("Store") },
       { label: "🍕 Kitchen Display", url: createPageUrl("KitchenDisplay") },
       { label: "📱 App Trabajadores", url: createPageUrl("WorkerMobile") },
     ]
