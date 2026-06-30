@@ -8,11 +8,9 @@ import { Card, CardContent } from "@/components/ui/card";
  */
 export default function SynkiaMain() {
   useEffect(() => {
-    // Redirigir a SynK-IA Main
-    // Nota: cambia la URL según dónde esté alojada tu app principal
+    // Redirigir a la página de inicio (CEO Dashboard)
     const timer = setTimeout(() => {
-      const mainUrl = "http://localhost:9001"; // App principal de Sinkia
-      window.location.href = mainUrl;
+      window.location.assign(window.location.origin + "/");
     }, 1500);
     return () => clearTimeout(timer);
   }, []);
@@ -28,13 +26,13 @@ export default function SynkiaMain() {
             <h1 className="text-2xl font-bold text-white mb-2">SynK-IA Main</h1>
             <p className="text-zinc-400">Abriendo aplicación principal...</p>
           </div>
-          <a
-            href="http://localhost:9001"
+          <button
+            onClick={() => window.location.assign(window.location.origin + "/")}
             className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white py-3 px-4 rounded-lg font-medium transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
-            Abrir SynK-IA Main
-          </a>
+            Volver al Inicio
+          </button>
           <p className="text-xs text-zinc-500">
             Si no se abre automáticamente, haz clic en el botón anterior.
           </p>

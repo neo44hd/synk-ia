@@ -60,7 +60,6 @@ import VoiceCommands from "./VoiceCommands";
 import WebSync from "./WebSync";
 import WorkerInterface from "./WorkerInterface";
 import WorkerMobile from "./WorkerMobile";
-import SynkiaApp from "./SynkiaApp";
 import SynkiaMain from "./SynkiaMain";
 import ControlPanelPro from "./ControlPanelPro";
 import ControlCenter from "./ControlCenter";
@@ -145,7 +144,6 @@ function PagesContent() {
         <Route path="/websync" element={<Protected><WebSync /></Protected>} />
         <Route path="/workerinterface" element={<Protected><WorkerInterface /></Protected>} />
         <Route path="/workermobile" element={<Protected><WorkerMobile /></Protected>} />
-        <Route path="/synkiaapp" element={<Protected><SynkiaApp /></Protected>} />
         <Route path="/synkiamain" element={<Protected><SynkiaMain /></Protected>} />
         <Route path="/controlpanel" element={<Protected><ControlPanelPro /></Protected>} />
         <Route path="/controlcenter" element={<Protected><ControlCenter /></Protected>} />
