@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ord_001",
+    "customer": "Chicken Palace Ibiza",
+    "total": 1250,
+    "status": "entregado",
+    "order_date": "2026-05-20",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.557Z"
+  },
+  {
+    "id": "ord_002",
+    "customer": "Restaurant ABC",
+    "total": 890.5,
+    "status": "pendiente",
+    "order_date": "2026-05-25",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.557Z"
+  },
+  {
+    "id": "ord_003",
+    "customer": "Catering XYZ",
+    "total": 2100,
+    "status": "en_preparacion",
+    "order_date": "2026-05-26",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.557Z"
+  }
+]

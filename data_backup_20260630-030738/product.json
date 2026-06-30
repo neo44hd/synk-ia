@@ -1,0 +1,32 @@
+[
+  {
+    "id": "prod_001",
+    "name": "Pollo Fresh Kilo",
+    "sku": "POLLO-1K",
+    "price": 12.5,
+    "stock": 45,
+    "category": "Alimentos",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.553Z"
+  },
+  {
+    "id": "prod_002",
+    "name": "Aceite de Oliva Virgen",
+    "sku": "ACEITE-5L",
+    "price": 35,
+    "stock": 12,
+    "category": "Aceites",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.553Z"
+  },
+  {
+    "id": "prod_003",
+    "name": "Especias Variadas Mix",
+    "sku": "ESPECIAS-MIX",
+    "price": 8.75,
+    "stock": 25,
+    "category": "Condimentos",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.553Z"
+  }
+]

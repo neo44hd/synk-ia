@@ -1,0 +1,595 @@
+[
+  {
+    "id": "doc_1779625340670_tc4rfm",
+    "original_name": "PORTAL_EMPLEADO_PWA.pdf",
+    "mime_type": "application/pdf",
+    "file_size": 75672,
+    "file_path": "/Users/davidnows/synkia-app/uploads/1779625340668_02b0.pdf",
+    "extraction": {
+      "ok": true,
+      "text": "Portal del Empleado - Configuración PWA\n Cómo Instalar el Portal en tu Teléfono\nPrimera Vez (Configuración Inicial)\nEscanea tu código QR con la cámara de tu móvil\n- Tu administrador te ha proporcionado un código QR único\n- Ábrelo en el navegador (Chrome, Safari, Firefox, etc.)\nVerificar que funciona\n- Deberías ver tu portal con tu nombre y puesto\n- Verás los botones de ENTRADA y SALIDA\n- Puedes fichar normalmente\nAñadir a Pantalla de Inicio\nEn Android (Chrome):\n- Presiona el menú (3 puntos) arriba a la derecha\n- Selecciona “Añadir a pantalla de inicio” o “Instalar app”\n- Confirma el nombre y presiona “Añadir”\nEn iPhone/iPad (Safari):\n- Presiona el botón de compartir (cuadrado con flecha hacia arriba)\n- Desplázate y selecciona “Añadir a pantalla de inicio”\n- Confirma el nombre y presiona “Añadir”\n¡Listo! \n- Ahora tienes un icono en tu pantalla de inicio\n- La app se abrirá directamente sin necesidad del navegador\n Uso Diario\nCada día después de instalar:\nAbre la app desde el icono en tu pantalla de inicio\nSe abrirá automáticamente tu portal (sin necesidad de QR)\nFicha entrada/salida normalmente\nRevisa tus horas, nóminas, vacaciones, etc.\n⚠️ No necesitas escanear el QR cada vez - solo la primera vez para configurar\n Cerrar Sesión\nSi necesitas cerrar sesión (por ejemplo, para cambiar de cuenta):\nAbre el portal\n1. \n2. \n3. \n1. \n1. \n2. \n3. \n4. \n1. \n1\n\nEn la esquina superior derecha, presiona el botón rojo con icono de power (⚡)\nVolverás a la pantalla de acceso\nPara volver a entrar, escanea tu QR de nuevo\n❓ Problemas Comunes\n“No se encuentra tu sesión”\nSolución: Escanea tu código QR desde el navegador web primero\nLuego añade a pantalla de inicio\n“Tu sesión ha expirado”\nSolución: Escanea tu código QR de nuevo\nTu token puede haber sido renovado por seguridad\nLa app no abre\nSolución: Elimina la app de la pantalla de inicio y reinstala\nEscanea el QR desde el navegador y añade de nuevo\nNo puedo fichar\nVerifica que tienes conexión a internet\nCierra y vuelve a abrir la app\nSi persiste, contacta a tu administrador\n️ Información Técnica (Administradores)\nCómo Funciona\nManifest Dinámico: Cada empleado obtiene un manifest PWA personalizado con su token\nLocalStorage: El token se guarda localmente para auto-login\nDetección de Modo PWA: La app detecta si está en modo standalone y ajusta su comportami‐\nento\nValidación de Token: Cada vez que se abre, verifica que el token sigue siendo válido\nArchivos Clave\n/app/api/portal-manifest/route.ts - Genera manifest dinámico por empleado\n/app/portal-empleado/page.tsx - Pantalla de acceso con auto-login\n/app/portal-empleado/[token]/page.tsx - Portal principal del empleado\n/app/api/fichajes/portal/route.ts - API de fichaje y datos del portal\nVariables de Entorno\nNo se requieren variables adicionales para el funcionamiento PWA.\n2. \n3. \n4. \n• \n• \n• \n• \n• \n• \n• \n• \n• \n1. \n2. \n3. \n4. \n• \n• \n• \n• \n2\n\nRegenerar Token de Empleado\n// Desde /empleados/[id], presiona \"Regenerar Token\"\n// O actualiza directamente en la base de datos:\nconstnewToken=crypto.randomBytes(32).toString('hex');\nconstnewPIN=Math.floor(1000+Math.random()*9000).toString();\nSeguridad\nLos tokens son aleatorios de 64 caracteres hexadecimales\nLos PINs son de 4 dígitos (no usados actualmente pero disponibles)\nEl localStorage es aislado por dominio\nLas sesiones se validan en cada request\n Estadísticas de Uso\nPara ver quién ha accedido al portal:\n1. Ve a Auditoría Laboral\n2. Filtra por acción: LOGIN_PORTAL\n3. Verás todos los accesos con fecha, hora, IP y dispositivo\n Soporte\nSi tienes problemas:\n1. Verifica que el empleado tiene un tokenMagico válido en la base de datos\n2. Revisa los logs del servidor para errores\n3. Asegúrate de que el empleado esté en estado “Activo”\n4. Verifica que la conexión a internet funciona\nÚltima actualización: 27 de enero de 2026\nVersión: 2.0 (PWA con Manifest Dinámico)\n• \n• \n• \n• \n3",
+      "method": "pdf-text",
+      "metadata": {
+        "elapsed_ms": 58,
+        "original_name": "PORTAL_EMPLEADO_PWA.pdf",
+        "pages": 3,
+        "has_tables": false,
+        "has_images": false
+      }
+    },
+    "analysis": {
+      "tipo": "correo_comercial",
+      "subtipo": "manual_tecnico",
+      "urgencia": "baja",
+      "emisor": {
+        "nombre": "Portal del Empleado",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "otro",
+        "tipo_entidad": "otro"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "empresa",
+        "tipo_entidad": "empresa"
+      },
+      "trabajador": null,
+      "importes": {
+        "base_imponible": null,
+        "iva_porcentaje": null,
+        "iva_total": null,
+        "irpf": null,
+        "total": null,
+        "moneda": "EUR"
+      },
+      "conceptos": [],
+      "fechas": {
+        "documento": "2026-01-27",
+        "vencimiento": null,
+        "periodo_inicio": null,
+        "periodo_fin": null
+      },
+      "referencias": {
+        "numero_documento": "2.0",
+        "numero_expediente": null,
+        "referencia_catastral": null,
+        "numero_poliza": null
+      },
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Manual técnico de configuración del Portal del Empleado PWA",
+      "tags": [
+        "manual",
+        "tecnico",
+        "pwa",
+        "portal",
+        "empleado",
+        "android",
+        "iphone",
+        "safari",
+        "chrome",
+        "fichaje"
+      ],
+      "accion_recomendada": "archivar",
+      "confianza": 0.95
+    },
+    "organization": {
+      "folder_path": "correo/comercial/2026",
+      "normalized_name": "2026-01-27_correo-comercial_portal-del-empleado_20.pdf",
+      "full_path": "correo/comercial/2026/2026-01-27_correo-comercial_portal-del-empleado_20.pdf",
+      "tags": [
+        "manual",
+        "tecnico",
+        "pwa",
+        "portal",
+        "empleado",
+        "android",
+        "iphone",
+        "safari",
+        "chrome",
+        "fichaje",
+        "correo-comercial",
+        "2026",
+        "manual tecnico"
+      ],
+      "urgencia": "baja",
+      "accion_recomendada": "archivar",
+      "pending_actions": [],
+      "auto_ignored": false,
+      "entities_created": [],
+      "entities_updated": [],
+      "processing_time_ms": 6,
+      "organized_at": "2026-05-24T12:22:55.591Z"
+    },
+    "status": "processed",
+    "agents_completed": [
+      "extractor",
+      "analyzer",
+      "organizer"
+    ],
+    "processing_time_ms": 34922,
+    "processed_at": "2026-05-24T12:22:55.592Z",
+    "errors": []
+  },
+  {
+    "id": "doc_1779625416421_pka6lu",
+    "original_name": "SISTEMA_CEO_EJECUTIVO.pdf",
+    "mime_type": "application/pdf",
+    "file_size": 145131,
+    "file_path": "/Users/davidnows/synkia-app/uploads/1779625416420_eh40.pdf",
+    "extraction": {
+      "ok": true,
+      "text": " SISTEMA CEO EJECUTIVO v2.0 - SYNK-IA\n RESUMEN EJECUTIVO\nSe ha implementado un sistema completamente autónomo que actúa como un CEO/Director de\nempresa, tomando decisiones ejecutivas sobre la documentación y procesos del negocio.\nFILOSOFÍA: “Procesar primero, preguntar después (solo si es\ncrítico)”\n NUEVAS CAPACIDADES IMPLEMENTADAS\n1. AUTO-PROCESADOR EJECUTIVO v2.0\nUbicación:/app/api/archivo-inteligente/auto-procesar/route.ts\nQué hace:\n✅ Clasifica automáticamente todos los documentos pendientes usando IA avanzada\n✅ Extrae datos completos de facturas (proveedor, CIF, importe, fecha, IVA, etc.)\n✅ Crea proveedores automáticamente cuando detecta una factura de uno nuevo\n✅ Crea facturas automáticamente vinculadas al proveedor correcto\n✅ Vincula nóminas y contratos a empleados por nombre/DNI\n✅ Almacena documentos legales (modelos 303, 111, 190, licencias, etc.)\n✅ Toma decisiones autónomas sin necesidad de confirmación manual\nTipos de documentos que procesa:\n FACTURAS:\n- Detecta facturas de proveedores\n- Extrae: nombre proveedor, CIF, número factura, fecha, base imponible, IVA, total\n- Busca proveedor existente por CIF o nombre\n- Si NO existe → CREA el proveedor automáticamente\n- Crea la factura vinculada con todos los datos\n- Resultado: Proveedor + Factura creados en un solo paso\n DOCUMENTOS DE EMPLEADOS:\n- Nóminas → Vincula al empleado correcto\n- Contratos → Vincula al empleado correcto\n- Identificación por nombre completo o DNI\n DOCUMENTOS LEGALES/FISCALES:\n- Modelo 303 (IVA)\n- Modelo 111 (Retenciones)\n- Modelo 190 (Resumen anual)\n- Escrituras de constitución\n- Licencias de actividad\n- Contratos de alquiler\n- Almacena en DocumentoLegal con categorización\n1\n\n OTROS:\n- Presupuestos\n- Albaranes\n- Correspondencia\n- Clasificación y archivo inteligente\n2. API DE EXTRACCIÓN INTELIGENTE\nUbicación:/app/api/archivo-inteligente/extraer-factura/route.ts\nQué hace:\nAPI especializada que usa GPT-4o-mini para extraer TODOS los datos de una factura:\n{\n\"proveedor\":{\n\"nombre\":\"Nombre completo del proveedor\",\n\"cif\":\"A12345678\",\n\"direccion\":\"Calle, número, ciudad\",\n\"email\":\"contacto@proveedor.com\",\n\"telefono\":\"+34 XXX XXX XXX\"\n},\n\"factura\":{\n\"numero\":\"FAC-2024-001\",\n\"fecha\":\"2024-01-15\",\n\"baseImponible\":1000.00,\n\"tipoIVA\":21,\n\"importeIVA\":210.00,\n\"total\":1210.00,\n\"observaciones\":\"Notas importantes\"\n},\n\"confianza\":95\n}\nCaracterísticas:\n- Precisión del 95%+ en extracción de datos\n- Temperatura 0.1 para máxima exactitud\n- Maneja facturas complejas con múltiples líneas\n- Extrae IVA, bases imponibles, totales\n- Identifica formas de pago y vencimientos\n3. AGENTE CEO EJECUTIVO MEJORADO\nUbicación:/app/api/agents/ceo/route.ts\nNueva Personalidad:\nANTES (Asesor pasivo):\n“Deberías revisar las facturas y considerar optimizar los pagos”\nAHORA (CEO que actúa):\n2\n\n“He detectado 5 facturas venciendo en 3 días (€12,500).\n ACCIONES INMEDIATAS:\n1. Priorizar pago a Proveedor X (crítico)\n2. Renegociar plazo con Proveedor Y\n3. Generar informe de liquidez\n4. Alertar al equipo financiero\n¿Ejecuto estas acciones ahora?”\nCapacidades del CEO:\n✅ Análisis financiero proactivo (detecta problemas ANTES de que ocurran)\n✅ Optimización de procesos sin pedir permiso\n✅ Detección de anomalías y fraudes\n✅ Proyecciones inteligentes (cash flow, gastos, tendencias)\n✅ Toma de decisiones autónoma con poder ejecutivo\n✅ Respuestas concisas y accionables (máximo 10 líneas)\nMétricas que analiza:\n Finanzas: Total facturas, pendientes, tasa de pago, importe total\n RRHH: Empleados activos, costo nómina, costo medio/empleado\n KPIs: ROI, margen, liquidez, rotación\n⚠️ Alertas: Facturas venciendo, problemas de liquidez, anomalías\n CÓMO USAR EL SISTEMA\nOpción 1: Desde la Interfaz Web\nVe a  Archivo Inteligente\nSube facturas PDF (puedes subir varias a la vez)\nPresiona “Auto-Procesar Documentos”\nEl sistema:\n- Clasifica cada documento\n- Extrae datos completos\n- Crea proveedores si no existen\n- Crea facturas automáticamente\n- Todo en menos de 5 segundos por factura\nOpción 2: Pregúntale al CEO\nVe a  Agentes IA → CEO Brain\nPregunta: “Procesa los documentos pendientes”\nEl CEO ejecuta el auto-procesamiento y te informa:\nEjecutando procesamiento inteligente...\n  ✅ 8 facturas procesadas → 3 proveedores nuevos creados\n  ✅ 5 nóminas vinculadas a empleados\n  ✅ 2 contratos archivados\n   Total facturado nuevo: €15,800\n   Sistema optimizado y actualizado\n• \n• \n• \n• \n1. \n2. \n3. \n4. \n1. \n2. \n3. \n3\n\n RESULTADOS ESPERADOS\nAntes (Sistema antiguo):\n❌ Solo clasificaba documentos\n❌ No creaba proveedores\n❌ No extraía datos de facturas\n❌ Requería confirmación manual\n❌ Pedía crear proveedores manualmente\n⏱️ Tiempo: 5-10 minutos por factura\nAhora (CEO Auto-Processor):\n✅ Clasifica + Extrae + Crea proveedor + Crea factura\n✅ 100% automático, cero intervención\n✅ Datos completos extraídos con IA\n✅ Vinculación inteligente de documentos\n✅ Decisiones ejecutivas autónomas\n⚡ Tiempo: 3-5 segundos por factura\nMejora de eficiencia: 60-100x más rápido \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n4\n\n ARQUITECTURA TÉCNICA\nComponentes principales:\n┌─────────────────────────────────────────────┐\n│  USUARIO SUBE FACTURA PDF  │\n└─────────────────┬───────────────────────────┘\n│\n▼\n┌─────────────────────────────────────────────┐\n│  AUTO-PROCESADOR EJECUTIVO  │\n│• Clasificación IA (GPT-4o-mini)  │\n│• Detección de tipo de documento  │\n└─────────────────┬───────────────────────────┘\n│\n▼\n┌─────────────────────────────────────────────┐\n│  EXTRACTOR DE DATOS IA  │\n│• Nombre proveedor  │\n│• CIF/NIF  │\n│• Número factura, fecha  │\n│• Base imponible, IVA, total  │\n│• Dirección, email, teléfono  │\n└─────────────────┬───────────────────────────┘\n│\n▼\n┌─────────────────────────────────────────────┐\n│  GESTOR DE PROVEEDORES  │\n│• Busca proveedor existente (CIF/nombre)  │\n│• Si NO existe → CREA automáticamente  │\n│• Si existe → Usa el existente  │\n└─────────────────┬───────────────────────────┘\n│\n▼\n┌─────────────────────────────────────────────┐\n│  CREADOR DE FACTURAS  │\n│• Vincula factura a proveedor  │\n│• Guarda todos los datos extraídos  │\n│• Estado: PENDIENTE  │\n│• Link al PDF en S3  │\n└─────────────────┬───────────────────────────┘\n│\n▼\n┌─────────────────────────────────────────────┐\n│  AUDITORÍA Y LOGS  │\n│• Registra todas las acciones  │\n│• Auditoría completa de cambios  │\n│• Trazabilidad total  │\n└─────────────────────────────────────────────┘\nTecnologías utilizadas:\nIA:  GPT-4o-mini (Abacus.AI RouteLL M)\nBase de datos: PostgreSQL + Prisma ORM\nAlmacenamiento: AWS S3\nBackend: Next.js API Routes\nAutenticación: NextAuth.js\n• \n• \n• \n• \n• \n5\n\n CASOS DE USO REALES\nCaso 1: Restaurante recibe factura de proveedor nuevo\nSituación:\n- Llega factura PDF de “Pescados Frescos Ibiza SL”\n- Proveedor nunca registrado en el sistema\n- Factura por €2,450 (base €2,024.79 + IVA 21%)\nProceso automático:\n1. Usuario sube PDF a Archivo Inteligente\n2. CEO Auto-Processor detecta: FACTURA_PROVEEDOR\n3. Extrae: Nombre, CIF B-07123456, email, teléfono, dirección\n4. Busca proveedor → NO EXISTE\n5. CREA proveedor automáticamente:\n- Nombre: “Pescados Frescos Ibiza SL”\n- CIF: “B-07123456”\n- Email: contacto@pescadosibiza.com\n- Teléfono: +34 971 123 456\n6. CREA factura automáticamente:\n- Número: FAC-2024-0156\n- Fecha: 15/01/2024\n- Importe: €2,450\n- Estado: PENDIENTE\n- Vinculada a proveedor\nResultado:\n- ✅ Proveedor creado\n- ✅ Factura creada y vinculada\n- ✅ PDF almacenado en S3\n- ✅ Todo en 4 segundos\n- ✅ Cero intervención manual\nCaso 2: Procesamiento masivo de 50 facturas\nSituación:\n- Empresa tiene 50 facturas acumuladas sin procesar\n- Mezcla de proveedores existentes y nuevos\n- Documentos en diferentes formatos\nProceso:\n1. Usuario sube las 50 facturas a la vez\n2. Presiona “Auto-Procesar Documentos”\n3. Sistema procesa en paralelo:\n- Clasifica las 50\n- Extrae datos de las 50\n- Identifica 12 proveedores nuevos\n- Crea los 12 proveedores\n- Crea las 50 facturas vinculadas\nTiempo total: 2-3 minutos\nResultado:\n- ✅ 50 facturas procesadas\n6\n\n- ✅ 12 proveedores nuevos creados\n- ✅ 38 facturas vinculadas a proveedores existentes\n- ✅ 100% de éxito\n- ✅ Auditoría completa de todo\n MEJORES PRÁCTICAS\nPara obtener mejores resultados:\nCalidad de PDFs:\n- ✅ Usar PDFs nativos (no escaneados) siempre que sea posible\n- ✅ Si son escaneados, usar buena resolución (300 DPI+)\n- ✅ Evitar PDFs con muchas imágenes y poco texto\nNombrado de archivos:\n- ✅ Nombres descriptivos: “Factura_ProveedorX_2024-01.pdf”\n- ✅ Incluir fecha en el nombre ayuda a la IA\n- ✅ Evitar nombres genéricos: “documento.pdf”\nProcesamiento por lotes:\n- ✅ Subir múltiples facturas a la vez (hasta 50)\n- ✅ Agrupar por tipo (facturas juntas, nóminas juntas)\n- ✅ Procesar regularmente (semanal/mensual)\nVerificación:\n- ✅ Revisar proveedores creados automáticamente\n- ✅ Verificar importes de facturas\n- ✅ Comprobar que las vinculaciones sean correctas\n- ✅ Usar la auditoría para rastrear cambios\n SOLUCIÓN DE PROBLEMAS\nProblema: “No se creó el proveedor”\nCausa: El proveedor ya existe en el sistema con nombre similar\nSolución: El sistema busca por CIF y por nombre similar. Si encuentra coincidencia, usa el existente.\nProblema: “Datos extraídos incorrectos”\nCausa: PDF de mala calidad o formato no estándar\nSolución:\n1. Verificar calidad del PDF\n2. Si es escaneo, usar OCR externo primero\n3. En casos extremos, crear manualmente\nProblema: “Factura duplicada”\nCausa: Ya existe factura con mismo número del mismo proveedor\nSolución: El sistema detecta duplicados y no crea la segunda. Revisa facturas existentes.\n1. \n2. \n3. \n4. \n7\n\n SOPORTE Y MANTENIMIENTO\nLogs del sistema:\nTodos los procesos se registran en:\n- Console logs: Para debugging en desarrollo\n- Auditoría Laboral: Para rastreo de cambios\n- Base de datos: Metadata en cada archivo procesado\nMonitoreo:\nPuedes ver el estado del procesamiento en:\n1. Archivo Inteligente: Lista de documentos con estados\n2. Auditoría: Historial completo de acciones\n3. Dashboard: Estadísticas generales\n ROADMAP FUTURO\nPróximas mejoras sugeridas:\nValidación bancaria:\n- Cruce automático con extractos bancarios\n- Detección de pagos duplicados\nPredicciones:\n- Predicción de gastos mensuales\n- Alertas tempranas de liquidez\nIntegraciones:\n- Conexión directa con contabilidad externa\n- Exportación a formatos contables estándar\nMachine Learning:\n- Aprendizaje de patrones de facturas\n- Mejora continua de precisión\n MÉTRICAS DE ÉXITO\nKPIs del sistema:\nTasa de éxito: 95%+ en procesamiento automático\nTiempo por factura: 3-5 segundos\nProveedores creados automáticamente: 100%\nPrecisión de extracción: 95%+\nReducción de tiempo manual: 60-100x\n1. \n2. \n3. \n4. \n• \n• \n• \n• \n• \n8\n\n✅ CONCLUSIÓN\nEl CEO Auto-Processor v2.0 transforma completamente la gestión documental de SYNK-IA:\n✅ Automatización total del procesamiento de facturas\n✅ Creación automática de proveedores\n✅ Extracción inteligente de datos con IA\n✅ Toma de decisiones autónoma como un CEO\n✅ Eficiencia 60-100x superior\nEl sistema ahora actúa como un verdadero Director Ejecutivo, no solo clasificando documentos, sino\ntomando decisiones de negocio reales y ejecutándolas automáticamente.\nEl futuro de la gestión empresarial está aquí. \nVersión: 2.0\nFecha: 27 de enero de 2026\nCheckpoint: “CEO Auto-Processor v2.0 Ejecutivo Completo”\nDeployment: synkia.abacusai.app\n• \n• \n• \n• \n• \n9",
+      "method": "pdf-text",
+      "metadata": {
+        "elapsed_ms": 33,
+        "original_name": "SISTEMA_CEO_EJECUTIVO.pdf",
+        "pages": 9,
+        "has_tables": false,
+        "has_images": false
+      }
+    },
+    "analysis": {
+      "tipo": "otro",
+      "subtipo": "resumen_ejecutivo",
+      "urgencia": "baja",
+      "emisor": {
+        "nombre": "SYNK-IA",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "otro",
+        "tipo_entidad": "otro"
+      },
+      "receptor": {
+        "nombre": "SYNK-IA",
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "otro",
+        "tipo_entidad": "otro"
+      },
+      "trabajador": null,
+      "importes": {
+        "base_imponible": null,
+        "iva_porcentaje": null,
+        "iva_total": null,
+        "irpf": null,
+        "total": null,
+        "moneda": "EUR"
+      },
+      "conceptos": [],
+      "fechas": {
+        "documento": null,
+        "vencimiento": null,
+        "periodo_inicio": null,
+        "periodo_fin": null
+      },
+      "referencias": {
+        "numero_documento": null,
+        "numero_expediente": null,
+        "referencia_catastral": null,
+        "numero_poliza": null
+      },
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Resumen ejecutivo del sistema CEO Auto-Processor v2.0 con capacidades de procesamiento automático de documentos",
+      "tags": [
+        "sistema",
+        "automatizacion",
+        "ceo",
+        "documentacion",
+        "synk-ia",
+        "otro",
+        "synkia"
+      ],
+      "accion_recomendada": "archivar",
+      "confianza": 1
+    },
+    "organization": {
+      "folder_path": "otros/2026",
+      "normalized_name": "2026-05-24_otro_synk-ia.pdf",
+      "full_path": "otros/2026/2026-05-24_otro_synk-ia.pdf",
+      "tags": [
+        "sistema",
+        "automatizacion",
+        "ceo",
+        "documentacion",
+        "synk-ia",
+        "otro",
+        "synkia",
+        "2026",
+        "synk",
+        "resumen ejecutivo"
+      ],
+      "urgencia": "baja",
+      "accion_recomendada": "archivar",
+      "pending_actions": [],
+      "auto_ignored": false,
+      "entities_created": [],
+      "entities_updated": [],
+      "processing_time_ms": 2,
+      "organized_at": "2026-05-24T12:24:00.657Z"
+    },
+    "status": "processed",
+    "agents_completed": [
+      "extractor",
+      "analyzer",
+      "organizer"
+    ],
+    "processing_time_ms": 24237,
+    "processed_at": "2026-05-24T12:24:00.657Z",
+    "errors": []
+  },
+  {
+    "id": "doc_1779625417449_z84f92",
+    "original_name": "app_analysis.pdf",
+    "mime_type": "application/pdf",
+    "file_size": 265680,
+    "file_path": "/Users/davidnows/synkia-app/uploads/1779625417446_b4d0.pdf",
+    "extraction": {
+      "ok": true,
+      "text": " Análisis Completo del Proyecto SYNK-IA\n Información General\nNombre del Proyecto: SYNK-IA (Base44 App)\nID de Aplicación:6909eb511f749a49b63df48c\nTipo de Aplicación: Sistema de Gestión Empresarial Integral con IA\nFramework Principal: React 18.2 + Vite 6.1\nEstado del Código: ✅ Completo y funcional\n️ Arquitectura y Tipo de Aplicación\nClasificación\nTipo: Single Page Application (SPA) Web Frontend\nParadigma: Enterprise Resource Planning (ERP) con IA integrada\nArquitectura: Cliente-Servidor con API REST\nPatrón de Diseño: Component-based Architecture con React Router\nCaracterísticas Principales\n烙 Múltiples agentes de IA integrados\n Dashboard ejecutivo con análisis en tiempo real\n Portal de empleados con autenticación\n Procesamiento inteligente de emails\n Integración con cámaras de seguridad\n茶 Gestión completa de facturación y contabilidad\n Sincronización automática con sistemas externos (Revo, Biloop, ESEECloud)\n Interfaz móvil para trabajadores\n️ Stack Tecnológico Completo\nFrontend Core\nTecnologíaVersiónPropósito\nReact18.2.0Biblioteca principal UI\nReact DOM18.2.0Renderizado web\nReact Router DOM7.2.0Navegación y rutas\nVite6.1.0Build tool y dev server\n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n1\n\nUI/UX Framework\nTecnologíaVersiónPropósito\nTailwind CSS3.4.17Estilos utility-first\nRadix UI~1.1-2.2Componentes accesibles (37\npaquetes)\nLucide React0.475.0Sistema de iconos\nFramer Motion12.4.7Animaciones fluidas\nSonner2.0.1Sistema de notificaciones\ntoast\nnext-themes0.4.4Gestión de temas claro/\noscuro\nGestión de Estado y Datos\nTecnologíaVersiónPropósito\n@base44/sdk0.1.2SDK cliente API Base44\n@tanstack/react-query(Implícito en código)Cache y sincronización de da‐\ntos\nReact Hook Form7.54.2Gestión de formularios\nZod3.24.2Validación de esquemas\nGráficos y Visualización\nTecnologíaVersiónPropósito\nRecharts2.15.1Gráficos y dashboards\nReact Day Picker8.10.1Selector de fechas\ndate-fns3.6.0Manipulación de fechas\n2\n\nComponentes Especializados\nTecnologíaVersiónPropósito\ncmdk1.0.0Command palette\ninput-otp1.4.2Inputs OTP\nembla-carousel-react8.5.2Carruseles\nreact-resizable-panels2.1.7Paneles redimensionables\nvaul1.1.2Drawers móviles\nUtilidades\nTecnologíaVersiónPropósito\nclsx2.1.1Gestión de clases CSS\nclass-variance-authority0.7.1Variantes de componentes\ntailwind-merge3.0.2Merge inteligente de clases\nHerramientas de Desarrollo\nTecnologíaVersiónPropósito\nESLint9.19.0Linting\nPostCSS8.5.3Procesador CSS\nAutoprefixer10.4.20Prefijos CSS automáticos\n@vitejs/plugin-react4.3.4Plugin React para Vite\n@flydotio/dockerfile0.7.8Deployment en Fly.io\nTypeScript Types22.13.5Tipos para Node y React\n3\n\n Estructura del Proyecto\n4\n\nsynk-ia-extracted/\n│\n├──ArchivosdeConfiguración\n│├──package.json# Dependencias y scripts\n│├──vite.config.js# Configuración de Vite\n│├──tailwind.config.js# Configuración de Tailwind\n│├──postcss.config.js# Configuración de PostCSS\n│├──eslint.config.js# Reglas de linting\n│├──components.json# Configuración de shadcn/ui\n│├──jsconfig.json# Configuración de JavaScript\n│├──index.html# Punto de entrada HTML\n│├──README.md# Documentación básica\n│└──.gitignore# Archivos ignorados\n│\n└──src/\n│\n├──App.jsx# Componente raíz\n├──App.css# Estilos globales App\n├──main.jsx# Punto de entrada React\n├──index.css# Estilos globales principales\n│\n├──api/# Capa de integración API\n│├──base44Client.js# Cliente Base44 configurado\n│├──entities.js# 35 entidades del modelo de datos\n│├──functions.js# 37 funciones del backend\n│└──integrations.js# Integraciones Core (LLM, Email, File, Image)\n│\n├──pages/(52páginas)# Vistas principales\n│├──Layout.jsx# Layout maestro con navegación\n│├──Home.jsx# Página de inicio\n│├──Dashboard.jsx# Dashboard principal (436 líneas)\n│├──CEOBrain.jsx# Asistente IA para CEO (553 líneas)\n│├──CentralAgent.jsx# Agente central de IA\n│├──HRAgent.jsx# Agente de Recursos Humanos\n│├──BiloopAgent.jsx# Agente para Biloop\n││\n│├──MódulosFinancieros\n│├──Billing.jsx# Facturación (555 líneas)\n│├──Invoices.jsx# Gestión de facturas (858 líneas)\n│├──GestorFacturas.jsx# Gestor de facturas (513 líneas)\n│├──SalesInvoice.jsx# Facturas de ventas\n│├──Albaranes.jsx# Albaranes de entrega\n│├──VeriFactu.jsx# Integración VeriFactu (625 líneas)\n│├──FinanceDashboard.jsx# Dashboard financiero\n││\n│├──MódulosdeRRHH\n│├──Staff.jsx# Gestión de personal (487 líneas)\n│├──HRDocuments.jsx# Documentos RRHH (698 líneas)\n│├──Payrolls.jsx# Nóminas\n│├──Timesheets.jsx# Hojas de tiempo\n│├──VacationRequests.jsx# Solicitudes de vacaciones\n│├──Contracts.jsx# Contratos\n│├──AttendanceControl.jsx# Control de asistencia\n││\n│├──PortaldeEmpleados\n│├──WorkerInterface.jsx# Interfaz trabajador (594 líneas)\n│├──WorkerMobile.jsx# Versión móvil trabajador\n│├──EmployeeHome.jsx# Home del empleado\n│├──PortalLogin.jsx# Login del portal\n││\n│├──MódulosdeEmail\n│├──EmailProcessor.jsx# Procesador inteligente (890 líneas)\n5\n\n│├──SmartMailbox.jsx# Buzón inteligente (621 líneas)\n│├──EmailSetup.jsx# Configuración de email\n│├──EmailTriage.jsx# Clasificación de emails\n││\n│├──GestiónDocumental\n│├──DocumentArchive.jsx# Archivo inteligente (967 líneas)\n│├──CompanyDocs.jsx# Documentos empresa (516 líneas)\n│├──BiloopDocuments.jsx# Documentos Biloop\n│├──LegalVault.jsx# Bóveda legal\n││\n│├──OperacionesyVentas\n│├──RevoDashboard.jsx# Dashboard Revo\n│├──RevoSync.jsx# Sincronización Revo\n│├──RevoManual.jsx# Manual Revo (760 líneas)\n│├──BiloopImport.jsx# Importación Biloop (1248 líneas)\n│├──BiloopSync.jsx# Sincronización Biloop\n│├──OrdersDashboard.jsx# Dashboard de pedidos\n│├──KitchenDisplay.jsx# Pantalla de cocina\n│├──ProductInventory.jsx# Inventario (487 líneas)\n│├──ProductionControl.jsx# Control de producción\n││\n│├──AnálisisyReportes\n│├──BusinessAnalysis.jsx# Análisis de negocio\n│├──ExecutiveReports.jsx# Reportes ejecutivos\n│├──Comparator.jsx# Comparador de precios\n││\n│├──ConfiguraciónySistema\n│├──SystemOverview.jsx# Vista del sistema (547 líneas)\n│├──ApiDiagnostics.jsx# Diagnósticos API (574 líneas)\n│├──ConnectionDiagnostics.jsx# Diagnósticos de conexión\n│├──AutomationHub.jsx# Hub de automatización (635 líneas)\n│├──CronSetup.jsx# Configuración de tareas cron\n│├──VoiceCommands.jsx# Comandos de voz\n│├──Notifications.jsx# Notificaciones\n││\n│├──SeguridadyCompliance\n│├──SecurityCameras.jsx# Cámaras de seguridad\n│├──RGPDManager.jsx# Gestión RGPD\n││\n│├──OtrosMódulos\n│├──MutuaManager.jsx# Gestión de mutua\n│├──Providers.jsx# Proveedores (655 líneas)\n│├──WebSync.jsx# Sincronización web\n│├──MyProfile.jsx# Perfil de usuario\n│├──PortalGestoria.jsx# Portal de gestoría\n│└──Showcase.jsx# Showcase de funcionalidades\n│\n├──components/# Componentes reutilizables\n│├──BackgroundTasksManager.jsx# G\n\n[...contenido truncado a 12000 caracteres...]\n\ns (Base44)\nInicializar esquema de 35 entidades\nConfigurar relaciones\nSeed data inicial si es necesario\n3. Servicios Externos\nConfigurar webhook endpoints\nConfigurar cron jobs para sincronizaciones\nSetup de cámaras de seguridad\n4. Deployment\nEl proyecto incluye @flydotio/dockerfile para Fly.io\nConfigurar variables de entorno de producción\nSSL/TLS para seguridad\n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n19\n\n Métricas del Proyecto\nMétricaValor\nTotal de Páginas52\nTotal de Componentes~71 (51 UI + 20 custom)\nEntidades de Datos35\nFunciones Backend37\nLíneas de Código (páginas)~25,500+\nArchivo más grandeBiloopImport.jsx (1248 líneas)\nDependencias NPM46 producción + 13 desarrollo\nComponentes Radix UI37 paquetes\nNivel de Complejidad⭐⭐⭐⭐⭐ (Muy Alto)\n Tecnologías Destacables\nModernas\n✅ React 18 con hooks modernos\n✅ Vite 6 (build tool de última generación)\n✅ React Router 7 (navegación moderna)\n✅ Tailwind CSS 3 (utility-first CSS)\n✅ Radix UI (componentes accesibles)\n✅ Framer Motion 12 (animaciones)\n✅ React Query (gestión de estado servidor)\n✅ Zod (validación TypeScript)\nArquitectura\n✅ Component-based\n✅ API-first con SDK dedicado\n✅ Responsive design\n✅ Dark mode nativo\n✅ PWA-ready (instalable)\n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n20\n\n Cómo Ejecutar\nInstalación\ncdsynk-ia-extracted\nnpminstall\nDesarrollo\nnpmrundev\nLa aplicación estará disponible en http://localhost:5173 (puerto por defecto de Vite)\nBuild de Producción\nnpmrunbuild\nLos archivos optimizados se generarán en la carpeta dist/\nPreview de Producción\nnpmrunpreview\n Casos de Uso Principales\nPara CEO/Dirección\nDashboard ejecutivo con KPIs en tiempo real\nCEO Brain (asistente IA personalizado)\nExecutive Reports\nBusiness Analysis\nCámaras de seguridad en vivo\nPara Finanzas\nGestión completa de facturas (compra/venta)\nSincronización con Biloop\nVeriFactu (facturación electrónica)\nControl de proveedores\nComparador de precios\nPara RRHH\nGestión de personal y contratos\nControl de asistencia con facial recognition\nProcesamiento de nóminas\nGestión de vacaciones\nArchivo de documentos\n1. \n2. \n3. \n4. \n5. \n1. \n2. \n3. \n4. \n5. \n1. \n2. \n3. \n4. \n5. \n21\n\nPara Operaciones\nDashboard de pedidos en tiempo real\nPantalla de cocina (KDS)\nSincronización con Revo (POS)\nControl de inventario\nGestión de producción\nPara Empleados\nPortal de trabajador (web + móvil)\nCheck-in facial\nConsulta de nóminas y documentos\nSolicitud de vacaciones\nChat grupal\nPara Administración\nEmail inteligente con clasificación automática\nArchivo documental con búsqueda\nAutomation Hub\nDiagnósticos de sistema\nRGPD Compliance\n Roadmap Sugerido (Mejoras Futuras)\nA Corto Plazo\n[ ] Implementar contenido en Home.jsx\n[ ] Agregar tests unitarios (Jest + React Testing Library)\n[ ] Agregar tests E2E (Playwright/Cypress)\n[ ] Documentar APIs en formato OpenAPI\n[ ] Crear guía de onboarding\nA Medio Plazo\n[ ] PWA completa con offline support\n[ ] Notificaciones push\n[ ] Modo multi-tenant\n[ ] App móvil nativa (React Native)\n[ ] Dashboards personalizables\nA Largo Plazo\n[ ] Marketplace de integraciones\n[ ] API pública documentada\n[ ] Webhooks configurables\n[ ] Módulo de forecasting con ML\n[ ] Expansión internacional (multi-idioma)\n1. \n2. \n3. \n4. \n5. \n1. \n2. \n3. \n4. \n5. \n1. \n2. \n3. \n4. \n5. \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n• \n22\n\n Soporte\nPara más información y soporte, contacta con Base44:\n- Email: app@base44.com\n- Website:Base44 (https://base44.com) (asumido)\n Conclusión Final\nSYNK-IA es un sistema ERP empresarial de nivel enterprise extremadamente completo que in‐\ntegra:\n- 烙 Inteligencia Artificial avanzada\n-  Analytics y reporting en tiempo real\n-  Gestión financiera completa\n-  RRHH integral\n-  Operaciones y POS\n-  Email inteligente\n-  Gestión documental\n-  Seguridad y compliance\nEl código es profesional, bien estructurado y production-ready, con más de 25,500 líneas de\ncódigo distribuidas en una arquitectura moderna basada en React 18 + Vite + Base44 SDK.\nCalificación General: ⭐⭐⭐⭐⭐ (5/5)\n- ✅ Arquitectura sólida\n- ✅ UI/UX moderna\n- ✅ Funcionalidades completas\n- ✅ Código limpio\n- ⚠️ Requiere configuración inicial de servicios\nAnálisis realizado el: 9 de enero de 2026\nAnalista: DeepAgent AI\nVersión del análisis: 1.0\n23",
+      "method": "pdf-text",
+      "metadata": {
+        "elapsed_ms": 69,
+        "original_name": "app_analysis.pdf",
+        "pages": 23,
+        "has_tables": false,
+        "has_images": false,
+        "truncated": true,
+        "original_length": 10849
+      }
+    },
+    "analysis": {
+      "tipo": "otro",
+      "subtipo": "análisis_proyecto",
+      "urgencia": "baja",
+      "emisor": {
+        "nombre": null,
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "otro",
+        "tipo_entidad": "otro"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa",
+        "tipo_entidad": "empresa"
+      },
+      "trabajador": null,
+      "importes": {
+        "base_imponible": null,
+        "iva_porcentaje": null,
+        "iva_total": null,
+        "irpf": null,
+        "total": null,
+        "moneda": "EUR"
+      },
+      "conceptos": [],
+      "fechas": {
+        "documento": null,
+        "vencimiento": null,
+        "periodo_inicio": null,
+        "periodo_fin": null
+      },
+      "referencias": {
+        "numero_documento": null,
+        "numero_expediente": null,
+        "referencia_catastral": null,
+        "numero_poliza": null
+      },
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Análisis técnico del proyecto SYNK-IA (Base44 App) - documento informativo sin valor fiscal",
+      "tags": [
+        "análisis",
+        "proyecto",
+        "base44",
+        "react",
+        "vite",
+        "frontend",
+        "arquitectura",
+        "documentación",
+        "roadmap",
+        "tecnología"
+      ],
+      "accion_recomendada": "archivar",
+      "confianza": 0.95
+    },
+    "organization": {
+      "folder_path": "otros/2026",
+      "normalized_name": "2026-05-24_otro.pdf",
+      "full_path": "otros/2026/2026-05-24_otro.pdf",
+      "tags": [
+        "análisis",
+        "proyecto",
+        "base44",
+        "react",
+        "vite",
+        "frontend",
+        "arquitectura",
+        "documentación",
+        "roadmap",
+        "tecnología",
+        "otro",
+        "2026",
+        "analisis proyecto"
+      ],
+      "urgencia": "baja",
+      "accion_recomendada": "archivar",
+      "pending_actions": [],
+      "auto_ignored": false,
+      "entities_created": [],
+      "entities_updated": [],
+      "processing_time_ms": 6,
+      "organized_at": "2026-05-24T12:24:25.167Z"
+    },
+    "status": "processed",
+    "agents_completed": [
+      "extractor",
+      "analyzer",
+      "organizer"
+    ],
+    "processing_time_ms": 47719,
+    "processed_at": "2026-05-24T12:24:25.167Z",
+    "errors": []
+  },
+  {
+    "id": "doc_1779627337165_o1f99x",
+    "original_name": "test_clientes.csv",
+    "mime_type": "application/octet-stream",
+    "file_size": 230,
+    "file_path": "/Users/davidnows/sinkia/uploads/1779627337163_dp6u.csv",
+    "extraction": {
+      "ok": true,
+      "text": "=== Hoja: Sheet1 ===\n| id | nombre | email | telefono | poblacion | pedido_total |\n| 1 | Ana GarcÃ­a | ana@chickenpalace.es | 612345678 | Ibiza | 1250 |\n| 2 | Carlos LÃ³pez | carlos@restaurante.es | 698765432 | Madrid | 3400.5 |\n| 3 | MarÃ­a RodrÃ­guez | maria@hoteles.es | 655443322 | Palma | 875.25 |",
+      "method": "xlsx",
+      "metadata": {
+        "elapsed_ms": 60,
+        "original_name": "test_clientes.csv",
+        "sheets": 1,
+        "has_tables": true,
+        "has_images": false,
+        "rows_total": 4
+      }
+    },
+    "analysis": {
+      "tipo": "otro",
+      "subtipo": "tabla_de_datos",
+      "urgencia": "baja",
+      "emisor": {
+        "nombre": null,
+        "cif_nif": null,
+        "direccion": null,
+        "email": null,
+        "telefono": null,
+        "rol": "otro",
+        "tipo_entidad": "otro"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE IBIZA, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "empresa",
+        "tipo_entidad": "empresa"
+      },
+      "trabajador": null,
+      "importes": {
+        "base_imponible": null,
+        "iva_porcentaje": null,
+        "iva_total": null,
+        "irpf": null,
+        "total": null,
+        "moneda": "EUR"
+      },
+      "conceptos": [],
+      "fechas": {
+        "documento": null,
+        "vencimiento": null,
+        "periodo_inicio": null,
+        "periodo_fin": null
+      },
+      "referencias": {
+        "numero_documento": null,
+        "numero_expediente": null,
+        "referencia_catastral": null,
+        "numero_poliza": null
+      },
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Tabla de datos con información de contacto y pedidos",
+      "tags": [
+        "tabla",
+        "datos",
+        "contacto",
+        "pedidos",
+        "ibiza",
+        "madrid",
+        "palma",
+        "otro"
+      ],
+      "accion_recomendada": "archivar",
+      "confianza": 0.9
+    },
+    "organization": {
+      "folder_path": "otros/2026",
+      "normalized_name": "2026-05-24_otro.csv",
+      "full_path": "otros/2026/2026-05-24_otro.csv",
+      "tags": [
+        "tabla",
+        "datos",
+        "contacto",
+        "pedidos",
+        "ibiza",
+        "madrid",
+        "palma",
+        "otro",
+        "2026",
+        "tabla de datos"
+      ],
+      "urgencia": "baja",
+      "accion_recomendada": "archivar",
+      "pending_actions": [],
+      "auto_ignored": false,
+      "entities_created": [],
+      "entities_updated": [],
+      "processing_time_ms": 4,
+      "organized_at": "2026-05-24T12:56:07.172Z"
+    },
+    "status": "processed",
+    "agents_completed": [
+      "extractor",
+      "analyzer",
+      "organizer"
+    ],
+    "processing_time_ms": 30009,
+    "processed_at": "2026-05-24T12:56:07.173Z",
+    "errors": []
+  },
+  {
+    "id": "doc_1782566775508_0nhd76",
+    "original_name": "email_1779856764018_FACTURADEVENTA_CM6_670B.pdf",
+    "mime_type": "application/pdf",
+    "file_size": 30371,
+    "file_path": "uploads/email_1779856764018_FACTURADEVENTA_CM6_670B.pdf",
+    "extraction": {
+      "ok": true,
+      "text": "C H I C K E N  P A L A C E\nB 5 6 9 0 8 4 8 6\nC / J O S E  R I Q U E R ,  7  B J . 3\n0 7 8 0 0I B I Z A\nB A L E A R E S\nFEC H AS ER IE\nF A C T U R A  D E  V E N T A\nC ÓDIGO\nDESC RIPC IÓNPREC IO DT O %IM PORT E\n3 0 / 0 4 / 2 0 2 66 7 0\nN Ú M ER O\nC M 6\nC L I E N T E  N º .\n1 3 6 9\nN .R .S . -  4 0 0 6 0 7 0 /P M  C .I.F . B - 0 7 .6 5 7 .0 4 2\nC H I C K EN  P A L A C E,  S . L .\nC A NT IDA DNº A L BA RA N\nIV A\nD I S T R I B U C I O N ES  P I N ED A  M O N T I EL ,  S . L .\nC / P o u  d e  N a  M a c i a n a , 1 4 - 1 6  ·  P o l . In d . M o n te c r i s to\n0 7 8 1 6  S a n t R a fe l  d e  S a  C r e u  ·  Ib i za  ·  E s p a ñ a\nT e l é fo n o  ( + 3 4 )  9 7 1  3 9  6 5  1 0\nin f o @ d is t r ib u c io n e s m o n t ie l.c o m\n8 5 4 0\n7 , 6\nS AL M O N  F R E S C O  6 /8\n9 6 , 9 01 2 , 7 50 0 2 6 / 4 7 0 3\n1 0 %\nSA L M- 3 5 7 X- 1 3 - 2 0 2 6L OT E:\nNo mb r e :SA L MO SA L A R  Mé to d o  p r o d u c c ió n : CRIA  Pa ís : NORUEGA  A r te  d e  p e s c a :\nT O T A L  B R U T O9 6 , 9 0\nI M P U ES T O S9 , 6 9\n1 0 6 ,5 9\nI.V .A .%REC .EQUIV .\n9 , 6 9\n0 , 0 0F O R M A  D E  P A G O :\nP A G O  Q U IN C E N A L\nBA SE IM P.%\n1 0\n0\n \n9 6 , 9 0\n0 , 0 0\n0 , 0 000 , 0 0\nTOTAL €:\n \n \n \n \n \n \n \nF I R M A\nN O M B R E\nD I S T R I B U C I O N E S  P I N E D A  M O N T I E L  S L  e s  R e s p o n s a b le  d e l  t r a t a m ie n t o  d e  c o n f o r m id a d  c o n  e l  G D P R  y  la  L O P D G D D ,  c o n  la  f in a lid a d  d e  m a n t e n e r  u n a  r e la c ió n  c o m e r c ia l  y  \nc o n s e r v a r  lo s  d a t o s  d u r a n t e  n o  m á s  t ie m p o  d e l  n e c e s a r io  p a r a  e llo .  N o  s e  c o m u n ic a r á n  lo s  d a t o s  a  t e r c e r o s .  P u e d e  e je r c e r  lo s  d e r e c h o s  d e  a c c e s o ,  r e c t if ic a c ió n ,  p o r t a b ilid a d ,\ns u p r e s ió n ,  lim it a c ió n  y  o p o s ic ió n  e n  C a r r e r  d e s  P o u  d e  n a  M a c ia n a  1 4 - 1 6 , - 0 7 8 1 6  S a n t  R a f a e l( I lle s  B a le a r s ) . E - m a il: in f o @ d is t r ib u c io n e s m o n t ie l. c o m  y  e l  d e  r e c la m a c ió n  a  \nw w w . a e p d . e s\nD IST R IBU C IO N ES PIN ED A M O N T IEL, S.L. Ins c r ito en la hoja IB- 00000863, tomo 00019, libr o 00019, folio 42\nC Ó D . T R A N S P O R T E:\n4 5\n0 , 0 000 , 0 0",
+      "method": "pdf-text",
+      "metadata": {
+        "elapsed_ms": 43,
+        "original_name": "email_1779856764018_FACTURADEVENTA_CM6_670B.pdf",
+        "pages": 1,
+        "has_tables": false,
+        "has_images": false
+      }
+    },
+    "analysis": {
+      "tipo": "factura_recibida",
+      "subtipo": "distribución de alimentos",
+      "urgencia": "alta",
+      "emisor": {
+        "nombre": "DISTRIBUCIONES PINEDAS MONTIEL, S.L.",
+        "cif_nif": "84504064",
+        "direccion": "POU DE NACIANA, 14-16 · POL. INDE. MONTECRISTO",
+        "email": "in f o @distribucionesmontiel.com",
+        "telefono": "(+34) 971 361 65 10",
+        "rol": "proveedor",
+        "tipo_entidad": "empresa"
+      },
+      "receptor": {
+        "nombre": "CHICKEN PALACE, S.L.",
+        "cif_nif": "B56908486",
+        "direccion": null,
+        "email": "info@chickenpalace.es",
+        "telefono": null,
+        "rol": "cliente",
+        "tipo_entidad": "empresa"
+      },
+      "trabajador": null,
+      "importes": {
+        "base_imponible": 96.9,
+        "iva_porcentaje": "10",
+        "iva_total": 9.69,
+        "irpf": null,
+        "total": 96.9,
+        "moneda": "EUR"
+      },
+      "conceptos": [
+        {
+          "descripcion": "SALMÓN FRESCO 6/8",
+          "cantidad": 9,
+          "precio_unitario": null,
+          "iva_porcentaje": null,
+          "total": 96
+        }
+      ],
+      "fechas": {
+        "documento": "2024-02-20",
+        "vencimiento": null,
+        "periodo_inicio": null,
+        "periodo_fin": null
+      },
+      "referencias": {
+        "numero_documento": "IV-A-00000863",
+        "numero_expediente": null,
+        "referencia_catastral": null,
+        "numero_poliza": null
+      },
+      "forma_pago": null,
+      "cuenta_bancaria": null,
+      "resumen": "Factura de distribución de alimentos",
+      "tags": [
+        "distribucion",
+        "alimentos",
+        "salmón",
+        "fresco",
+        "factura-recibida",
+        "distribuciones",
+        "2024",
+        "urgente"
+      ],
+      "accion_recomendada": "pagar",
+      "confianza": 0.9
+    },
+    "organization": {
+      "folder_path": "gastos/facturas/alimentacion/2024",
+      "normalized_name": "2024-02-20_factura-recibida_distribuciones-pinedas-montiel_00000863_96.9eur.pdf",
+      "full_path": "gastos/facturas/alimentacion/2024/2024-02-20_factura-recibida_distribuciones-pinedas-montiel_00000863_96.9eur.pdf",
+      "tags": [
+        "distribucion",
+        "alimentos",
+        "salmón",
+        "fresco",
+        "factura-recibida",
+        "distribuciones",
+        "2024",
+        "urgente",
+        "distribucion de alimentos"
+      ],
+      "urgencia": "alta",
+      "accion_recomendada": "pagar",
+      "pending_actions": [
+        {
+          "tipo": "pagar",
+          "descripcion": "Pagar 96.9€ a DISTRIBUCIONES PINEDAS MONTIEL, S.L.",
+          "plazo": null,
+          "completada": false
+        }
+      ],
+      "auto_ignored": false,
+      "proveedor_id": "prov_1782566789444_g7xd",
+      "proveedor_nuevo": false,
+      "entities_created": [],
+      "entities_updated": [],
+      "processing_time_ms": 8,
+      "organized_at": "2026-06-27T13:31:19.436Z"
+    },
+    "status": "processed",
+    "agents_completed": [
+      "extractor",
+      "analyzer",
+      "organizer"
+    ],
+    "processing_time_ms": 8334,
+    "processed_at": "2026-06-27T13:31:19.436Z",
+    "errors": []
+  }
+]

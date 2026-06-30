@@ -63,6 +63,7 @@ import WorkerMobile from "./WorkerMobile";
 import SynkiaApp from "./SynkiaApp";
 import SynkiaMain from "./SynkiaMain";
 import ControlPanelPro from "./ControlPanelPro";
+import ControlCenter from "./ControlCenter";
 
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 
@@ -146,6 +147,7 @@ function PagesContent() {
         <Route path="/synkiaapp" element={<Protected><SynkiaApp /></Protected>} />
         <Route path="/synkiamain" element={<Protected><SynkiaMain /></Protected>} />
         <Route path="/controlpanel" element={<Protected><ControlPanelPro /></Protected>} />
+        <Route path="/controlcenter" element={<Protected><ControlCenter /></Protected>} />
 
         <Route path="*" element={<Navigate to="/ceodashboard" replace />} />
       </Routes>

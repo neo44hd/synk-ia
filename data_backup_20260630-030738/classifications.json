@@ -1,0 +1,162 @@
+{
+  "feedback": [
+    {
+      "id": "cls_1779858180994_u6niztyz7",
+      "timestamp": "2026-05-27T05:03:00.994Z",
+      "classification": {
+        "tipo": {
+          "value": "Factura",
+          "confidence": 7,
+          "scores": {
+            "Factura": 2,
+            "Presupuesto": 0,
+            "Contrato": 0,
+            "PO": 0,
+            "Recibo": 0
+          }
+        },
+        "departamento": {
+          "value": "Finanzas",
+          "confidence": 3,
+          "scores": {
+            "Compras": 0,
+            "RRHH": 0,
+            "Legal": 0,
+            "Finanzas": 1,
+            "IT": 0
+          }
+        },
+        "urgencia": {
+          "value": "Otro",
+          "confidence": 0,
+          "scores": {
+            "Critical": 0,
+            "Urgente": 0,
+            "Normal": 0
+          }
+        },
+        "estado": {
+          "value": "Archivado",
+          "confidence": 3,
+          "scores": {
+            "Procesado": 0,
+            "Archivado": 1,
+            "Nuevo": 0
+          }
+        }
+      },
+      "metadata": {
+        "textLength": 20
+      },
+      "feedback": null,
+      "ollamaUsed": true
+    },
+    {
+      "id": "cls_1779858471852_e0xixia1x",
+      "timestamp": "2026-05-27T05:07:51.852Z",
+      "classification": {
+        "tipo": {
+          "value": "Factura",
+          "confidence": 13,
+          "scores": {
+            "Factura": 4,
+            "Presupuesto": 0,
+            "Contrato": 0,
+            "PO": 0,
+            "Recibo": 0
+          }
+        },
+        "departamento": {
+          "value": "Compras",
+          "confidence": 3,
+          "scores": {
+            "Compras": 1,
+            "RRHH": 0,
+            "Legal": 0,
+            "Finanzas": 1,
+            "IT": 0
+          }
+        },
+        "urgencia": {
+          "value": "Otro",
+          "confidence": 0,
+          "scores": {
+            "Critical": 0,
+            "Urgente": 0,
+            "Normal": 0
+          }
+        },
+        "estado": {
+          "value": "Archivado",
+          "confidence": 7,
+          "scores": {
+            "Procesado": 0,
+            "Archivado": 2,
+            "Nuevo": 0
+          }
+        }
+      },
+      "metadata": {
+        "textLength": 87
+      },
+      "feedback": null,
+      "ollamaUsed": true
+    },
+    {
+      "id": "cls_1781700281227_w8spiinvz",
+      "timestamp": "2026-06-17T12:44:41.227Z",
+      "classification": {
+        "tipo": {
+          "value": "Factura",
+          "confidence": 10,
+          "scores": {
+            "Factura": 3,
+            "Presupuesto": 0,
+            "Contrato": 0,
+            "PO": 0,
+            "Recibo": 0
+          }
+        },
+        "departamento": {
+          "value": "Finanzas",
+          "confidence": 3,
+          "scores": {
+            "Compras": 0,
+            "RRHH": 0,
+            "Legal": 0,
+            "Finanzas": 1,
+            "IT": 0
+          }
+        },
+        "urgencia": {
+          "value": "Otro",
+          "confidence": 0,
+          "scores": {
+            "Critical": 0,
+            "Urgente": 0,
+            "Normal": 0
+          }
+        },
+        "estado": {
+          "value": "Otro",
+          "confidence": 0,
+          "scores": {
+            "Procesado": 0,
+            "Archivado": 0,
+            "Nuevo": 0
+          }
+        }
+      },
+      "metadata": {
+        "textLength": 52,
+        "filename": "factura.pdf"
+      },
+      "feedback": null,
+      "ollamaUsed": true
+    }
+  ],
+  "stats": {
+    "total": 3,
+    "correct": 0
+  }
+}

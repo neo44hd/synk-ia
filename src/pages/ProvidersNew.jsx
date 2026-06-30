@@ -134,10 +134,16 @@ export default function ProvidersNew() {
     setLoading(true);
     setError(null);
     try {
-      // Cargar proveedores desde entities.json
-      const entRes = await fetch('/api/data/entities');
-      const entJson = await entRes.json();
-      const proveList = entJson.data?.proveedores || [];
+      // Cargar proveedores desde el store sincronizado provider.json.
+      // ('/api/data/entities' NO existe en la API genérica → devolvía 400 y
+      //  la página se quedaba en 0 proveedores.)
+      const provRes = await fetch('/api/data/provider?limit=1000');
+      const provJson = await provRes.json();
+      const proveList = (provJson.data || []).map((p) => ({
+        ...p,
+        nombre: p.nombre || p.name || '',
+        cif_nif: p.cif_nif || p.cif || '',
+      }));
 
       // Cargar facturas
       const invRes = await fetch('/api/data/invoice?limit=2000');

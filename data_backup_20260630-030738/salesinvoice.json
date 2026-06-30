@@ -1,0 +1,32 @@
+[
+  {
+    "id": "sales_001",
+    "client_id": "client_001",
+    "client_name": "Chicken Palace Ibiza",
+    "total": 5000,
+    "invoice_date": "2026-05-20",
+    "status": "pagada",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.550Z"
+  },
+  {
+    "id": "sales_002",
+    "client_id": "client_002",
+    "client_name": "Restaurant ABC",
+    "total": 2500,
+    "invoice_date": "2026-05-25",
+    "status": "pendiente",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.550Z"
+  },
+  {
+    "id": "sales_003",
+    "client_id": "client_001",
+    "client_name": "Chicken Palace Ibiza",
+    "total": 3200,
+    "invoice_date": "2026-05-26",
+    "status": "pagada",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.550Z"
+  }
+]

@@ -47,6 +47,7 @@ const navItems = [
       { label: "📹 Cámaras & Seguridad", url: createPageUrl("SecurityCameras") },
       { label: "🏥 Sistema Overview", url: createPageUrl("SystemOverview") },
       { label: "⚙️ Control Panel", url: createPageUrl("ControlPanel") },
+      { label: "🛠️ Centro de Control", url: createPageUrl("ControlCenter") },
     ]
   },
   { 

@@ -1,0 +1,307 @@
+[
+  {
+    "id": "id_1777030727728_95etabaxk",
+    "full_name": "Pino Macías Humberto",
+    "dni": "",
+    "position": "Desarrollador Senior",
+    "nss": "",
+    "salary_net": 2516.8,
+    "salary_gross": 3200,
+    "status": "activo",
+    "start_date": null,
+    "payrolls": [
+      {
+        "period": "2026-04",
+        "net_salary": 2516.8,
+        "gross_salary": 3200,
+        "date_processed": "2026-04-24T11:38:47.728Z",
+        "source_doc_id": "doc_1777030114714_ax1gw",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-24T11:38:47.728Z",
+    "updated_date": "2026-04-24T11:38:47.728Z"
+  },
+  {
+    "id": "id_1777030727728_2h4rfv3au",
+    "full_name": "ROLDAN HUESO, FERNANDO",
+    "dni": "53092395T",
+    "position": "COCINERO",
+    "nss": "4610047483",
+    "salary_net": 2500,
+    "salary_gross": 5625,
+    "status": "activo",
+    "start_date": "1 FEB 24",
+    "payrolls": [
+      {
+        "period": "2024-11",
+        "net_salary": 4050,
+        "gross_salary": 5625,
+        "date_processed": "2026-04-24T11:38:47.728Z",
+        "source_doc_id": "doc_1777024250542_7y3lq",
+        "source_v3_id": null
+      },
+      {
+        "period": "2026-04",
+        "net_salary": 2500,
+        "gross_salary": 3152.98,
+        "date_processed": "2026-04-29T11:07:12.170Z",
+        "source_doc_id": "doc_1777460784695_yvz3x",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-24T11:38:47.728Z",
+    "updated_date": "2026-04-29T11:07:12.170Z"
+  },
+  {
+    "id": "id_1777030727728_ilm8rkdfk",
+    "full_name": "ROLDAN HUESO, DAVID",
+    "dni": "53357205B",
+    "position": "COCINERO",
+    "nss": "4610223734",
+    "salary_net": 2500,
+    "salary_gross": 5625,
+    "status": "activo",
+    "start_date": "2024-01-01",
+    "payrolls": [
+      {
+        "period": "2024-11",
+        "net_salary": 4050,
+        "gross_salary": 5625,
+        "date_processed": "2026-04-24T11:38:47.728Z",
+        "source_doc_id": "doc_1777024250542_91eh5",
+        "source_v3_id": null
+      },
+      {
+        "period": "2026-04",
+        "net_salary": 2500,
+        "gross_salary": 3142.68,
+        "date_processed": "2026-04-29T11:07:12.170Z",
+        "source_doc_id": "doc_1777460784695_ul5m6",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-24T11:38:47.728Z",
+    "updated_date": "2026-04-29T11:07:12.170Z"
+  },
+  {
+    "id": "id_1777030727728_wbucpkh9z",
+    "full_name": "AZCOITI MAYANS, CLARA",
+    "dni": "47409005W",
+    "position": "PERSONAL",
+    "nss": "07/10577252-66",
+    "salary_net": 1113.66,
+    "salary_gross": 1190.7,
+    "status": "activo",
+    "start_date": "22 MAY 24",
+    "payrolls": [
+      {
+        "period": "2024-11",
+        "net_salary": 1113.66,
+        "gross_salary": 1190.7,
+        "date_processed": "2026-04-24T11:38:47.728Z",
+        "source_doc_id": "doc_1777024250542_ttlo6",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-24T11:38:47.728Z",
+    "updated_date": "2026-04-24T11:38:47.728Z"
+  },
+  {
+    "id": "id_1777030727728_uvltm0vol",
+    "full_name": "RAMOS, EVELYN BEATRIZ",
+    "dni": "Y8472087M",
+    "position": "OFICIALES",
+    "nss": "07/11027632-75",
+    "salary_net": 1468.52,
+    "salary_gross": 161.55,
+    "status": "activo",
+    "start_date": "2 ABR 24",
+    "payrolls": [
+      {
+        "period": "2024-11",
+        "net_salary": 1695.25,
+        "gross_salary": 161.55,
+        "date_processed": "2026-04-24T11:38:47.728Z",
+        "source_doc_id": "doc_1777024250542_3adpn",
+        "source_v3_id": null
+      },
+      {
+        "period": "2026-04",
+        "net_salary": 1468.52,
+        "gross_salary": 1794.92,
+        "date_processed": "2026-04-29T11:07:12.170Z",
+        "source_doc_id": "doc_1777460784695_75s6z",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-24T11:38:47.728Z",
+    "updated_date": "2026-04-29T11:07:12.170Z"
+  },
+  {
+    "id": "id_1777030727728_dfsugnh1i",
+    "full_name": "AGUIRRE GALLEGOS, CARLOS FABIAN",
+    "dni": "Y6582736N",
+    "position": "OFICIALES",
+    "nss": "07/11126247-41",
+    "salary_net": 1506.6,
+    "salary_gross": 1856.8,
+    "status": "activo",
+    "start_date": "2023-11-01",
+    "payrolls": [
+      {
+        "period": "2024-11",
+        "net_salary": 1507.16,
+        "gross_salary": 1856.8,
+        "date_processed": "2026-04-24T11:38:47.728Z",
+        "source_doc_id": "doc_1777024250542_mktdh",
+        "source_v3_id": null
+      },
+      {
+        "period": "2026-04",
+        "net_salary": 1506.6,
+        "gross_salary": 1856.8,
+        "date_processed": "2026-04-29T11:07:12.170Z",
+        "source_doc_id": "doc_1777460784695_we810",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-24T11:38:47.728Z",
+    "updated_date": "2026-04-29T11:07:12.170Z"
+  },
+  {
+    "id": "id_1777030727728_5ddwlryp5",
+    "full_name": "AGUIRRE GALLEGOS, SANDY YADIRA",
+    "dni": "11456218X",
+    "position": "OFICIALES",
+    "nss": "07/10552545-94",
+    "salary_net": 1570.1,
+    "salary_gross": 1856.8,
+    "status": "activo",
+    "start_date": "2022-03-03",
+    "payrolls": [
+      {
+        "period": "2024-11",
+        "net_salary": 1588.86,
+        "gross_salary": 1856.8,
+        "date_processed": "2026-04-24T11:38:47.728Z",
+        "source_doc_id": "doc_1777024250542_ld2ok",
+        "source_v3_id": null
+      },
+      {
+        "period": "2026-04",
+        "net_salary": 1570.1,
+        "gross_salary": 1856.8,
+        "date_processed": "2026-04-29T11:07:12.170Z",
+        "source_doc_id": "doc_1777460784695_01wqq",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-24T11:38:47.728Z",
+    "updated_date": "2026-04-29T11:07:12.170Z"
+  },
+  {
+    "id": "id_1777030727728_9pvyosara",
+    "full_name": "GALLEGOS ORDOÑEZ, TOLIA",
+    "dni": "55465294N",
+    "position": "OFICIALES",
+    "nss": "07/10552543-92",
+    "salary_net": 1506.6,
+    "salary_gross": 1856.8,
+    "status": "activo",
+    "start_date": "22 MAR",
+    "payrolls": [
+      {
+        "period": "2024-11",
+        "net_salary": 1507.16,
+        "gross_salary": 1856.8,
+        "date_processed": "2026-04-24T11:38:47.728Z",
+        "source_doc_id": "doc_1777024250542_x945l",
+        "source_v3_id": null
+      },
+      {
+        "period": "2026-04",
+        "net_salary": 1506.6,
+        "gross_salary": 1856.8,
+        "date_processed": "2026-04-29T11:07:12.170Z",
+        "source_doc_id": "doc_1777460784695_giehx",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-24T11:38:47.728Z",
+    "updated_date": "2026-04-29T11:07:12.170Z"
+  },
+  {
+    "id": "id_1777030727728_7850wzcqi",
+    "full_name": "PINO MACIAS, HUMBERTO",
+    "dni": "Y9492798E",
+    "position": "OFICIALES",
+    "nss": "0711082155",
+    "salary_net": 1399.36,
+    "salary_gross": 1733.01,
+    "status": "activo",
+    "start_date": "2022-11-16",
+    "payrolls": [
+      {
+        "period": "2024-11",
+        "net_salary": 1399.36,
+        "gross_salary": 1733.01,
+        "date_processed": "2026-04-24T11:38:47.728Z",
+        "source_doc_id": "doc_1777024250542_ix2dw",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-24T11:38:47.728Z",
+    "updated_date": "2026-04-24T11:38:47.728Z"
+  },
+  {
+    "id": "id_1777460832170_pcjadiqyd",
+    "full_name": "AGUIRRE FARFAN, DAVIS FABIAN",
+    "dni": "Z2558594X",
+    "position": "AYUDANTES",
+    "nss": "07/11211343-68",
+    "salary_net": 1253.04,
+    "salary_gross": 1362.66,
+    "status": "activo",
+    "start_date": "1 NOV 25",
+    "payrolls": [
+      {
+        "period": "2026-04",
+        "net_salary": 1253.04,
+        "gross_salary": 1362.66,
+        "date_processed": "2026-04-29T11:07:12.170Z",
+        "source_doc_id": "doc_1777460784695_34lkc",
+        "source_v3_id": null
+      }
+    ],
+    "created_date": "2026-04-29T11:07:12.170Z",
+    "updated_date": "2026-04-29T11:07:12.170Z"
+  },
+  {
+    "id": "emp_001",
+    "name": "Juan García",
+    "email": "juan@sinkia.local",
+    "role": "chef",
+    "status": "activo",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.555Z"
+  },
+  {
+    "id": "emp_002",
+    "name": "María López",
+    "email": "maria@sinkia.local",
+    "role": "camarero",
+    "status": "activo",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.555Z"
+  },
+  {
+    "id": "emp_003",
+    "name": "Pedro Martínez",
+    "email": "pedro@sinkia.local",
+    "role": "cocinero",
+    "status": "activo",
+    "created_date": "2026-05-27T03:27:41.499Z",
+    "updated_date": "2026-05-27T03:27:41.555Z"
+  }
+]

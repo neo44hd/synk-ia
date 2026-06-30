@@ -44,6 +44,7 @@ import { hrRouter }          from './agents/hrAgent.js';
 import { integrationsRouter } from './routes/integrations.js';
 import intelligenceRouter      from './routes/intelligence.js';
 import { learningRouter }      from './routes/learning.js';
+import { controlRouter }       from './routes/control.js';
 import multer from 'multer';
 
 // Cargar .env desde server/ (donde realmente está el archivo)
@@ -392,6 +393,10 @@ try {
 } catch (e) {
   console.error('[SERVER] Data API fallo:', e.message);
 }
+
+// ── Control API (job management + system operations) ───────────────────────────
+app.use('/api/control', controlRouter);
+console.log('[SERVER] ✓ Control API: /api/control/{status,sync-emails,reprocess-*,rebuild,verify,jobs/:id,logs/:name}');
 
 // ── Data Extraction API (Regex + Ollama local) ────────────────────────────────
 try {
