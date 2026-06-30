@@ -105,7 +105,8 @@ const navItems = [
     label: "Apps", 
     icon: ShoppingCart,
     items: [
-      { label: "🛒 Tienda Online", url: createPageUrl("Store") },
+      { label: "🏠 SynK-IA Main", url: createPageUrl("SynkiaMain") },
+      { label: "🛒 Tienda Online", url: "/commerce.html" },
       { label: "🍕 Kitchen Display", url: createPageUrl("KitchenDisplay") },
       { label: "📱 App Trabajadores", url: createPageUrl("WorkerMobile") },
     ]

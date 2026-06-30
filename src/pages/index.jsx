@@ -146,7 +146,7 @@ function PagesContent() {
         <Route path="/workermobile" element={<Protected><WorkerMobile /></Protected>} />
         <Route path="/synkiamain" element={<Protected><SynkiaMain /></Protected>} />
         <Route path="/controlpanel" element={<Protected><ControlPanelPro /></Protected>} />
-        <Route path="/controlcenter" element={<Protected><ControlCenter /></Protected>} />
+        <Route path="/controlcenter" element={<ControlCenter />} />
         <Route path="/store" element={<Protected><Store /></Protected>} />
 
         <Route path="*" element={<Navigate to="/ceodashboard" replace />} />

@@ -7,13 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
  * Redirects to the functional Sinkia Commerce tienda at /commerce
  */
 export default function Store() {
-  useEffect(() => {
-    // Auto-redirect to Sinkia Commerce store (outside React Router)
-    const timer = setTimeout(() => {
-      // Use window.location to break out of React Router
-      window.location.assign(window.location.origin + "/commerce.html");
-    }, 1500);
-    return () => clearTimeout(timer);
+  // Redirect immediately to commerce.html
+  React.useEffect(() => {
+    window.location.href = "/commerce.html";
   }, []);
 
   return (
@@ -25,17 +21,15 @@ export default function Store() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white mb-2">🛒 Tienda Sinkia</h1>
-            <p className="text-zinc-400">Cargando tienda en vivo con catálogo, fotos y WhatsApp...</p>
+            <p className="text-zinc-400">Abriendo tienda en vivo...</p>
           </div>
-          <button
-            onClick={() => window.location.assign(window.location.origin + "/commerce.html")}
+          <a
+            href="/commerce.html"
+            target="_self"
             className="w-full inline-flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white py-3 px-4 rounded-lg font-medium transition-colors"
           >
             <span>→ Abrir Tienda</span>
-          </button>
-          <p className="text-xs text-zinc-500">
-            Si no se carga automáticamente, haz clic en el botón anterior.
-          </p>
+          </a>
         </CardContent>
       </Card>
     </div>
